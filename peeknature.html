@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PeekNature</title>
-    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAA7VBMVEUAqQwDqg8EqhAApgIApQAAowAApAACqQ0BqQ0AqQuf36O96b+15ri25rm05rik4KhZx2ECpwcBqAsAqQ3e9N/////9/v2j4KcApwbY8tmV25oitC04vEGe3qJUxVrZ8tt+0X4AnwACpQIHqArX8tp/1IUHrBQApAHI7Mmd3qIEqg9+0oEAoQBPxFj4/fhwznbd897l9ubI7MvY8tr6/foRrRkAqAnt+e6q468esiUApgUBqg7a8tyK2JAIrBQetCkOrhoBpwfW8dh80n8EqAoAqAgCqQ4GqxKI146x5bRPxFcApQEApAIAogAApga0sxDTAAAAAWJLR0QV5dj5owAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB+gFDAoRN1IGAE4AAAABb3JOVAHPoneaAAAAqElEQVQY002P1w6CQBBFd1fBxa44iliwY8Hee8fu/3+OrLCEk3mYezLJzSBkgRmEIBef30IQA9SOEg6GwpFoLJ5IyixTiaQgDdZkFOqILKi5fAGgKGJbaFAqV6o1UAXCRV1s6E1oCW0uOobS7UGfXwxgOBpPQJvOqKdlvliu1k7LBra7/UE//jMTJzgblys2ERes5UbdTyR8fzxfGHl4f76yNyNMTHf/AerjEMZ3R8ezAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDI0LTA1LTEyVDEwOjE3OjQ1KzAwOjAwBp6S+gAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyNC0wNS0xMlQxMDoxNzo0NSswMDowMHfDKkYAAAAASUVORK5CYII=">
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGIAAABeCAYAAADYHcHYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAPeSURBVHhe7dtZSFRRHMfxn6OWlZblHuqDJWYW0kKZlAXZCgZBlBFJUURaERHRnkULlWQWGL1Umi0QREFFRAVBUBYFSWoEKSm2SKtmWuloc4b/gz1od0DP/Tvn/4GQc+bNb3fOOfdefco7yjogbOegn8JmEoIJCcGEhGBCQjAhIZiQEExICCYkBBMSggkJwYSEYEJCMCEhmJAQTEgIJiQEExKCCQnBhIRgwraXB969fY/zx0vwu+U3zfSs2JExiEuMQ+K4UQiLCoPDl/f/OdtCVD6vRFbaSvxq/kUzvStpYhKWb1yGGRnTETgkkGb5MOarqeJZBbYt34HUYdOwe1Uu6uvq6RMejFsj2tvbce3sdcyJm4+zR8/12lejp4xdrNta25C/tQDrMjbg88fPNGsf43dNpfefYHX6Gryv+UAz9jA+hPKmogp7XOtGU0MTzegnIYi6MvK3FcDZ5qQZvSREJ2oRf/G4jEZ6SYhOWv+02raT6jMHurCoUPj6+dGoa81NzWj81kgjz/n380fRgzNInpJMM3r0iRBRsVG4VHrBHcMKtTWtqqxCcX4Jbl645T47eCIndy1y9mbTSA+v/Gry8/dDQnICDhUfwPXyq4iOi6ZPrHn64Jn7ytLJ69cIdeMv7/IRBAUH0cz/1b6pxY/vP2ikhxGL9dhJY9w3/Kxq+NqATx/0nraN2TWlpKe4FntfGnVP7Zp03/YwJkTMiBiEDw+nET/GhODOmBDtTiecrn9cGRNCPZr9Uv+FRvwYE6L0XqnlG3oBAwNc60kYjfQwIsTLp+UoOXGRRv83eOhghESE0EgPrw9R/aoaW5Zu9eiANsp1Kg8ODaaRHl4ZQt1rel32GtuzdmLB6IWoq66jT6yZkDYe/QP600gPr7v7qk7FLT9baOQ5dSvk/MMixI8ZSTN6GPNek1XzMuficMkhy6fwnmLMrskK9SwiM2eJ9giKhOhkSfZijJ86jkZ6SQiSMnMy1u/LgY+PD83oJSFc1HuxB4v22/pOrPEh1JVQeOMkIqIjaMYexoZQj1M3H92E07dPITTS2rPw3mRcCIfD4d4Z3a25g5VbVriDcGBECPXLT509Bceu5OFJ4yPsKtxh+Y0QXfrEgU7t72cvmoUBgwbQTPfUOSBpwmhExkQifmw8QsKHyV8MdaU332vqi4zfNXEhIZiQEExICCYkBBMSggkJwYSEYEJCMCEhmJAQTEgIJiQEExKCCdtug4t/yRXBhIRgQkIwISGYkBBMSAgmJAQTEoIJCcGEhGBCQjAhIZiQEExICCYkBBMSggkJwYSEYEJCMCEhmJAQTEgIFoC/mMIkUSW4cE0AAAAASUVORK5CYII=
+">
     <!--Font Load Code (Start)-->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +19,7 @@
             font-family: "Radio Canada Big";
             margin: 0;
             padding: 0;
-            background-color: #00a90c;
+            background-color: #acffa6;
         }
 
         .container {
@@ -31,7 +32,7 @@
         }
 
         .card {
-            background-color: #00c40e;
+            background-color: #d4ffd1;
             border-radius: 0.5rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin: 1rem;
@@ -48,24 +49,24 @@
         h1 {
             font-size: 3rem;
             margin-top: 0;
-            color: #fff;
+            color: #000;
          
         }
 
         p {
             font-size: 1.2rem;
-            color: #fff;
+            color: #666;
         }
         h3 {
-            color: #fff;
+            color: #666;
         }
         h5 {
             font-size: 1.1rem;
-            color: #fff;
+            color: #666;
         }
 
         a {
-            color: #fff;
+            color: #666;
         }
         
         @media (max-width: 768px) {
