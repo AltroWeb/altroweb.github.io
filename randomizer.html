@@ -1,0 +1,394 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randomizer</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,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">
+    <!--Font Load Code (Start)-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <!-- Supported fonts: Radio Canada Big, Rowdies, Honk, Corinthia -->
+    
+    <!--Font Load Code (End)-->
+    
+    <style>
+    html {
+  scroll-behavior: smooth;
+}
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #fcd27e;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #ffe4ad;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        a {
+            font-size: 1.2rem;
+            color: #b07600;
+        }
+        
+        h5 {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        h4 {
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+
+        /*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1 id="top">Randomizer</h1>
+          <p>All things random. ;)</p>
+            <br>
+ <a href="https://altroweb.github.io">< Back to AltroWeb</a>
+ <br><br><br><a href="#bottom">Bottom ↓</a>
+ <br><br><br>
+
+
+
+
+
+
+<div class="generator">
+    <h4>Random Password</h4>
+    <a href="javascript:void(0)" onclick="generatePassword()">Generate Password</a><br><br>
+    <div class="output" id="passwordOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Number</h4>
+    <a href="javascript:void(0)" onclick="generateNumber()">Generate Number</a><br><br>
+    <div class="output" id="numberOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Word</h4>
+ <a href="javascript:void(0)" onclick="generateWord()">Generate Word</a><br><br>
+    <div class="output" id="wordOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Sentence</h4>
+<a href="javascript:void(0)" onclick="generateSentence()">Generate Sentence</a><br><br>
+    <div class="output" id="sentenceOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Color</h4>
+    <a href="javascript:void(0)" onclick="generateColor()">Generate Color</a><br><br>
+    <div class="output" id="colorOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Date</h4>
+   <a href="javascript:void(0)" onclick="generateDate()">Generate Date</a><br><br>
+    <div class="output" id="dateOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Animal</h4>
+  <a href="javascript:void(0)" onclick="generateAnimal()">Generate Animal</a><br><br>
+    <div class="output" id="animalOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Quote</h4>
+    <a href="javascript:void(0)" onclick="generateQuote()">Generate Quote</a><br><br>
+    <div class="output" id="quoteOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Image URL</h4>
+    <a href="javascript:void(0)" onclick="generateImageUrl()">Generate Image URL</a><br><br>
+    <div class="output" id="imageUrlOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Name</h4>
+    <a href="javascript:void(0)" onclick="generateName()">Generate Name</a><br><br>
+    <div class="output" id="nameOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random City</h4>
+    <a href="javascript:void(0)" onclick="generateCity()">Generate City</a><br><br>
+    <div class="output" id="cityOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Job Title</h4>
+    <a href="javascript:void(0)" onclick="generateJobTitle()">Generate Job Title</a><br><br>
+    <div class="output" id="jobTitleOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Food Item</h4>
+    <a href="javascript:void(0)" onclick="generateFoodItem()">Generate Food Item</a><br><br>
+    <div class="output" id="foodItemOutput"></div>
+</div>
+
+<div class="generator">
+    <h4>Random Emoji</h4>
+    <a href="javascript:void(0)" onclick="generateEmoji()">Generate Emoji</a><br><br>
+    <div class="output" id="emojiOutput"></div>
+</div>
+
+
+
+
+
+
+
+<div>
+ 		<br><br>
+ 	<p id ="bottom" align="center">More randomizers adding soon!</p>
+ 	<br><br><br><br>
+    </div>
+    
+    <div>
+    <a href="#top">Top ↑</a><br><br><br><br>
+    </div>
+    
+    <p align="center">NOTE: Some randomizers may not work. Be careful with the content or the links (if) generated by any randomizers. Sorry for any inconvenience caused.</p>
+    <br><br>
+    <!-- Link to change font (Start) -->
+  <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a>
+    <br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <!-- Link to change font (End) -->
+    <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br>
+    <p align="center">Last Updated: 25 October 2024, 5:18 PM</p>
+ 	<p align=center>Source Code: <a href="https://github.com/AltroWeb/altroweb.github.io/">AltroWeb Source</a>
+</p>
+<!-- 
+     Enter Comment
+-->
+
+ 	<br><br>
+ 	<h3 align=center>©AltroWeb. All rights reserved.</h3>
+    <!-- Script to change font when link clicked (Start) -->
+    <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+
+
+/*Generator function start*/
+
+
+
+
+
+
+
+// Existing functions...
+function generatePassword() {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        password += charset[randomIndex];
+    }
+    document.getElementById("passwordOutput").innerText = password;
+}
+
+function generateNumber() {
+    const number = Math.floor(Math.random() * 100) + 1; // Random number between 1 and 100
+    document.getElementById("numberOutput").innerText = number;
+}
+
+function generateWord() {
+    const words = ["apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "kiwi"];
+    const randomWord = words[Math.floor(Math.random() * words.length)];
+    document.getElementById("wordOutput").innerText = randomWord;
+}
+
+function generateSentence() {
+    const sentences = [
+        "The quick brown fox jumps over the lazy dog.",
+        "A journey of a thousand miles begins with a single step.",
+        "To be or not to be, that is the question.",
+        "All that glitters is not gold.",
+        "The only thing we have to fear is fear itself."
+    ];
+    const randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
+    document.getElementById("sentenceOutput").innerText = randomSentence;
+}
+
+function generateColor() {
+   const letters = '0123456789ABCDEF';
+   let color = '#';
+   for (let i = 0; i < 6; i++) {
+       color += letters[Math.floor(Math.random() * 16)];
+   }
+   document.getElementById("colorOutput").innerText = color;
+}
+
+// New functions...
+function generateDate() {
+   const start = new Date(2000, 0, 1); // January 1, 2000
+   const end = new Date(); // Current date
+   const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+   document.getElementById("dateOutput").innerText = date.toLocaleDateString();
+}
+
+function generateAnimal() {
+   const animals = ["Dog", "Cat", "Elephant", "Giraffe", "Lion", "Tiger", "Bear", "Zebra"];
+   const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
+   document.getElementById("animalOutput").innerText = randomAnimal;
+}
+
+function generateQuote() {
+   const quotes = [
+       "The best way to predict the future is to invent it.",
+       "Life is what happens when you're busy making other plans.",
+       "Get busy living or get busy dying.",
+       "You only live once, but if you do it right, once is enough."
+   ];
+   const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+   document.getElementById("quoteOutput").innerText = randomQuote;
+}
+
+function generateImageUrl() {
+   const images = [
+       "https://picsum.photos/200/300",
+       "https://placekitten.com/200/300",
+       "https://placebear.com/200/300",
+       "https://loremflickr.com/320/240"
+   ];
+   const randomImageUrl = images[Math.floor(Math.random() * images.length)];
+   document.getElementById("imageUrlOutput").innerText = randomImageUrl;
+}
+
+function generateName() {
+   const names = ["Alice", "Bob", "Charlie", "David", "Eve"];
+   const randomName = names[Math.floor(Math.random() * names.length)];
+   document.getElementById("nameOutput").innerText = randomName;
+}
+
+function generateCity() {
+   const cities = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"];
+   const randomCity = cities[Math.floor(Math.random() * cities.length)];
+   document.getElementById("cityOutput").innerText = randomCity;
+}
+
+function generateJobTitle() {
+   const jobTitles = ["Software Engineer", "Data Scientist", "Product Manager", "Designer", "Marketing Specialist"];
+   const randomJobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
+   document.getElementById("jobTitleOutput").innerText = randomJobTitle;
+}
+
+function generateFoodItem() {
+   const foodItems = ["Pizza", "Burger", "Sushi", "Pasta", "Salad"];
+   const randomFoodItem = foodItems[Math.floor(Math.random() * foodItems.length)];
+   document.getElementById("foodItemOutput").innerText = randomFoodItem;
+}
+
+function generateEmoji() {
+   const emojis = ["😀", "🎉", "🚀", "❤️", "🌍"];
+   const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+   document.getElementById("emojiOutput").innerText = randomEmoji;
+}
+
+
+
+
+
+
+
+
+</script>
+<!-- Script to change font when link clicked (End) -->
+   </div>
+    </div>
+</body>
+</html>
