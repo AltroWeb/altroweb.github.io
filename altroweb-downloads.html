@@ -1,0 +1,189 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BruWeb Downloads</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYAAAAGACAQAAAAOzn00AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAATFSURBVHja7N1RbuIwFEDRGLH/LZsffpCqNmqiKOaes4IpfdfPoSMYc26Q9fASIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgAAYAAQAAgABAACAAEAAIAAYAAQAAgABAArO1593/g8Ds6YHoJVg+A844POQhADlIQAEMIAkAI3gXiHUL1zQYbgI9tUNsFNgDpXSAA0hEIgHQEAiAdgQBIRyAAdkQgAOwBAWAPCAAJCAAJCABPAwLAHhAAEhAAEhAAEhAAEhAAEhAACAA7QABIQABIQAAgAOwAASABAYAAsAMEgAQEAALADhAACAA7QAAgABAALkECAAFgBwgABAACAAHgKUAAIAAQAPzp6SX4vxm/P//+U0wBcDyr4QURgBxkIAAZyMBDcD2D6UUQgAgQgAvR7Q0B0E5AAEhAAEhAACAA7AABIAEBgABAALgECQAEAALAJUgACFMAIAAQAAgABAACYAVTACAAEAAIAE8AAgABcCqfGCoAXIAEAAJwAUIAuAAJAATgAuT8FwAIwPnv/BeA8UcAxt/5LwDjjwCMf/38F4DxT4+/b4o3/HECMPzh818ABj89/gIw+K5AGNHq+e9dINLjLwDS4y8A0uMvANLjLwDS4y8A0uMvANLj7+8AhIffBiA+/jYA4eG3AYiPvw1AePgFQHr4BUB6+AVAevgFQHr4BUB49AVAfPi3zd8BiLMBeBvJTSAAfgzBu0DIIJCBAEhn4CGYHRl87ycg2QCkd4ENQHoXCIB0BAIgHYEAOPRUIADsAQFgDwgAe0AA2AMCQAICwFVIANgDAkACAkACAkACAgABYAcIAAkIAAkIAAkIAASAHXAhnwpxwEyPzt6fYwqAM+IaXhQBSGK9FO69AwSwbAo2gofgeAarfE7bEAD1CARAOIIhAK55QEYAErADBCABBCABBCABlyABgADsAAQgAZcgAYAAQAAuQe1LkACwAUAAuAQJAAQAmcdgAWADgABAACAAEAAIAAQAAmApPjdUACAAEAAIwBMAAgABgABcgBAACMD5LwCMvwAw/gIAAeD8z/BN8YbfBsD4CwDjf4G7fWijK5Dh9wyA0RcARl8AGHwBYNwjj8ACMKRx3gZFANC8AAkAGwAEAMELkACwAUAAELwACQAbAKrnvwCwAUAAELwACQAbAKrnvwBIj78AcAWC6vkvAGwAqJ7/AiA9/gLAFQiq578ASI+/AEiPvwBIj78ASI+/AIgTAOHzXwCkx18ApMdfAKTH3xdkEB5+G4D4+AuA9PgLgPT4ewYgPPw2APHxtwEID78NQHz8bQDCwy8A0sMvANLDLwDSwy8AwqMvAMKDLwDSgy8AwmMvAEOPAAw8AjDwAsCwC8CvlyD/GxQBgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAAAgABAACAAGAAEAAIAAQAAgABAACAAGAAGBxrwEAPKV/cefv1HcAAAAASUVORK5CYII=">
+    <!--Font Load Code (Start)-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <!-- Supported fonts: Radio Canada Big, Rowdies, Honk, Corinthia -->
+    
+    <!--Font Load Code (End)-->
+    
+    <style>
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        h5 {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+
+        /*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1>BruWeb Downloads</h1>
+          <p>Free things, just for fun, in secret. :)</p>
+            <br>
+ <a href="https://bruweb.w3spaces.com/">< Back to BruWeb</a>
+ <br><br><br>
+        <a href="https://mcpedl.org/uploads_files/17-04-2022/minecraft-1-18-12.apk">Minecraft 1.18.12 Free APK - Direct Link</a>
+        <br><br>
+        <a href="https://mcpedl.org/uploads_files/10-04-2024/minecraft-1-21-0-21.apk">Minecraft 1.21.0.21 Beta APK - Direct Link</a>
+        <br><br>
+        <a href="https://upy.happymod.cool/packages/com.gmail.heagoo.apkeditor.pro/APK_Editor_3.0_300_09d409.apk">APK Editor v3.0 MOD APK</a>
+ <br><br>
+<a href="https://files.apkmodget.com/games/subway-surfers-mod_3.22.2-apkmodget.com.apk">Subway Surfers MOD v3.22.2 APK</a>
+ <br><br>
+ 	<a href="https://file.gbapps.net/GBWhatsApp_2024.apk" download>GB WhatsApp Latest APK</a>
+ 	<br><br>
+ 	<a href="https://github.com/revancedapps/revanced.net/releases/download/2024-15/revanced.net_revanced_youtube_v19.09.37_cli4.6.0_p4.7.0.6.apk" download>YouTube Revanced 19.09.37 APK</a>
+ 	<br><br>
+ 	<a href="https://github.com/revancedapps/revanced.net/releases/download/2024-14/revanced.net_revanced_gms_microg_v0.3.1.4.240913.apk" download>MicroG Services 0.3.1.4.240913 APK (Required for ReVanced)</a>
+ 	<br><br>
+ 	<a href="https://download.booksfree.org/download/24411/?tmstv=1713022377&dlm-dp-dl-force=1&dlm-dp-dl-nonce=21b383a2c2">Rich Dar Poor Dad - Robert Kiyosaki Free Ebook PDF</a>
+ 	<br><br>
+ 	<a href="https://pixeldrain.com/api/file/hBuDbyGK?download
+">Ratiborus KMS Tools for Activating Windows, etc.</a>
+ 	<br><br>
+ 	<a href="https://pixeldrain.com/api/file/5bwMVFs6?download
+">Spaceflight Simulator 1.5.10.2 PC Version Free</a>
+ 	<br><br>
+ 	<a href="https://pixeldrain.com/api/file/6A9aXdwB?download">Adobe Photoshop 2024 Crack (PixelDrain)</a>
+ <br><br>
+ <a href="https://file.apkdone.download/s/Qb7iaZfTH8qrceS/download">BitLife 3.13.6 MOD APK</a>
+ <br><br>
+ <a href="https://files.modyolo.com/Mini%20Metro/mini-metro-v2.54.1-full.apk">Mini Metro 2.54.1 MOD APK (May not work on some devices)</a>
+ <br><br>
+<a href="https://pixeldrain.com/api/file/Caz1AycT?download">The Bad Guys - A Very Bad Holiday Hindi-Eng 720P Download (PixelDrain)</a>
+ <br><br>
+ <a href="https://pixeldrain.com/api/file/YaMz8Miv?download">Cars 3 Hindi 720P Download</a>
+ <br><br>
+ <a href="https://pixeldrain.com/api/file/kpLdqMrZ?download">Call Of Duty Black OPS 1 - Part 1 (5 GB)</a>
+ <br><br>
+ <a href="https://pixeldrain.com/api/file/n4oLWcDH?download">Call Of Duty Black OPS 1 - Part 2 (5 GB)</a>
+ <br><br>
+ <a href="https://fastupload.io/account/direct_download/305823/e4d7d1c7580b6bef1f837dac4eca3b5a75dd7c4b5c7e8ecf7fb0cb456cef6212/WorldBox-Mod-0.22.21-_Turn_of_the_wifi_first_before_Opening.apk">WorldBox 0.22.21 MOD APK</a>
+ <br><br>
+
+ 		<br><br>
+ 	<p align="center">New links to be added soon!</p>
+ 	<br><br><br><br>
+    <p align="center">NOTE: Some links may expire due to some restrictions. Sorry for any inconvenience.</p>
+    <br><br>
+    <!-- Link to change font (Start) -->
+  <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a>
+    <br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <!-- Link to change font (End) -->
+    <a href="https://bruweb.w3spaces.com/">< Back to BruWeb</a><br>
+    <p align="center">Last Updated: 19 June 2024, 9:52 PM</p>
+ 	<p align=center>Mail: <a href="mailto:bru33163@vogco.com">Bru Vogco</a>
+</p>
+<!-- W3spaces username: Bru Vogco
+Email (fake, may expire): bru33163@vogco.com
+password: Vogco#bru2476
+
+-->
+
+ 	<br><br>
+ 	<h3 align=center>©BruWeb. All rights reserved.</h3>
+    <!-- Script to change font when link clicked (Start) -->
+    <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+</script>
+<!-- Script to change font when link clicked (End) -->
+   </div>
+    </div>
+</body>
+</html>

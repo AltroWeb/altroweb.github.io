@@ -1,0 +1,248 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MixPix's Enhanced Music</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAByCAAAAACqttqhAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+gFCw40OLCUXV0AAAN4SURBVGje7ZlNSFRRFMdPH0wiucg+FirlZzaMWaYIMYFoheSu2rgNWkVr165b1iyF2hVJGQVKSUSLobKxckDGSXQ0R1HEkXAYaEBq4dTMPe+++855cy9t7tnMnP+57/zm3ffO/RoAa9asWbNmzZq1/2T7RDc8lFc0Drx4KNX77yivuhdV/YLB30qbkl81qr5qUGy9n9UnZ+TyRVYSHvLQoEwNHjGIDPTJ1OuVBpHQKhM7eDmYyKZOp9bQysvBRNbWOrX6JqNI6HFKId6jZCOvOqU+ZgouUvLcepgpuMjALawEDxtGwgAWbgdMI09goZmbgY0M9iK/xTjy+DHRb2FWpQ8kLpM27qP0gbykdLUgc2jGRx2JkPmcBuR6WvQDd0u9cJUYTa9rQG4lkSCMNjdQMLmlAQkJ5J8qdbo8GvtCVowgoam/+L2zDgVHKrTcJXp/qmuK3xsbxVhey10CzCC/ZEEXQqGPhHQU5DjyB6RfAQDgnSbkHPJLFiPnPJr6Rc4vIuFfZfaj0W5xhpCOgpxGg0Fx6XETBdKEt4c2xsaQ3/x3IXDeo6F/5HPk1xZuM3zUo6F/ZBSN1dUn9z5Po6rMRSnZaJMX7rDCMNvm0awc5GvkFzr2mkezcpDzeMzb+wiKan5eIzK2gIRhAAC82Uzq7NjUEhK6AZw7g3RKIxLwIUF9AzircoqWi4icRH5dF0BvDRJfaUVGM6JfFQIIob1mZlorEj4hvwOg3aNJuchR5F8BuOzRpFzkGqrMSgA82q0RUx0ktvuePCsKw3g2nqXMlZy7TOGa63bMld6LZh7S8XK0XkACbejhIMfQw3QsJx9rRyY21XHiaMdBwgd1+As5ER35TB1+agC5odw57lCrkoNMzKqic9Sq5CDXl1XR5awBJHxVxPLv6XkYyPs77rFfj4wgs4rKTNP7lXUI89Y9NMFIw0FOuocYj5KFXHR9mJurhpBJ1w1rIslIw0Fmv7n+GMbbwzvDi7v8m5aPc7KwkBGXm8lGjCFhgyVrQbqUH33i4iPfyGVOVXKRP6Rj3uqSQWRCesgSJy97fCBBWvKUwx7/SFll5j4bRUZ+OrXtJ0aRsOSUFpgpuMhxp0Q7evGPlGzOx7Qjxe1gJoPjq9uK5t4JYeUlfiUPiEWXetC+K8Zj4iZvYm4XZQisMLvBmjVr1qxZs2bNlP0BnuP7s/BXv9cAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDUtMTFUMTQ6NTI6NDcrMDA6MDAugOVxAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA1LTExVDE0OjUyOjQ3KzAwOjAwX91dzQAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNS0xMVQxNDo1Mjo1NiswMDowMGIVdzgAAAAASUVORK5CYII=">
+    <!--Font Load Code (Start)-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <!-- Supported fonts: Radio Canada Big, Rowdies, Honk, Corinthia -->
+    
+    <!--Font Load Code (End)-->
+    
+    <style>
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #2b2828;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #fff;
+         
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #fff;
+        }
+        h3 {
+            color: #fff;
+        }
+        h5 {
+            font-size: 1.1rem;
+            color: #fff;
+        }
+        
+        a {
+            color: #fff;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+/*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1>MixPix's Enhanced Music</h1>
+          <h3>MixPix's enhanced, slowed and aesthetic music collection. 🎵</h3><br>
+          <a href="https://bruweb.w3spaces.com/">< Back to BruWeb</a><br><br>
+<p>You and Me - Shubh (MixPix Enhanced, Ultra Slowed)</p>    
+<audio controls>
+  <source src="https://dl.sndup.net/zd8f/You%20And%20Me%20-%20Shubh%20(Enhanced%20by%20MixPix).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Habibi Remix x Believer - MixPix</p>    
+<audio controls>
+  <source src="https://dl.sndup.net/bxn9/Habibi%20(Remix)%20x%20Believer.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+  <p>Let Me Down Slowly x Main Royaan (Edit Audio) - MixPix</p>    
+<audio controls>
+  <source src="https://dl.sndup.net/qdfh/Let%20Me%20Down%20Slowly%20x%20Maine%20Royaan%20(Edit%20Audio).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+  <p>Love Nwantiti (ElGrandeToto Remix)x Tu Aake Dekhle (Lofi) - MixPix</p>
+  <audio controls>
+<source src="https://dl.sndup.net/jcb3/Love%20Nwantiti%20(ElGrandeToto)%20x%20Tu%20Aake%20Dekh%20Le.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Amplifier x Satisfya (Edit Audio) - MixPix</p>
+  <audio controls>
+<source src="https://dl.sndup.net/qyz9/Amplifier%20x%20Satisfya%20(Edit%20Audio).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Pasoori x Paro (Edit Audio) - MixPix</p>
+  <audio controls>
+<source src="https://dl.sndup.net/jp49/Pasoori%20x%20Paro%20(Edit%20Audio).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Cheques x Hood Anthem (Remixed by MixPix)</p>
+  <audio controls>
+<source src="https://dl.sndup.net/rqxy/Cheques%20x%20Hood%20Anthem%20(Remixed%20by%20MixPix).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Cheques x Hood Anthem (Remixed & Enhanced by MixPix)</p>
+  <audio controls>
+<source src="https://dl.sndup.net/sbf3/Cheques%20x%20Hood%20Anthem%20(Remix%20&%20Enhanced%20by%20MixPix).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Bandana x King Shit (Remixed by MixPix)</p>
+  <audio controls>
+<source src="https://dl.sndup.net/hxmz/Bandana%20x%20King%20Shit%20-%20MixPix.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Bandana x King Shit (Remixed & Enhanced by MixPix)</p>
+  <audio controls>
+<source src="https://dl.sndup.net/s4yc/Bandana%20x%20King%20Shit%20(MixPix%20Enhanced).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>You and Me x Insane (Remixed by MixPix)</p>
+  <audio controls>
+<source src="https://dl.sndup.net/ztx6/You%20and%20me%20x%20Insane%20-%20MixPix.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Amplifier X Satisfya - Remastered Atmos Edit</p>
+  <audio controls>
+<source src="https://dl.sndup.net/bd96r/Amplifier%20x%20Satisfya%20(Remastered%20Atmos%20Edit).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Let Me Down Slowly X Main Royaan - Remastered Atmos Edit</p>
+  <audio controls>
+<source src="https://dl.sndup.net/xm8sh/Let%20Me%20Down%20Slowly%20x%20Main%20Royaan.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Pasoori X Paro - Remastered Audio Edit</p>
+  <audio controls>
+<source src="https://dl.sndup.net/ry6fm/Pasoori%20x%20Paro%20(Remastered%20Atmos%20Edit).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Kangana Tera Ni X Sajni</p>
+  <audio controls>
+<source src="https://dl.sndup.net/vcpnx/Kangna%20Tera%20Ni%20x%20Sajni.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Kangana Tera Ni X Sajni - Atmos Edit</p>
+  <audio controls>
+<source src="https://dl.sndup.net/fqnjm/Kangna%20Tera%20Ni%20x%20Sajni%20-%20Atmos%20Edit.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+<p>Levitating X Ghungroo (LKE)</p>
+  <audio controls>
+<source src="https://dl.sndup.net/gnpyc/Levitating%20X%20Ghungroo%20(LKE).mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio><br><br>
+
+ <br><br>
+
+ 		<br><br>
+ 	<p align="center">More music adding soon!</p>
+ 	<br><br><br><br>
+    <p align="center">NOTE: These audio files may expire as they are uploaded to a server. Sorry for any inconvenience.</p>
+    <br><br>
+    <!-- Link to change font (Start) -->
+  <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a><br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <!-- Link to change font (End) -->
+    <a href="https://bruweb.w3spaces.com/">< Back to BruWeb</a>
+    <br><br>
+    <p align="center">Last Updated: 19 June 2024, 9:52 PM</p>
+ 	
+ 	<p align=center>Mail: <a href="mailto:bru33163@vogco.com">Bru Vogco</a>
+</p>
+<!-- W3spaces username: Bru Vogco
+Email (fake, may expire): bru33163@vogco.com
+password: Vogco#bru2476
+
+Audio.com Account:
+Email (same, may expire, not verified): bru33163@vogco.com
+password: Mix.Pix@bruweb1000
+
+Profile link: https://audio.com/mixpix (Will not be updated anymore)
+-->
+
+ 	<br><br>
+ 	<h3 align=center>©MixPix. All rights reserved.</h3>
+   </div>
+ <!-- Script to change font when link clicked (Start) -->
+    <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+</script>
+<!-- Script to change font when link clicked (End) -->
+    </div>
+</body>
+</html>

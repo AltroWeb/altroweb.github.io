@@ -1,0 +1,529 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebList</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,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">
+    <!--Font Load Code (Start)-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <!-- Supported fonts: Radio Canada Big, Rowdies, Honk, Corinthia -->
+    
+    <!--Font Load Code (End)-->
+    
+    <style>
+    html {
+  scroll-behavior: smooth;
+}
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #d4f6fc;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #def7fc;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        a {
+            font-size: 1.2rem;
+            color: #4f93a1;
+        }
+        
+        h5 {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        h4 {
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+
+        /*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1 id="top">WebList</h1>
+          <p>An full list of software, websites and services that can be helpful.</p>
+            <br>
+ <a href="https://bruweb.w3spaces.com/">< Back to BruWeb</a>
+ <br><br><br><a href="#bottom">Bottom ↓</a>
+ <br><br><br>
+<!-- Links start-->
+<h4>Search</h4>
+<p>These websites provide search index facility over the web:</p><br>
+<a href="https://google.com">Google (Search)</a><br><br>
+<a href="https://duckduckgo.com">DuckDuckGo (Search)</a><br><br>
+<a href="https://ecosia.org">Ecosia Search Engine</a><br><br>
+<a href="https://yandex.com">Yandex (Search)</a><br><br>
+<a href="https://qmamu.com">QMamu - Indian Search Engine</a><br><br>
+
+<h4>Image</h4>
+<p>These websites/software provide image tools such as reverse search, editing, etc.:</p><br>
+
+<a href="https://images.google.com">Google Image Search</a><br><br>
+<a href="https://gimp.org">GIMP Editor</a><br><br>
+<a href="https://google.com">Snapseed - Image Editor (Android)</a><br><br>
+<a href="https://search4faces.com/en/tt00/index.html">Search4Faces - Reverse face search</a><br><br>
+<a href="https://facecheck.id/">FaceCheck.ID - Find Faces</a><br><br>
+<a href="https://getintopc.com/softwares/photo-editing/vector-magic-desktop-edition-free-download/">Vector Magic - PNG to SVG (GetIntoPC)</a><br><br>
+<a href="https://getintopc.com/softwares/graphic-design/adobe-photoshop-2023-free-download-1758627/">Adobe Photoshop 2023 - Free (GetIntoPC)</a><br><br>
+<a href="https://photopea.com">Photopea - Online Photo Editor</a><br><br>
+<a href="https://image.online-convert.com/">Image Converter</a><br><br>
+<a href="https://ezgif.com">ezGIF - GIF Tools</a><br><br>
+<a href="https://www.iloveimg.com/">Image Tools - iLoveIMG</a><br><br>
+<a href="https://remove.bg/">Remove.BG - Backgroung Remover</a><br><br>
+<a href="https://www.watermarkremover.io/">Watermark Remover From Image</a><br><br>
+
+<h4>Audio</h4>
+<p>These websites/software offer various utilities for audio and sound.</p><br>
+
+<a href="https://audacityteam.org">Audacity - Audio editor (PC)</a><br><br>
+<a href="https://audioalter.com">AudioAlter - Sound Tools</a><br><br>
+<a href="https://vocalremover.org/">Vocal Remover (Proprietary)</a><br><br>
+<a href="https://x-minus.pro/ai">X-Minus - Vocal Remover</a><br><br>
+<a href="https://mp3cut.net/">MP3Cut.net - Trim Audio</a><br><br>
+<a href="https://slowedandreverb.studio/">SlowedAndReverb.studio</a><br><br>
+<a href="https://www.songpeel.com/">SongPeel - Audio Tools</a><br><br>
+<a href="https://online-audio-converter.com/">Online Audio Converter</a><br><br>
+<a href="https://wavacity.com/">Wavacity - Online Audio Edit</a><br><br>
+
+<h5>Music Services:</h5>
+
+<a href="https://music.youtube.com">YouTube Music</a><br><br>
+<a href="https://spotify.com">Spotify</a><br><br>
+<a href="https://www.xmanagerapp.com/">xManager - Spotify MOD</a><br><br>
+<a href="https://music.apple.com">Apple Music</a><br><br>
+
+<h5>Music Players:</h5>
+
+<a href="https://statics.liteapks.com/Music%20Speed%20Changer/Music%20Speed%20Changer%20v13.2.1-pl%20%28PREMIUM%29.apk">Music Speed Changer MOD (Android)</a><br><br>
+<a href="https://hst.happymod.com/downloadfile/mod/f6432a9765b9ae48a8b66a46257036eb/L3Hze6E5UMIzN5p9fpHtboaycrzpTBFxeF50fNd8YX7weX7ojvQugqFxeetucj27QYK1ggBs">ZPlayer - Metro UI (Paid for Free) (Android)</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=com.kyant.vanilla&hl=en">Vanilla Music Player (Android)</a><br><br>
+<a href="https://www.aimp.ru/">AIMP Player (PC)</a><br><br>
+<a href="https://prod.downloadnow.com/08d/bc3/f4e4d362130bf19b5604d370cc39b66d72/winamp58_3660_beta_full_en-us.exe?Expires=1725827413&Signature=88a2130dbd3b176f74bf64c083f3a96564f16941&url=https://download.cnet.com/winamp/3000-2141_4-10251792.html&Filename=winamp58_3660_beta_full_en-us.exe
+">Winamp (PC) (Direct Link)</a><br><br>
+
+
+
+
+<h4>Video</h4>
+<p>Software/websites that may be useful for videos:</p><br>
+
+<a href="https://www.openshot.org/">OpenShot Video Editor</a><br><br>
+<a href="https://www.shotcut.org/">Shotcut Editor</a><br><br>
+<a href="https://s2.pesk.top/eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjcyMjU2MDAsInN1YiI6IkNhcEN1dF80XzNfMF8xNjk0X2NhcGN1dHBjXzBfY3JlYXRvcnRvb2wgW1Blc2tUb3AuY29tXS5yYXIiLCJzb3VyY2UiOiJodHRwczpcL1wvcGVza3RvcC5jb21cLyJ9.uipkwal9fQ2aV5QJ4HxBQJbsaaPbTkz_SuR9ZuyBBvw">CapCut Crack (PC)</a><br><br>
+<a href="https://capcutmodapk.id/files/capcut.apk">Capcut APK (Android)</a><br><br>
+
+<h5>Video Services:</h5>
+
+<a href="https://youtube.com">YouTube</a><br><br>
+<a href="https://dailymotion.com/">Dailymotion</a><br><br>
+<a href="https://twitch.tv">Twitch</a><br><br>
+<a href="https://vimeo.com">Vimeo</a><br><br>
+<a href="https://revanced.net/">ReVanced - YouTube Enhanced (Android)</a><br><br>
+
+<h4>Social Media</h4>
+<p>All the abundant social media platforms:</p><br>
+
+<a href="https://facebook.com">Facebook</a><br><br>
+<a href="https://instagram.com">Instagram</a><br><br>
+<a href="https://telegram.org">Telegram</a><br><br>
+<a href="https://tiktok.com">TikTok</a><br><br>
+<a href="https://x.com">Twitter/X</a><br><br>
+<a href="https://sharechat.com">ShareChat</a><br><br>
+<a href="https://snapchat.com">Snapchat</a><br><br>
+<a href="https://whatsapp.com/">WhatsApp</a><br><br>
+<a href="https://reddit.com">Reddit</a><br><br>
+
+<h5>Other Social Media Apps</h5>
+
+<a href="https://gbapps.net/gbwhatsapp-apk-dl/">GBWhatsApp</a><br><br>
+<a href="https://fouadsnap.com/">Fouad Snapchat (MOD)</a><br><br>
+<a href="https://gb-insta.app/">GBInsta</a><br><br>
+
+
+<h4>Tools</h4>
+<p>Useful tools for both PC and mobile:</p><br>
+
+<h5>Windows</h5>
+
+<a href="https://www.7-zip.org/">7-Zip</a><br><br>
+<a href="https://sourceforge.net/projects/ai2offline/">AppInventor Offline PC</a><br><br>
+<a href="https://anydesk.com/en">AnyDesk</a><br><br>
+<a href="https://qwertycube.com/apk-editor-studio/">APK Editor Studio</a><br><br>
+<a href="https://blender.org">Blender - 3D Animation</a><br><br>
+<a href="https://www.cputhermometer.com/">CPUThermometer</a><br><br>
+<a href="https://www.dev47apps.com/">DroidCam</a><br><br>
+<a href="https://ds4-windows.com/">DS4Windows - DualShock on PC</a><br><br>
+<a href="https://www.mozilla.org/en-US/firefox/">Mozilla Firefox</a><br><br>
+<a href="https://www.google.com/intl/en_in/chrome/">Google Chrome</a><br><br>
+<a href="https://handbrake.fr/">HandBrake - Video Encoder</a><br><br>
+<a href="https://jrsoftware.org/isdl.php#stable">Inno Setup - Installer Creation</a><br><br>
+<a href="https://www.java.com/en/download/">Java Download</a><br><br>
+<a href="https://kodi.tv/">Kodi TV</a><br><br>
+<a href="https://krita.org/en/">Krita - Open Source Paint</a><br><br>
+<a href="https://www.libreoffice.org/">LibreOffice</a><br><br>
+<a href="https://download.apponic.com/L0eJRmak1Y8DgWX3-NxlQSSaXRu_OpXnrQQCF6h57ZfbS-Wc97BVhe0EEttmVBvIrgO29qP7DYqM9Q7RDRILvcUFbqofwcB7Xy9lW4SLKahVQVAGMGAtquyU6PXddaO3VIvZqSW1frBTU_L54VzkVSP0JjbYFvQX0_a6LD8o25SI_3d4unX7lTRFhw/
+">MSWLogo (Direct Link)</a><br><br>
+<a href="https://www.microsoft.com/en-in/download/details.aspx?id=44574">Windows Phone 8.1 Emulator</a><br><br>
+<a href="https://nodejs.org/en">NodeJS</a><br><br>
+<a href="https://www.nero.com/eng/products/nero-burning-rom/download.php?vlang=us">Nero ROM Burner</a><br><br>
+<a href="https://notepad-plus-plus.org/">Notepad++</a><br><br>
+<a href="https://virtualbox.org">Oracle VM VirtualBox</a><br><br>
+<a href="https://playnite.link/">Playnite</a><br><br>
+<a href="https://github.com/microsoft/PowerToys/releases/tag/v0.84.0">PowerToys Windows</a><br><br>
+<a href="https://www.python.org/">Python</a><br><br>
+<a href="https://www.rainmeter.net/">Rainmeter - Desktop Widgets</a><br><br>
+<a href="http://www.rw-designer.com/cursor-maker">RealWorld Cursor Editor</a><br><br>
+<a href="https://www.angusj.com/resourcehacker/">Resource Hacker</a><br><br>
+<a href="https://www.screentogif.com/">ScreenToGif - Screen Recorder</a><br><br>
+<a href="https://github.com/Genymobile/scrcpy">ScrCpy - Screen Share with ADB</a><br><br>
+<a href="https://github.com/Oliviaophia/SmartTaskbar">SmartTaskbar - Auto Hide Taskbar</a><br><br>
+<a href="https://www.top-password.com/take-ownership-pro.html">TakeOwnerShip Pro</a><br><br>
+<a href="https://desktop.turbowarp.org/">TurboWarp Desktop</a><br><br>
+<a href="https://www.urban-vpn.com/free-products/free-windows-vpn/">UrbanVPN</a><br><br>
+<a href="https://github.com/Makazzz/VbsToExePortable">VBSToExe Portable</a><br><br>
+<a href="https://www.videolan.org/vlc/">VideoLAN</a><br><br>
+<a href="https://visualstudio.microsoft.com/">Visual Studio</a><br><br>
+<a href="https://bluej.org/">BlueJ</a><br><br>
+<a href="https://github.com/MustardChef/WSABuilds">Windows Subsystem for Android on Windows 10</a><br><br>
+<a href="https://mrs0m30n3.github.io/youtube-dl-gui/">yt-dlg (YouTube Downloader)</a><br><br>
+<a href="https://dotnet.microsoft.com/en-us/download/dotnet-framework">DotNet Framework Download</a><br><br>
+
+<h5>Android</h5>
+<a href="https://github.com/KieronQuinn/TapTap">Pixel Back Tap Port</a><br><br>
+<a href="https://odindownload.com/">Odin Flash Tool (PC Download)</a><br><br>
+<a href="https://samfw.com/">SamFW - Flash Tools</a><br><br>
+<a href="https://xdaforums.com/">XDA - Android and PC Development Forum</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.accessibility.voiceaccess&hl=en_IN">Voice Access - Control Phone with Voice</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=com.google.earth&hl=en_IN">Google Earth</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=com.google.android.inputmethod.latin&hl=en_IN">GBoard</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=com.vinwap.parallaxpro&hl=en_IN">4D Wallpaper</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=ru.playsoftware.j2meloader&hl=en_IN">J2ME Loader - Play OLD Jar games</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=moe.shizuku.privileged.api&hl=en_IN">Shizuku</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=ru.zdevs.zarchiver&hl=en_IN">ZArchiver</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=com.cxinventor.file.explorer&hl=en_IN">CxExplorer (compatible with Android TV)</a><br><br>
+<a href="https://play.google.com/store/apps/details?id=flar2.homebutton&hl=en_IN"></a>Button Mapper<br><br>
+<a href="https://play.google.com/store/apps/details?id=erfanrouhani.hapticfeedback&hl=en_IN">Haptic feedback on Game Vibrate</a><br><br>
+
+<h4>Utility and Misc Websites</h4>
+<p>Miscellaneous websites that are helpful in productive tasks:</p><br>
+
+<a href="https//editpad.org/">Editpad - Online textpad</a><br><br>
+<a href="https://translate.google.com">Google Translate</a><br><br>
+<a href="https://maps.google.com">Google Maps</a><br><br>
+<a href="https://wolframalpha.com">Wolfram Alpha</a><br><br>
+<a href="https://earth.google.com">Google Earth Web</a><br><br>
+<a href="https://toffeeshare.com">ToffeeShare - Easy File Sharing</a><br><br>
+<a href="https://dropbox.com">DropBox - Cloud</a><br><br>
+<a href="https://10minutemail.net">10MinuteMail - Disposable Mail</a><br><br>
+<a href="https://cloudconvert.com">CloudConvert</a><br><br>
+<a href="https://musiclab.chromeexperiments.com/">Chrome Music Lab</a><br><br>
+<a href="https://www.andromo.com/">Andromo App Builder</a><br><br>
+<a href="https://appetize.io/">Appetize.io - Run Native Apps Online</a><br><br>
+<a href="https://median.co">Median - websites to apps</a><br><br>
+<a href="https://scratch.mit.edu/">Scratch</a><br><br>
+<a href="https://wayback.archive.org/">Wayback Machine</a><br><br>
+<a href=""></a><br><br>
+
+
+
+
+<!--Explicit URL(s)-->
+<a href="https://y2meta.app">Y2meta - YT Downloader (WARNING: MAY CONTAIN SERIOUS CONTENT!)</a><br><br>
+
+<h4>AI</h4>
+<p>Artificial Intelligence powered websites:</p><br>
+
+<a href="https://perchance.org/ai-character-generator">Perchance AI Character Generator</a><br><br>
+<a href="https://perchance.org/ai-text-to-image-generator">Perchance AI Image Generator</a><br><br>
+<a href="https://perchance.org/ai-chat">Perchance AI Chat and Roleplay</a><br><br>
+<a href="https://ahrefs.com/writing-tools/paragraph-rewriter">AI Paragraph Writer</a><br><br>
+<a href="https://ahrefs.com/writing-tools/paragraph-generator">AI Paragraph Generator</a><br><br>
+<a href="https://ahrefs.com/writing-tools">AI Writing Tools</a><br><br>
+<a href="https://www.perplexity.ai/">Perplexity AI</a><br><br>
+<a href="https://gemini.google.com">Google Gemini</a><br><br>
+<a href="https://copilot.microsoft.com/">Microsoft Copilot</a><br><br>
+<a href="https://suno.com/">Suno AI - AI Music Creation</a><br><br>
+<a href="https://www.alpacaml.com/">AlpacaML - AI Photoshop Tools</a><br><br>
+<a href="https://firefly.adobe.com/">Adobe Firefly AI</a><br><br>
+
+
+
+<h4>Tech, Industry and Government</h4>
+<p>Websites of the industrial and government sectors:</p><br>
+<h5>Industrial, Tech, Community, Automobile and Others</h5>
+<a href="https://microsoft.com">Microsoft</a><br><br>
+<a href="https://mozilla.org/">Mozilla</a><br><br>
+<a href="https://apple.com">Apple</a><br><br>
+<a href="https://stackoverflow.com">Stack Overflow</a><br><br>
+<a href="https://stackexchange.com/">Stack Exchange</a><br><br>
+<a href="https://xda-developers.com">XDA</a><br><br>
+<a href="https://ubuntu.com">Ubuntu</a><br><br>
+<a href="https://linuxmint.com">Linux Mint</a><br><br>
+<a href="https://adobe.com">Adobe</a><br><br>
+<a href="https://infosys.com">Infosys</a><br><br>
+<a href="https://ibm.com">IBM</a><br><br>
+<a href="https://beebom.com">Beebom</a><br><br>
+<a href="https://androidauthority.com">Android Authority</a><br><br>
+<a href="https://sammobile.com">Sammobile</a><br><br>
+<a href="https://samsung.com">Samsung</a><br><br>
+<a href="https://xiaomi.com">Xiaomi</a><br><br>
+<a href="https://global.honda">Honda</a><br><br>
+<a href="https://hyundai.com">Hyundai</a><br><br>
+<a href="https://audi.com">Audi</a><br><br>
+<a href="https://bmw.com">BMW</a><br><br>
+<a href="https://ktm.com">KTM</a><br><br>
+<a href="https://porsche.com">Porsche</a><br><br>
+<a href="https://volkswagen.com">Volkswagen</a><br><br>
+<a href="https://tata.com">Tata</a><br><br>
+<a href="https://mahindra.com">Mahindra</a><br><br>
+<a href="https://lamborghini.com">Lamborghini</a><br><br>
+<a href="https://bugatti.com">Bugatti</a><br><br>
+<a href="https://ferrari.com">Ferrari</a><br><br>
+<a href="https://britannia.co.in">Britannia</a><br><br>
+<a href="https://www.rolls-roycemotorcars.com/">Rolls-Royce</a><br><br>
+<a href="https://techwiser.com">TechWiser</a><br><br>
+<a href="https://intel.com">Intel</a><br><br>
+<a href="https://nvidia.com">Nvidia</a><br><br>
+<a href="https://www.tsmc.com/english">TSMC</a><br><br>
+<a href="https://qualcomm.com">Qualcomm</a><br><br>
+<a href="https://disney.com">Disney</a><br><br>
+<a href="https://unilever.com">Unilever</a><br><br>
+<a href="https://ford.com">Ford</a><br><br>
+<a href="https://ge.com">General Electric</a><br><br>
+<h5>Aerospace</h5>
+<a href="https://boeing.com">Boeing</a><br><br>
+<a href="https://spacex.com">SpaceX</a><br><br>
+<a href="https://lockheedmartin.com">Lockheed Martin</a><br><br>
+<h5>Governmental</h5>
+<a href="https://nasa.gov">NASA</a><br><br>
+<a href="https://isro.gov.in">ISRO</a><br><br>
+<a href="https://gov.uk">GOV.UK</a><br><br>
+<a href="https://india.gov.in">MyGov.in</a><br><br>
+<a href="https://us.gov">us.gov</a><br><br>
+<a href="https://www.bundesregierung.de/breg-en">Bundesregierung GOV</a><br><br>
+<a href="https://pakistan.gov.pk">Pakistan Government</a><br><br>
+<a href="https://english.www.gov.cn/">Government of China</a><br><br>
+<a href="https://governo.it">Governo.IT</a><br><br>
+<a href="https://france-visas.gouv.fr/en/">Gouvernement de France</a><br><br>
+
+
+
+
+
+
+<h4>News and Finance</h4>
+<p>Information on finance and news from various sources around the world:</p><br>
+
+<h5>News</h5>
+<a href="https://www.nytimes.com/">The New York Times</a><br><br>
+<a href="https://www.cnn.com/">CNN</a><br><br>
+<a href="https://www.reuters.com/">Reuters</a><br><br>
+<a href="https://www.wsj.com/">Wall Street Journal</a><br><br>
+<a href="https://www.bbc.com/">BBC News</a><br><br>
+<a href="https://www.npr.org/">NPR</a><br><br>
+<a href="https://news.google.com/">Google News</a><br><br>
+<a href="https://www.foxnews.com/">Fox News</a><br><br>
+<a href="https://www.nbcnews.com/">NBC News</a><br><br>
+<a href="https://www.washingtonpost.com/">The Washington Post</a><br><br>
+
+
+<h5>Finance</h5>
+<a href="https://www.trendlyne.com">TrendLyne</a><br><br>
+<a href="https://www.forbes.com/">Forbes</a><br><br>
+<a href="https://www.wsj.com/">Wall Street Journal</a><br><br>
+<a href="https://www.cnbc.com/">CNBC</a><br><br>
+<a href="https://www.marketwatch.com/">MarketWatch</a><br><br>
+<a href="https://www.investing.com/">Investing.com</a><br><br>
+<a href="https://www.ft.com/">Financial Times</a><br><br>
+<a href="https://www.economist.com/">The Economist</a><br><br>
+<a href="https://www.money.com/">Money</a><br><br>
+<a href="https://www.kiplinger.com/">Kiplinger</a><br><br>
+<a href="https://www.morningstar.com/">Morningstar</a><br><br>
+<a href="https://moneycontrol.com">MoneyControl</a><br><br>
+<a href="https://nseindia.com">NSE India</a><br><br>
+<a href="https://tickertape.in">TickerTape</a><br><br>
+
+<h4>Shopping, Fashion and Commerce</h4>
+<p>Online shopping, banking and fashion websites:</p><br>
+<h5>Retail/E-Commerce</h5>
+<a href="https://flipkart.com">Flipkart</a><br><br>
+<a href="https://amazon.com">Amazon</a><br><br>
+<a href="https://target.com">Target Store</a><br><br>
+<a href="https://bestbuy.com">Best Buy</a><br><br>
+<a href="https://myntra.com">Myntra</a><br><br>
+<a href="https://meesho.com">Meesho</a><br><br>
+<h5>Sell/Buy</h5>
+<a href="https://ebay.com">EBay</a><br><br>
+<a href="https://etsy.com">Etsy</a><br><br>
+<a href="https://olx.in">OLX</a><br><br>
+<h5>Food</h5>
+<a href="https://www.zomato.com/">Zomato</a><br><br>
+<a href="https://www.swiggy.com/">Swiggy</a><br><br>
+<a href="https://online.kfc.co.in/">KFC</a><br><br>
+<a href="https://www.mcdonalds.com/us/en-us/mcdelivery.html">McDonald's</a><br><br>
+<h5>Banking</h5>
+<a href="https://www.hdfcbank.com/personal">HDFC Bank</a><br><br>
+<a href="https://www.onlinesbi.sbi/">SBI</a><br><br>
+<a href="https://www.americanexpress.com/">AMEX</a><br><br>
+<a href="https://www.mastercard.co.in/en-in.html">Mastercard</a><br><br>
+<a href="https://www.hsbc.com/">HSBC</a><br><br>
+
+
+
+
+<h4>Fun and Games</h4>
+<p>Some fun websites for games and more:</p><br>
+<a href="https://store.steampowered.com">Steam</a><br><br>
+<a href="https://steamunlocked.net">SteamUnlocked</a><br><br>
+<a href="https://itch.io">Itch.io</a><br><br>
+<a href="https://happymod.com">HappyMod</a><br><br>
+<a href="https://an1.com">AN1</a><br><br>
+<a href="https://modyolo.com">ModYolo</a><br><br>
+<a href="https://crazygames.com">CrazyGames</a><br><br>
+<a href="https://poki.com">Poki Games</a><br><br>
+<a href="https://www.msn.com/en-us/play">MSN Play</a><br><br>
+<a href="https://neal.fun/">Neal.fun</a><br><br>
+<a href="https://neave.com">Neave Interactive</a><br><br>
+<a href="https://cleverbot.com">CleverBot</a><br><br>
+<a href="https://kickassapp.com">KickAss - Interactive Web Game</a><br><br>
+<a href="https://scaleofuniverse.com/en/">ScaleOfTheUniverse</a><br><br>
+<a href="https://elgoog.im">elgooG - Google Easter Eggs</a><br><br>
+<a href="https://madebyevan.com/webgl-water/">WebGL Water</a><br><br>
+<a href="https://scp-wiki.wikidot.com/">SCP Foundation Wiki</a><br><br>
+<a href="https://fandom.com">Fandom</a><br><br>
+<a href="http://wonders-of-walgia.fandom.com/wiki/Wonders_of_Walgia_Wiki">Wonders Of Walgia - Fandom</a><br><br>
+<a href="https://jmnet.one/sfs/forum/index.php">Spaceflight Simulator Forum</a><br><br>
+
+
+
+
+
+
+
+<!-- Links end -->
+
+<div>
+ 		<br><br>
+ 	<p id ="bottom" align="center">More categories and links adding soon!</p>
+ 	<br><br><br><br>
+    </div>
+    
+    <div>
+    <a href="#top">Top ↑</a><br><br><br><br>
+    </div>
+    
+    <p align="center">NOTE: Some websites may contain ads or unreviewed content and links may also expire. Proceed safely. Sorry for any inconvenience caused.</p>
+    <br><br>
+    <!-- Link to change font (Start) -->
+  <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a>
+    <br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <!-- Link to change font (End) -->
+    <a href="https://bruweb.w3spaces.com/">< Back to BruWeb</a><br><br>
+    <p align="center">Last Updated: 9 September 2024, 12:24 AM</p>
+ 	<p align=center>Mail: <a href="mailto:bru33163@vogco.com">Bru Vogco</a>
+</p>
+<!-- W3spaces username: Bru Vogco
+Email (fake, may expire): bru33163@vogco.com
+password: Vogco#bru2476
+
+-->
+
+ 	<br><br>
+ 	<h3 align=center>©BruWeb. All rights reserved.</h3>
+    <!-- Script to change font when link clicked (Start) -->
+    <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+</script>
+<!-- Script to change font when link clicked (End) -->
+   </div>
+    </div>
+</body>
+</html>
