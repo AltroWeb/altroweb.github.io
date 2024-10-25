@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BruWeb</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYAAAAGACAQAAAAOzn00AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAATFSURBVHja7N1RbuIwFEDRGLH/LZsffpCqNmqiKOaes4IpfdfPoSMYc26Q9fASIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgABAACAAGAAEAAIAAQAAgAAYAAQAAgABAACAAEAAIAAYAAQAAgABAArO1593/g8Ds6YHoJVg+A844POQhADlIQAEMIAkAI3gXiHUL1zQYbgI9tUNsFNgDpXSAA0hEIgHQEAiAdgQBIRyAAdkQgAOwBAWAPCAAJCAAJCABPAwLAHhAAEhAAEhAAEhAAEhAAEhAACAA7QABIQABIQAAgAOwAASABAYAAsAMEgAQEAALADhAACAA7QAAgABAALkECAAFgBwgABAACAAHgKUAAIAAQAPzp6SX4vxm/P//+U0wBcDyr4QURgBxkIAAZyMBDcD2D6UUQgAgQgAvR7Q0B0E5AAEhAAEhAACAA7AABIAEBgABAALgECQAEAALAJUgACFMAIAAQAAgABAACYAVTACAAEAAIAE8AAgABcCqfGCoAXIAEAAJwAUIAuAAJAATgAuT8FwAIwPnv/BeA8UcAxt/5LwDjjwCMf/38F4DxT4+/b4o3/HECMPzh818ABj89/gIw+K5AGNHq+e9dINLjLwDS4y8A0uMvANLjLwDS4y8A0uMvANLj7+8AhIffBiA+/jYA4eG3AYiPvw1AePgFQHr4BUB6+AVAevgFQHr4BUB49AVAfPi3zd8BiLMBeBvJTSAAfgzBu0DIIJCBAEhn4CGYHRl87ycg2QCkd4ENQHoXCIB0BAIgHYEAOPRUIADsAQFgDwgAe0AA2AMCQAICwFVIANgDAkACAkACAkACAgABYAcIAAkIAAkIAAkIAASAHXAhnwpxwEyPzt6fYwqAM+IaXhQBSGK9FO69AwSwbAo2gofgeAarfE7bEAD1CARAOIIhAK55QEYAErADBCABBCABBCABlyABgADsAAQgAZcgAYAAQAAuQe1LkACwAUAAuAQJAAQAmcdgAWADgABAACAAEAAIAAQAAmApPjdUACAAEAAIwBMAAgABgABcgBAACMD5LwCMvwAw/gIAAeD8z/BN8YbfBsD4CwDjf4G7fWijK5Dh9wyA0RcARl8AGHwBYNwjj8ACMKRx3gZFANC8AAkAGwAEAMELkACwAUAAELwACQAbAKrnvwCwAUAAELwACQAbAKrnvwBIj78AcAWC6vkvAGwAqJ7/AiA9/gLAFQiq578ASI+/AEiPvwBIj78ASI+/AIgTAOHzXwCkx18ApMdfAKTH3xdkEB5+G4D4+AuA9PgLgPT4ewYgPPw2APHxtwEID78NQHz8bQDCwy8A0sMvANLDLwDSwy8AwqMvAMKDLwDSgy8AwmMvAEOPAAw8AjDwAsCwC8CvlyD/GxQBgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAACAAEAAIAAQAAgABgABAAAgABAACAAGAAEAAIAAQAAgABAACAAGAAGBxrwEAPKV/cefv1HcAAAAASUVORK5CYII=">
+   <!--Font Load Code (Start)-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <!-- Supported fonts: Radio Canada Big, Rowdies, Honk, Corinthia -->
+    
+    <!--Font Load Code (End)-->
+    <style>
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        h5 {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+        /*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1>BruWeb</h1>
+<p>Just some good stuff. :)</p><br>
+    <p align="center">Main page:</p>
+    <a href="https://bruweb.w3spaces.com/bruweb-downloads.html">BruWeb Downloads</a><br><br>
+    <p align="center">Also visit:</p>
+    <a href="https://bruweb.w3spaces.com/weblist.html">WebList</a><br><br>
+    <a href="https://bruweb.w3spaces.com/mixpix.html">MixPix's Enhanced Music</a><br><br>
+    <a href="https://bruweb.w3spaces.com/peeknature.html">PeekNature</a><br><br>
+    <!-- Link to change font (Start) -->
+  <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a>
+    <br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <!-- Link to change font (End) -->
+    <p align="center">Last Updated: 19 June 2024, 9:52 PM</p><br>
+ 	<p align=center>Mail: <a href="mailto:bru33163@vogco.com">Bru Vogco</a>
+</p>
+<!-- W3spaces username: Bru Vogco
+Email (fake, may expire): bru33163@vogco.com
+password: Vogco#bru2476
+
+-->
+
+ 	<br><br>
+ 	<h3 align=center>©BruWeb. All rights reserved.</h3>
+   </div>
+    </div>
+  <!-- Script to change font when link clicked (Start) -->
+    <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+</script>
+<!-- Script to change font when link clicked (End) -->
+</body>
+</html>
