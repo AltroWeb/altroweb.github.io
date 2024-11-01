@@ -15,10 +15,6 @@
     <!--Font Load Code (End)-->
     
     <style>
-
-    html {
-  scroll-behavior: smooth;
-}
         body {
             font-family: "Radio Canada Big";
             margin: 0;
@@ -71,6 +67,7 @@
 
         a {
             color: #666;
+            font-size: 1.2rem;
         }
         
         @media (max-width: 768px) {
@@ -106,9 +103,10 @@ toggleBlur {
 <body>
     <div class="container">
         <div class="card">
-<h1>PeekNature</h1>
+<h1 id="top">PeekNature</h1>
           <h3>Relax your mind with the soothing sounds of nature. 🌳</h3><br>
-          <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br>
+          <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br><br><br>
+          <a href="#bottom">Bottom ↓</a><br><br><br>
           <p>Meditation Music</p>    
 <audio controls>
   <source src="https://dl.sndup.net/nh9h/meditation%20music.mp3" type="audio/mpeg">
@@ -159,7 +157,7 @@ Your browser does not support the audio element.
   <source src="https://dl.sndup.net/f2jx/birds%20chirp.mp3" type="audio/mpeg">
 Your browser does not support the audio element.
 </audio><br><br>
-<p>Tropical Forest Sounds</p>    
+<p  id="bottom" >Tropical Forest Sounds</p>    
 <audio controls>
   <source src="https://dl.sndup.net/x3m9/tropical%20forest.mp3" type="audio/mpeg">
 Your browser does not support the audio element.
@@ -167,7 +165,10 @@ Your browser does not support the audio element.
 
 
  <br><br>
-
+ <div>
+    <a href="#top">Top ↑</a>
+    </div>
+ 	
  		
  	<br><br><br><br>
     <p align="center">NOTE: These audio files may expire as they are uploaded to a server. Sorry for any inconvenience.</p>
