@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Screen Sharing with Code</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        #sharerVideo, #viewerVideo {
+            width: 100%;
+            height: auto;
+            background: grey;
+            margin-top: 20px;
+        }
+        #codeDisplay {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2>Screen Sharer</h2>
+    <video id="sharerVideo" autoplay playsinline muted></video>
+    <div class="mt-3">
+        <button class="btn btn-primary" id="start">Start Screen Sharing</button>
+        <button class="btn btn-secondary" id="stop">Stop Screen Sharing</button>
+    </div>
+    <div id="codeDisplay"></div>
+
+    <h2 class="mt-5">Screen Viewer</h2>
+    <input type="text" id="codeInput" placeholder="Enter Code to View Screen" />
+    <button class="btn btn-info" id="join">Join Screen</button>
+    <video id="viewerVideo" autoplay playsinline></video>
+</div>
+
+<script type="text/javascript">
+    const sharerVideoElem = document.getElementById("sharerVideo");
+    const viewerVideoElem = document.getElementById("viewerVideo");
+    const startElem = document.getElementById("start");
+    const stopElem = document.getElementById("stop");
+    const codeDisplay = document.getElementById("codeDisplay");
+    const codeInput = document.getElementById("codeInput");
+    const joinElem = document.getElementById("join");
+
+    let currentCode = '';
+    let sharedStream = null;
+
+    // Options for getDisplayMedia()
+    var displayMediaOptions = {
+        video: {
+            cursor: "always"
+        },
+        audio: false
+    };
+
+    // Function to generate a random code
+    function generateRandomCode(length) {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    }
+
+    // Start screen capture
+    async function startCapture() {
+        try {
+            sharedStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+            sharerVideoElem.srcObject = sharedStream;
+
+            // Generate and display a random code
+            currentCode = generateRandomCode(6); // Generate a 6-character code
+            codeDisplay.textContent = `Share this code: ${currentCode}`;
+
+            // Stop sharing when the stream ends
+            sharedStream.getTracks().forEach(track => {
+                track.onended = () => {
+                    stopCapture();
+                };
+            });
+        } catch (err) {
+            console.error("Error: " + err);
+        }
+    }
+
+    // Stop screen capture
+    function stopCapture() {
+        if (sharedStream) {
+            const tracks = sharedStream.getTracks();
+            tracks.forEach(track => track.stop());
+            sharerVideoElem.srcObject = null;
+            sharedStream = null;
+            codeDisplay.textContent = ''; // Clear the code display
+        }
+    }
+
+    // Join screen functionality
+    joinElem.addEventListener("click", () => {
+        if (codeInput.value === currentCode && sharedStream) {
+            viewerVideoElem.srcObject = sharedStream; // Share the stream to the viewer
+            alert('You are now viewing the shared screen!');
+        } else if (codeInput.value !== currentCode) {
+            alert('Invalid code. Please try again.');
+        } else {
+            alert('No active screen sharing session.');
+        }
+    });
+
+    startElem.addEventListener("click", startCapture);
+    stopElem.addEventListener("click", stopCapture);
+</script>
+
+</body>
+</html>
