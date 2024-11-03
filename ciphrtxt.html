@@ -1,0 +1,630 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CiphrTxt</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,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">
+    <!--Font Load Code (Start)-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <!-- Supported fonts: Radio Canada Big, Rowdies, Honk, Corinthia -->
+    
+    <!--Font Load Code (End)-->
+    
+    <style>
+    html {
+  scroll-behavior: smooth;
+}
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #f2ee79;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #fffdbd;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        a {
+            font-size: 1.2rem;
+            color: #5c5a26;
+        }
+        
+        h5 {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        h4 {
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+
+        /*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+
+
+.color-picker-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .color-display {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        
+        .palette {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping to the next line */
+            margin-top: 20px;
+            max-width: 330px; /* Adjust width to hold 4 boxes */
+            
+         }
+         
+        .palette-color {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        
+input[type="color"] {
+    -webkit-appearance: none; /* Remove default styling in WebKit browsers */
+    appearance: none; /* Remove default styling */
+    width: 60px; /* Set a fixed width */
+    height: 60px; /* Set a fixed height */
+    border-radius: 5px;
+    border: 1px solid #ccc; /* Add a border */
+    cursor: pointer;
+    margin-top: 10px; /* Space above */
+    background-color: #a3a041;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border-radius: 5px; /* Round corners of the color swatch */
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none; /* Remove border from swatch */
+}
+
+
+button {
+    background-color: #fffdbd; 
+    color: #5c5a26; 
+    border: none;
+    padding: 10px 15px;
+    margin-top: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: "Radio Canada Big";
+    font-size: 1.2rem;
+}
+
+button:hover {
+    background-color: #a3a041; /* Slightly darker on hover */
+    color: #fff;
+}
+
+
+#input-text {
+            padding: 5px; 
+             
+            border-radius: 5px; 
+            border: 1px solid #ccc; 
+            background-color: #fffdbd;
+            color: #5c5a26;
+        }
+        
+   #decode-input {
+            padding: 5px; 
+             
+            border-radius: 5px; 
+            border: 1px solid #ccc; 
+            background-color: #fffdbd;
+            color: #5c5a26;
+        }     
+        
+        
+
+#hex     {
+          color: #994978;   
+         
+         }
+         
+input[type="text"]
+{
+   font-family: "Radio Canada Big";
+    font-size: 1.2rem;
+     color: #994978;
+}
+
+ canvas {
+            display: none; /* Hide the canvas */
+        }
+        
+ h2 {
+  font-family: "Radio Canada Big";
+    font-size: 1.5rem;
+     color: #994978
+  }
+        
+        
+        
+ label {
+ 
+ background-color: #fffdbd; 
+    color: #5c5a26; 
+    border: none;
+    padding: 10px 15px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: "Radio Canada Big";
+    font-size: 1.2rem;
+ 
+ }
+ 
+ 
+label:hover {
+
+background-color:  #a3a041; /* Slightly darker on hover */
+    color: #fff;
+
+
+}
+
+
+
+/* Create a custom radio button */
+        .custom-radio {
+            display: inline-block;
+            width: 10px; /* Size of the circle */
+            height: 10px; /* Size of the circle */
+            border-radius: 50%; /* Make it circular */
+            border: 2px solid #a3a041; /* Border color */
+            position: relative;
+            margin-right: 10px; /* Space between radio and label */
+            cursor: pointer; /* Change cursor to pointer */
+        }
+
+        /* Style for checked state */
+        input[type="radio"]:checked + .custom-radio {
+            background-color: #a3a041; /* Background color when checked */
+        }
+
+        /* Inner dot for checked state */
+        input[type="radio"]:checked + .custom-radio::after {
+            content: '';
+            display: block;
+            width: 6px; /* Size of the inner dot */
+            height: 6px; /* Size of the inner dot */
+            border-radius: 50%; /* Make it circular */
+            background-color: white; /* Inner dot color */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center the dot */
+        }
+
+
+
+
+
+
+
+
+
+
+/* Hide the default radio button */
+        input[type="radio"] {
+            display: none; /* Hide the original radio button */
+        }
+
+
+
+
+#qr-code {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        
+        
+#output, #decoded-output {
+
+          color: #787751;
+          font-size: 1.2rem;
+        
+        margin-top: 20px;
+            word-wrap: break-word; /* Allow long words to break */
+            overflow-wrap: break-word; /* Ensure compatibility across browsers */
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+            max-width: calc(100% - 20px); /* Ensure it fits within the container */
+
+        }
+        
+        
+      .break-line {
+            display: inline-block; /* Allow manual line breaks */
+            max-width: 15ch; /* Maximum width of each line (15 characters) */
+        }  
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1 id="top">CiphrTxt</h1>
+          <p>Cipher your information into random text and vice-versa. </p>
+            <br>
+ <a href="https://altroweb.github.io">< Back to AltroWeb</a>
+ <br><br><br><a href="#bottom">Bottom ↓</a><br>
+ 
+ 
+ 
+ 
+ <div class="container">
+ 
+ 
+ 
+ 
+<h4>Secret Code Generator</h4>
+<br>
+
+<label>
+    <input type="radio" name="mode" value="base64" checked>
+    <span class="custom-radio"></span>
+    Base64+ Encoding
+</label>
+<br>
+<label>
+    <input type="radio" name="mode" value="custom">
+    <span class="custom-radio"></span>
+    SSAE Encoding
+</label><br>
+          
+        <input type="text" id="input-text" placeholder="Enter text or URL" required>
+        <button id="generate-btn">Generate Secret Code</button>
+        <button id="clear-btn">Clear</button>
+
+        <div id="output"></div><br>
+        <button id="copy-secret-btn" style="display:none;">Copy Secret Code</button>
+
+        <h4>Decode Secret Code</h4>
+        <input type="text" id="decode-input" placeholder="Enter secret code" required>
+        <button id="decode-btn">Decode</button>
+        <button id="clear-decode-btn">Clear Decode</button>
+        
+        <div id="decoded-output"></div>
+        <button id="copy-decoded-btn" style="display:none;">Copy Decoded Input</button>
+
+        
+    </div>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+<div>
+ 	<p id ="bottom" align="center">Improvements will be made over time!</p>
+ 	<br><br><br><br>
+    </div>
+    
+    <div>
+    <a href="#top">Top ↑</a><br><br><br><br>
+    </div>
+    
+    <p align="center">NOTE: The SSAE Encoding cannot handle emojis properly due to unadequate substitution of UTF-8 characters.</p>
+    <br>
+    <p align="center">May not work properly. There are some bugs which can be improved. Sorry for any inconvenience caused.</p>
+    <br><br>
+    <!-- Link to change font (Start) -->
+  <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a>
+    <br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <!-- Link to change font (End) -->
+    <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br>
+    <p align="center">Last Updated: 3 November 2024, 11:25 AM</p>
+ 	<p align=center>Source Code: <a href="https://github.com/AltroWeb/altroweb.github.io/">AltroWeb Source</a>
+</p>
+<!-- 
+     Enter Comment
+-->
+
+ 	<br><br>
+ 	<h3 align=center>©AltroWeb. All rights reserved.</h3>
+    
+    
+    
+    <!-- Script to change font when link clicked (Start) -->
+    
+    
+    <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+
+
+/*  code function start */
+
+
+
+// Base64 Encoding and Decoding Functions
+       function generateSecretCode(input) {
+           const randomString = Math.random().toString(36).substring(2, 10); // Generate a random string
+           return btoa(unescape(encodeURIComponent(input + '|' + randomString))); // Encode original input with a random string
+       }
+
+       function decodeSecretCode(secretCode) {
+           const decoded = decodeURIComponent(escape(atob(secretCode)));
+           const parts = decoded.split('|');
+           return parts[0]; // Return the original input
+       }
+
+       // Generate a random character mapping for custom encoding
+       function generateCharMap() {
+           const originalChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+[]{}|;:\'",.<>?`~ 😊';
+           const shuffledChars = originalChars.split('').sort(() => Math.random() - 0.5).join('');
+           const charMap = {};
+           for (let i = 0; i < originalChars.length; i++) {
+               charMap[originalChars[i]] = shuffledChars[i];
+           }
+           return charMap;
+       }
+
+       const charMap = generateCharMap();
+       
+       function encode(input) {
+           return input.split('').map(char => charMap[char] || char).join('');
+       }
+
+       function decode(encoded) {
+           const reversedMap = Object.fromEntries(Object.entries(charMap).map(([key, value]) => [value, key]));
+           return encoded.split('').map(char => reversedMap[char] || char).join('');
+       }
+
+       function formatOutput(text) {
+           return text.match(/.{1,15}/g).join('\n'); // Split into chunks of up to 15 characters without HTML tags
+       }
+
+       document.getElementById('generate-btn').addEventListener('click', function() {
+           const inputText = document.getElementById('input-text').value;
+
+           if (!inputText) {
+               alert("Please enter some text or a URL.");
+               return;
+           }
+
+           const mode = document.querySelector('input[name="mode"]:checked').value;
+
+           if (mode === 'base64') {
+               const secretCode = generateSecretCode(inputText);
+               
+               // Display the generated secret code
+               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + formatOutput(secretCode) + '<br><br>';
+
+               // Show the copy button for the secret code
+               document.getElementById('copy-secret-btn').style.display = 'inline-block';
+
+               // Clear the decode output
+               document.getElementById('decoded-output').innerText = '';
+               
+               // Hide the copy button for decoded input
+               document.getElementById('copy-decoded-btn').style.display = 'none';
+           } else if (mode === 'custom') {
+               const secretCode = encode(inputText);
+               
+               // Display the generated secret code
+               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + formatOutput(secretCode) + '<br><br>';
+
+               // Show the copy button for the secret code
+               document.getElementById('copy-secret-btn').style.display = 'inline-block';
+
+               // Clear the decode output
+               document.getElementById('decoded-output').innerText = '';
+               
+               // Hide the copy button for decoded input
+               document.getElementById('copy-decoded-btn').style.display = 'none';
+           }
+       });
+
+       document.getElementById('clear-btn').addEventListener('click', function() {
+           document.getElementById('input-text').value = '';
+           document.getElementById('output').innerHTML = '';
+           
+           // Clear decode fields
+           document.getElementById('decode-input').value = '';
+           document.getElementById('decoded-output').innerText = '';
+
+           // Hide both copy buttons
+           document.getElementById('copy-secret-btn').style.display = 'none';
+           document.getElementById('copy-decoded-btn').style.display = 'none';
+       });
+
+       document.getElementById('decode-btn').addEventListener('click', function() {
+           const secretCode = document.getElementById('decode-input').value;
+
+           if (!secretCode) {
+               alert("Please enter a secret code.");
+               return;
+           }
+
+           const mode = document.querySelector('input[name="mode"]:checked').value;
+
+           if (mode === 'base64') {
+               try {
+                   const originalInput = decodeSecretCode(secretCode);
+                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + formatOutput(originalInput) + '<br><br>';
+
+                   // Show the copy button for the decoded input
+                   document.getElementById('copy-decoded-btn').style.display = 'inline-block';
+                   document.getElementById('copy-secret-btn').style.display = 'none';
+               } catch (error) {
+                   alert("Invalid secret code.");
+                   document.getElementById('decoded-output').innerText = '';
+                   // Hide the copy button for decoded input
+                   document.getElementById('copy-decoded-btn').style.display = 'none';
+               }
+           } else if (mode === 'custom') {
+               try {
+                   const originalInput = decode(secretCode);
+                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + formatOutput(originalInput) + '<br><br>';
+
+                   // Show the copy button for the decoded input
+                   document.getElementById('copy-decoded-btn').style.display = 'inline-block';
+                   document.getElementById('copy-secret-btn').style.display = 'none';
+               } catch (error) {
+                   alert("Invalid secret code.");
+                   document.getElementById('decoded-output').innerText = '';
+                   // Hide the copy button for decoded input
+                   document.getElementById('copy-decoded-btn').style.display = 'none';
+               }
+           }
+       });
+
+       // Copy Secret Code to Clipboard (only the code)
+       document.getElementById('copy-secret-btn').addEventListener('click', function() {
+           const secretCodeTextArray = document.getElementById('output')
+              .innerHTML.split('<small>')[0]; // Get only the code part without hint
+
+          navigator.clipboard.writeText(secretCodeTextArray.replace("Generated Secret Code:<br>", "").replace(/<br>/g, "\n")).then(() => { 
+              alert("Secret code copied to clipboard!"); 
+          });
+       });
+
+       // Copy Decoded Input to Clipboard (only the original input)
+       document.getElementById('copy-decoded-btn').addEventListener('click', function() {
+          const decodedInputTextArray = document.getElementById('decoded-output')
+              .innerText.replace("Original Input:\n", ""); // Remove label
+
+          navigator.clipboard.writeText(decodedInputTextArray).then(() => {
+              alert("Decoded input copied to clipboard!");
+          });
+       });
+
+       // Clear Decode Section
+       document.getElementById('clear-decode-btn').addEventListener('click', function() {
+          document.getElementById('decode-input').value = '';
+          document.getElementById('decoded-output').innerText = '';
+          
+          // Hide the copy button for decoded input
+          document.getElementById('copy-decoded-btn').style.display = 'none';
+      });
+
+
+
+
+</script>
+<!-- Script to change font when link clicked (End) -->
+   </div>
+    </div>
+</body>
+</html>
