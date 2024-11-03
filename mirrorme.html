@@ -6,7 +6,7 @@
     <title>Screen Sharing with Code</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <style>
-        #sharerVideo, #viewerVideo {
+        #sharerVideo, .viewerVideo {
             width: 100%;
             height: auto;
             background: grey;
@@ -15,6 +15,9 @@
         #codeDisplay {
             margin-top: 20px;
             font-size: 24px;
+        }
+        .viewerContainer {
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -32,17 +35,18 @@
     <h2 class="mt-5">Screen Viewer</h2>
     <input type="text" id="codeInput" placeholder="Enter Code to View Screen" />
     <button class="btn btn-info" id="join">Join Screen</button>
-    <video id="viewerVideo" autoplay playsinline></video>
+
+    <div class="viewerContainer" id="viewers"></div>
 </div>
 
 <script type="text/javascript">
     const sharerVideoElem = document.getElementById("sharerVideo");
-    const viewerVideoElem = document.getElementById("viewerVideo");
     const startElem = document.getElementById("start");
     const stopElem = document.getElementById("stop");
     const codeDisplay = document.getElementById("codeDisplay");
     const codeInput = document.getElementById("codeInput");
     const joinElem = document.getElementById("join");
+    const viewersContainer = document.getElementById("viewers");
 
     let currentCode = '';
     let sharedStream = null;
@@ -100,7 +104,18 @@
     // Join screen functionality
     joinElem.addEventListener("click", () => {
         if (codeInput.value === currentCode && sharedStream) {
-            viewerVideoElem.srcObject = sharedStream; // Share the stream to the viewer
+            // Create a new video element for each viewer
+            const viewerVideoElem = document.createElement('video');
+            viewerVideoElem.classList.add('viewerVideo');
+            viewerVideoElem.autoplay = true;
+            viewerVideoElem.playsInline = true;
+            
+            // Set the source of the new video element to the shared stream
+            viewerVideoElem.srcObject = sharedStream;
+
+            // Append the new video element to the viewers container
+            viewersContainer.appendChild(viewerVideoElem);
+            
             alert('You are now viewing the shared screen!');
         } else if (codeInput.value !== currentCode) {
             alert('Invalid code. Please try again.');
