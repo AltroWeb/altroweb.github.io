@@ -246,7 +246,7 @@ background-color:  #a3a041; /* Slightly darker on hover */
 
 /* Create a custom radio button */
         .custom-radio {
-            display: inline-block;
+            display: none; /* Changed from: inline-block; */
             width: 10px; /* Size of the circle */
             height: 10px; /* Size of the circle */
             border-radius: 50%; /* Make it circular */
@@ -319,9 +319,7 @@ background-color:  #a3a041; /* Slightly darker on hover */
             max-width: 15ch; /* Maximum width of each line (15 characters) */
         }  
         
-        
-        
-        
+
         
         
         
@@ -350,17 +348,13 @@ background-color:  #a3a041; /* Slightly darker on hover */
 <h4>Secret Code Generator</h4>
 <br>
 
-<label>
+
     <input type="radio" name="mode" value="base64" checked>
     <span class="custom-radio"></span>
-    Base64+ Encoding
-</label>
+    
+
 <br>
-<label>
-    <input type="radio" name="mode" value="custom">
-    <span class="custom-radio"></span>
-    SSAE Encoding
-</label><br>
+
           
         <input type="text" id="input-text" placeholder="Enter text or URL" required>
         <button id="generate-btn">Generate Secret Code</button>
@@ -405,9 +399,8 @@ background-color:  #a3a041; /* Slightly darker on hover */
     <a href="#top">Top ↑</a><br><br><br><br>
     </div>
     
-    <p align="center">NOTE: The SSAE Encoding cannot handle emojis properly due to unadequate substitution of UTF-8 characters.</p>
-    <br>
-    <p align="center">May not work properly. There are some bugs which can be improved. Sorry for any inconvenience caused.</p>
+
+    <p align="center">NOTE: May not work properly. There are some bugs which can be improved. Sorry for any inconvenience caused.</p>
     <br><br>
     <!-- Link to change font (Start) -->
   <p>For Fun Only:</p>
