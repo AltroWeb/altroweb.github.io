@@ -3,5 +3,5 @@
   Access-Control-Allow-Headers: Content-Type
   Set-Cookie: SameSite=None;
   Secure
-
+  Cross-Origin-Resource-Policy: cross-origin
 
