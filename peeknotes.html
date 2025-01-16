@@ -477,10 +477,14 @@ toggleButton.addEventListener('click', () => {
         alert('Text copied to clipboard!');
     });
 
-    // Clear the textbox
-    document.getElementById('clearButton').addEventListener('click', function() {
-        document.getElementById('textBox').value = '';
-    });
+    // Clear the textbox and reset its size
+document.getElementById('clearButton').addEventListener('click', function() {
+    const textBox = document.getElementById('textBox');
+    textBox.value = ''; // Clear the text
+    textBox.style.width = '200px'; // Reset width to default
+    textBox.style.height = '100px'; // Reset height to default
+});
+
 
     // Save the content of the textbox as a .txt file
     document.getElementById('saveButton').addEventListener('click', function() {
