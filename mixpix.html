@@ -1,0 +1,1754 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MixPix's Music Collection</title>
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAByCAAAAACqttqhAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+gFCw40OLCUXV0AAAN4SURBVGje7ZlNSFRRFMdPH0wiucg+FirlZzaMWaYIMYFoheSu2rgNWkVr165b1iyF2hVJGQVKSUSLobKxckDGSXQ0R1HEkXAYaEBq4dTMPe+++855cy9t7tnMnP+57/zm3ffO/RoAa9asWbNmzZq1/2T7RDc8lFc0Drx4KNX77yivuhdV/YLB30qbkl81qr5qUGy9n9UnZ+TyRVYSHvLQoEwNHjGIDPTJ1OuVBpHQKhM7eDmYyKZOp9bQysvBRNbWOrX6JqNI6HFKId6jZCOvOqU+ZgouUvLcepgpuMjALawEDxtGwgAWbgdMI09goZmbgY0M9iK/xTjy+DHRb2FWpQ8kLpM27qP0gbykdLUgc2jGRx2JkPmcBuR6WvQDd0u9cJUYTa9rQG4lkSCMNjdQMLmlAQkJ5J8qdbo8GvtCVowgoam/+L2zDgVHKrTcJXp/qmuK3xsbxVhey10CzCC/ZEEXQqGPhHQU5DjyB6RfAQDgnSbkHPJLFiPnPJr6Rc4vIuFfZfaj0W5xhpCOgpxGg0Fx6XETBdKEt4c2xsaQ3/x3IXDeo6F/5HPk1xZuM3zUo6F/ZBSN1dUn9z5Po6rMRSnZaJMX7rDCMNvm0awc5GvkFzr2mkezcpDzeMzb+wiKan5eIzK2gIRhAAC82Uzq7NjUEhK6AZw7g3RKIxLwIUF9AzircoqWi4icRH5dF0BvDRJfaUVGM6JfFQIIob1mZlorEj4hvwOg3aNJuchR5F8BuOzRpFzkGqrMSgA82q0RUx0ktvuePCsKw3g2nqXMlZy7TOGa63bMld6LZh7S8XK0XkACbejhIMfQw3QsJx9rRyY21XHiaOdBwgd1+As5ER35TB1+agC5odw57lCrkoNMzKqic9Sq5CDXl1XR5awBJHxVxPLv6XkYyPs77rFfj4wgs4rKTNP7lXUI89Y9NMFIw0FOuocYj5KFXHR9mJurhpBJ1w1rIslIw0Fmv7n+GMbbwzvDi7v8m5aPc7KwkBGXm8lG3CFhgyVrQbqUH33i4iPfyGVOVXKRP6Rj3uqSQWRCesgSJy97fCBBWvKUwx7/SFll5j4bRUZ+OrXtJ0aRsOSUFpgpuMhxp0Q7evjPlGzOx7Qjxe1gJoPjq9uK5t4JYeUlfiUPiEWXetC+K8Zj4iZvYm4XZQisMLvBmjVr1qxZs2bNlP0BnuP7s/BXv9cAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDUtMTFUMTQ6NTI6NDcrMDA6MDAugOVxAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA1LTExVDE0OjUyOjQ3KzAwOjAwX91dzQAAACh0RVB0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNS0xMVQxNDo1Mjo1NiswMDowMGIVdzgAAAAASUVORK5CYII=">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://unpkg.com/jsmediatags@latest/dist/jsmediatags.min.js"></script>
+    
+    <style>
+    html {
+  scroll-behavior: smooth;
+}
+    
+        body {
+            font-family: "Radio Canada Big";
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: #2b2828;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 1.2rem;
+            flex-basis: calc(33.33% - 2rem);
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s ease-in-out;
+              padding: 1.5rem;
+            width: 100%;
+            max-width: 28rem; /* Max width for the entire card */
+            display: flex;
+            flex-direction: column;
+             align-items: center;
+             position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-top: 0;
+            color: #fff;
+         
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #fff;
+        }
+        h3 {
+            color: #fff;
+        }
+        h5 {
+            font-size: 1.1rem;
+            color: #fff;
+        }
+        
+        a {
+        font-size: 1.2rem;
+            color: #fff;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                flex-basis: calc(50% - 2rem);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex-basis: 100%;
+            }
+        }
+/*Blur CSS start*/
+        body {
+  transition: filter 0.5s, opacity 0.5s;
+}
+
+.blurred {
+  filter: blur(10px);
+  opacity: 0.5;
+}
+
+
+toggleBlur {
+  position: relative;
+  z-index: 1;
+}
+/*Blur CSS end*/
+
+
+
+
+
+ /* Custom seekbar styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #474747; /* Darker gray track */
+            outline: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s ease-in-out;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff; /* Blue thumb */
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s ease-in-out;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s ease-in-out;
+        }
+
+        input[type="range"]::-ms-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s ease-in-out;
+        }
+
+        /* Hover effect for seekbar */
+        input[type="range"]:hover::-webkit-slider-thumb {
+            background: #e8e8e8; /* Darker blue on hover */
+        }
+        input[type="range"]:hover::-moz-range-thumb {
+            background: #e8e8e8;
+        }
+        input[type="range"]:hover::-ms-thumb {
+            background: #e8e8e8;
+        }
+
+        /* Player button styling with gradients and shadows */
+        .player-button {
+            background: #383838;
+            border: none;
+            color: white;
+            font-size: 1.25rem; /* Larger icons */
+            padding: 0.75rem;
+            border-radius: 10px; /* Fully rounded */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .player-button:hover {
+            background: #2e2e2e; /* Darker gradient on hover */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 3px 5px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        .player-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Specific styling for play/pause button */
+        #play-pause-button {
+            width: 60px; /* Larger */
+            height: 60px;
+            font-size: 1.8rem;
+        }
+
+        /* Active state for loop/shuffle buttons */
+        .player-button.active {
+            background: #2e2e2e; /* dark color for active */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); /* Inset shadow */
+        }
+
+        /* Style for the track list items */
+        .track-item {
+            background-color: #3d3d3d; /* Slightly lighter gray for non-active list items */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .track-item:hover {
+            background-color:  #5c5c5c; /* Lighter gray on hover */
+        }
+
+        .track-item.active-track {
+            background-color: #5c5c5c; /* strong white for active track */
+            font-weight: bold;
+        }
+
+        /* Styles for truncating long track titles with ellipsis */
+        .track-title-container {
+            flex-grow: 1;
+            min-width: 0;
+            text-align: center; /* Center text within the container */
+        }
+
+        .track-title-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #474747;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #474747; /* Green for active */
+        }
+
+        input:focus + .toggle-slider {
+            box-shadow: 0 0 1px #474747;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(16px);
+        }
+
+        /* Individual Panel Styles (no background, shadow, margin-top) */
+        .player-container,
+        .track-list-container,
+        .effects-panel {
+            background-color: transparent; /* Remove individual panel backgrounds */
+            box-shadow: none; /* Remove individual panel shadows */
+            margin-top: 0; /* Remove individual panel top margins */
+            padding: 0; /* Remove individual panel padding, handled by main-player-card */
+            width: 100%; /* Ensure they take full width of parent card */
+            max-width: none; /* Remove max-width, handled by main-player-card */
+            border-radius: 0; /* Remove individual panel border-radius */
+        }
+
+        /* Artwork */
+        .player-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 12rem;
+            object-fit: cover;
+            margin-bottom: 1.5rem; /* Add spacing below artwork */
+        }
+        @media (min-width: 640px) {
+            .player-container img {
+                max-width: 17rem;
+            }
+        }
+        @media (min-width: 768px) {
+            .player-container img {
+                max-width: 22rem;
+            }
+        }
+
+        /* Track Info Section */
+        .player-container .text-center.w-full {
+            margin-bottom: 1.5rem; /* Spacing below track info */
+            text-align: center; /* <-- ENSURE THIS IS PRESENT */
+        }
+
+        /* Track Title */
+        #track-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff; /* Light blue for titles */
+        }
+
+        /* Artist Name */
+        #artist-name {
+            color: #e0e0e0; /* Gray for artist name */
+            font-size: 1.125rem;
+        }
+
+        /* Seekbar group container */
+        .seekbar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 1.5rem; /* Spacing below seekbar */
+        }
+        .seekbar-group > *:not(:first-child) {
+            margin-top: 0.5rem;
+        }
+
+        /* Time display */
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.875rem;
+            color: #e0e0e0;
+        }
+
+        /* Player Controls */
+        .player-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 1.5rem; /* Spacing below controls */
+        }
+        .player-controls > *:not(:first-child) {
+            margin-left: 1rem;
+        }
+
+        /* Upload Button */
+        #upload-button {
+        font-family: "Radio Canada Big", sans-serif; /* Apply body font */
+            background-color: #383838; /* dark background */
+            color: white;
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+            transform: scale(1);
+            outline: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none; /* Removed border */
+            font-size: 1.2rem;
+            
+        }
+        #upload-button:hover {
+            background-color: #2e2e2e; /* Darker on hover */
+            transform: scale(1.05);
+        }
+        #upload-button:focus {
+            box-shadow: 0 0 0 2px #e0e0e0, 0 0 0 4px #e0e0e0;
+        }
+        #upload-button .fas {
+            margin-right: 0.5rem;
+        }
+
+        /* Upload Error Message */
+        #upload-error-message {
+            color: #ef4444; /* Red for error messages */
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Track List Container Specifics */
+        .track-list-container {
+            position: relative;
+            /* No margin-top here, handled by card's gap */
+            padding-top: 1.5rem; /* Add internal padding back */
+            padding-bottom: 1.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+
+/* Flex spacer to push content */
+.flex-spacer {
+    flex-grow: 1; /* These will expand and push content */
+}
+
+
+
+        /* Playlist header */
+        .playlist-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Center the heading */
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        /* Playlist title */
+        .track-list-container h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff; /* Light blue for titles */
+            flex-grow: 1;
+            text-align: left; /* Ensure playlist title is centered */
+            
+        }
+
+        /* Clear playlist button */
+        #clear-playlist-button {
+            color: #e0e0e0;
+            transition: color 0.2s ease-in-out;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            
+            
+
+            
+        }
+        #clear-playlist-button:hover {
+            color: #fff; /* Red on hover */
+        }
+
+        /* Playlist list */
+        #playlist-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 15rem;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+            color: #fff;
+        }
+        #playlist-list > li:not(:first-child) {
+            margin-top: 0.5rem;
+        }
+
+        /* No tracks message */
+        #playlist-list li.text-gray-400 {
+            color: #e0e0e0;
+            text-align: center;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        /* Effects Panel Specifics */
+        .effects-panel {
+            /* No margin-top here, handled by main-player-card's gap */
+            padding-top: 1.5rem; /* Add internal padding back */
+            padding-bottom: 1.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        .effects-panel h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff; /* white for titles */
+            text-align: left;
+        }
+
+        /* Effects section spacing */
+        .effects-panel .effect-group {
+            margin-bottom: 1.5rem;
+        }
+        .effects-panel .effect-group:last-child {
+            margin-bottom: 0; /* Remove margin from last effect group */
+        }
+        .effects-panel .effect-group.hidden {
+            display: none;
+        }
+
+        /* Effect label and toggle alignment */
+        .effects-panel .effect-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Effect label text */
+        .effects-panel label.text-lg {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        /* Slider value display */
+        .effects-panel .slider-value-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #e0e0e0;
+            margin-top: 0.25rem;
+            
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-player-card {
+                width: 95%;
+                padding: 1rem;
+            }
+            .player-controls button {
+                font-size: 1rem;
+                padding: 0.5rem;
+            }
+            #play-pause-button {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+            }
+            #clear-playlist-button {
+                top: 0.5rem;
+                right: 0.5rem;
+                font-size: 1.2rem;
+                padding: 0.3rem;
+            }
+        }
+
+        /* General alignment for other content */
+        p[align="center"], h3[align="center"] {
+            text-align: center;
+        }
+
+        /* Save Track Button Specific Styling */
+        #save-track-button {
+            font-family: "Radio Canada Big", sans-serif; /* Match body font */
+            font-size: 1rem; /* Adjust font size */
+            padding: 0.5rem 1rem; /* Adjust padding */
+            /* Remove icon related styles if any were present */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+<h1 id="top">MixPix's MixBox</h1>
+          <h3>Groove in style! 🎵</h3><br>
+          <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br><br><a href="#bottom">Bottom ↓</a><br><br>
+
+        <div class="player-container">
+            <img id="artwork" src="https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork" alt="Album Artwork">
+
+            <div class="text-center w-full">
+                <h2 id="track-title">No Song Loaded</h2>
+                <p id="artist-name">Upload music to start</p>
+            </div>
+
+            <div class="seekbar-group">
+                <div class="time-display">
+                    <span id="current-time">00:00</span>
+                    <span id="total-time">00:00</span>
+                </div>
+                <input type="range" id="seekbar" value="0" min="0" max="100">
+            </div>
+
+            <div class="player-controls">
+                <button id="shuffle-button" class="player-button"><i class="fas fa-random"></i></button>
+                <button id="prev-button" class="player-button"><i class="fas fa-backward-step"></i></button>
+                <button id="play-pause-button" class="player-button"><i class="fas fa-play"></i></button>
+                <button id="next-button" class="player-button"><i class="fas fa-forward-step"></i></button>
+                <button id="loop-button" class="player-button"><i class="fas fa-redo-alt"></i></button>
+            </div>
+
+            <input type="file" id="music-upload" accept="audio/*" multiple class="hidden">
+          
+            <p id="upload-error-message" class="hidden"></p>
+        </div>
+
+<button id="upload-button">
+                <i class="fas fa-upload"></i> Upload Music
+            </button>
+
+
+
+        <div class="track-list-container">
+            <div class="playlist-header">
+                <h3>Playlist</h3>
+                <button id="clear-playlist-button">
+                <i class="fas fa-times-circle"></i>
+            </button>
+            </div>
+            
+            <ul id="playlist-list">
+                <li>No tracks uploaded yet.</li>
+            </ul>
+        </div>
+
+        <div class="effects-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3>Effects Panel</h3>
+                <button id="save-track-button" class="player-button" disabled>
+                    Save Track
+                </button>
+            </div>
+
+            <div class="effect-group hidden">
+                <div class="effect-header">
+                    <label for="pitch-toggle" class="text-lg font-medium">Pitch Shift</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="pitch-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <input type="range" id="pitch-slider" min="-400" max="400" value="0" disabled>
+                <div class="slider-value-display">
+                    <span>-4 semitones</span>
+                    <span id="pitch-value">0 semitones</span>
+                    <span>+4 semitones</span>
+                </div>
+            </div>
+
+            <div class="effect-group">
+                <div class="effect-header">
+                    <label for="tempo-toggle" class="text-lg font-medium">Tempo</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="tempo-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <input type="range" id="tempo-slider" min="0.8" max="1.2" value="1.0" step="0.01" disabled>
+                <div class="slider-value-display">
+                    <span>80%</span>
+                    <span id="tempo-value">100%</span>
+                    <span>120%</span>
+                </div>
+            </div>
+
+            <div class="effect-group">
+                <div class="effect-header">
+                    <label for="reverb-toggle" class="text-lg font-medium">Reverb</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="reverb-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <input type="range" id="reverb-slider" min="0" max="5" value="0" disabled>
+                <div class="slider-value-display">
+                    <span>No Reverb</span>
+                    <span id="reverb-value">No Reverb</span>
+                    <span>Max Reverb</span>
+                </div>
+            </div>
+        </div>
+    
+
+    <audio id="audio-player" class="hidden"></audio>
+
+
+ <br><br>
+
+ 		<br><br>
+ 	<p id="bottom" align="center"></p><br><br>
+    <div>
+    <a href="#top">Top ↑</a>
+    </div>
+ 	<br><br><br>
+    <p align="center">NOTE: This music player may contain bugs which are to be fixed. Sorry for any inconvenience.</p>
+    <br><br>
+    <p>For Fun Only:</p>
+    <a href="javascript:void(0);" onclick="changeFont()">Change Font</a><br><br>
+    <a href="javascript:void(0)" id="toggleBlur">Toggle Blur</a>
+    
+    <h5>NOTE: If any problem occurs due to the font or blur effect, just reload the page.</h5>
+    <br><br>
+    <a href="https://altroweb.github.io">< Back to AltroWeb</a>
+    <br><br>
+    <p align="center">Last Updated: 24 May 2025, 9:30 PM</p><br>
+ 	
+ 	<p align=center>Source Code: <a href="https://github.com/AltroWeb/altroweb.github.io/">AltroWeb Source</a>
+</p>
+
+
+ 	<br><br>
+ 	<h3 align=center>©AltroWeb - MixPix. All rights reserved.</h3>
+    
+   </div>
+   
+ <script>
+var fontNames = ['Rowdies', 'Honk', 'Corinthia', 'Radio Canada Big'];
+var currentIndex = 0;
+
+function changeFont() {
+    document.body.style.fontFamily = fontNames[currentIndex];
+    currentIndex = (currentIndex + 1) % fontNames.length;
+}
+
+/*Blur function start*/
+const toggleButton = document.getElementById('toggleBlur');
+
+toggleButton.addEventListener('click', () => {
+  document.body.classList.toggle('blurred');
+});
+/*Blur function start*/
+
+
+
+
+  // Get references to DOM elements
+        const audioPlayer = document.getElementById('audio-player'); // Still used for UI time updates
+        const artwork = document.getElementById('artwork');
+        const trackTitle = document.getElementById('track-title');
+        const artistName = document.getElementById('artist-name');
+        const seekbar = document.getElementById('seekbar');
+        const currentTimeSpan = document.getElementById('current-time');
+        const totalTimeSpan = document.getElementById('total-time');
+        const playPauseButton = document.getElementById('play-pause-button');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const loopButton = document.getElementById('loop-button');
+        const shuffleButton = document.getElementById('shuffle-button');
+        const uploadButton = document.getElementById('upload-button');
+        const musicUploadInput = document.getElementById('music-upload');
+        const playlistList = document.getElementById('playlist-list');
+        const clearPlaylistButton = document.getElementById('clear-playlist-button');
+        const uploadErrorMessage = document.getElementById('upload-error-message');
+        const saveTrackButton = document.getElementById('save-track-button'); // New save button
+
+        // Effects Panel elements
+        const pitchToggle = document.getElementById('pitch-toggle');
+        const pitchSlider = document.getElementById('pitch-slider');
+        const pitchValue = document.getElementById('pitch-value');
+        const tempoToggle = document.getElementById('tempo-toggle'); 
+        const tempoSlider = document.getElementById('tempo-slider');
+        const tempoValue = document.getElementById('tempo-value');
+        const reverbToggle = document.getElementById('reverb-toggle');
+        const reverbSlider = document.getElementById('reverb-slider');
+        const reverbValue = document.getElementById('reverb-value');
+
+        // Player state variables
+        let playlist = [];
+        let currentTrackIndex = -1;
+        let isShuffling = false;
+        let isLooping = false;
+        let isPlaying = false;
+        const MAX_TRACKS = 10; // Maximum number of tracks allowed in the playlist
+
+        // Web Audio API setup
+        let audioCtx;
+        let currentSourceNode = null; // The AudioBufferSourceNode for the currently playing track
+        let dryGainNode; // For the original signal
+        let wetGainNode; // For the reverb signal
+        let convolverNode = null; // For reverb effect using impulse response
+
+        // Variables for managing playback time with AudioBufferSourceNode
+        let playbackStartTime = 0; // audioCtx.currentTime when playback started/resumed
+        let currentPlaybackOffset = 0; // Current position in the track (in seconds)
+
+        // Animation frame for updating seekbar
+        let animationFrameId = null;
+
+        /**
+         * Generates a simple decaying noise impulse response for the convolver.
+         * This simulates a room's echo characteristics, with an attempt to reduce white noise
+         * by shaping the decay.
+         * @param {number} duration - The length of the impulse response in seconds.
+         * @param {number} decay - How quickly the noise decays (higher value = faster initial decay).
+         * @param {AudioContext|OfflineAudioContext} context - The audio context to create the buffer in.
+         * @returns {AudioBuffer} The generated impulse response.
+         */
+        function generateReverbImpulseResponse(duration = 2, decay = 1.5, context = audioCtx) {
+            const sampleRate = context.sampleRate;
+            const length = sampleRate * duration;
+            const impulse = context.createBuffer(2, length, sampleRate); // Stereo buffer
+
+            const impulseL = impulse.getChannelData(0);
+            const impulseR = impulse.getChannelData(1);
+
+            // Generate random noise and apply a decaying envelope.
+            // A higher decay value makes the initial drop-off steeper, which can help
+            // reduce lingering high-frequency noise.
+            for (let i = 0; i < length; i++) {
+                // Apply a power curve for decay, making it more aggressive.
+                const envelope = Math.pow(1 - i / length, decay);
+                // Introduce a slight random variation to the envelope for more naturalness
+                // without adding too much harsh noise.
+                const randomL = (Math.random() * 2 - 1) * 0.7; // Reduce max amplitude of noise
+                const randomR = (Math.random() * 2 - 1) * 0.7; // Reduce max amplitude of noise
+
+                impulseL[i] = randomL * envelope;
+                impulseR[i] = randomR * envelope;
+            }
+            return impulse;
+        }
+
+        /**
+         * Initializes the Web Audio API context and nodes.
+         * This should be called on the first user interaction to comply with browser autoplay policies.
+         */
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                dryGainNode = audioCtx.createGain(); // Node for the direct sound
+                wetGainNode = audioCtx.createGain(); // Node for the reverb (wet) sound
+                convolverNode = audioCtx.createConvolver(); // Node for the reverb effect
+
+                // Connect the main audio path: Source -> Dry Gain -> Destination
+                // And the reverb path: Source -> Convolver -> Wet Gain -> Destination
+                // The sourceNode (AudioBufferSourceNode) will be created and connected dynamically.
+                dryGainNode.connect(audioCtx.destination);
+                convolverNode.connect(wetGainNode);
+                wetGainNode.connect(audioCtx.destination);
+
+                // Set initial reverb wet gain to 0 (off)
+                wetGainNode.gain.value = 0;
+
+                // Generate a default impulse response for the convolver
+                convolverNode.buffer = generateReverbImpulseResponse();
+            }
+            // Resume context if suspended (e.g., after user interaction)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+
+        // --- Helper Functions ---
+
+        /**
+         * Formats time in seconds to MM:SS format.
+         * @param {number} seconds - The time in seconds.
+         * @returns {string} Formatted time string.
+         */
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        /**
+         * Shows an error message below the upload button.
+         * @param {string} message - The error message to display.
+         */
+        function showUploadError(message) {
+            uploadErrorMessage.textContent = message;
+            uploadErrorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                uploadErrorMessage.classList.add('hidden');
+            }, 5000); // Hide after 5 seconds
+        }
+
+        /**
+         * Updates the UI to reflect the current track's information.
+         * @param {Object} track - The track object containing title, artist, and duration.
+         */
+        function updateTrackInfo(track) {
+            artwork.src = track.artwork || 'https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork';
+            artwork.onerror = () => artwork.src = 'https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork'; // Fallback
+            trackTitle.textContent = track.title;
+            artistName.textContent = track.artist;
+            totalTimeSpan.textContent = track.duration ? formatTime(track.duration) : '00:00';
+            seekbar.value = 0;
+            currentTimeSpan.textContent = '00:00';
+            updatePlaylistUI(); // Highlight the current track in the list
+        }
+
+        /**
+         * Updates the visual state of the play/pause button.
+         */
+        function updatePlayPauseButton() {
+            if (isPlaying) {
+                playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        }
+
+        /**
+         * Updates the visual state of the loop button.
+         */
+        function updateLoopButton() {
+            if (isLooping) {
+                loopButton.classList.add('active');
+            } else {
+                loopButton.classList.remove('active');
+            }
+        }
+
+        /**
+         * Updates the visual state of the shuffle button.
+         */
+        function updateShuffleButton() {
+            if (isShuffling) {
+                shuffleButton.classList.add('active');
+            } else {
+                shuffleButton.classList.remove('active');
+            }
+        }
+
+        /**
+         * Clears and re-renders the playlist UI, highlighting the currently playing track.
+         */
+        function updatePlaylistUI() {
+            playlistList.innerHTML = ''; // Clear existing list
+            if (playlist.length === 0) {
+                playlistList.innerHTML = '<li class="text-gray-400 text-center py-4">No tracks uploaded yet.</li>';
+                return;
+            }
+
+            playlist.forEach((track, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = `track-item ${index === currentTrackIndex ? 'active-track' : ''}`;
+                listItem.dataset.index = index;
+                listItem.innerHTML = `
+                    <div class="track-title-container">
+                        <div class="font-semibold text-base track-title-text">${track.title}</div>
+                        <div class="text-sm text-gray-300 track-title-text">${track.artist}</div>
+                    </div>
+                    <div class="text-sm text-gray-300 ml-4 flex-shrink-0">${formatTime(track.duration || 0)}</div>
+                `;
+                listItem.addEventListener('click', () => loadTrack(index));
+                playlistList.appendChild(listItem);
+            });
+        }
+
+        // --- Core Player Functions ---
+
+        /**
+         * Loads and prepares a track from the playlist.
+         * Decodes audio data into an AudioBuffer.
+         * @param {number} index - The index of the track to load.
+         */
+        async function loadTrack(index) {
+            if (index < 0 || index >= playlist.length) {
+                console.error("Invalid track index.");
+                return;
+            }
+
+            // Stop current playback if any
+            if (currentSourceNode) {
+                try {
+                    currentSourceNode.stop();
+                    currentSourceNode.disconnect();
+                } catch (e) {
+                    console.warn("Error stopping previous source node:", e);
+                }
+                currentSourceNode = null;
+                cancelAnimationFrame(animationFrameId);
+            }
+            
+            currentTrackIndex = index;
+            const track = playlist[currentTrackIndex];
+
+            // If audioBuffer is already decoded, just update UI and play
+            if (track.audioBuffer) {
+                updateTrackInfo(track);
+                currentPlaybackOffset = 0; // Reset playback to start
+                playTrack();
+                return;
+            }
+
+            // Otherwise, fetch and decode audio
+            try {
+                const response = await fetch(track.src);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                
+                track.audioBuffer = audioBuffer; // Store the decoded buffer
+                track.duration = audioBuffer.duration; // Store actual duration
+
+                updateTrackInfo(track);
+                currentPlaybackOffset = 0; // Reset playback to start
+                playTrack();
+
+            } catch (error) {
+                console.error("Error loading or decoding audio:", error);
+                trackTitle.textContent = "Error Loading Track";
+                artistName.textContent = "Please try another file.";
+                isPlaying = false;
+                updatePlayPauseButton();
+            }
+        }
+
+        /**
+         * Plays the current track using AudioBufferSourceNode.
+         */
+        function playTrack() {
+            if (playlist.length === 0 || currentTrackIndex === -1) return;
+
+            initAudioContext(); // Ensure audio context is initialized and resumed
+
+            // Stop any existing source node before creating a new one
+            if (currentSourceNode) {
+                try {
+                    currentSourceNode.stop();
+                    currentSourceNode.disconnect();
+                } catch (e) {
+                    console.warn("Error stopping previous source node:", e);
+                }
+                currentSourceNode = null;
+            }
+
+            const track = playlist[currentTrackIndex];
+            if (!track.audioBuffer) {
+                console.error("AudioBuffer not available for current track.");
+                return;
+            }
+
+            currentSourceNode = audioCtx.createBufferSource();
+            currentSourceNode.buffer = track.audioBuffer;
+
+            // Apply current pitch and tempo settings
+            applyPitch();
+            applyTempo();
+
+            // Connect to the audio graph
+            currentSourceNode.connect(dryGainNode);
+            if (convolverNode) { // Only connect if convolverNode exists
+                currentSourceNode.connect(convolverNode);
+            }
+
+            // Set up 'ended' event listener for the new source node
+            currentSourceNode.onended = () => {
+                if (currentSourceNode && currentSourceNode.buffer && currentSourceNode.buffer.duration - currentPlaybackOffset < 0.05) { // Check if it truly ended
+                    isPlaying = false;
+                    updatePlayPauseButton();
+                    cancelAnimationFrame(animationFrameId); // Stop updating seekbar
+                    if (isLooping) {
+                        currentPlaybackOffset = 0; // Reset for loop
+                        playTrack();
+                    } else {
+                        nextTrack();
+                    }
+                }
+            };
+
+            try {
+                // Start playback from the current offset
+                currentSourceNode.start(0, currentPlaybackOffset);
+                playbackStartTime = audioCtx.currentTime - (currentPlaybackOffset / currentSourceNode.playbackRate.value); // Adjust for playbackRate
+                isPlaying = true;
+                updatePlayPauseButton();
+                updateSeekbarLoop(); // Start the seekbar update loop
+            } catch (error) {
+                console.error("Error starting audio playback:", error);
+                isPlaying = false;
+                updatePlayPauseButton();
+            }
+        }
+
+        /**
+         * Pauses the current track.
+         */
+        function pauseTrack() {
+            if (currentSourceNode) {
+                try {
+                    currentSourceNode.stop();
+                    currentSourceNode.disconnect();
+                } catch (e) {
+                    console.warn("Error stopping source node:", e);
+                }
+                // Calculate current playback position before stopping
+                currentPlaybackOffset = (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
+                isPlaying = false;
+                updatePlayPauseButton();
+                cancelAnimationFrame(animationFrameId); // Stop updating seekbar
+            }
+        }
+
+        /**
+         * Toggles play/pause state.
+         */
+        function playPause() {
+            if (playlist.length === 0) return;
+
+            if (isPlaying) {
+                pauseTrack();
+            } else {
+                if (currentTrackIndex === -1 || !playlist[currentTrackIndex].audioBuffer) {
+                    loadTrack(0); // Load and play the first track if nothing is loaded
+                } else {
+                    playTrack(); // Resume or start playing the current track
+                }
+            }
+        }
+
+        /**
+         * Plays the next track in the playlist. Handles shuffle and loop.
+         */
+        function nextTrack() {
+            if (playlist.length === 0) return;
+
+            if (isShuffling) {
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * playlist.length);
+                } while (newIndex === currentTrackIndex && playlist.length > 1); // Ensure different track if possible
+                loadTrack(newIndex);
+            } else {
+                currentTrackIndex++;
+                if (currentTrackIndex >= playlist.length) {
+                    currentTrackIndex = 0; // Loop back to start
+                    if (!isLooping) { // If not looping, pause after the last track
+                        pauseTrack();
+                        updateTrackInfo(playlist[currentTrackIndex]); // Show info of first track
+                        currentPlaybackOffset = 0; // Reset playback offset
+                        return;
+                    }
+                }
+                loadTrack(currentTrackIndex);
+            }
+        }
+
+        /**
+         * Plays the previous track in the playlist.
+         */
+        function prevTrack() {
+            if (playlist.length === 0) return;
+
+            currentTrackIndex--;
+            if (currentTrackIndex < 0) {
+                currentTrackIndex = playlist.length - 1; // Loop back to end
+            }
+            loadTrack(currentTrackIndex);
+        }
+
+        /**
+         * Toggles the loop mode for the current track.
+         */
+        function toggleLoop() {
+            isLooping = !isLooping;
+            updateLoopButton();
+        }
+
+        /**
+         * Toggles the shuffle mode.
+         */
+        function toggleShuffle() {
+            isShuffling = !isShuffling;
+            updateShuffleButton();
+            // Note: Shuffle logic is applied in nextTrack()
+        }
+
+        /**
+         * Updates the seekbar and current time display.
+         * This function is called repeatedly via requestAnimationFrame.
+         */
+        function updateSeekbar() {
+            if (!isPlaying || !currentSourceNode || !currentSourceNode.buffer) {
+                animationFrameId = null;
+                return;
+            }
+
+            const trackDuration = currentSourceNode.buffer.duration;
+            const currentAudioTime = (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
+            
+            // Update the offset for accurate seeking/pausing
+            currentPlaybackOffset = currentAudioTime;
+
+            currentTimeSpan.textContent = formatTime(currentAudioTime);
+
+            if (isNaN(trackDuration) || trackDuration === 0) {
+                seekbar.value = 0;
+            } else {
+                const progress = (currentAudioTime / trackDuration) * 100;
+                seekbar.value = progress;
+                totalTimeSpan.textContent = formatTime(trackDuration);
+            }
+
+            animationFrameId = requestAnimationFrame(updateSeekbar);
+        }
+
+        /**
+         * Starts the requestAnimationFrame loop for updating the seekbar.
+         */
+        function updateSeekbarLoop() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationFrameId = requestAnimationFrame(updateSeekbar);
+        }
+
+        /**
+         * Seeks to a specific position in the track based on seekbar value.
+         */
+        function seekTo() {
+            if (!currentSourceNode || !currentSourceNode.buffer) return;
+
+            const seekTime = (seekbar.value / 100) * currentSourceNode.buffer.duration;
+            currentPlaybackOffset = seekTime; // Update the offset
+
+            // If currently playing, stop and restart from the new seek position
+            if (isPlaying) {
+                playTrack();
+            } else {
+                // If paused, just update the current time display
+                currentTimeSpan.textContent = formatTime(currentPlaybackOffset);
+            }
+        }
+
+        /**
+         * Clears the entire playlist and resets the player state.
+         */
+        function clearPlaylist() {
+            pauseTrack(); // This will also stop currentSourceNode and cancel animationFrame
+            playlist = [];
+            currentTrackIndex = -1;
+            
+            artwork.src = 'https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork';
+            trackTitle.textContent = 'No Song Loaded';
+            artistName.textContent = 'Upload music to start';
+            currentTimeSpan.textContent = '00:00';
+            totalTimeSpan.textContent = '00:00';
+            seekbar.value = 0;
+            updatePlayPauseButton();
+            updatePlaylistUI();
+            uploadErrorMessage.classList.add('hidden'); // Hide any error message
+            updateSaveButtonState(); // Update save button state
+        }
+
+        // --- Effects Panel Functions ---
+
+        /**
+         * Updates the enabled/disabled state of the save button based on active effects.
+         */
+        function updateSaveButtonState() {
+            const isAnyEffectEnabled = pitchToggle.checked || tempoToggle.checked || reverbToggle.checked;
+            saveTrackButton.disabled = !isAnyEffectEnabled;
+        }
+
+        /**
+         * Applies the current pitch setting to the source node.
+         * Pitch is controlled by detune parameter (cents).
+         */
+        function applyPitch() {
+            if (currentSourceNode && pitchToggle.checked) {
+                const cents = parseFloat(pitchSlider.value);
+                currentSourceNode.detune.value = cents;
+                pitchValue.textContent = `${cents / 100} semitones`;
+            } else if (currentSourceNode) {
+                currentSourceNode.detune.value = 0; // Reset to normal pitch
+                pitchValue.textContent = '0 semitones';
+            }
+        }
+
+        /**
+         * Updates the pitch based on the slider value.
+         * Slider range: -400 to +400 cents (-4 to +4 semitones).
+         */
+        function updatePitch() {
+            applyPitch(); // Apply the current slider value
+        }
+
+        /**
+         * Toggles the pitch shift effect on or off.
+         */
+        function togglePitch() {
+            initAudioContext(); // Ensure audio context is initialized
+            const isEnabled = pitchToggle.checked;
+            pitchSlider.disabled = !isEnabled;
+            applyPitch(); // Apply or reset pitch based on toggle state
+            updateSaveButtonState(); // Update save button state
+        }
+
+        /**
+         * Applies the current tempo setting to the source node.
+         * Tempo is controlled by playbackRate.
+         */
+        function applyTempo() {
+            if (currentSourceNode && tempoToggle.checked) {
+                const tempoFactor = parseFloat(tempoSlider.value);
+                currentSourceNode.playbackRate.value = tempoFactor;
+                const tempoPercentage = Math.round(tempoFactor * 100);
+                tempoValue.textContent = `${tempoPercentage}%`;
+            } else if (currentSourceNode) {
+                currentSourceNode.playbackRate.value = 1.0; // Reset to normal tempo
+                tempoValue.textContent = '100%';
+            }
+        }
+
+        /**
+         * Updates the tempo based on the slider value.
+         * Slider range: 0.8 (80%) to 1.2 (120%).
+         */
+        function updateTempo() {
+            applyTempo(); // Apply the current slider value
+        }
+
+        /**
+         * Toggles the tempo effect on or off.
+         */
+        function toggleTempo() {
+            initAudioContext(); // Ensure audio context is initialized
+            const isEnabled = tempoToggle.checked;
+            tempoSlider.disabled = !isEnabled;
+            applyTempo(); // Apply or reset tempo based on toggle state
+            updateSaveButtonState(); // Update save button state
+        }
+
+
+        /**
+         * Applies the selected reverb preset by adjusting the convolver's impulse response
+         * and the wet gain.
+         * @param {number} presetIndex - The index of the reverb preset (0-5).
+         * @param {AudioContext|OfflineAudioContext} context - The audio context to use.
+         */
+        function applyReverbPreset(presetIndex, context = audioCtx) {
+            // Define reverb presets (wetMix: how much reverb is heard,
+            // duration/decay: characteristics of the generated impulse response)
+            const presets = [
+                { wetMix: 0.0, duration: 0.1, decay: 0.1, label: "No Reverb" },     // 0: No Reverb
+                { wetMix: 0.15, duration: 0.4, decay: 1.5, label: "Bathroom" },      // 1: Bathroom (shorter duration, slightly faster decay)
+                { wetMix: 0.30, duration: 1.0, decay: 2.0, label: "Large Room" },    // 2: Large Room (medium duration, more pronounced decay)
+                { wetMix: 0.45, duration: 2.0, decay: 2.5, label: "Concert Hall" },  // 3: Concert Hall (longer duration, smoother decay)
+                { wetMix: 0.60, duration: 3.5, decay: 3.0, label: "Cathedral" },     // 4: Cathedral (very long, expansive decay)
+                { wetMix: 0.75, duration: 4.5, decay: 3.5, label: "Maximum Reverb" } // 5: Maximum Reverb (even longer, more pronounced decay)
+            ];
+
+            const preset = presets[presetIndex];
+            if (context === audioCtx) { // Only update UI if it's the main audio context
+                reverbValue.textContent = preset.label;
+            }
+
+            // Update the convolver's impulse response based on preset duration and decay
+            if (context && convolverNode) { // Ensure audio context and convolverNode are initialized
+                convolverNode.buffer = generateReverbImpulseResponse(preset.duration, preset.decay, context);
+                // Smoothly change the wet gain to avoid clicks
+                wetGainNode.gain.setTargetAtTime(preset.wetMix, context.currentTime, 0.05); // 0.05s ramp
+            } else if (context) { // If convolverNode isn't ready but context is, just set the gain
+                // This branch is mostly for offline context where convolverNode might be created on the fly
+                // and wetGainNode needs to be set directly.
+                // For main context, convolverNode should always be ready after initAudioContext.
+                wetGainNode.gain.value = preset.wetMix;
+            }
+        }
+
+        /**
+         * Toggles the reverb effect on or off.
+         */
+        function toggleReverb() {
+            initAudioContext(); // Ensure audio context is ready
+            const isEnabled = reverbToggle.checked;
+            reverbSlider.disabled = !isEnabled;
+
+            if (isEnabled) {
+                // Apply current slider value
+                applyReverbPreset(parseInt(reverbSlider.value));
+            } else {
+                // Smoothly set wet gain to 0 to turn off reverb
+                if (audioCtx) {
+                    wetGainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                } else {
+                    wetGainNode.gain.value = 0;
+                }
+                reverbSlider.value = 0; // Reset slider visual
+                reverbValue.textContent = 'No Reverb';
+            }
+            updateSaveButtonState(); // Update save button state
+        }
+
+        /**
+         * Exports the given AudioBuffer as a WAV file.
+         * @param {AudioBuffer} audioBuffer - The AudioBuffer to export.
+         * @param {string} filename - The desired filename (without extension).
+         */
+        function exportWAV(audioBuffer, filename) {
+            const numOfChan = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const format = 1; // 1 = PCM
+            const bitDepth = 16;
+            const bytesPerSample = bitDepth / 8;
+
+            let buffer = new ArrayBuffer(44 + audioBuffer.length * numOfChan * bytesPerSample);
+            let view = new DataView(buffer);
+
+            /* RIFF identifier */
+            writeString(view, 0, 'RIFF');
+            /* file length */
+            view.setUint32(4, 36 + audioBuffer.length * numOfChan * bytesPerSample, true);
+            /* RIFF type */
+            writeString(view, 8, 'WAVE');
+            /* format chunk identifier */
+            writeString(view, 12, 'fmt ');
+            /* format chunk length */
+            view.setUint32(16, 16, true);
+            /* sample format (raw) */
+            view.setUint16(20, format, true);
+            /* channel count */
+            view.setUint16(22, numOfChan, true);
+            /* sample rate */
+            view.setUint32(24, sampleRate, true);
+            /* byte rate (sample rate * block align) */
+            view.setUint32(28, sampleRate * numOfChan * bytesPerSample, true);
+            /* block align (channel count * bytes per sample) */
+            view.setUint16(32, numOfChan * bytesPerSample, true);
+            /* bits per sample */
+            view.setUint16(34, bitDepth, true);
+            /* data chunk identifier */
+            writeString(view, 36, 'data');
+            /* data chunk length */
+            view.setUint32(40, audioBuffer.length * numOfChan * bytesPerSample, true);
+
+            // Write PCM data
+            floatTo16BitPCM(view, 44, audioBuffer);
+
+            const blob = new Blob([view], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filename}_modified.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url); // Clean up the URL
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function floatTo16BitPCM(output, offset, input) {
+            const channels = [];
+            for (let i = 0; i < input.numberOfChannels; i++) {
+                channels.push(input.getChannelData(i));
+            }
+
+            for (let i = 0; i < input.length; i++) {
+                for (let channel = 0; channel < input.numberOfChannels; channel++) {
+                    let s = Math.max(-1, Math.min(1, channels[channel][i]));
+                    s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    output.setInt16(offset, s, true);
+                    offset += 2;
+                }
+            }
+        }
+
+        /**
+         * Processes the current track with applied effects using OfflineAudioContext
+         * and then triggers a download of the modified audio.
+         */
+        async function saveModifiedTrack() {
+            if (currentTrackIndex === -1 || !playlist[currentTrackIndex] || !playlist[currentTrackIndex].audioBuffer) {
+                console.warn("No track loaded to save.");
+                // No popup, just prevent action
+                return;
+            }
+
+            const originalBuffer = playlist[currentTrackIndex].audioBuffer;
+            const originalDuration = originalBuffer.duration;
+
+            const isPitchEnabled = pitchToggle.checked;
+            const isTempoEnabled = tempoToggle.checked;
+            const isReverbEnabled = reverbToggle.checked;
+
+            if (!isPitchEnabled && !isTempoEnabled && !isReverbEnabled) {
+                console.warn("No effects applied. Please enable at least one effect to save.");
+                // No popup, just prevent action
+                return;
+            }
+
+            // Change button text and disable during processing
+            saveTrackButton.textContent = "Processing...";
+            saveTrackButton.disabled = true;
+
+            // Determine the output duration based on tempo
+            const tempoFactor = isTempoEnabled ? parseFloat(tempoSlider.value) : 1.0;
+            const outputDuration = originalDuration / tempoFactor;
+            const offlineCtxLength = Math.ceil(outputDuration * originalBuffer.sampleRate);
+
+            try {
+                const offlineCtx = new OfflineAudioContext(
+                    originalBuffer.numberOfChannels,
+                    offlineCtxLength,
+                    originalBuffer.sampleRate
+                );
+
+                const source = offlineCtx.createBufferSource();
+                source.buffer = originalBuffer;
+
+                // Apply pitch
+                if (isPitchEnabled) {
+                    source.detune.value = parseFloat(pitchSlider.value);
+                } else {
+                    source.detune.value = 0;
+                }
+
+                // Apply tempo
+                if (isTempoEnabled) {
+                    source.playbackRate.value = tempoFactor;
+                } else {
+                    source.playbackRate.value = 1.0;
+                }
+
+                // Reverb setup for offline context
+                // Create new gain and convolver nodes for the offline context
+                const offlineDryGain = offlineCtx.createGain();
+                const offlineWetGain = offlineCtx.createGain();
+                const offlineConvolver = offlineCtx.createConvolver();
+
+                if (isReverbEnabled) {
+                    const reverbPresetIndex = parseInt(reverbSlider.value);
+                    const presets = [
+                        { wetMix: 0.0, duration: 0.1, decay: 0.1, label: "No Reverb" },     // 0: No Reverb
+                        { wetMix: 0.15, duration: 0.4, decay: 1.5, label: "Bathroom" },      // 1: Bathroom (shorter duration, slightly faster decay)
+                        { wetMix: 0.30, duration: 1.0, decay: 2.0, label: "Large Room" },    // 2: Large Room (medium duration, more pronounced decay)
+                        { wetMix: 0.45, duration: 2.0, decay: 2.5, label: "Concert Hall" },  // 3: Concert Hall (longer duration, smoother decay)
+                        { wetMix: 0.60, duration: 3.5, decay: 3.0, label: "Cathedral" },     // 4: Cathedral (very long, expansive decay)
+                        { wetMix: 0.75, duration: 4.5, decay: 3.5, label: "Maximum Reverb" } // 5: Maximum Reverb (even longer, more pronounced decay)
+                    ];
+                    const preset = presets[reverbPresetIndex];
+
+                    offlineConvolver.buffer = generateReverbImpulseResponse(preset.duration, preset.decay, offlineCtx);
+                    offlineWetGain.gain.value = preset.wetMix;
+
+                    // Connect dry path
+                    source.connect(offlineDryGain);
+                    offlineDryGain.connect(offlineCtx.destination);
+
+                    // Connect wet path
+                    source.connect(offlineConvolver);
+                    offlineConvolver.connect(offlineWetGain);
+                    offlineWetGain.connect(offlineCtx.destination);
+                } else {
+                    // If reverb is not enabled, connect source directly to destination
+                    source.connect(offlineCtx.destination);
+                }
+
+                source.start(0);
+                const renderedBuffer = await offlineCtx.startRendering();
+
+                exportWAV(renderedBuffer, playlist[currentTrackIndex].title);
+                console.log("Track processed and downloaded successfully!");
+
+            } catch (error) {
+                console.error("Error processing audio for saving:", error);
+            } finally {
+                // Revert button text and enable it
+                saveTrackButton.textContent = "Save Track";
+                updateSaveButtonState(); // Re-evaluate state based on toggles
+            }
+        }
+
+
+        // --- Event Listeners ---
+
+        // Play/Pause button click
+        playPauseButton.addEventListener('click', playPause);
+
+        // Previous button click
+        prevButton.addEventListener('click', prevTrack);
+
+        // Next button click
+        nextButton.addEventListener('click', nextTrack);
+
+        // Loop button click
+        loopButton.addEventListener('click', toggleLoop);
+
+        // Shuffle button click
+        shuffleButton.addEventListener('click', toggleShuffle);
+
+        // Seekbar input (while dragging) and change (after release)
+        seekbar.addEventListener('input', seekTo);
+
+        // Clear playlist button
+        clearPlaylistButton.addEventListener('click', clearPlaylist);
+
+        // Handle music file upload
+        uploadButton.addEventListener('click', () => {
+            musicUploadInput.click(); // Trigger the hidden file input click
+        });
+
+        musicUploadInput.addEventListener('change', async (event) => {
+            const files = Array.from(event.target.files); // Convert FileList to Array
+            if (files.length === 0) return;
+
+            // Hide any previous error message
+            uploadErrorMessage.classList.add('hidden');
+
+            // Initialize audio context on user interaction
+            initAudioContext();
+
+            // Process files sequentially to ensure metadata is read before audio decoding
+            const newTracks = [];
+            for (const file of files) {
+                const fileURL = URL.createObjectURL(file);
+                let title = file.name.replace(/\.[^/.]+$/, ""); // Default title
+                let artist = "Unknown Artist"; // Default artist
+                let artworkDataURL = null; // Default artwork
+
+                try {
+                    const tags = await new Promise((resolve, reject) => {
+                        jsmediatags.read(file, {
+                            onSuccess: function(tag) {
+                                resolve(tag);
+                            },
+                            onError: function(error) {
+                                console.warn("Error reading metadata for", file.name, ":", error);
+                                resolve(null); // Resolve with null if error, so processing continues
+                            }
+                        });
+                    });
+
+                    if (tags && tags.tags) {
+                        if (tags.tags.title) {
+                            title = tags.tags.title;
+                        }
+                        if (tags.tags.artist) {
+                            artist = tags.tags.artist;
+                        }
+                        if (tags.tags.picture) {
+                            const picture = tags.tags.picture;
+                            let base64String = "";
+                            for (let i = 0; i < picture.data.length; i++) {
+                                base64String += String.fromCharCode(picture.data[i]);
+                            }
+                            artworkDataURL = `data:${picture.format};base64,${btoa(base64String)}`;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Unexpected error during metadata reading:", error);
+                }
+
+                newTracks.push({
+                    title: title,
+                    artist: artist,
+                    src: fileURL,
+                    duration: 0, // Duration will be updated after decoding
+                    audioBuffer: null, // Placeholder for decoded audio buffer
+                    artwork: artworkDataURL // Store artwork data URL
+                });
+            }
+
+            if (files.length === 1) {
+                // Scenario 1: Single file upload (add to queue if space allows)
+                if (playlist.length >= MAX_TRACKS) {
+                    showUploadError(`Cannot add "${files[0].name}". Playlist is full (max ${MAX_TRACKS} tracks).`);
+                    return;
+                }
+                playlist.push(newTracks[0]);
+                updatePlaylistUI();
+                if (!isPlaying && playlist.length === 1) {
+                    await loadTrack(0);
+                } else if (!isPlaying && currentTrackIndex === -1 && playlist.length > 0) {
+                    await loadTrack(0);
+                }
+            } else {
+                // Scenario 2: Multiple file upload (replace queue, capped at MAX_TRACKS)
+                let filesToProcess = newTracks;
+                if (newTracks.length > MAX_TRACKS) {
+                    showUploadError(`Cannot upload more than ${MAX_TRACKS} tracks. Only the first ${MAX_TRACKS} will be loaded.`);
+                    filesToProcess = newTracks.slice(0, MAX_TRACKS); // Slice files to the maximum allowed
+                }
+
+                // Stop current playback and clear existing playlist
+                pauseTrack();
+                playlist = filesToProcess;
+                currentTrackIndex = -1;
+                
+                updatePlaylistUI();
+                if (playlist.length > 0) {
+                    await loadTrack(0); // Load and play the first track automatically
+                } else {
+                    // Reset UI if no tracks were added (e.g., if files.length was 0 after slicing)
+                    artwork.src = 'https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork';
+                    trackTitle.textContent = 'No Song Loaded';
+                    artistName.textContent = 'Upload music to start';
+                    currentTimeSpan.textContent = '00:00';
+                    totalTimeSpan.textContent = '00:00';
+                    seekbar.value = 0;
+                    updatePlayPauseButton();
+                }
+            }
+            // Clear the file input value so that selecting the same file(s) again triggers change event
+            musicUploadInput.value = '';
+            updateSaveButtonState(); // Update save button state after new tracks are loaded
+        });
+
+
+        // Effects panel event listeners
+        pitchToggle.addEventListener('change', togglePitch);
+        pitchSlider.addEventListener('input', updatePitch);
+        tempoToggle.addEventListener('change', toggleTempo); 
+        tempoSlider.addEventListener('input', updateTempo);
+        reverbToggle.addEventListener('change', toggleReverb);
+        reverbSlider.addEventListener('input', () => applyReverbPreset(parseInt(reverbSlider.value)));
+
+        // Save track button listener
+        saveTrackButton.addEventListener('click', saveModifiedTrack);
+
+
+        // Initial UI setup
+        updatePlayPauseButton();
+        updateLoopButton();
+        updateShuffleButton();
+        updatePlaylistUI(); // This will show "No tracks uploaded yet." initially
+
+        // Initial state for effects panel
+        togglePitch(); // Set initial slider state for pitch
+        toggleTempo(); // Set initial slider state for tempo
+        toggleReverb(); // Set initial slider state for reverb
+        updateSaveButtonState(); // Set initial state for save button
+</script>
+</div>
+</body>
+</html>
