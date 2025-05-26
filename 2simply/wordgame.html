@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Ddakji: Flip Modes!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGoAAABgCAYAAAD1uufxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAArKSURBVHhe7Z1vjFRnFcYPu7Cw227lTzuEbguVUiGkYttUjNgaCSRtUBNDTOwHQ9oGK4LiB/mgfjDKB0XRxhip/YOSkCa2janEPxtpGiExxQqI2FhCsChNW1K27B/KgjIsW98z3Gd45t13Z+7Mvefei/DbPDzLHXaeM/ec972zswNMuF0+9Z4kZIKT3ol6luSV2yxp1NkWeSLQaXWWAreAM0IqCqglVB+8Eak0SiclJAVuAWeEVBRCtakUeCNSW1HNTkgacGYe+XFJo76WGsXTwFLgFnBGSAo8T7gWlgJvlpYaxdPBUuAWcAZLgRcBromlwJulqUbxVISkwC3gDJYCzxOuJSQF3ixNNYqnIumEtEIov0iE6kurzliN4mlgKXALOCOkooBaQvXBkxKrUf6kQArcAs4IqSigllB98KTEXlEhKXALOCOkohCqTaXAkxJ7RaU9IXHgzDzy45JFfcFG8TSwFLgFnBGSAs8TroWlwNMm2CieDpYCt4AzWAq8CHBNLAWeNjWN4qkISYFbwBksBZ4nXEtICjxtahrFU2E9ISFC+UUiVF9WdVYaxdPAUuAWcEZIRQG1hOqDW6IZlUb5kwIpcAs4I6SigFpC9cEt0YzqigpJgVvAGSEVhVBtKgVuAWdUV1SWEwI4M4/8uORVH2e2YTq4e1ZwRkgKPE+4FpYCt4SzoDZMC3fPCs5gKfAiwDWxFLglnAUVYkUp8DzhWkJS4BZwhq/KisoKf1KKRqi+LOusl19ZUVbgvnkyWEUBtYTqg1vi50IK3HRF+RPiqyigllB9cEv8XEiBX11RjlBtKgVuAWeEpMBrXutLG54Kf0KKRF71cWaj/FQbxVMQkgLPE66FpcAt4SyWAvdJtVH+hEAKvAhwTSwFbglnseqRyYpS4HnCtYSkwC3gjJDqYbqiikaovizrTJKfqFGYAn8yoKKAWkL1wS3xcyEF3ohEjfInxFdRQC2h+uCW+LmQAm/EFbOiQlLgFnBGSAq8ERM+mPSvhraPyhc2/Vm+snQwOuAxdJs8tX6+PCOD8uhPXpIPTY2Oy2Q5vPUTsvqpdnnAff2XG3z9Tw9Fvy+dlUcf2y3LbhmNDrRCl7yy5V5Zt22SnI6ONEv3LcPyI1fH4lJ0oB7H7pTvre2R5/ourqC4zWGaWlE8Bb5aZXLklyXtkccA56jVc9VUo3hfZV2lMUnPUyor6vLjrCxa9bL8uvclebF3r2xff07eH91iRdLzlGhFxWO2XCcfl1lyh7fNtbmdY4k7fo+7/broWIiLX39TVbfWLbp86GHZvPQH8sm7L+nh1Y/IUf9i1H1Kri8NOvXJzTMXyYz2jugGCxbI+1ztN1Y1WyZGt8SlbqMwBbx6WFfJjrqN8leQr0Jywa2q6FPg/95n2r3b5ce/3e22Qbcdbjol93RFNxSIK2JFDR7tkRceXyfPq7auksP90Q2g6x25tjTgtsGT0jPzJpnWXrxONbWilMKuJOCeMvPV5oIckbdP75Mnnn1dNm51ev5Neet0nefV7Z3S6a4gRRvEmkahOF41LAV+JVM9B26bzYqaRvkrCFLglyPN1j5JFsoNslhKcrdMdx/+thPr/voWy+E991W07y89cuI/0fEWibWiFPiVQYdr1hSnLvfZpY2Uz0Xl8zo76JnXPirbNyyTr61fJt/eXJJ9rb5WFVF3RaVCx4DMXf66rFz+llxT861KWa691R1/6JjMm5nwUTRg7JA19+jw9SbnJyaVRmFCfKVC19/kw6u2yMpVO+TmmidTF2TW0l/IyjVPypKFA9Gx4mJ2fuqADPVKozAhvq5yieTnZ0DOyNty2umUvCtxXvtHhrr9ivo/Ien5GZHjrkFHXKOOuIYNxWoUMtRrVpTS/KQ0R3lopvT3z5Cy1VPbwCsTM+44Kc/s+p0c3O/U+8exP8s6W5IzfXNksG+enDjeLWcCtfnn51y5TfqPl6S/b1qkG2Sgch8X72fgZKecS/gYOTPTv80hFxbI/s1fldWfWyt7jnVGB1PG+4ZXmRL5ePT/6UH5xqfXyedXPCJrvt4j+85GNzj88wIvH++Sbz60WJav+Fik++QzK/Q+ovvZOF0ON9kozvBVfe85/Cq1ZHl+OIulVN97Ds8Mo62vY/4OWfurLfJ070X9svc3su37r8iC7ugPNMl456fjxrPy3W175cXKz7RUO2VHlPl075Py+LcGZEETPwFWOIulTFiUwj+nzSxb86psWv3vS9vP0DJ5dv19sh3vefC40D4sD2zaJg8ufSM64raVo6vkZ1+8XV4Yig4wpX/Khsd+LksTvWeiW17dskG+s63TXdhDlOV85XI/6p4E/Ms9CRgYc/HX90z88IndsnhGdMBjeM+XZOOGWXKwcsEccff3mnsK8W7ltkZoc7QpaJJS8w1v9gy70g+4X+miUADOySF5R/Y67ZfBQJPi8J78wzVY70N1INik6mrxpMBBzo0aB6NtsRXqbjeN6mxwO+5bnaXAQepbX8/C/8pnPzJHprZHz7WGpsv+nd3y9+CrRMNuYg/KvCVluX/+XJnS7ubIPbjzJ0qya2envBF6oB3H5a77/yq3zXBzXrkGdMok+YBMHjOD4Lx70PpBlDuk7+U58vsj0e89zrma+httU12j7lneKZlbffub/nBktqvFFeXqHj42S/6wa6Jbj0p469OKta7xKmdSb5RPmyyUmXI9vX7Z5z4OB3/qerHwNnd9u0tKcun1plF3neiTN8cZ0Gvcx50yNdHmUHYjc8CdxnLsEzeWqe7Kt8gpzIjbCvuito1Hvdxctz4tjKXUK9aSLPI5I6R65NoonV6WAq8lyTO8eIRz04UfI0uBj4f51qdb0yS3f+tE6NSMumd4I071Qie4bWSi+8AUjbpN6Xxws1T0bWe68elHfTRfc8dO74jbVofcr0nQeqe6xxpmtHL/I+PkNyaDRo3P+CcuG/LKbyU3k60PBamzFLglfi6kwC3gDJYCj0smjcKSVWcpcEv8XEiBW8AZLAUel8xWVEgK3ALOCEmBW8AZLAUel8xWVKuTlATOLEp+q5g0iqeGpcAt4SyWAreAM0JKgkmj/EniiYJbwlksa+rlwlsl1UZhavxJghS4BZwRkjXICOXCWyXVRvH0pDVJzVCUfCXt3FQaxVPDUuCW+LmQAreAM1gKPC1SaRRPL0uBW+LnQgrcAs5gKfC0SG1FhaTALeCMkBS4BZzBUuBpkdqKspqkenBmUfKtaKlRPDUsBW4JZ7EUuAWcEZIlLTXKnySeKLglnMWypl4u3IqmGoWp8ScJUuAWcEZI1iAjlAu3oqlG8fRkNUlMUfKVLHOVWI3iqWEpcEv8XEiBW8AZLAWeFbEaxdPLUuCW+LmQAreAM1gKPCtir6iQFLgFnBGSAreAM1gKPCtir6g8Jokzi5KfF8FG8dSwFLglnMVS4BZwRkh5EmyUP0k8UXBLOItlTb1ceF7UNApT408SpMAt4IyQrEFGKBeeFzWN4unJY5KKkq9kmRuHSqN4algK3BI/F1LgFnAGS4EXAa2l0iieXpYCt8TPhRS4BZzBUuBFQGuprqiQFLgFnBGSAreAM1gKPE+4luqKymOSOLMo+UWC68v235mI4CyWAreAM0IqCqiFa8v0/+EFnMWypl4uvAhwTVCmK4ozQrIGGaFceJ5wLb5y/39488hXssyNC58T/lxE5H9+VOXrhhTvTAAAAABJRU5ErkJggg==">
+
+    <style>
+        /* Custom font definitions */
+        @font-face {
+            font-family: 'RadioC';
+            src: url('radioc.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Gamify';
+            src: url('gamify.ttf') format('truetype');
+        }
+        
+        
+        a {
+       font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-family: 'Press Start 2P', cursive;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--final-score-color);
+            text-shadow: var(--final-score-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+            text-decoration: none;
+        }
+        
+        
+        
+
+        /* CSS Variables for Theming - Default Theme */
+        :root {
+            --body-background: linear-gradient(135deg, #7F00FF, #E100FF); /* Original purple gradient */
+            --container-background: rgba(0, 0, 0, 0.7);; /* Purplish transparent */
+            --container-border: 3px solid #ffcc00;
+            --container-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            --title-color: #ffcc00;
+            --title-text-shadow: 4px 4px #4a008a;
+            --primary-btn-bg: #00FF7F;
+            --primary-btn-color: #212121;
+            --primary-btn-hover-bg: #00DD6E;
+            --secondary-btn-bg: #555;
+            --secondary-btn-color: #fff;
+            --secondary-btn-hover-bg: #777;
+            --danger-btn-bg: #dc3545;
+            --danger-btn-color: #fff;
+            --danger-btn-hover-bg: #c82333;
+            --text-color: #fff;
+            --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            --word-display-color: #fff;
+            --word-display-text-shadow: 3px 3px #8a004a;
+            --choice-box-bg: #333;
+            --choice-box-border: 2px solid #666;
+            --timer-bar-bg: #ffcc00;
+            --timer-bar-depleted-bg: #dc3545;
+            --final-score-color: #00FF7F;
+            --final-score-text-shadow: 4px 4px #212121;
+            --heading-color: #00FF7F;
+            --heading-text-shadow: 3px 3px #212121;
+            --strong-color: #ffcc00;
+            --bullet-color: #00FF7F;
+            --game-container-backdrop-filter: none; /* For blur theme */
+            --body-background-size: auto;
+            --body-background-position: center center;
+            --body-background-repeat: no-repeat;
+        }
+
+        /* Theme 1: Retro Arcade (black, gold, light blue) */
+        body.theme-retro-arcade {
+            --body-background: linear-gradient(135deg, #000000, #2c3e50);
+            --container-background: rgba(20, 20, 20, 0.9);
+            --container-border: 3px solid #FFD700; /* Gold */
+            --container-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+            --title-color: #00FFFF; /* Light Blue */
+            --title-text-shadow: 4px 4px #FFD700;
+            --primary-btn-bg: #00FFFF;
+            --primary-btn-color: #000000;
+            --primary-btn-hover-bg: #00CCCC;
+            --secondary-btn-bg: #34495e;
+            --secondary-btn-color: #fff;
+            --secondary-btn-hover-bg: #4a627a;
+            --danger-btn-bg: #FF4500; /* Orange-Red */
+            --danger-btn-color: #fff;
+            --danger-btn-hover-bg: #CC3700;
+            --text-color: #E0E0E0;
+            --text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.5);
+            --word-display-color: #FFD700;
+            --word-display-text-shadow: 3px 3px #00FFFF;
+            --choice-box-bg: #1a1a1a;
+            --choice-box-border: 2px solid #555;
+            --timer-bar-bg: #00FFFF;
+            --timer-bar-depleted-bg: #FF4500;
+            --final-score-color: #00FFFF;
+            --final-score-text-shadow: 4px 4px #FFD700;
+            --heading-color: #FFD700;
+            --heading-text-shadow: 3px 3px #00FFFF;
+            --strong-color: #00FFFF;
+            --bullet-color: #FFD700;
+        }
+
+        /* Theme 2: Pastel Dream (light pink, green, white) */
+        body.theme-pastel-dream {
+            --body-background: linear-gradient(135deg, #FFD1DC, #E0FFFF); /* Light Pink to Light Cyan */
+            --container-background: rgba(255, 255, 255, 0.85);
+            --container-border: 3px solid #98FB98; /* Pale Green */
+            --container-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            --title-color: #87CEEB; /* Sky Blue */
+            --title-text-shadow: 4px 4px #FFC0CB; /* Pink */
+            --primary-btn-bg: #98FB98;
+            --primary-btn-color: #333;
+            --primary-btn-hover-bg: #7CFC00;
+            --secondary-btn-bg: #DDA0DD; /* Plum */
+            --secondary-btn-color: #fff;
+            --secondary-btn-hover-bg: #C71585; /* Medium Violet Red */
+            --danger-btn-bg: #FF6347; /* Tomato */
+            --danger-btn-color: #fff;
+            --danger-btn-hover-bg: #E4573D;
+            --text-color: #333;
+            --text-shadow: none;
+            --word-display-color: #87CEEB;
+            --word-display-text-shadow: 3px 3px #FFC0CB;
+            --choice-box-bg: #F0F8FF; /* Alice Blue */
+            --choice-box-border: 2px solid #ADD8E6; /* Light Blue */
+            --timer-bar-bg: #98FB98;
+            --timer-bar-depleted-bg: #FF6347;
+            --final-score-color: #98FB98;
+            --final-score-text-shadow: 4px 4px rgba(0,0,0,0.1);
+            --heading-color: #DDA0DD;
+            --heading-text-shadow: 3px 3px rgba(0,0,0,0.1);
+            --strong-color: #87CEEB;
+            --bullet-color: #98FB98;
+        }
+
+        /* Theme 3: Blurred Reality (random image, blurred container) */
+        body.theme-blurred-reality {
+            /* Background image will be set via JS */
+            --body-background: url(''); /* Placeholder, set by JS */
+            --body-background-size: cover;
+            --body-background-position: center center;
+            --body-background-repeat: no-repeat;
+            
+            --container-background: rgba(0, 0, 0, 0.2); /* More transparent */
+            --container-border: 3px solid rgba(255, 255, 255, 0.5);
+            --container-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            --game-container-backdrop-filter: blur(8px); /* Apply blur to container */
+
+            --title-color: #FFFFFF;
+            --title-text-shadow: 4px 4px rgba(0, 0, 0, 0.5);
+            --primary-btn-bg: rgba(255, 255, 255, 0.7);
+            --primary-btn-color: #333;
+            --primary-btn-hover-bg: rgba(255, 255, 255, 0.9);
+            --secondary-btn-bg: rgba(100, 100, 100, 0.7);
+            --secondary-btn-color: #fff;
+            --secondary-btn-hover-bg: rgba(120, 120, 120, 0.9);
+            --danger-btn-bg: rgba(220, 53, 69, 0.7);
+            --danger-btn-color: #fff;
+            --danger-btn-hover-bg: rgba(220, 53, 69, 0.9);
+            --text-color: #FFFFFF;
+            --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+            --word-display-color: #FFFFFF;
+            --word-display-text-shadow: 3px 3px rgba(0, 0, 0, 0.7);
+            --choice-box-bg: rgba(0, 0, 0, 0.3);
+            --choice-box-border: 2px solid rgba(255, 255, 255, 0.4);
+            --timer-bar-bg: rgba(255, 255, 255, 0.7);
+            --timer-bar-depleted-bg: rgba(220, 53, 69, 0.7);
+            --final-score-color: #FFFFFF;
+            --final-score-text-shadow: 4px 4px rgba(0, 0, 0, 0.7);
+            --heading-color: #FFFFFF;
+            --heading-text-shadow: 3px 3px rgba(0, 0, 0, 0.7);
+            --strong-color: #E0FFFF; /* Light Cyan for contrast */
+            --bullet-color: #FFFFFF;
+        }
+
+
+        /* General Body Styles */
+        body {
+            font-family: 'Radio Canada Big', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-y: auto; /* Allow scrolling if content overflows vertically */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            padding: 10px; /* Add some padding to body to ensure game container doesn't touch edges */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+
+            /* Apply CSS variables */
+            background: var(--body-background);
+            background-size: var(--body-background-size);
+            background-position: var(--body-background-position);
+            background-repeat: var(--body-background-repeat);
+            color: var(--text-color);
+            text-shadow: var(--text-shadow);
+            transition: background 0.7s ease-in-out; /* Smooth transition for background */
+        }
+
+        /* Game Container */
+        .game-container {
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            width: 95%; /* Use a slightly larger percentage */
+            max-width: 550px;
+            /* animation: fadeIn 1s ease-out; Removed initial fade-in from here */
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin: auto; /* Center the container horizontally with auto margins */
+
+            /* Apply CSS variables */
+            background-color: var(--container-background);
+            border: var(--container-border);
+            box-shadow: var(--container-box-shadow);
+            backdrop-filter: var(--game-container-backdrop-filter); /* For blur theme */
+            transition: background-color 0.7s ease-in-out, border-color 0.7s ease-in-out, box-shadow 0.7s ease-in-out, backdrop-filter 0.7s ease-in-out, height 0.5s ease-in-out, width 0.5s ease-in-out; /* Added height and width transitions */
+        }
+
+        /* Title */
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            margin-bottom: 20px;
+            font-size: 2em;
+            letter-spacing: 2px;
+            word-break: break-word; /* Allow title to break words if too long */
+
+            /* Apply CSS variables */
+            color: var(--title-color);
+            text-shadow: var(--title-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        /* Game Screens Area - Holds all individual screens */
+        .game-screen-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            flex-grow: 1;
+            position: relative; /* Needed for absolute positioning of screens for transitions */
+            overflow: hidden; /* Hide overflow during transitions */
+            min-height: 300px; /* A minimum height for the screen area */
+        }
+
+        /* General Screen styles for transitions */
+        .screen {
+            position: absolute; /* Position screens on top of each other */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; /* Ensure full height for transitions */
+            display: flex; /* Always flex, hide with opacity */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0;
+            box-sizing: border-box;
+            flex-grow: 1;
+            gap: 15px;
+
+            opacity: 0;
+            transform: scale(0.95); /* Start slightly zoomed out for new screens */
+            pointer-events: none; /* Disable interaction when not active */
+            /* The transition property for screens will be managed by JavaScript based on animationsEnabled */
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        /* Class to disable screen transitions specifically */
+        .screen.no-transition {
+            transition: none !important;
+        }
+
+        .screen.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto; /* Enable interaction when active */
+            position: relative; /* Active screen takes up space */
+            height: auto; /* Allow height to adjust to content */
+            min-height: 100%; /* Ensure it fills parent height if content is short */
+        }
+        
+        /* Hidden screens are absolutely positioned so they don't take up space */
+        .game-screen-area > .screen:not(.active) {
+            position: absolute;
+            height: 100%; /* Maintain height for smooth transition off-screen */
+        }
+
+
+        /* Buttons */
+        .btn {
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            font-family: 'Press Start 2P', cursive;
+            letter-spacing: 1px;
+            text-align: center; /* Center text within the button */
+            word-break: break-word; /* Allow words to break if they are too long */
+            min-width: 120px; /* Ensure a minimum width for buttons */
+            line-height: 1.5; /* 1.5 times the font size */
+
+            /* Apply CSS variables */
+            background-color: var(--primary-btn-bg);
+            color: var(--primary-btn-color);
+            transition: background-color 0.3s ease, transform 0.2s ease, color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-btn-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-btn-bg);
+            color: var(--secondary-btn-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary-btn-hover-bg);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-btn-bg);
+            color: var(--danger-btn-color);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-btn-hover-bg);
+        }
+
+        /* Specific styles for the Quit Game button */
+        #quit-game-button {
+            margin-top: auto;
+            align-self: center;
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+
+
+        /* Mode Selection Specific Styles */
+        .mode-options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 80%;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .mode-options-container .btn {
+            width: 100%; /* Make buttons fill the container width */
+            font-size: 1em;
+            padding: 12px 8px;
+        }
+
+        .mode-selection-screen-text {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            max-width: 90%;
+            text-align: center;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--title-color); /* Using title color for this text */
+            text-shadow: var(--title-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+        /* Adjusted margin for back button in mode selection */
+        #mode-selection-screen #back-to-main-button {
+            margin-top: 25px;
+        }
+
+        /* Start Screen specific */
+        #start-screen p {
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            line-height: 1.5;
+            text-align: center;
+            word-break: break-word;
+        }
+        /* New styles for the additional buttons on start screen */
+        .start-screen-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%;
+            max-width: 300px;
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .start-screen-buttons .btn {
+            width: 100%;
+        }
+
+
+        /* Game UI */
+        #word-display {
+            font-size: 2.8em;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            min-height: 1.5em;
+            font-family: 'Press Start 2P', cursive;
+            word-wrap: break-word;
+            word-break: break-word; /* Added for better compatibility */
+            text-align: center;
+
+            /* Apply CSS variables */
+            color: var(--word-display-color);
+            text-shadow: var(--word-display-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        .choices-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* Center items when they wrap */
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            min-width: 260px;
+            margin-bottom: 25px;
+        }
+
+        .choice-box {
+            border-radius: 12px;
+            padding: 15px 12px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+            flex: 1 1 150px; /* Allow boxes to grow and shrink, with a preferred basis */
+            min-width: 110px;
+            max-width: 180px; /* Keep a max width to prevent boxes from becoming too wide */
+            height: auto; /* Allow height to adjust based on content */
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            word-wrap: break-word;
+            word-break: break-word; /* Added for better compatibility */
+
+            /* Apply CSS variables */
+            background-color: var(--choice-box-bg);
+            border: var(--choice-box-border);
+            color: var(--text-color);
+            transition: background-color 0.7s ease-in-out, border-color 0.7s ease-in-out, color 0.7s ease-in-out;
+        }
+
+        .choice-box:hover {
+            background-color: #555; /* Keep a consistent hover for choice boxes */
+            transform: translateY(-3px);
+        }
+
+        .choice-box.correct {
+            background-color: #28a745;
+            border-color: #218838;
+            animation: pulseGreen 0.5s ease-out;
+        }
+
+        .choice-box.wrong {
+            background-color: #dc3545;
+            border-color: #c82333;
+            animation: shake 0.5s ease-out;
+        }
+
+        #score-turn-container {
+            width: 100%;
+            padding: 0 8px;
+            box-sizing: border-box;
+            display: flex; /* Use flexbox for score and turn */
+            justify-content: space-between; /* Space out score and turn */
+            align-items: center;
+        }
+
+        #score-display, #turn-display {
+            font-size: 1.3em;
+            font-weight: bold;
+
+            /* Apply CSS variables */
+            color: var(--title-color); /* Using title color for score/turn */
+            text-shadow: var(--title-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        /* End Screen */
+        #end-screen .btn {
+            margin-top: 25px;
+        }
+        #final-score {
+            font-size: 2.8em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-family: 'Press Start 2P', cursive;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--final-score-color);
+            text-shadow: var(--final-score-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        #final-message {
+            font-size: 1.6em;
+            margin-bottom: 25px;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--text-color);
+            text-shadow: var(--text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        /* Confirmation Screen Specific */
+        .confirmation-screen p {
+            font-size: 1.4em;
+            margin-bottom: 25px;
+            text-align: center;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--text-color);
+            text-shadow: var(--text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap; /* Allow buttons to wrap */
+            justify-content: center; /* Center buttons when they wrap */
+        }
+        .confirmation-buttons .btn {
+             margin-top: 0;
+             flex: 1 1 120px; /* Allow buttons to grow/shrink with a basis */
+             max-width: 180px; /* Max width for confirmation buttons */
+        }
+
+        /* Mode Info Screen & Offline Screen & Options Screen Headings */
+        #mode-info-screen h2, #offline-screen h2, #options-screen h2 {
+            font-family: 'Press Start 2P', cursive;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--heading-color);
+            text-shadow: var(--heading-text-shadow);
+            transition: color 0.7s ease-in-out, text-shadow 0.7s ease-in-out;
+        }
+
+        /* Mode Info Screen & Offline Screen & Options Screen Paragraphs */
+        #mode-info-screen p, #offline-screen p, #options-screen p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: center;
+            max-width: 90%;
+            word-break: break-word;
+
+            /* Apply CSS variables */
+            color: var(--text-color);
+            transition: color 0.7s ease-in-out;
+        }
+
+        #mode-info-screen ul {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+            max-width: 90%; /* Limit list width */
+            margin-left: auto; /* Center the list */
+            margin-right: auto;
+        }
+
+        #mode-info-screen ul li {
+            margin-bottom: 8px;
+            font-size: 1.1em;
+
+            /* Apply CSS variables */
+            color: var(--text-color);
+            transition: color 0.7s ease-in-out;
+        }
+
+        #mode-info-screen ul li strong {
+            /* Apply CSS variables */
+            color: var(--strong-color);
+            transition: color 0.7s ease-in-out;
+        }
+
+        #mode-info-screen ul li:before {
+            content: "• ";
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+
+            /* Apply CSS variables */
+            color: var(--bullet-color);
+            transition: color 0.7s ease-in-out;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+            20%, 40%, 60%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes pulseGreen {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+
+        /* Confetti Effect (Simple Circles) */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #ffcc00;
+            border-radius: 50%;
+            opacity: 0;
+            animation: fadeOutUp 2s forwards;
+            z-index: 100;
+        }
+
+        .confetti:nth-child(2n) { background-color: #00FF7F; animation-delay: 0.2s; }
+        .confetti:nth-child(3n) { background-color: #E100FF; animation-delay: 0.4s; }
+        .confetti:nth-child(4n) { background-color: #7F00FF; animation-delay: 0.6s; }
+
+        @keyframes fadeOutUp {
+            0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(-400px) rotate(720deg); }
+        }
+
+        /* Timer Bar */
+        #timer-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #555;
+            border-radius: 6px;
+            margin-top: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        #timer-bar {
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            /* Timer bar transition is always active */
+            transition: width linear, background-color 0.7s ease-in-out; 
+
+            /* Apply CSS variables */
+            background-color: var(--timer-bar-bg);
+        }
+
+        /* --- Responsive Adjustments (Media Queries) --- */
+        @media (max-width: 768px) { /* Tablets and smaller */
+            .game-container {
+                padding: 20px;
+                min-height: 450px;
+            }
+            h1 {
+                font-size: 1.6em;
+            }
+            #word-display {
+                font-size: 2em;
+            }
+            .btn {
+                padding: 10px 20px;
+                font-size: 1.1em;
+                min-width: 100px; /* Adjust min-width for smaller screens */
+            }
+             .mode-options-container .btn,
+             .start-screen-buttons .btn {
+                 padding: 10px 6px; /* Adjust padding for mode/start buttons */
+             }
+            .choice-box {
+                font-size: 1.1em;
+                padding: 12px 8px;
+                min-height: 55px;
+                flex-basis: calc(50% - 10px); /* Two columns on smaller screens */
+                max-width: calc(50% - 10px);
+            }
+            .choices-container {
+                 gap: 10px; /* Adjust gap for two columns */
+            }
+            #score-display, #turn-display {
+                font-size: 1.1em;
+            }
+            #final-score {
+                font-size: 2.2em;
+            }
+            #final-message {
+                font-size: 1.4em;
+            }
+            .mode-options-container .btn {
+                font-size: 0.95em;
+            }
+            .confirmation-screen p {
+                font-size: 1.2em;
+            }
+            #quit-game-button {
+                padding: 8px 18px;
+            }
+             #mode-info-screen h2, #offline-screen h2, #options-screen h2 {
+                font-size: 1.5em;
+            }
+            #mode-info-screen p, #mode-info-screen ul li, #offline-screen p, #options-screen p {
+                font-size: 1em;
+            }
+            .confirmation-buttons .btn {
+                 flex-basis: calc(50% - 10px); /* Two columns for confirmation buttons */
+                 max-width: calc(50% - 10px);
+            }
+             .confirmation-buttons {
+                 gap: 10px; /* Adjust gap */
+             }
+        }
+
+        @media (max-width: 480px) { /* Phones */
+            .game-container {
+                padding: 12px;
+                border-radius: 12px;
+                min-height: 400px;
+            }
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 12px;
+            }
+            #word-display {
+                font-size: 1.6em;
+                margin-bottom: 15px;
+            }
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+                min-width: unset; /* Remove min-width on very small screens */
+            }
+            .choices-container {
+                gap: 8px;
+            }
+            .choice-box {
+                flex-basis: calc(50% - 8px); /* Two columns on small screens, adjust for gap */
+                max-width: calc(50% - 8px);
+                font-size: 0.9em;
+                padding: 8px;
+                min-height: 45px;
+            }
+            #score-display, #turn-display {
+                font-size: 0.9em;
+                margin-top: 12px;
+            }
+            #final-score {
+                font-size: 1.8em;
+            }
+            #final-message {
+                font-size: 1.1em;
+            }
+            .mode-options-container .btn,
+            .start-screen-buttons .btn {
+                font-size: 0.85em;
+                padding: 10px 6px;
+            }
+            .confirmation-screen p {
+                font-size: 1em;
+            }
+            #quit-game-button {
+                padding: 6px 12px;
+                font-size: 0.8em;
+            }
+            #mode-info-screen h2, #offline-screen h2, #options-screen h2 {
+                font-size: 1.2em;
+            }
+            #mode-info-screen p, #mode-info-screen ul li, #offline-screen p, #options-screen p {
+                font-size: 0.9em;
+            }
+             .confirmation-buttons .btn {
+                 flex-basis: 100%; /* Stack confirmation buttons on very small screens */
+                 max-width: 100%;
+             }
+             .confirmation-buttons {
+                 gap: 8px; /* Adjust gap */
+             }
+        }
+         @media (max-width: 320px) { /* Extra small phones */
+             .game-container {
+                 padding: 8px;
+             }
+             h1 {
+                 font-size: 1.1em;
+             }
+             #word-display {
+                 font-size: 1.4em;
+             }
+             .btn {
+                 font-size: 0.8em;
+                 padding: 6px 10px;
+             }
+              .mode-options-container .btn,
+             .start-screen-buttons .btn {
+                 font-size: 0.8em;
+                 padding: 8px 4px;
+             }
+             .choice-box {
+                 font-size: 0.8em;
+                 padding: 6px;
+                 min-height: 40px;
+             }
+             #score-display, #turn-display {
+                 font-size: 0.8em;
+             }
+             #final-score {
+                 font-size: 1.6em;
+             }
+             #final-message {
+                 font-size: 1em;
+             }
+             .confirmation-screen p {
+                 font-size: 0.9em;
+             }
+             #quit-game-button {
+                 font-size: 0.7em;
+                 padding: 4px 8px;
+             }
+             #mode-info-screen h2, #offline-screen h2, #options-screen h2 {
+                 font-size: 1em;
+             }
+             #mode-info-screen p, #mode-info-screen ul li, #offline-screen p, #options-screen p {
+                 font-size: 0.8em;
+             }
+         }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="game-container">
+        <h1 id="game-title">Word Ddakji: Flip Modes!</h1>
+
+        <div class="game-screen-area">
+            <div id="start-screen" class="screen active">
+                <p>
+                    Welcome to Word Ddakji! Test your vocabulary and speed.
+                    Choose a mode and try to get most correct answers!
+                </p>
+                <div class="start-screen-buttons">
+                    <button id="play-button" class="btn">PLAY GAME</button>
+                    
+                    <button id="options-button" class="btn">OPTIONS</button>
+                    <button id="offline-button" class="btn">OFFLINE</button>
+                    <button id="mode-info-button" class="btn btn-secondary">ABOUT</button>
+                    <button id="linky-button" class="btn btn-secondary">BACK TO ALTROWEB</button>
+                </div>
+            </div>
+
+            <div id="mode-selection-screen" class="screen">
+                <p class="mode-selection-screen-text">Choose Your Mode:</p>
+                <div class="mode-options-container">
+                    <button id="antonym-mode-button" class="btn">ANTONYM MODE</button>
+                    <button id="synonym-mode-button" class="btn">SYNONYM MODE</button>
+                </div>
+                <button id="back-to-main-button" class="btn btn-secondary">BACK TO MAIN</button>
+            </div>
+
+            <div id="mode-info-screen" class="screen">
+                <h2>v0.5.2 BETA</h2>
+                <p>Try the most simple but fun game, on AltroWeb!</p>
+                <uln>
+                    <lin><strong></strong></lin>
+                    <lin><strong></strong></lin>
+                </uln>
+                <p>NOTE: This game is in beta, so it may have bugs, we are trying our best to fix it. Sorry for the inconvenience.<br><br><strong>What's new in - v0.5.2</strong><br><br>This major update brings all new exciting features to the game!<br>- Added smoother animations with a new options menu.<br>- Added themes, more rounds option, and an accessibilty feature.
+                <br><br><strong>©AltroWeb - 2Simply Games. All rights reserved.</strong></p>
+                <button id="back-from-info-button" class="btn btn-secondary">BACK</button>
+            </div>
+
+            <div id="offline-screen" class="screen">
+                <h2>Play Offline</h2>
+                <p>Play Word Ddakji anytime/anywhere, even when you are offline!</p><a href="https://github.com/AltroWeb/altroweb.github.io/releases/download/resources/WordDdakji_signed.apk">Download Android APK</a>
+               <br> <button id="back-from-offline-button" class="btn btn-secondary">BACK</button>
+            </div>
+
+            <div id="options-screen" class="screen">
+                <h2>Game Options</h2>
+                <p>Customize your game experience!</p>
+                <div class="mode-options-container"> 
+                    <p>Change UI Theme:</p>
+                    <button id="change-theme-button" class="btn">CYCLE THEMES</button>
+                    <p>Number of Turns:</p>
+                    <button id="toggle-turns-button" class="btn">TURNS: 5</button>
+                    <p>UI Animations:</p>
+                    <button id="toggle-animations-button" class="btn">ANIMATIONS: ON</button>
+                </div><br>
+                <button id="back-from-options-button" class="btn btn-secondary">BACK</button>
+            </div>
+
+            <div id="game-screen" class="screen">
+                <div id="score-turn-container">
+                    <div id="score-display">Score: 0/5</div>
+                    <div id="turn-display">Turn: 0/5</div>
+                </div>
+                <div id="timer-bar-container">
+                    <div id="timer-bar"></div>
+                </div>
+                <p id="word-display">Loading...</p>
+                <div class="choices-container" id="choices-container">
+                </div>
+                <button id="quit-game-button" class="btn btn-danger">QUIT GAME</button>
+            </div>
+
+            <div id="quit-confirmation-screen" class="screen">
+                <p>Are you sure you want to quit the current game?</p>
+                <div class="confirmation-buttons">
+                    <button id="confirm-quit-button" class="btn btn-danger">YES, QUIT</button>
+                    <button id="cancel-quit-button" class="btn btn-secondary">NO, CONTINUE</button>
+                </div>
+            </div>
+
+            <div id="end-screen" class="screen">
+                <p id="final-score">Your Score: 0/5</p>
+                <p id="final-message">Too poor...</p>
+                <button id="restart-button" class="btn">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Data ---
+        const antonymList = [
+            { word: "HAPPY", antonym: "SAD", options: ["JOLLY", "GLAD", "SAD"] },
+            { word: "BIG", antonym: "SMALL", options: ["HUGE", "TINY", "SMALL"] },
+            { word: "HOT", antonym: "COLD", options: ["WARM", "COLD", "BOILING"] },
+            { word: "FAST", antonym: "SLOW", options: ["QUICK", "RAPID", "SLOW"] },
+            { word: "BRIGHT", antonym: "DIM", options: ["SHINY", "GLOWING", "DIM"] },
+            { word: "LIGHT", antonym: "HEAVY", options: ["EASY", "BRIGHT", "HEAVY"] },
+            { word: "OPEN", antonym: "CLOSED", options: ["AJAR", "CLOSED", "WIDE"] },
+            { word: "HARD", antonym: "SOFT", options: ["TOUGH", "RIGID", "SOFT"] },
+            { word: "RICH", antonym: "POOR", options: ["WEALTHY", "AFFLUENT", "POOR"] },
+            { word: "TALL", antonym: "SHORT", options: ["HIGH", "SHORT", "LONG"] },
+            { word: "TRUE", antonym: "FALSE", options: ["REAL", "FALSE", "GENUINE"] },
+            { word: "BEGIN", antonym: "END", options: ["START", "END", "COMMENCE"] },
+            { word: "WIN", antonym: "LOSE", options: ["SUCCEED", "LOSE", "TRIUMPH"] },
+            { word: "ABSENT", antonym: "PRESENT", options: ["GONE", "PRESENT", "MISSING"] },
+            { word: "ARRIVAL", antonym: "DEPARTURE", options: ["COMING", "DEPARTURE", "ENTRY"] },
+            { word: "ANCIENT", antonym: "MODERN", options: ["OLD", "MODERN", "HISTORIC"] },
+            { word: "ATTACK", antonym: "DEFEND", options: ["ASSAULT", "DEFEND", "INVADE"] },
+            { word: "BLESS", antonym: "CURSE", options: ["SANCTIFY", "CURSE", "PRAISE"] },
+            { word: "BOLD", antonym: "TIMID", options: ["BRAVE", "FEARLESS", "TIMID"] },
+            { word: "BUILD", antonym: "DESTROY", options: ["CONSTRUCT", "DESTROY", "CREATE"] },
+            { word: "CLEVER", antonym: "FOOLISH", options: ["SMART", "FOOLISH", "INTELLIGENT"] },
+            { word: "CRUEL", antonym: "KIND", options: ["BRUTAL", "GENTLE", "KIND"] },
+            { word: "DRY", antonym: "WET", options: ["ARID", "MOIST", "WET"] },
+            { word: "EMPTY", antonym: "FULL", options: ["HOLLOW", "FULL", "VACANT"] },
+            { word: "EXPAND", antonym: "CONTRACT", options: ["GROW", "SHRINK", "CONTRACT"] },
+            { word: "FAIL", antonym: "SUCCEED", options: ["FLOP", "BUNGLE", "SUCCEED"] },
+            { word: "FRIEND", antonym: "ENEMY", options: ["ALLY", "COMPANION", "ENEMY"] },
+            { word: "GENEROUS", antonym: "STINGY", options: ["KIND", "STINGY", "GIVING"] },
+            { word: "GUILTY", antonym: "INNOCENT", options: ["CULPRIT", "BLAMELESS", "INNOCENT"] },
+            { word: "IMPORT", antonym: "EXPORT", options: ["BRING IN", "SEND OUT", "EXPORT"] },
+            { word: "INCLUDE", antonym: "EXCLUDE", options: ["CONTAIN", "EXCLUDE", "ENCOMPASS"] },
+            { word: "MAJOR", antonym: "MINOR", options: ["BIG", "MINOR", "IMPORTANT"] },
+            { word: "OPTIMIST", antonym: "PESSIMIST", options: ["HOPEFUL", "DOUBTER", "PESSIMIST"] },
+            { word: "PERMIT", antonym: "FORBID", options: ["ALLOW", "FORBID", "GRANT"] },
+            { word: "PLENTY", antonym: "SCARCITY", options: ["ABUNDANCE", "SHORTAGE", "SCARCITY"] },
+            { word: "PRIVATE", antonym: "PUBLIC", options: ["SECRET", "PERSONAL", "PUBLIC"] },
+            { word: "PUNISH", antonym: "REWARD", options: ["PENALIZE", "REWARD", "CHASTISE"] },
+            { word: "ROUGH", antonym: "SMOOTH", options: ["COARSE", "BUMPY", "SMOOTH"] },
+            { word: "SHARP", antonym: "BLUNT", options: ["KEEN", "POINTY", "BLUNT"] },
+            { word: "SINCERE", antonym: "INSINCERE", options: ["HONEST", "GENUINE", "INSINCERE"] },
+            { word: "STALE", antonym: "FRESH", options: ["OLD", "ROTTEN", "FRESH"] },
+            { word: "TIGHT", antonym: "LOOSE", options: ["SNUG", "FIRM", "LOOSE"] },
+            { word: "TOP", antonym: "BOTTOM", options: ["PEAK", "APEX", "BOTTOM"] },
+            { word: "URBAN", antonym: "RURAL", options: ["CITY", "METROPOLITAN", "RURAL"] },
+            { word: "VIRTUE", antonym: "VICE", options: ["GOODNESS", "MORALITY", "VICE"] },
+            { word: "WEAK", antonym: "STRONG", options: ["FRAIL", "FEEBLE", "STRONG"] },
+            { word: "WILD", antonym: "TAME", options: ["UNTAMED", "SAVAGE", "TAME"] },
+            { word: "WISE", antonym: "FOOLISH", options: ["CLEVER", "PRUDENT", "FOOLISH"] },
+            { word: "YOUTH", antonym: "AGE", options: ["CHILDHOOD", "ADOLESCENCE", "AGE"] },
+            { word: "ADVANTAGE", antonym: "DISADVANTAGE", options: ["BENEFIT", "PLUS", "DISADVANTAGE"] },
+            // Additional Antonyms
+            { word: "ACCEPT", antonym: "REJECT", options: ["AGREE", "RECEIVE", "REJECT"] },
+            { word: "ACTIVE", antonym: "INACTIVE", options: ["BUSY", "LIVELY", "INACTIVE"] },
+            { word: "ADMIT", antonym: "DENY", options: ["CONFESS", "ACKNOWLEDGE", "DENY"] },
+            { word: "AGREE", antonym: "DISAGREE", options: ["CONSENT", "APPROVE", "DISAGREE"] },
+            { word: "ALWAYS", antonym: "NEVER", options: ["FOREVER", "CONSTANTLY", "NEVER"] },
+            { word: "APPEAR", antonym: "DISAPPEAR", options: ["EMERGE", "SHOW", "DISAPPEAR"] },
+            { word: "APPROVE", antonym: "DISAPPROVE", options: ["SANCTION", "ENDORSE", "DISAPPROVE"] },
+            { word: "ARTIFICIAL", antonym: "NATURAL", options: ["FAKE", "SYNTHETIC", "NATURAL"] },
+            { word: "ASCEND", antonym: "DESCEND", options: ["CLIMB", "RISE", "DESCEND"] },
+            { word: "ATTRACT", antonym: "REPEL", options: ["DRAW", "LURE", "REPEL"] },
+            { word: "BENEFIT", antonym: "HARM", options: ["ADVANTAGE", "GAIN", "HARM"] },
+            { word: "BLUNT", antonym: "SHARP", options: ["DULL", "ROUNDED", "SHARP"] },
+            { word: "CAREFUL", antonym: "CARELESS", options: ["CAUTIOUS", "THOUGHTFUL", "CARELESS"] },
+            { word: "CHEAP", antonym: "EXPENSIVE", options: ["INEXPENSIVE", "AFFORDABLE", "EXPENSIVE"] },
+            { word: "CLEAN", antonym: "DIRTY", options: ["SPOTLESS", "TIDY", "DIRTY"] },
+            { word: "COMPLICATED", antonym: "SIMPLE", options: ["COMPLEX", "INTRICATE", "SIMPLE"] },
+            { word: "COURAGE", antonym: "COWARDICE", options: ["BRAVERY", "VALOR", "COWARDICE"] },
+            { word: "CREATE", antonym: "DESTROY", options: ["BUILD", "INVENT", "DESTROY"] },
+            { word: "DARK", antonym: "LIGHT", options: ["GLOOMY", "SHADY", "LIGHT"] },
+            { word: "DEFEAT", antonym: "VICTORY", options: ["LOSS", "FAILURE", "VICTORY"] },
+            { word: "DEMAND", antonym: "SUPPLY", options: ["REQUIRE", "ASK", "SUPPLY"] },
+            { word: "DEPARTURE", antonym: "ARRIVAL", options: ["LEAVING", "EXIT", "ARRIVAL"] },
+            { word: "DIFFERENT", antonym: "SIMILAR", options: ["VARIOUS", "DIVERSE", "SIMILAR"] },
+            { word: "DISAPPEAR", antonym: "APPEAR", options: ["VANISH", "FADE", "APPEAR"] },
+            { word: "DIVIDE", antonym: "UNITE", options: ["SEPARATE", "SPLIT", "UNITE"] },
+            { word: "EARLY", antonym: "LATE", options: ["SOON", "PROMPT", "LATE"] },
+            { word: "EASY", antonym: "DIFFICULT", options: ["SIMPLE", "EFFORTLESS", "DIFFICULT"] },
+            { word: "ENCOURAGE", antonym: "DISCOURAGE", options: ["SUPPORT", "INSPIRE", "DISCOURAGE"] },
+            { word: "ENTER", antonym: "EXIT", options: ["COME IN", "GO IN", "EXIT"] },
+            { word: "EQUAL", antonym: "UNEQUAL", options: ["SAME", "IDENTICAL", "UNEQUAL"] },
+            { word: "EXCLUDE", antonym: "INCLUDE", options: ["OMIT", "LEAVE OUT", "INCLUDE"] },
+            { word: "EXIT", antonym: "ENTER", options: ["LEAVE", "DEPART", "ENTER"] },
+            { word: "EXPENSIVE", antonym: "CHEAP", options: ["COSTLY", "PRICEY", "CHEAP"] },
+            { word: "EXTERNAL", antonym: "INTERNAL", options: ["OUTSIDE", "OUTWARD", "INTERNAL"] },
+            { word: "FAIL", antonym: "SUCCEED", options: ["FLOP", "BUNGLE", "SUCCEED"] },
+            { word: "FALSE", antonym: "TRUE", options: ["INCORRECT", "UNTRUE", "TRUE"] },
+            { word: "FEAR", antonym: "COURAGE", options: ["DREAD", "TERROR", "COURAGE"] },
+            { word: "FEW", antonym: "MANY", options: ["SEVERAL", "SCARCE", "MANY"] },
+            { word: "FLOAT", antonym: "SINK", options: ["DRIFT", "HOVER", "SINK"] },
+            { word: "FOOLISH", antonym: "WISE", options: ["SILLY", "STUPID", "WISE"] },
+            { word: "FORWARD", antonym: "BACKWARD", options: ["AHEAD", "ONWARD", "BACKWARD"] },
+            { word: "FRESH", antonym: "STALE", options: ["NEW", "CRISP", "STALE"] },
+            { word: "FUTURE", antonym: "PAST", options: ["TOMORROW", "COMING", "PAST"] },
+            { word: "GIVE", antonym: "RECEIVE", options: ["DONATE", "GRANT", "RECEIVE"] },
+            { word: "GROW", antonym: "SHRINK", options: ["DEVELOP", "EXPAND", "SHRINK"] },
+            { word: "GUEST", antonym: "HOST", options: ["VISITOR", "CALLER", "HOST"] },
+            { word: "GUILTY", antonym: "INNOCENT", options: ["CULPRIT", "BLAMEABLE", "INNOCENT"] },
+            { word: "HEALTHY", antonym: "SICK", options: ["WELL", "FIT", "SICK"] },
+            { word: "HEAVY", antonym: "LIGHT", options: ["WEIGHTY", "BURDENSOME", "LIGHT"] },
+            { word: "HIGH", antonym: "LOW", options: ["TALL", "ELEVATED", "LOW"] },
+            { word: "HOPE", antonym: "DESPAIR", options: ["OPTIMISM", "WISH", "DESPAIR"] },
+            { word: "HUMBLE", antonym: "PROUD", options: ["MODEST", "MEEK", "PROUD"] },
+            { word: "IMPORT", antonym: "EXPORT", options: ["BRING IN", "INTRODUCE", "EXPORT"] },
+            { word: "INCREASE", antonym: "DECREASE", options: ["GROW", "EXPAND", "DECREASE"] },
+            { word: "INNER", antonym: "OUTER", options: ["INSIDE", "INTERNAL", "OUTER"] },
+            { word: "INNOCENT", antonym: "GUILTY", options: ["BLAMELESS", "PURE", "GUILTY"] },
+            { word: "KIND", antonym: "CRUEL", options: ["GENTLE", "COMPASSIONATE", "CRUEL"] },
+            { word: "KNOWLEDGE", antonym: "IGNORANCE", options: ["WISDOM", "LEARNING", "IGNORANCE"] },
+            { word: "LAND", antonym: "SEA", options: ["EARTH", "GROUND", "SEA"] },
+            { word: "LARGE", antonym: "SMALL", options: ["HUGE", "BIG", "SMALL"] },
+            { word: "LAUGH", antonym: "CRY", options: ["GIGGLE", "CHUCKLE", "CRY"] },
+            { word: "LEGAL", antonym: "ILLEGAL", options: ["LAWFUL", "PERMITTED", "ILLEGAL"] },
+            { word: "LONG", antonym: "SHORT", options: ["EXTENDED", "LENGTHY", "SHORT"] },
+            { word: "LOUD", antonym: "QUIET", options: ["NOISY", "BOOMING", "QUIET"] },
+            { word: "LOVE", antonym: "HATE", options: ["AFFECTION", "ADORATION", "HATE"] },
+            { word: "MAJOR", antonym: "PRIMARY", options: ["PRIMARY", "MAIN", "MINOR"] },
+            { word: "MAXIMUM", antonym: "MINIMUM", options: ["MOST", "HIGHEST", "MINIMUM"] },
+            { word: "MELT", antonym: "FREEZE", options: ["LIQUEFY", "THAW", "FREEZE"] },
+            { word: "MERRY", antonym: "GLOOMY", options: ["JOLLY", "CHEERFUL", "GLOOMY"] },
+            { word: "NARROW", antonym: "WIDE", options: ["THIN", "RESTRICTED", "WIDE"] },
+            { word: "NEAR", antonym: "FAR", options: ["CLOSE", "ADJACENT", "FAR"] },
+            { word: "NEAT", antonym: "MESSY", options: ["TIDY", "ORDERLY", "MESSY"] },
+            { word: "NEGATIVE", antonym: "POSITIVE", options: ["BAD", "PESSIMISTIC", "POSITIVE"] },
+            { word: "NEW", antonym: "OLD", options: ["FRESH", "MODERN", "OLD"] },
+            { word: "NOISY", antonym: "QUIET", options: ["LOUD", "ROWDY", "QUIET"] },
+            { word: "NORTH", antonym: "SOUTH", options: ["UP", "POLE", "SOUTH"] },
+            { word: "OBEY", antonym: "DISOBEY", options: ["FOLLOW", "COMPLY", "DISOBEY"] },
+            { word: "OFF", antonym: "ON", options: ["CLOSED", "DISABLED", "ON"] },
+            { word: "OLD", antonym: "YOUNG", options: ["ANCIENT", "AGED", "YOUNG"] },
+            { word: "OPTIMIST", antonym: "PESSIMIST", options: ["HOPEFUL", "POSITIVE", "PESSIMIST"] },
+            { word: "OUTSIDE", antonym: "INSIDE", options: ["EXTERNAL", "OUTDOOR", "INSIDE"] },
+            { word: "PERMANENT", antonym: "TEMPORARY", options: ["LASTING", "FIXED", "TEMPORARY"] },
+            { word: "PLENTY", antonym: "SCARCITY", options: ["ABUNDANCE", "SUFFICIENCY", "SCARCITY"] },
+            { word: "POLITE", antonym: "RUDE", options: ["COURTEOUS", "RESPECTFUL", "RUDE"] },
+            { word: "POOR", antonym: "RICH", options: ["IMPOVERISHED", "NEEDY", "RICH"] },
+            { word: "PRESENT", antonym: "ABSENT", options: ["HERE", "ATTENDING", "ABSENT"] },
+            { word: "PRIVATE", antonym: "PUBLIC", options: ["SECRET", "PERSONAL", "PUBLIC"] },
+            { word: "PUNISH", antonym: "REWARD", options: ["CHASTISE", "PENALIZE", "REWARD"] },
+            { word: "PUSH", antonym: "PULL", options: ["SHOVEL", "SHOVE", "PULL"] },
+            { word: "QUIET", antonym: "LOUD", options: ["SILENT", "PEACEFUL", "LOUD"] },
+            { word: "RAPID", antonym: "SLOW", options: ["FAST", "QUICK", "SLOW"] },
+            { word: "RARE", antonym: "COMMON", options: ["UNCOMMON", "SCARCE", "COMMON"] },
+            { word: "REAL", antonym: "FAKE", options: ["GENUINE", "AUTHENTIC", "FAKE"] },
+            { word: "REMEMBER", antonym: "FORGET", options: ["RECALL", "RECOLLECT", "FORGET"] },
+            { word: "REPAIR", antonym: "DAMAGE", options: ["FIX", "MEND", "DAMAGE"] },
+            { word: "REVEAL", antonym: "CONCEAL", options: ["DISCLOSE", "UNCOVER", "CONCEAL"] },
+            { word: "ROUGH", antonym: "SMOOTH", options: ["BUMPY", "COARSE", "SMOOTH"] },
+            { word: "RUDE", antonym: "POLITE", options: ["IMPOLITE", "CRUDE", "POLITE"] },
+            { word: "SAFE", antonym: "DANGEROUS", options: ["SECURE", "PROTECTED", "DANGEROUS"] },
+            { word: "SHALLOW", antonym: "DEEP", options: ["SUPERFICIAL", "FLAT", "DEEP"] },
+            { word: "SHARP", antonym: "BLUNT", options: ["KEEN", "POINTED", "BLUNT"] },
+            { word: "SHORT", antonym: "LONG", options: ["BRIEF", "SMALL", "LONG"] },
+            { word: "SHUT", antonym: "OPEN", options: ["CLOSE", "SEAL", "OPEN"] },
+            { word: "SIMPLE", antonym: "COMPLICATED", options: ["EASY", "PLAIN", "COMPLICATED"] },
+            { word: "SOFT", antonym: "HARD", options: ["GENTLE", "PLIANT", "HARD"] },
+            { word: "SOUTH", antonym: "NORTH", options: ["DOWN", "EQUATOR", "NORTH"] },
+            { word: "START", antonym: "FINISH", options: ["BEGIN", "COMMENCE", "FINISH"] },
+            { word: "STRONG", antonym: "WEAK", options: ["POWERFUL", "ROBUST", "WEAK"] },
+            { word: "SUCCESS", antonym: "FAILURE", options: ["TRIUMPH", "ACHIEVEMENT", "FAILURE"] },
+            { word: "SWEET", antonym: "SOUR", options: ["SUGARY", "DELICIOUS", "SOUR"] },
+            { word: "TAME", antonym: "WILD", options: ["DOMESTICATED", "GENTLE", "WILD"] },
+            { word: "THICK", antonym: "THIN", options: ["DENSE", "BROAD", "THIN"] },
+            { word: "TIDY", antonym: "MESSY", options: ["NEAT", "ORDERLY", "MESSY"] },
+            { word: "TOP", antonym: "BOTTOM", options: ["PEAK", "SUMMIT", "BOTTOM"] },
+            { word: "UGLY", antonym: "BEAUTIFUL", options: ["UNATTRACTIVE", "HIDEOUS", "BEAUTIFUL"] },
+            { word: "UP", antonym: "DOWN", options: ["ABOVE", "UPWARD", "DOWN"] },
+            { word: "USEFUL", antonym: "USELESS", options: ["HELPFUL", "PRACTICAL", "USELESS"] },
+            { word: "VICTORY", antonym: "DEFEAT", options: ["TRIUMPH", "WIN", "DEFEAT"] },
+            { word: "WAR", antonym: "PEACE", options: ["CONFLICT", "BATTLE", "PEACE"] },
+            { word: "WET", antonym: "DRY", options: ["DAMP", "MOIST", "DRY"] },
+            { word: "WHITE", antonym: "BLACK", options: ["PALE", "LIGHT", "BLACK"] },
+            { word: "WHOLE", antonym: "PARTIAL", options: ["ENTIRE", "COMPLETE", "PARTIAL"] },
+            { word: "WIDE", antonym: "NARROW", options: ["BROAD", "EXTENSIVE", "NARROW"] },
+            { word: "WIN", antonym: "LOSE", options: ["SUCCEED", "TRIUMPH", "LOSE"] },
+            { word: "WINTER", antonym: "SUMMER", options: ["COLD", "SNOW", "SUMMER"] },
+            { word: "WITHIN", antonym: "WITHOUT", options: ["INSIDE", "INTERNAL", "WITHOUT"] },
+            { word: "YES", antonym: "NO", options: ["AFFIRMATIVE", "AGREE", "NO"] },
+            { word: "YIELD", antonym: "RESIST", options: ["SURRENDER", "GIVE IN", "RESIST"] }
+        ];
+
+        const synonymList = [
+            { word: "BEGIN", synonym: "START", options: ["END", "FINISH", "START"] },
+            { word: "FAST", synonym: "QUICK", options: ["SLOW", "RAPID", "QUICK"] },
+            { word: "JOY", synonym: "HAPPINESS", options: ["SADNESS", "MISERY", "HAPPINESS"] },
+            { word: "LARGE", synonym: "BIG", options: ["SMALL", "TINY", "BIG"] },
+            { word: "SHOUT", synonym: "YELL", options: ["WHISPER", "MURMUR", "YELL"] },
+            { word: "CLEAN", synonym: "TIDY", options: ["DIRTY", "MESSY", "TIDY"] },
+            { word: "FINISH", synonym: "COMPLETE", options: ["START", "BEGIN", "COMPLETE"] },
+            { word: "HELP", synonym: "ASSIST", options: ["HINDER", "OBSTRUCT", "ASSIST"] },
+            { word: "OLD", synonym: "ANCIENT", options: ["NEW", "MODERN", "ANCIENT"] },
+            { word: "QUIET", synonym: "SILENT", options: ["LOUD", "NOISY", "SILENT"] },
+            { word: "ANGRY", synonym: "FURIOUS", options: ["CALM", "HAPPY", "FURIOUS"] },
+            { word: "BRAVE", synonym: "COURAGEOUS", options: ["COWARDLY", "FEARFUL", "COURAGEOUS"] },
+            { word: "BUY", synonym: "PURCHASE", options: ["SELL", "GIVE", "PURCHASE"] },
+            { word: "DIFFICULT", synonym: "HARD", options: ["EASY", "SIMPLE", "HARD"] },
+            { word: "ENJOY", synonym: "DELIGHT", options: ["DISLIKE", "HATE", "DELIGHT"] },
+            { word: "EVIL", synonym: "WICKED", options: ["GOOD", "KIND", "WICKED"] },
+            { word: "FAMOUS", synonym: "WELL-KNOWN", options: ["UNKNOWN", "OBSCURE", "WELL-KNOWN"] },
+            { word: "GATHER", synonym: "COLLECT", options: ["SCATTER", "DISPERSE", "COLLECT"] },
+            { word: "GENUINE", synonym: "AUTHENTIC", options: ["FAKE", "FALSE", "AUTHENTIC"] },
+            { word: "HIDE", synonym: "CONCEAL", options: ["REVEAL", "SHOW", "CONCEAL"] },
+            { word: "IMPORTANT", synonym: "CRUCIAL", options: ["TRIVIAL", "MINOR", "CRUCIAL"] },
+            { word: "JOB", synonym: "OCCUPATION", options: ["HOBBY", "PASTIME", "OCCUPATION"] },
+            { word: "KILL", synonym: "MURDER", options: ["SAVE", "RESURRECT", "MURDER"] },
+            { word: "LAZY", synonym: "IDLE", options: ["ACTIVE", "BUSY", "IDLE"] },
+            { word: "LISTEN", synonym: "HEAR", options: ["IGNORE", "OVERLOOK", "HEAR"] },
+            { word: "MAJOR", synonym: "PRINCIPAL", options: ["MINOR", "SECONDARY", "PRINCIPAL"] },
+            { word: "NICE", synonym: "PLEASANT", options: ["UNPLEASANT", "NASTY", "PLEASANT"] },
+            { word: "OBEY", synonym: "COMPLY", options: ["DISOBEY", "REBEL", "COMPLY"] },
+            { word: "ODD", synonym: "STRANGE", options: ["NORMAL", "COMMON", "STRANGE"] },
+            { word: "PEACE", synonym: "CALM", options: ["WAR", "CONFLICT", "CALM"] },
+            { word: "POLITE", synonym: "COURTEOUS", options: ["RUDE", "IMPOLITE", "COURTEOUS"] },
+            { word: "QUICKLY", synonym: "RAPIDLY", options: ["SLOWLY", "LEISURELY", "RAPIDLY"] },
+            { word: "REMEMBER", synonym: "RECALL", options: ["FORGET", "DISMISS", "RECALL"] },
+            { word: "RICH", synonym: "WEALTHY", options: ["POOR", "IMPOVERISHED", "WEALTHY"] },
+            { word: "SAD", synonym: "UNHAPPY", options: ["HAPPY", "JOYFUL", "UNHAPPY"] },
+            { word: "SMART", synonym: "INTELLIGENT", options: ["STUPID", "DULL", "INTELLIGENT"] },
+            { word: "STRONG", synonym: "POWERFUL", options: ["WEAK", "FRAIL", "POWERFUL"] },
+            { word: "THINK", synonym: "PONDER", options: ["FORGET", "NEGLECT", "PONDER"] },
+            { word: "TRUE", synonym: "CORRECT", options: ["FALSE", "WRONG", "CORRECT"] },
+            { word: "UGLY", synonym: "UNATTRACTIVE", options: ["BEAUTIFUL", "PRETTY", "UNATTRACTIVE"] },
+            { word: "VACANT", synonym: "EMPTY", options: ["FULL", "OCCUPIED", "EMPTY"] },
+            { word: "VICTORY", synonym: "TRIUMPH", options: ["DEFEAT", "LOSS", "TRIUMPH"] },
+            { word: "WEAK", synonym: "FRAIL", options: ["STRONG", "ROBUST", "FRAIL"] },
+            { word: "WHOLE", synonym: "ENTIRE", options: ["PARTIAL", "INCOMPLETE", "ENTIRE"] },
+            { word: "WISE", synonym: "SAGACIOUS", options: ["FOOLISH", "IGNORANT", "SAGACIOUS"] },
+            { word: "YELL", synonym: "SHOUT", options: ["WHISPER", "MURMUR", "SHOUT"] },
+            { word: "ZEALOUS", synonym: "ENTHUSIASTIC", options: ["APATHETIC", "INDIFFERENT", "ENTHUSIASTIC"] },
+            { word: "FORTUNE", synonym: "LUCK", options: ["LUCK", "FATE", "UNLUCKY"] },
+            // Additional Synonyms
+            { word: "ABANDON", synonym: "DESERT", options: ["KEEP", "HOLD", "DESERT"] },
+            { word: "ACCURATE", synonym: "CORRECT", options: ["WRONG", "FALSE", "CORRECT"] },
+            { word: "ACHIEVE", synonym: "ACCOMPLISH", options: ["FAIL", "LOSE", "ACCOMPLISH"] },
+            { word: "ADAPT", synonym: "ADJUST", options: ["RESIST", "REFUSE", "ADJUST"] },
+            { word: "ADEQUATE", synonym: "SUFFICIENT", options: ["INSUFFICIENT", "LACKING", "SUFFICIENT"] },
+            { word: "ADMIRE", synonym: "RESPECT", options: ["DESPISE", "HATE", "RESPECT"] },
+            { word: "ADULT", synonym: "GROWN-UP", options: ["CHILD", "INFANT", "GROWN-UP"] },
+            { word: "ADVANTAGE", synonym: "BENEFIT", options: ["DISADVANTAGE", "HINDRANCE", "BENEFIT"] },
+            { word: "ADVENTURE", synonym: "JOURNEY", options: ["ROUTINE", "STILLNESS", "JOURNEY"] },
+            { word: "AFFORD", synonym: "MANAGE", options: ["FAIL", "LACK", "MANAGE"] },
+            { word: "AGGRESSIVE", synonym: "ASSERTIVE", options: ["PASSIVE", "SHY", "ASSERTIVE"] },
+            { word: "AID", synonym: "HELP", options: ["HINDER", "OBSTRUCT", "HELP"] },
+            { word: "ALERT", synonym: "VIGILANT", options: ["SLEEPY", "UNCONSCIOUS", "VIGILANT"] },
+            { word: "ALLOW", synonym: "PERMIT", options: ["FORBID", "PROHIBIT", "PERMIT"] },
+            { word: "AMAZING", synonym: "ASTONISHING", options: ["BORING", "ORDINARY", "ASTONISHING"] },
+            { word: "ANCIENT", synonym: "OLD", options: ["NEW", "MODERN", "OLD"] },
+            { word: "ANSWER", synonym: "REPLY", options: ["QUESTION", "ASK", "REPLY"] },
+            { word: "APART", synonym: "SEPARATE", options: ["TOGETHER", "JOINED", "SEPARATE"] },
+            { word: "APOLOGIZE", synonym: "REGRET", options: ["INSULT", "OFFEND", "REGRET"] },
+            { word: "APPARENT", synonym: "OBVIOUS", options: ["HIDDEN", "UNCLEAR", "OBVIOUS"] },
+            { word: "APPEAR", synonym: "SEEM", options: ["VANISH", "DISAPPEAR", "SEEM"] },
+            { word: "APPROACH", synonym: "COME NEAR", options: ["DEPART", "LEAVE", "COME NEAR"] },
+            { word: "APPROPRIATE", synonym: "SUITABLE", options: ["INAPPROPRIATE", "UNSUITABLE", "SUITABLE"] },
+            { word: "ARID", synonym: "DRY", options: ["WET", "MOIST", "DRY"] },
+            { word: "ARRANGE", synonym: "ORGANIZE", options: ["DISORDER", "MESS", "ORGANIZE"] },
+            { word: "ARTIFICIAL", synonym: "SYNTHETIC", options: ["NATURAL", "REAL", "SYNTHETIC"] },
+            { word: "ASK", synonym: "INQUIRE", options: ["ANSWER", "REPLY", "INQUIRE"] },
+            { word: "ASSIST", synonym: "HELP", options: ["HINDER", "OBSTRUCT", "HELP"] },
+            { word: "ATTEMPT", synonym: "TRY", options: ["GIVE UP", "QUIT", "TRY"] },
+            { word: "ATTRACTIVE", synonym: "APPEALING", options: ["UGLY", "REPULSIVE", "APPEALING"] },
+            { word: "AWFUL", synonym: "TERRIBLE", options: ["GREAT", "WONDERFUL", "TERRIBLE"] },
+            { word: "BAD", synonym: "EVIL", options: ["GOOD", "MORAL", "EVIL"] },
+            { word: "BEAUTIFUL", synonym: "LOVELY", options: ["UGLY", "HIDEOUS", "LOVELY"] },
+            { word: "BELOW", synonym: "UNDER", options: ["ABOVE", "OVER", "UNDER"] },
+            { word: "BENEFIT", synonym: "ADVANTAGE", options: ["HARM", "LOSS", "ADVANTAGE"] },
+            { word: "BLAME", synonym: "ACCUSE", options: ["PRAISE", "FORGIVE", "ACCUSE"] },
+            { word: "BLANK", synonym: "EMPTY", options: ["FULL", "FILLED", "EMPTY"] },
+            { word: "BORE", synonym: "TIRE", options: ["EXCITE", "AMUSE", "TIRE"] },
+            { word: "BRIEF", synonym: "SHORT", options: ["LONG", "EXTENDED", "SHORT"] },
+            { word: "BRIGHT", synonym: "SHINY", options: ["DARK", "DIM", "SHINY"] },
+            { word: "CALM", synonym: "PEACEFUL", options: ["AGITATED", "CHAOTIC", "PEACEFUL"] },
+            { word: "CAPABLE", synonym: "ABLE", options: ["INCAPABLE", "UNABLE", "ABLE"] },
+            { word: "CAREFUL", synonym: "CAUTIOUS", options: ["CARELESS", "RECKLESS", "CAUTIOUS"] },
+            { word: "CEASE", synonym: "STOP", options: ["START", "BEGIN", "STOP"] },
+            { word: "CHANCE", synonym: "OPPORTUNITY", options: ["MISFORTUNE", "BAD LUCK", "OPPORTUNITY"] },
+            { word: "CHARMING", synonym: "DELIGHTFUL", options: ["UNPLEASANT", "OFFENSIVE", "DELIGHTFUL"] },
+            { word: "CHOOSE", synonym: "SELECT", options: ["REJECT", "DISCARD", "SELECT"] },
+            { word: "CLARIFY", synonym: "EXPLAIN", options: ["CONFUSE", "OBSCURE", "EXPLAIN"] },
+            { word: "CLOSE", synonym: "SHUT", options: ["OPEN", "UNSEAL", "SHUT"] },
+            { word: "COLD", synonym: "CHILLY", options: ["HOT", "WARM", "CHILLY"] },
+            { word: "COMFORT", synonym: "EASE", options: ["DISCOMFORT", "PAIN", "EASE"] },
+            { word: "COMMON", synonym: "ORDINARY", options: ["UNCOMMON", "RARE", "ORDINARY"] },
+            { word: "COMPARE", synonym: "CONTRAST", options: ["DIFFER", "OPPOSE", "CONTRAST"] },
+            { word: "CONCEAL", synonym: "HIDE", options: ["REVEAL", "SHOW", "HIDE"] },
+            { word: "CONFIDENT", synonym: "ASSURED", options: ["DOUBTFUL", "INSECURE", "ASSURED"] },
+            { word: "CONNECT", synonym: "JOIN", options: ["SEPARATE", "DISCONNECT", "JOIN"] },
+            { word: "CONSIDER", synonym: "THINK", options: ["DISMISS", "IGNORE", "THINK"] },
+            { word: "CONSTANT", synonym: "CONTINUOUS", options: ["INTERMITTENT", "STOPPING", "CONTINUOUS"] },
+            { word: "CONSTRUCT", synonym: "BUILD", options: ["DESTROY", "DEMOLISH", "BUILD"] },
+            { word: "CONTENT", synonym: "HAPPY", options: ["UNHAPPY", "DISSATISFIED", "HAPPY"] },
+            { word: "CONTINUE", synonym: "PROCEED", options: ["STOP", "CEASE", "PROCEED"] },
+            { word: "CONTRARY", synonym: "OPPOSITE", options: ["SIMILAR", "SAME", "OPPOSITE"] },
+            { word: "CONVINCE", synonym: "PERSUADE", options: ["DISSUADE", "DISCOURAGE", "PERSUADE"] },
+            { word: "COOL", synonym: "CHILLY", options: ["WARM", "HOT", "CHILLY"] },
+            { word: "CORRECT", synonym: "ACCURATE", options: ["WRONG", "FALSE", "ACCURATE"] },
+            { word: "COURAGEOUS", synonym: "BRAVE", options: ["COWARDLY", "FEARFUL", "BRAVE"] },
+            { word: "CRITICAL", synonym: "CRUCIAL", options: ["UNIMPORTANT", "TRIVIAL", "CRUCIAL"] },
+            { word: "CRUEL", synonym: "BRUTAL", options: ["KIND", "GENTLE", "BRUTAL"] },
+            { word: "CURIOUS", synonym: "INQUISITIVE", options: ["INDIFFERENT", "UNINTERESTED", "INQUISITIVE"] },
+            { word: "DANGER", synonym: "PERIL", options: ["SAFETY", "SECURITY", "PERIL"] },
+            { word: "DARE", synonym: "CHALLENGE", options: ["AVOID", "SHY AWAY", "CHALLENGE"] },
+            { word: "DARK", synonym: "DIM", options: ["BRIGHT", "LIGHT", "DIM"] },
+            { word: "DEAR", synonym: "BELOVED", options: ["HATED", "DESPISED", "BELOVED"] },
+            { word: "DECEIVE", synonym: "MISLEAD", options: ["GUIDE", "INFORM", "MISLEAD"] },
+            { word: "DECIDE", synonym: "DETERMINE", options: ["HESITATE", "VACILLATE", "DETERMINE"] },
+            { word: "DECREASE", synonym: "REDUCE", options: ["INCREASE", "GROW", "REDUCE"] },
+            { word: "DEEP", synonym: "PROFUND", options: ["SHALLOW", "SUPERFICIAL", "PROFUND"] },
+            { word: "DEFEND", synonym: "PROTECT", options: ["ATTACK", "HARM", "PROTECT"] },
+            { word: "DELICIOUS", synonym: "TASTY", options: ["UNPALATABLE", "DISGUSTING", "TASTY"] },
+            { word: "DENY", synonym: "REFUSE", options: ["ADMIT", "ACCEPT", "REFUSE"] },
+            { word: "DEPART", synonym: "LEAVE", options: ["ARRIVE", "COME", "LEAVE"] },
+            { word: "DEPENDABLE", synonym: "RELIABLE", options: ["UNRELIABLE", "UNTRUSTWORTHY", "RELIABLE"] },
+            { word: "DESTROY", synonym: "DEMOLISH", options: ["BUILD", "CREATE", "DEMOLISH"] },
+            { word: "DETERMINE", synonym: "DECIDE", options: ["HESITATE", "WAVER", "DECIDE"] },
+            { word: "DEVELOP", synonym: "GROW", options: ["SHRINK", "DECLINE", "GROW"] },
+            { word: "DIFFERENT", synonym: "DISTINCT", options: ["SIMILAR", "SAME", "DISTINCT"] },
+            { word: "DIM", synonym: "FAINT", options: ["BRIGHT", "CLEAR", "FAINT"] },
+            { word: "DISCLOSE", synonym: "REVEAL", options: ["CONCEAL", "HIDE", "REVEAL"] },
+            { word: "DISCOVER", synonym: "FIND", options: ["LOSE", "MISS", "FIND"] },
+            { word: "DISLIKE", synonym: "HATE", options: ["LIKE", "LOVE", "HATE"] },
+            { word: "DIVIDE", synonym: "SEPARATE", options: ["JOIN", "UNITE", "SEPARATE"] },
+            { word: "DOMESTIC", synonym: "HOUSEHOLD", options: ["FOREIGN", "WILD", "HOUSEHOLD"] },
+            { word: "DOUBT", synonym: "UNCERTAINTY", options: ["CERTAINTY", "BELIEF", "UNCERTAINTY"] },
+            { word: "DRAMATIC", synonym: "STRIKING", options: ["ORDINARY", "DULL", "STRIKING"] },
+            { word: "DREAM", synonym: "FANTASY", options: ["REALITY", "FACT", "FANTASY"] },
+            { word: "DULL", synonym: "BORING", options: ["EXCITING", "INTERESTING", "BORING"] },
+            { word: "EAGER", synonym: "KEEN", options: ["RELUCTANT", "UNWILLING", "KEEN"] },
+            { word: "EFFECTIVE", synonym: "EFFICIENT", options: ["INEFFECTIVE", "USELESS", "EFFICIENT"] },
+            { word: "ELEGANT", synonym: "GRACEFUL", options: ["AWKWARD", "CLUMSY", "GRACEFUL"] },
+            { word: "EMPHASIZE", synonym: "HIGHLIGHT", options: ["UNDERSTATE", "DOWNPLAY", "HIGHLIGHT"] },
+            { word: "ENCOUNTER", synonym: "MEET", options: ["AVOID", "MISS", "MEET"] },
+            { word: "END", synonym: "TERMINATE", options: ["START", "BEGIN", "TERMINATE"] },
+            { word: "ENORMOUS", synonym: "HUGE", options: ["TINY", "SMALL", "HUGE"] },
+            { word: "ENTIRE", synonym: "WHOLE", options: ["PARTIAL", "INCOMPLETE", "WHOLE"] },
+            { word: "ENTHUSIASTIC", synonym: "EAGER", options: ["APATHETIC", "INDIFFERENT", "EAGER"] },
+            { word: "ERASE", synonym: "DELETE", options: ["ADD", "CREATE", "DELETE"] },
+            { word: "ESSENTIAL", synonym: "NECESSARY", options: ["UNNECESSARY", "OPTIONAL", "NECESSARY"] },
+            { word: "ESTABLISH", synonym: "CREATE", options: ["DESTROY", "ABOLISH", "CREATE"] },
+            { word: "EVALUATE", synonym: "ASSESS", options: ["IGNORE", "NEGLECT", "ASSESS"] },
+            { word: "EVIDENT", synonym: "OBVIOUS", options: ["HIDDEN", "UNCLEAR", "OBVIOUS"] },
+            { word: "EXACT", synonym: "PRECISE", options: ["INEXACT", "APPROXIMATE", "PRECISE"] },
+            { word: "EXAMINE", synonym: "INSPECT", options: ["OVERLOOK", "IGNORE", "INSPECT"] },
+            { word: "EXCELLENT", synonym: "SUPERB", options: ["POOR", "TERRIBLE", "SUPERB"] },
+            { word: "EXCITE", synonym: "THRILL", options: ["BORE", "CALM", "THRILL"] },
+            { word: "EXHAUSTED", synonym: "TIRED", options: ["ENERGETIC", "RESTED", "TIRED"] },
+            { word: "EXPLAIN", synonym: "CLARIFY", options: ["CONFUSE", "OBSCURE", "CLARIFY"] },
+            { word: "EXPLORE", synonym: "INVESTIGATE", options: ["IGNORE", "NEGLECT", "INVESTIGATE"] },
+            { word: "EXTEND", synonym: "PROLONG", options: ["SHORTEN", "REDUCE", "PROLONG"] },
+            { word: "EXTRA", synonym: "ADDITIONAL", options: ["LACKING", "MISSING", "ADDITIONAL"] },
+            { word: "FABULOUS", synonym: "WONDERFUL", options: ["AWFUL", "TERRIBLE", "WONDERFUL"] },
+            { word: "FACE", synonym: "CONFRONT", options: ["AVOID", "EVADE", "CONFRONT"] },
+            { word: "FAIR", synonym: "JUST", options: ["UNFAIR", "BIASED", "JUST"] },
+            { word: "FAITHFUL", synonym: "LOYAL", options: ["DISLOYAL", "TREACHEROUS", "LOYAL"] },
+            { word: "FAMILIAR", synonym: "KNOWN", options: ["UNKNOWN", "STRANGE", "KNOWN"] },
+            { word: "FASCINATING", synonym: "CAPTIVATING", options: ["BORING", "DULL", "CAPTIVATING"] },
+            { word: "FATIGUE", synonym: "TIREDNESS", options: ["ENERGY", "VIGOR", "TIREDNESS"] },
+            { word: "FAVORITE", synonym: "PREFERRED", options: ["DISLIKED", "HATED", "PREFERRED"] },
+            { word: "FEARFUL", synonym: "AFRAID", options: ["BRAVE", "COURAGEOUS", "AFRAID"] },
+            { word: "FEEBLE", synonym: "WEAK", options: ["STRONG", "ROBUST", "WEAK"] },
+            { word: "FIERCE", synonym: "FEROCIOUS", options: ["GENTLE", "MILD", "FEROCIOUS"] },
+            { word: "FINAL", synonym: "LAST", options: ["FIRST", "INITIAL", "LAST"] },
+            { word: "FIRM", synonym: "SOLID", options: ["SOFT", "LOOSE", "SOLID"] },
+            { word: "FIT", synonym: "SUITABLE", options: ["UNSUITABLE", "INAPPROPRIATE", "SUITABLE"] },
+            { word: "FLAWLESS", synonym: "PERFECT", options: ["IMPERFECT", "FAULTY", "PERFECT"] },
+            { word: "FLEXIBLE", synonym: "PLIABLE", options: ["RIGID", "STIFF", "PLIABLE"] },
+            { word: "FLOURISH", synonym: "THRIVE", options: ["WITHER", "DECLINE", "THRIVE"] },
+            { word: "FLOW", synonym: "STREAM", options: ["STOP", "STAGNATE", "STREAM"] },
+            { word: "FOLLOW", synonym: "PURSUIT", options: ["LEAD", "GUIDE", "PURSUIT"] },
+            { word: "FORBID", synonym: "PROHIBIT", options: ["ALLOW", "PERMIT", "PROHIBIT"] },
+            { word: "FORCE", synonym: "COMPEL", options: ["PERSUADE", "CONVINCE", "COMPEL"] },
+            { word: "FOREVER", synonym: "ETERNALLY", options: ["TEMPORARILY", "BRIEFLY", "ETERNALLY"] },
+            { word: "FORMER", synonym: "PREVIOUS", options: ["LATTER", "NEXT", "PREVIOUS"] },
+            { word: "FRAGILE", synonym: "DELICATE", options: ["STRONG", "DURABLE", "DELICATE"] },
+            { word: "FREEDOM", synonym: "LIBERTY", options: ["SLAVERY", "BONDAGE", "LIBERTY"] },
+            { word: "FREQUENT", synonym: "OFTEN", options: ["SELDOM", "RARELY", "OFTEN"] },
+            { word: "FRIENDLY", synonym: "AMIABLE", options: ["UNFRIENDLY", "HOSTILE", "AMIABLE"] },
+            { word: "FRIGHTEN", synonym: "SCARE", options: ["COMFORT", "ASSURE", "SCARE"] },
+            { word: "FUNCTION", synonym: "PURPOSE", options: ["MALFUNCTION", "FAILURE", "PURPOSE"] },
+            { word: "GENEROUS", synonym: "GIVING", options: ["STINGY", "SELFISH", "GIVING"] },
+            { word: "GENTLE", synonym: "MILD", options: ["HARSH", "ROUGH", "MILD"] },
+            { word: "GLAD", synonym: "HAPPY", options: ["SAD", "UNHAPPY", "HAPPY"] },
+            { word: "GLOOMY", synonym: "DARK", options: ["BRIGHT", "CHEERFUL", "DARK"] },
+            { word: "GRAB", synonym: "SEIZE", options: ["RELEASE", "LET GO", "SEIZE"] },
+            { word: "GRAND", synonym: "MAGNIFICENT", options: ["SMALL", "INSIGNIFICANT", "MAGNIFICENT"] },
+            { word: "GRATEFUL", synonym: "THANKFUL", options: ["UNGRATEFUL", "UNTHANKFUL", "THANKFUL"] },
+            { word: "GREAT", synonym: "EXCELLENT", options: ["BAD", "POOR", "EXCELLENT"] },
+            { word: "GREET", synonym: "WELCOME", options: ["BID FAREWELL", "IGNORE", "WELCOME"] },
+            { word: "GRUMPY", synonym: "CRABBY", options: ["CHEERFUL", "HAPPY", "CRABBY"] },
+            { word: "GUARD", synonym: "PROTECT", options: ["NEGLECT", "ABANDON", "PROTECT"] },
+            { word: "GUIDE", synonym: "LEAD", options: ["FOLLOW", "WANDER", "LEAD"] },
+            { word: "HABIT", synonym: "CUSTOM", options: ["EXCEPTION", "DEVIATION", "CUSTOM"] },
+            { word: "HANDY", synonym: "USEFUL", options: ["USELESS", "AWKWARD", "USEFUL"] },
+            { word: "HARM", synonym: "INJURY", options: ["BENEFIT", "HELP", "INJURY"] },
+            { word: "HARMONY", synonym: "AGREEMENT", options: ["DISCORD", "CONFLICT", "AGREEMENT"] },
+            { word: "HASTY", synonym: "QUICK", options: ["SLOW", "DELIBERATE", "QUICK"] },
+            { word: "HAZARDOUS", synonym: "DANGEROUS", options: ["SAFE", "SECURE", "DANGEROUS"] },
+            { word: "HEALTHY", synonym: "FIT", options: ["SICK", "UNWELL", "FIT"] },
+            { word: "HEAVY", synonym: "WEIGHTY", options: ["LIGHT", "FEATHERY", "WEIGHTY"] },
+            { word: "HIDDEN", synonym: "CONCEALED", options: ["EXPOSED", "VISIBLE", "CONCEALED"] },
+            { word: "HIGH", synonym: "TALL", options: ["LOW", "SHORT", "TALL"] },
+            { word: "HONEST", synonym: "TRUTHFUL", options: ["DISHONEST", "DECEITFUL", "TRUTHFUL"] },
+            { word: "HOPEFUL", synonym: "OPTIMISTIC", options: ["HOPELESS", "PESSIMISTIC", "OPTIMISTIC"] },
+            { word: "HOSTILE", synonym: "UNFRIENDLY", options: ["FRIENDLY", "AMIABLE", "UNFRIENDLY"] },
+            { word: "HUMBLE", synonym: "MODEST", options: ["ARROGANT", "PROUD", "MODEST"] },
+            { word: "IDEAL", synonym: "PERFECT", options: ["IMPERFECT", "FLAWED", "PERFECT"] },
+            { word: "ILLEGAL", synonym: "UNLAWFUL", options: ["LEGAL", "LAWFUL", "UNLAWFUL"] },
+            { word: "IMAGINE", synonym: "CONCEIVE", options: ["REALITY", "FACT", "CONCEIVE"] },
+            { word: "IMMEDIATE", synonym: "INSTANT", options: ["DELAYED", "FUTURE", "INSTANT"] },
+            { word: "IMPACT", synonym: "EFFECT", options: ["CAUSE", "ORIGIN", "EFFECT"] },
+            { word: "IMPATIENT", synonym: "EAGER", options: ["PATIENT", "CALM", "EAGER"] },
+            { word: "IMPOLITE", synonym: "RUDE", options: ["POLITE", "COURTEOUS", "RUDE"] },
+            { word: "IMPROVE", synonym: "ENHANCE", options: ["WORSEN", "DEGRADE", "ENHANCE"] },
+            { word: "INCREASE", synonym: "GROW", options: ["DECREASE", "SHRINK", "GROW"] },
+            { word: "INDIVIDUAL", synonym: "SINGLE", options: ["GROUP", "COLLECTIVE", "SINGLE"] },
+            { word: "INFERIOR", synonym: "LOWER", options: ["SUPERIOR", "HIGHER", "LOWER"] },
+            { word: "INFORM", synonym: "NOTIFY", options: ["CONCEAL", "HIDE", "NOTIFY"] },
+            { word: "INITIAL", synonym: "FIRST", options: ["FINAL", "LAST", "FIRST"] },
+            { word: "INNOCENT", synonym: "BLAMELESS", options: ["GUILTY", "CULPRIT", "BLAMELESS"] },
+            { word: "INSIDE", synonym: "INTERNAL", options: ["OUTSIDE", "EXTERNAL", "INTERNAL"] },
+            { word: "INSPIRE", synonym: "MOTIVATE", options: ["DISCOURAGE", "DEMOTIVATE", "MOTIVATE"] },
+            { word: "INSTANT", synonym: "MOMENT", options: ["DURATION", "PERIOD", "MOMENT"] },
+            { word: "INSTRUCT", synonym: "TEACH", options: ["LEARN", "STUDY", "TEACH"] },
+            { word: "INTENSE", synonym: "STRONG", options: ["WEAK", "MILD", "STRONG"] },
+            { word: "INTERESTING", synonym: "ENGAGING", options: ["BORING", "DULL", "ENGAGING"] },
+            { word: "INTERNAL", synonym: "INNER", options: ["EXTERNAL", "OUTER", "INNER"] },
+            { word: "JOIN", synonym: "CONNECT", options: ["SEPARATE", "DIVIDE", "CONNECT"] },
+            { word: "JOLLY", synonym: "MERRY", options: ["SAD", "GLOOMY", "MERRY"] },
+            { word: "JUMP", synonym: "LEAP", options: ["SIT", "STAY", "LEAP"] },
+            { word: "JUST", synonym: "FAIR", options: ["UNFAIR", "BIASED", "FAIR"] },
+            { word: "KEEN", synonym: "EAGER", options: ["INDIFFERENT", "APATHETIC", "EAGER"] },
+            { word: "KEY", synonym: "CRUCIAL", options: ["MINOR", "TRIVIAL", "CRUCIAL"] },
+            { word: "KIND", synonym: "GENTLE", options: ["CRUEL", "HARSH", "GENTLE"] },
+            { word: "KNOWLEDGE", synonym: "UNDERSTANDING", options: ["IGNORANCE", "UNFAMILIARITY", "UNDERSTANDING"] }
+        ];
+
+        // --- DOM Elements ---
+        const gameContainer = document.getElementById('game-container'); // Added for container transitions
+        const gameTitle = document.getElementById('game-title');
+        const startScreen = document.getElementById('start-screen');
+        const modeSelectionScreen = document.getElementById('mode-selection-screen');
+        const modeInfoScreen = document.getElementById('mode-info-screen');
+        const offlineScreen = document.getElementById('offline-screen');
+        const optionsScreen = document.getElementById('options-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const quitConfirmationScreen = document.getElementById('quit-confirmation-screen');
+        const endScreen = document.getElementById('end-screen');
+
+        const playButton = document.getElementById('play-button');
+        const offlineButton = document.getElementById('offline-button');
+        const optionsButton = document.getElementById('options-button');
+        const modeInfoButton = document.getElementById('mode-info-button');
+        const linkyButton = document.getElementById('linky-button');
+        const backFromInfoButton = document.getElementById('back-from-info-button');
+        const backFromOfflineButton = document.getElementById('back-from-offline-button');
+        const backFromOptionsButton = document.getElementById('back-from-options-button');
+        const changeThemeButton = document.getElementById('change-theme-button');
+        const toggleTurnsButton = document.getElementById('toggle-turns-button'); // New
+        const toggleAnimationsButton = document.getElementById('toggle-animations-button'); // New
+
+        const antonymModeButton = document.getElementById('antonym-mode-button');
+        const synonymModeButton = document.getElementById('synonym-mode-button');
+        const backToMainButton = document.getElementById('back-to-main-button');
+        const quitGameButton = document.getElementById('quit-game-button');
+        const confirmQuitButton = document.getElementById('confirm-quit-button');
+        const cancelQuitButton = document.getElementById('cancel-quit-button');
+        const restartButton = document.getElementById('restart-button');
+
+        const wordDisplay = document.getElementById('word-display');
+        const choicesContainer = document.getElementById('choices-container');
+        const scoreDisplay = document.getElementById('score-display');
+        const turnDisplay = document.getElementById('turn-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalMessageDisplay = document.getElementById('final-message');
+        const timerBar = document.getElementById('timer-bar');
+
+        // --- Game State Variables ---
+        let currentScore = 0;
+        let currentTurn = 0;
+        let totalTurns = 5; // Default turns, now configurable
+        const turnOptions = [5, 10, 15, 20]; // Available turn counts
+        let currentTurnOptionIndex = 0; // Index for turnOptions array
+        const timePerTurn = 4000; // 4 seconds in milliseconds
+        let gameActive = false; // Indicates if a game round is actively running
+        let countdownTimer;
+        let currentWordData = null; // Stores the data for the word currently being displayed
+        let usedWordIndices = new Set(); // To prevent repeating words in a single game session
+        let activeWordList = []; // Will be set to antonymList or synonymList
+        let currentMode = ''; // 'antonym' or 'synonym'
+        let previousScreen = null; // To keep track of the screen before confirmation
+        let animationsEnabled = true; // New: Global flag for animations
+
+        // --- Theme Management Variables ---
+        const themes = [
+            'default-theme', // Original theme
+            'theme-retro-arcade',
+            'theme-pastel-dream',
+            'theme-blurred-reality'
+        ];
+        const backgroundImages = [
+            'https://www.skyweaver.net/images/media/wallpapers/wallpaper1.jpg',
+            'https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg',
+            'https://images.unsplash.com/photo-1559583985-c80d8ad9b29f?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0',
+            'https://c4.wallpaperflare.com/wallpaper/133/969/139/artwork-nature-landscape-fantasy-art-wallpaper-preview.jpg',
+            'https://wallpapers.com/images/hd/aesthetic-nature-tumblr-2zfbty4w4z1nazba.jpg'
+        ];
+        let currentThemeIndex = 0; // Default theme
+        let currentBackgroundImageIndex = 0; // New: To track sequential background image for blur theme
+
+        // --- Screen Management Function with Transitions ---
+        let activeScreen = null; // Keep track of the currently active screen element
+
+        function showScreen(screenToShow) {
+            const screens = [startScreen, modeSelectionScreen, modeInfoScreen, offlineScreen, optionsScreen, gameScreen, quitConfirmationScreen, endScreen];
+
+            // Capture current dimensions before content changes for smooth container transition
+            const currentHeight = gameContainer.offsetHeight;
+            const currentWidth = gameContainer.offsetWidth;
+
+            // 1. Prepare all screens: hide non-target screens, reset target screen for entry
+            screens.forEach(screen => {
+                if (screen === screenToShow) {
+                    screen.style.display = 'flex'; // Ensure it's display:flex before transition
+                    if (animationsEnabled) {
+                        screen.classList.remove('no-transition'); // Ensure transitions are enabled
+                        screen.style.opacity = 0; // Start hidden
+                        screen.style.transform = 'scale(0.95)'; // Start zoomed out
+                    } else {
+                        screen.classList.add('no-transition'); // Disable transitions
+                        screen.style.opacity = 1; // No animation, just show
+                        screen.style.transform = 'scale(1)';
+                    }
+                    screen.style.pointerEvents = 'none'; // Disable clicks during transition
+                    screen.classList.remove('active'); // Ensure it's not active yet
+                } else {
+                    if (screen.classList.contains('active')) {
+                        screen.classList.remove('active');
+                        if (animationsEnabled) {
+                            screen.classList.remove('no-transition'); // Ensure transitions are enabled
+                            screen.style.opacity = 0;
+                            screen.style.transform = 'scale(0.95)';
+                        } else {
+                            screen.classList.add('no-transition'); // Disable transitions
+                            screen.style.opacity = 0; // No animation, just hide
+                            screen.style.transform = 'scale(0.95)';
+                        }
+                        screen.style.pointerEvents = 'none';
+                        // After transition, set display to none
+                        setTimeout(() => {
+                            screen.style.display = 'none';
+                        }, animationsEnabled ? 500 : 0); // Match CSS transition duration or immediately
+                    } else {
+                        screen.style.display = 'none';
+                        screen.style.opacity = 0;
+                        screen.style.transform = 'scale(0.95)';
+                        screen.style.pointerEvents = 'none';
+                        screen.classList.remove('no-transition'); // Ensure it doesn't retain no-transition if it wasn't active
+                    }
+                }
+            });
+
+            // Temporarily set height to current height to allow smooth transition
+            gameContainer.style.height = `${currentHeight}px`;
+            gameContainer.style.width = `${currentWidth}px`;
+
+            // Use requestAnimationFrame to ensure the browser has rendered the initial state
+            requestAnimationFrame(() => {
+                // Apply the 'active' class to the screen to show
+                if (animationsEnabled) {
+                    screenToShow.style.opacity = 1;
+                    screenToShow.style.transform = 'scale(1)';
+                }
+                screenToShow.style.pointerEvents = 'auto';
+                screenToShow.classList.add('active'); // Add active class to apply relative positioning and final state
+
+                // After a very short delay, allow the container to adjust its height naturally
+                // This gives the screen content a chance to render and determine its natural height
+                setTimeout(() => {
+                    gameContainer.style.height = 'auto'; // Allow container to adjust to new content height
+                    gameContainer.style.width = 'auto'; // Allow container to adjust to new content width
+                }, animationsEnabled ? 50 : 0); // Small delay to ensure screen content is rendered
+            });
+
+            activeScreen = screenToShow; // Update the active screen reference
+
+            // Game state management (unchanged)
+            if (gameActive && screenToShow !== gameScreen && screenToShow !== quitConfirmationScreen) {
+                 endGame(false);
+            } else if (screenToShow !== gameScreen) {
+                clearTimeout(countdownTimer);
+            }
+        }
+
+        // --- Theme Application Function ---
+        function applyTheme(themeName) {
+            const body = document.body;
+            // Remove all existing theme classes
+            themes.forEach(theme => body.classList.remove(theme));
+
+            // Add the new theme class
+            body.classList.add(themeName);
+
+            // Special handling for the blurred reality theme
+            if (themeName === 'theme-blurred-reality') {
+                // Use currentBackgroundImageIndex for sequential loading
+                currentBackgroundImage = backgroundImages[currentBackgroundImageIndex];
+                body.style.backgroundImage = `url('${currentBackgroundImage}')`;
+                body.style.backgroundSize = 'cover';
+                body.style.backgroundPosition = 'center center';
+                body.style.backgroundRepeat = 'no-repeat';
+                
+                // Increment index for next time, loop back to 0 if at end
+                currentBackgroundImageIndex = (currentBackgroundImageIndex + 1) % backgroundImages.length;
+            } else {
+                // For non-blur themes, ensure backgroundImage is not set directly in JS
+                // Let the CSS variables handle the 'background' property entirely.
+                body.style.backgroundImage = ''; // Clear any inline background-image
+                body.style.backgroundSize = '';
+                body.style.backgroundPosition = '';
+                body.style.backgroundRepeat = '';
+            }
+
+            // Save current theme and background image index to localStorage
+            localStorage.setItem('wordDdakjiTheme', themeName);
+            localStorage.setItem('wordDdakjiBackgroundImageIndex', currentBackgroundImageIndex);
+        }
+
+        function cycleThemes() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            applyTheme(themes[currentThemeIndex]);
+        }
+
+        // --- Game Functions ---
+
+        function startGame(mode) {
+            currentScore = 0;
+            currentTurn = 0;
+            usedWordIndices.clear(); // Clear used words for a new game
+            gameActive = true;
+            currentMode = mode; // Set the current game mode
+
+            // Select the appropriate word list based on mode
+            if (currentMode === 'antonym') {
+                activeWordList = antonymList;
+                gameTitle.textContent = 'Word Ddakji: Antonym Mode'; // Set title for Antonym Mode
+            } else if (currentMode === 'synonym') {
+                activeWordList = synonymList;
+                gameTitle.textContent = 'Word Ddakji: Synonym Mode'; // Set title for Synonym Mode
+            } else {
+                console.error("Invalid game mode selected.");
+                gameTitle.textContent = 'Word Ddakji: Error'; // Indicate error in title
+                return; // Prevent game from starting with invalid mode
+            }
+
+            // Ensure there are enough words for the game
+            // If activeWordList.length is less than totalTurns, words will repeat after all unique words are used.
+            if (activeWordList.length < totalTurns) {
+                console.warn(`Warning: Not enough unique words (${activeWordList.length}) for ${totalTurns} turns. Words will repeat.`);
+            }
+
+            scoreDisplay.textContent = `Score: ${currentScore}/${totalTurns}`;
+            turnDisplay.textContent = `Turn: ${currentTurn}/${totalTurns}`;
+
+            showScreen(gameScreen); // Show the game screen
+            nextTurn();
+        }
+
+        function nextTurn() {
+            if (!gameActive) {
+                clearTimeout(countdownTimer); // Ensure timer is cleared if game becomes inactive mid-turn
+                return;
+            }
+
+            clearTimeout(countdownTimer); // Clear any lingering timer from previous turn
+
+            currentTurn++;
+            if (currentTurn > totalTurns) {
+                endGame(true); // End game and show final score
+                return;
+            }
+
+            turnDisplay.textContent = `Turn: ${currentTurn}/${totalTurns}`;
+            resetChoices();
+            displayRandomWord(); // Display word before starting timer
+            startTimer(); // Start timer immediately after word is displayed
+        }
+
+        function displayRandomWord() {
+            let availableWordIndices = [];
+            for(let i = 0; i < activeWordList.length; i++) {
+                if (!usedWordIndices.has(i)) {
+                    availableWordIndices.push(i);
+                }
+            }
+
+            // If we run out of unique words, reset the used words set and shuffle all words
+            // This ensures words repeat only if necessary, for long play sessions
+            if (availableWordIndices.length === 0) {
+                usedWordIndices.clear();
+                // If the game has more turns than unique words, this allows repetition
+                for(let i = 0; i < activeWordList.length; i++) {
+                    availableWordIndices.push(i);
+                }
+                 // Shuffle the entire list again if we're reusing words
+                 shuffleArray(activeWordList);
+            }
+
+            currentWordData = activeWordList[Math.floor(Math.random() * activeWordList.length)]; // Select a random word
+            // Ensure unique words if possible, otherwise allow repetition
+            let tries = 0;
+            while (usedWordIndices.has(activeWordList.indexOf(currentWordData)) && tries < activeWordList.length) {
+                currentWordData = activeWordList[Math.floor(Math.random() * activeWordList.length)];
+                tries++;
+            }
+            usedWordIndices.add(activeWordList.indexOf(currentWordData)); // Mark this word's index as used
+
+
+            wordDisplay.textContent = currentWordData.word;
+
+            const allOptions = [...currentWordData.options];
+            shuffleArray(allOptions); // Shuffle the options
+
+            choicesContainer.innerHTML = ''; // Clear previous choices
+
+            allOptions.forEach(option => {
+                const choiceBox = document.createElement('div');
+                choiceBox.classList.add('choice-box');
+                choiceBox.textContent = option;
+                // Store the actual correct answer (antonym/synonym) in a data attribute for comparison
+                choiceBox.dataset.correctAnswer = (currentMode === 'antonym') ? currentWordData.antonym : currentWordData.synonym;
+                choiceBox.addEventListener('click', () => handleChoiceClick(choiceBox));
+                choicesContainer.appendChild(choiceBox);
+            });
+        }
+
+        function handleChoiceClick(chosenBox) {
+            if (!gameActive) return; // Important: prevent execution if game has ended or isn't active
+            clearTimeout(countdownTimer); // Stop the timer immediately
+
+            const allChoiceBoxes = document.querySelectorAll('.choice-box');
+            allChoiceBoxes.forEach(box => {
+                box.style.pointerEvents = 'none'; // Disable further clicks
+            });
+
+            // Retrieve the correct answer from the currentWordData, not from the chosen box's dataset initially
+            const correctAnswer = (currentMode === 'antonym') ? currentWordData.antonym : currentWordData.synonym;
+
+            // Check if the chosen box's textContent matches the correct answer
+            // chosenBox can be null if it's a timeout
+            const isCorrect = (chosenBox && chosenBox.textContent === correctAnswer);
+
+            if (isCorrect) {
+                chosenBox.classList.add('correct'); // Always add correct animation
+                currentScore++;
+                scoreDisplay.textContent = `Score: ${currentScore}/${totalTurns}`;
+            } else {
+                // Mark the chosen one as wrong (if it was a user click, not a timeout dummy)
+                if (chosenBox) { // Always add 'wrong' class if a box was actually clicked
+                    chosenBox.classList.add('wrong');
+                }
+
+                // Always highlight the correct answer
+                allChoiceBoxes.forEach(box => {
+                    if (box.textContent === correctAnswer) {
+                        box.classList.add('correct');
+                    }
+                });
+            }
+
+            // Wait a bit for the animation/feedback, then proceed to the next turn
+            setTimeout(() => {
+                nextTurn();
+            }, 1000); // 1 second delay for visual feedback (always, as per user's request)
+        }
+
+        function resetChoices() {
+            choicesContainer.innerHTML = ''; // Clear choices for the next word
+            // Reset timer bar styles
+            timerBar.style.transition = 'none'; // Clear previous transition instantly
+            timerBar.style.width = '100%'; // Reset width to full
+            timerBar.style.backgroundColor = 'var(--timer-bar-bg)'; // Reset color to gold (using var)
+            void timerBar.offsetWidth; // Trigger reflow to apply 'none' transition immediately
+        }
+
+        function startTimer() {
+            // Timer bar animation is always enabled as per request
+            timerBar.style.transition = `width ${timePerTurn / 1000}s linear, background-color 0.7s ease-in-out`;
+            timerBar.style.width = '0%';
+            timerBar.style.backgroundColor = 'var(--timer-bar-depleted-bg)'; // Turn red as it depletes (using var)
+
+            countdownTimer = setTimeout(() => {
+                // When timer runs out, automatically trigger a 'wrong' choice
+                // Pass a null for chosenBox, as no user clicked
+                handleChoiceClick(null);
+            }, timePerTurn);
+        }
+
+        // `showFinalScore` boolean parameter decides whether to transition to end screen or just reset game state
+        function endGame(showFinalScore = false) {
+            gameActive = false; // Game is no longer active
+            clearTimeout(countdownTimer); // Ensure any running timer is cleared
+
+            if (showFinalScore) {
+                showScreen(endScreen);
+                finalScoreDisplay.textContent = `Your Score: ${currentScore}/${totalTurns}`;
+                let message = '';
+                switch (currentScore) {
+                    case 0: message = "Too poor... Keep practicing!"; break;
+                    case 1: message = "Needs improvement! Don't give up!"; break;
+                    case 2: message = "Just ok! You're getting there."; break;
+                    case 3: message = "Good! Not bad at all!"; break;
+                    case 4: message = "Great! Almost perfect!"; break;
+                    case totalTurns: message = "EXCELLENT! You're a Word Ddakji Master!";
+                            if (animationsEnabled) triggerConfetti(); // Confetti for perfect score!
+                            break;
+                    default: message = "Well played!"; break; // Fallback
+                }
+                finalMessageDisplay.textContent = message;
+                gameTitle.textContent = 'Word Ddakji: Game Over'; // Set title for end screen
+            } else {
+                // If not showing final score (e.g., quitting mid-game), just reset relevant states
+                currentScore = 0;
+                currentTurn = 0;
+                usedWordIndices.clear();
+                currentWordData = null;
+                // When quitting or going back, reset the title to the default
+                gameTitle.textContent = 'Word Ddakji: Flip Modes!';
+            }
+        }
+
+        function triggerConfetti() {
+            if (!animationsEnabled) return; // Only trigger if animations are enabled
+            const numConfetti = 50;
+            const containerRect = document.body.getBoundingClientRect();
+            for (let i = 0; i < numConfetti; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = `${containerRect.height - 20}px`;
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                confetti.style.transform = `scale(${0.5 + Math.random()})`;
+                document.body.appendChild(confetti);
+
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
+            }
+        }
+
+        // Fisher-Yates (Knuth) Shuffle for array randomization
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Function to update the turns button text
+        function updateTurnsButtonText() {
+            toggleTurnsButton.textContent = `TURNS: ${totalTurns}`;
+        }
+
+        // Function to update the animations button text
+        function updateAnimationsButtonText() {
+            toggleAnimationsButton.textContent = `ANIMATIONS: ${animationsEnabled ? 'ON' : 'OFF'}`;
+        }
+
+        // --- Event Listeners ---
+        playButton.addEventListener('click', () => {
+            gameActive = false;
+            showScreen(modeSelectionScreen);
+            gameTitle.textContent = 'Word Ddakji: Select Mode'; // Set title for mode selection
+        });
+
+        // Event listener for the Offline button
+        offlineButton.addEventListener('click', () => {
+            showScreen(offlineScreen);
+            gameTitle.textContent = 'Word Ddakji: Offline Mode'; // Set title for offline screen
+        });
+
+        // Event listener for the Options button
+        optionsButton.addEventListener('click', () => {
+            showScreen(optionsScreen);
+            gameTitle.textContent = 'Word Ddakji: Options'; // Set title for options screen
+        });
+
+        // Event listener for the Mode Info button
+        modeInfoButton.addEventListener('click', () => {
+            showScreen(modeInfoScreen);
+            gameTitle.textContent = 'Word Ddakji: About'; // Set title for mode info
+        });
+
+        // Event listener for the LINKY button
+        linkyButton.addEventListener('click', () => {
+            window.open('https://altroweb.github.io', '_self'); // Opens AltroWeb in the same tab
+        });
+
+        // Event listener for the Back button on the Mode Info screen
+        backFromInfoButton.addEventListener('click', () => {
+            showScreen(startScreen);
+            gameTitle.textContent = 'Word Ddakji: Flip Modes!'; // Reset title
+        });
+
+        // Event listener for the Back button on the Offline screen
+        backFromOfflineButton.addEventListener('click', () => {
+            showScreen(startScreen);
+            gameTitle.textContent = 'Word Ddakji: Flip Modes!'; // Reset title
+        });
+
+        // Event listener for the Back button on the Options screen
+        backFromOptionsButton.addEventListener('click', () => {
+            showScreen(startScreen);
+            gameTitle.textContent = 'Word Ddakji: Flip Modes!'; // Reset title
+        });
+
+        // Event listener for the Change Theme button
+        changeThemeButton.addEventListener('click', cycleThemes);
+
+        // Event listener for the Toggle Turns button (New)
+        toggleTurnsButton.addEventListener('click', () => {
+            currentTurnOptionIndex = (currentTurnOptionIndex + 1) % turnOptions.length;
+            totalTurns = turnOptions[currentTurnOptionIndex];
+            updateTurnsButtonText();
+            localStorage.setItem('wordDdakjiTotalTurns', totalTurns); // Save to localStorage
+        });
+
+        // Event listener for the Toggle Animations button (New)
+        toggleAnimationsButton.addEventListener('click', () => {
+            animationsEnabled = !animationsEnabled;
+            updateAnimationsButtonText();
+            localStorage.setItem('wordDdakjiAnimationsEnabled', animationsEnabled); // Save to localStorage
+            // When animations are toggled, re-apply the current screen to ensure transitions are correctly set
+            showScreen(activeScreen); 
+        });
+
+        antonymModeButton.addEventListener('click', () => startGame('antonym'));
+        synonymModeButton.addEventListener('click', () => startGame('synonym'));
+
+        backToMainButton.addEventListener('click', () => {
+            gameActive = false;
+            showScreen(startScreen);
+            gameTitle.textContent = 'Word Ddakji: Flip Modes!'; // Reset title
+        });
+
+        quitGameButton.addEventListener('click', () => {
+            previousScreen = gameScreen;
+            showScreen(quitConfirmationScreen);
+            gameActive = false;
+            clearTimeout(countdownTimer);
+            gameTitle.textContent = 'Word Ddakji: Quit?'; // Set title for quit confirmation
+        });
+
+        confirmQuitButton.addEventListener('click', () => {
+            endGame(false); // endGame(false) already resets title
+            showScreen(startScreen);
+        });
+
+        cancelQuitButton.addEventListener('click', () => {
+            gameActive = true;
+            showScreen(previousScreen);
+            startTimer();
+            const allChoiceBoxes = document.querySelectorAll('.choice-box');
+            allChoiceBoxes.forEach(box => {
+                box.style.pointerEvents = 'auto';
+                box.classList.remove('correct', 'wrong');
+            });
+             // Restore the title based on the screen we're returning to (should be game screen)
+             if (previousScreen === gameScreen) {
+                 if (currentMode === 'antonym') {
+                     gameTitle.textContent = 'Word Ddakji: Antonym Mode';
+                 } else if (currentMode === 'synonym') {
+                     gameTitle.textContent = 'Word Ddakji: Synonym Mode';
+                 }
+             }
+        });
+
+        restartButton.addEventListener('click', () => {
+            showScreen(modeSelectionScreen);
+            gameTitle.textContent = 'Word Ddakji: Select Mode'; // Set title for mode selection
+        });
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load theme from localStorage or apply default
+            const savedTheme = localStorage.getItem('wordDdakjiTheme');
+            if (savedTheme && themes.includes(savedTheme)) {
+                currentThemeIndex = themes.indexOf(savedTheme);
+            } else {
+                currentThemeIndex = 0; // Default theme
+            }
+
+            // Load currentBackgroundImageIndex from localStorage or apply default
+            const savedBackgroundImageIndex = localStorage.getItem('wordDdakjiBackgroundImageIndex');
+            if (savedBackgroundImageIndex !== null && !isNaN(parseInt(savedBackgroundImageIndex))) {
+                currentBackgroundImageIndex = parseInt(savedBackgroundImageIndex) % backgroundImages.length;
+            } else {
+                currentBackgroundImageIndex = 0; // Default to the first image
+            }
+
+            applyTheme(themes[currentThemeIndex]);
+
+            // Load totalTurns from localStorage or apply default
+            const savedTurns = localStorage.getItem('wordDdakjiTotalTurns');
+            if (savedTurns && turnOptions.includes(parseInt(savedTurns))) {
+                totalTurns = parseInt(savedTurns);
+                currentTurnOptionIndex = turnOptions.indexOf(totalTurns);
+            } else {
+                totalTurns = 5; // Default turns
+                currentTurnOptionIndex = 0;
+            }
+            updateTurnsButtonText(); // Update button text on load
+
+            // Load animationsEnabled from localStorage or apply default
+            const savedAnimations = localStorage.getItem('wordDdakjiAnimationsEnabled');
+            if (savedAnimations !== null) { // Check if it exists
+                animationsEnabled = (savedAnimations === 'true'); // Convert string to boolean
+            } else {
+                animationsEnabled = true; // Default to animations ON
+            }
+            updateAnimationsButtonText(); // Update button text on load
+            
+            // Initialize the first screen
+            // Instead of directly calling showScreen(startScreen), we ensure all screens are initially hidden
+            // and then trigger the transition for the startScreen.
+            const allScreens = [startScreen, modeSelectionScreen, modeInfoScreen, offlineScreen, optionsScreen, gameScreen, quitConfirmationScreen, endScreen];
+            allScreens.forEach(screen => {
+                screen.style.display = 'none'; // Ensure all are hidden initially
+                screen.style.opacity = 0;
+                screen.style.transform = 'scale(0.95)';
+                screen.style.pointerEvents = 'none';
+                screen.classList.remove('active');
+                screen.classList.remove('no-transition'); // Ensure no-transition is off by default
+            });
+
+            // Now, show the start screen with the proper transition
+            showScreen(startScreen);
+            gameTitle.textContent = 'Word Ddakji: Flip Modes!'; // Set initial title
+        });
+
+    </script>
+</body>
+</html>
