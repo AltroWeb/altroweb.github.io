@@ -1,10 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MixPix's MixBox</title>
-    <link rel="icon" type="image/x-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAByCAAAAACqttqhAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+gFCw40OLCUXV0AAAN4SURBVGje7ZlNSFRRFMdPH0wiucg+FirlZzaMWaYIMYFoheSu2rgNWkVr165b1iyF2hVJGQVKSUSLobKxckDGSXQ0R1HEkXAYaEBq4dTMPe+++855cy9t7tnMnP+57/zm3ffO/RoAa9asWbNmzZq1/2T7RDc8lFc0Drx4KNX77yivuhdV/YLB30qbkl81qr5qUGy9n9UnZ+TyRVYSHvLQoEwNHjGIDPTJ1OuVBpHQKhM7eDmYyKZOp9bQysvBRNbWOrX6JqNI6HFKId6jZCOvOqU+ZgouUvLcepgpuMjALawEDxtGwgAWbgdMI09goZmbgY0M9iK/xTjy+DHRb2FWpQ8kLpM27qP0gbykdLUgc2jGRx2JkPmcBuR6WvQDd0u9cJUYTa9rQG4lkSCMNjdQMLmlAQkJ5J8qdbo8GvtCVowgoam/+L2zDgVHKrTcJXp/qmuK3xsbxVhey10CzCC/ZEEXQqGPhHQU5DjyB6RfAQDgnSbkHPJLFiPnPJr6Rc4vIuFfZfaj0W5xhpCOgpxGg0Fx6XETBdKEt4c2xsaQ3/x3IXDeo6F/5HPk1xZuM3zUo6F/ZBSN1dUn9z5Po6rMRSnZaJMX7rDCMNvm0awc5GvkFzr2mkezcpDzeMzb+wiKan5eIzK2gIRhAAC82Uzq7NjUEhK6AZw7g3RKIxLwIUF9AzircoqWi4icRH5dF0BvDRJfaUVGM6JfFQIIob1mZlorEj4hvwOg3aNJuchR5F8BuOzRpFzkGqrMSgA82q0RUx0ktvuePCsKw3g2nqXMlZy7TOGa63bMld6LZh7S8XK0XkACbejhIMfQw3QsJx9rRyY21XHiaMdBwgd1+As5ER35TB1+agC5odw57lCrkoNMzKqic9Sq5CDXl1XR5awBJHxVxPLv6XkYyPs77rFfj4wgs4rKTNP7lXUI89Y9NMFIw0FOuocYj5KFXHR9mJurhpBJ1w1rIslIw0Fmv7n+GMbbwzvDi7v8m5aPc7KwkBGXm8lGjCFhgyVrQbqUH33i4iPfyGVOVXKRP6Rj3uqSQWRCesgSJy97fCBBWvKUwx7/SFll5j4bRUZ+OrXtJ0aRsOSUFpgpuMhxp0Q7evGPlGzOx7Qjxe1gJoPjq9uK5t4JYeUlfiUPiEWXetC+K8Zj4iZvYm4XZQisMLvBmjVr1qxZs2bNlP0BnuP7s/BXv9cAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDUtMTFUMTQ6NTI6NDcrMDA6MDAugOVxAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA1LTExVDE0OjUyOjQ3KzAwOjAwX91dzQAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNS0xMVQxNDo1Mjo1NiswMDowMGIVdzgAAAAASUVORK5CYII=">
+    <link rel="icon" type="image/x-xicon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAByCAAAAACqttqhAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+gFCw40OLCUXV0AAAN4SURBVGje7ZlNSFRRFMdPH0wiucg+FirlZzaMWaYIMYFoheSu2rgNWkVr165b1iyF2hVJGQVKSUSLobKxckDGSXQ0R1HEkXAYaEBq4dTMPe+++855cy9t7tnMnP+57/zm3ffO/RoAa9asWbNmzZq1/2T7RDc8lFc0Drx4KNX77yivuhdV/YLB30qbkl81qr5qUGy9n9UnZ+TyRVYSHvLQoEwNHjGIDPTJ1OuVBpHQKhM7eDmYyKZOp9bQysvBRNbWOrX6JqNI6HFKId6jZCOvOqU+ZgouUvLcepgpuMjALawEDxtGwgAWbgdMI09goZmbgY0M9iK/xTjy+DHRb2FWpQ8kLpM27qP0gbykdLUgc2jGRx2JkPmcBuR6WvQDd0u9cJUYTa9rQG4lkSCMNjdQMLmlAQkJ5J8qdbo8GvtCVowgoam/+L2zDgVHKrTcJXp/qmuK3xsbxVhey10CzCC/ZEEXQqGPhHQU5DjyB6RfAQDgnSbkHPJLFiPnPJr6Rc4vIuFfZfaj0W5xhpCOgpxGg0Fx6XETBdKEt4c2xsaQ3/x3IXDeo6F/5HPk1xZuM3zUo6F/ZBSN1dUn9z5Po6rMRSnZaJMX7rDCMNvm0awc5GvkFzr2mkezcpDzeMzb+wiKan5eIzK2gIRhAAC82Uzq7NjUEhK6AZw7g3RKIxLwIUF9AzircoqWi4icRH5dF0BvDRJfaUVGM6JfFQIIob1mZlorEj4hvwOg3aNJuchR5F8BuOzRpFzkGqrMSgA82q0RUx0ktvuePCsKw3g2nqXMlZy7TOGa63bMld6LZh7S8XK0XkACbejhIMfQw3QsJx9rRyY21XHiaMdBwgd1+As5ER35TB1+agC5odw57lCrkoNMzKqic9Sq5CDXl1XR5awBJHxVxPLv6XkYyPs77rFfj4wgs4rKTNP7lXUI89Y9NMFIw0FOuocYj5KFXHR9mJurhpBJ1w1rIslIw0Fmv7n+GMbbwzvDi7v8m5aPc7KwkBGXm8lGjCFhgyVrQbqUH33i4iPfyGVOVXKRP6Rj3uqSQWRCesgSJy97fCBBWvKUwx7/SFll5j4bRUZ+OrXtJ0aRsOSUFpgpuMhxp0Q7evGPlGzOx7Qjxe1gJoPjq9uK5t4JYeUlfiUPiEWXetC+K8Zj4iZvYm4XZQisMLvBmjVr1qxZs2bNlP0BnuP7s/BXv9cAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDUtMTFUMTQ6NTI6NDcrMDA6MDAugOVxAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA1LTExVDE0OjUyOjQ3KzAwOjAwX91dzQAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNS0xMVQxNDo1Mjo1NiswMDowMGIVdzgAAAAASUVORK5CYII=">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
@@ -110,7 +110,6 @@ toggleBlur {
 
 
 
-
  /* Custom seekbar styling */
         input[type="range"] {
             -webkit-appearance: none;
@@ -178,7 +177,7 @@ toggleBlur {
             transition: all 0.2s ease-in-out;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: center; /* Corrected from align: center */
             cursor: pointer;
         }
 
@@ -304,25 +303,48 @@ toggleBlur {
             border-radius: 0; /* Remove individual panel border-radius */
         }
 
-        /* Artwork */
-        .player-container img {
-            width: 100%;
-            height: auto;
+        /* Artwork/Lyrics Wrapper */
+        .artwork-lyrics-wrapper {
+            position: relative;
+            width: 100%; /* Take full width of parent */
+            max-width: 12rem; /* Initial max-width from original artwork */
+            height: 12rem; /* Fixed height for square aspect ratio */
+            margin: 0 auto 1.5rem auto; /* Centered horizontally, maintains bottom margin */
             border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            max-width: 12rem;
-            object-fit: cover;
-            margin-bottom: 1.5rem; /* Add spacing below artwork */
+            overflow: hidden; /* Crucial for containing absolute children */
         }
+
         @media (min-width: 640px) {
-            .player-container img {
+            .artwork-lyrics-wrapper {
                 max-width: 17rem;
+                height: 17rem;
             }
         }
         @media (min-width: 768px) {
-            .player-container img {
+            .artwork-lyrics-wrapper {
                 max-width: 22rem;
+                height: 22rem;
             }
+        }
+
+        /* Artwork */
+        .player-container img#artwork {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            margin-bottom: 0; /* Remove original margin */
+            cursor: pointer;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        /* Class to hide artwork when lyrics are shown */
+        .player-container img#artwork.hidden-artwork {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* Prevent clicks when hidden */
         }
 
         /* Track Info Section */
@@ -466,7 +488,6 @@ toggleBlur {
             padding: 0.5rem;
             border-radius: 50%;
             
-            
 
             
         }
@@ -584,6 +605,89 @@ toggleBlur {
             /* Remove icon related styles if any were present */
         }
 
+        /* Lyrics Panel Styling */
+        .lyrics-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black overlay */
+            border-radius: 0.5rem; /* Match wrapper's border-radius */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Changed to flex-start for lyrics content */
+            align-items: center;
+            padding: 1rem; /* Internal padding for content */
+            box-sizing: border-box; /* Include padding in width/height */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            z-index: 2; /* Ensure it's above artwork */
+            cursor: pointer; /* Make the lyrics panel itself clickable to toggle back */
+        }
+
+        .lyrics-panel.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lyrics-display {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%; /* Changed from max-height to height to force it to take full available space */
+            overflow-y: auto; /* Ensure scrolling is contained here */
+            text-align: center;
+            padding: 0; /* Padding handled by .lyrics-panel */
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            scroll-behavior: smooth; /* Smooth scrolling for lyrics */
+            display: flex; /* Use flexbox for vertical centering if content is short */
+            flex-direction: column;
+            /* justify-content will be set by JS based on content */
+            align-items: center; /* Center horizontally */
+        }
+
+        .lyrics-display.centered-content {
+            justify-content: center; /* For "No lyrics found" message */
+        }
+
+        .lyrics-line {
+            color: #b0b0b0; /* Lighter gray for inactive lyrics */
+            font-size: 1.2rem; /* Fixed base font size */
+            padding: 0.3rem 0;
+            transition: color 0.3s ease-in-out, font-weight 0.3s ease-in-out; /* Removed font-size/transform transition */
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .lyrics-line.active {
+            color: #ffffff; /* White for active lyric */
+            font-weight: 700; /* Bolder for active lyric */
+            /* Removed font-size and transform to prevent jitter */
+        }
+
+        .no-lyrics-message {
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            margin: auto; /* Center if flex container */
+        }
+
+        .upload-lrc-button {
+            margin-top: 1rem;
+            font-family: "Radio Canada Big", sans-serif; /* Remove this line */
+
+            font-size: 1rem;
+            padding: 0.75rem 1.25rem;
+            margin: auto; /* Center if flex container */
+            cursor: pointer; /* Ensure button is clickable */
+        }
+        /* Hidden input for LRC upload */
+        #lrc-upload-input {
+            display: none;
+        }
+
     </style>
 </head>
 <body>
@@ -594,7 +698,14 @@ toggleBlur {
           <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br><br><a href="#bottom">Bottom ↓</a><br><br>
 
         <div class="player-container">
-            <img id="artwork" src="https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork" alt="Album Artwork">
+            <div class="artwork-lyrics-wrapper">
+                <img id="artwork" src="https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork" alt="Album Artwork">
+
+                <div id="lyrics-panel" class="lyrics-panel">
+                    <div id="lyrics-display" class="lyrics-display">
+                        </div>
+                </div>
+            </div>
 
             <div class="text-center w-full">
                 <h2 id="track-title">No Song Loaded</h2>
@@ -696,7 +807,56 @@ toggleBlur {
                     <span>Max Reverb</span>
                 </div>
             </div>
-        </div>
+
+            <div class="effect-group">
+                <div class="effect-header">
+                    <label for="bass-toggle" class="text-lg font-medium">Bass Boost</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="bass-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <input type="range" id="bass-slider" min="0" max="20" value="0" disabled>
+                <div class="slider-value-display">
+                    <span>0 dB</span>
+                    <span id="bass-value">0 dB</span>
+                    <span>20 dB</span>
+                </div>
+            </div>
+
+            <div class="effect-group">
+                <div class="effect-header">
+                    <label for="lowpass-toggle" class="text-lg font-medium">Muffle (LPF)</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="lowpass-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <input type="range" id="lowpass-slider" min="0" max="100" value="0" disabled>
+                <div class="slider-value-display">
+                    <span>0%</span>
+                    <span id="lowpass-value">0%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+
+            <div class="effect-group">
+                <div class="effect-header">
+                    <label for="pan-toggle" class="text-lg font-medium">Stereo Pan</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="pan-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <input type="range" id="pan-slider" min="-1" max="1" value="0" step="0.01" disabled>
+                <div class="slider-value-display">
+                    <span>Left</span>
+                    <span id="pan-value">Center</span>
+                    <span>Right</span>
+                </div>
+            </div>
+
+            </div>
     
 
     <audio id="audio-player" class="hidden"></audio>
@@ -710,7 +870,7 @@ toggleBlur {
     <a href="#top">Top ↑</a>
     </div>
  	<br><br><br>
-    <p align="center">NOTE: This music player may contain bugs which are to be fixed. Sorry for any inconvenience.</p>
+    <p align="center">NOTE: If you use tempo effect, the lyrics may mismatch due to altered time stretch.<br><br>This music player may contain bugs which are to be fixed. Sorry for any inconvenience.</p>
     <br><br>
     <p>For Fun Only:</p>
     <a href="javascript:void(0);" onclick="changeFont()">Change Font</a><br><br>
@@ -720,7 +880,7 @@ toggleBlur {
     <br><br>
     <a href="https://altroweb.github.io">< Back to AltroWeb</a>
     <br><br>
-    <p align="center">Last Updated: 24 May 2025, 9:30 PM</p><br>
+    <p align="center">Last Updated: 27 May 2025, 4:30 PM</p><br>
  	
  	<p align=center>Source Code: <a href="https://github.com/AltroWeb/altroweb.github.io/">AltroWeb Source</a>
 </p>
@@ -781,6 +941,24 @@ toggleButton.addEventListener('click', () => {
         const reverbToggle = document.getElementById('reverb-toggle');
         const reverbSlider = document.getElementById('reverb-slider');
         const reverbValue = document.getElementById('reverb-value');
+        // Bass Boost elements
+        const bassToggle = document.getElementById('bass-toggle');
+        const bassSlider = document.getElementById('bass-slider');
+        const bassValue = document.getElementById('bass-value');
+        // New Low Pass Filter elements
+        const lowpassToggle = document.getElementById('lowpass-toggle');
+        const lowpassSlider = document.getElementById('lowpass-slider');
+        const lowpassValue = document.getElementById('lowpass-value');
+        // New Stereo Pan elements
+        const panToggle = document.getElementById('pan-toggle');
+        const panSlider = document.getElementById('pan-slider');
+        const panValue = document.getElementById('pan-value');
+
+        // New Lyrics Panel elements
+        const lyricsPanel = document.getElementById('lyrics-panel');
+        const lyricsDisplay = document.getElementById('lyrics-display');
+        // Removed closeLyricsButton as it's now a toggle
+
 
         // Player state variables
         let playlist = [];
@@ -796,13 +974,23 @@ toggleButton.addEventListener('click', () => {
         let dryGainNode; // For the original signal
         let wetGainNode; // For the reverb signal
         let convolverNode = null; // For reverb effect using impulse response
+        let bassFilterNode = null; // Node for bass boost (low-shelf filter)
+        let compressorNode = null; // Node for dynamics compression
+        let lowpassFilterNode = null; // New node for low-pass filter
 
         // Variables for managing playback time with AudioBufferSourceNode
-        let playbackStartTime = 0; // audioCtx.currentTime when playback started/resumed
-        let currentPlaybackOffset = 0; // Current position in the track (in seconds)
+        let playbackStartTime = 0; // audioCtx.currentTime when playback started/resumed (real-time)
+        let currentPlaybackOffset = 0; // Current position in the original track (in seconds)
 
         // Animation frame for updating seekbar
         let animationFrameId = null;
+
+        // Stereo Pan specific nodes (global references for real-time playback)
+        let pannerNode = null;
+
+        // Lyrics state variable
+        let currentLyricIndex = -1; // Keep track of the currently highlighted lyric
+
 
         /**
          * Generates a simple decaying noise impulse response for the convolver.
@@ -849,19 +1037,45 @@ toggleButton.addEventListener('click', () => {
                 dryGainNode = audioCtx.createGain(); // Node for the direct sound
                 wetGainNode = audioCtx.createGain(); // Node for the reverb (wet) sound
                 convolverNode = audioCtx.createConvolver(); // Node for the reverb effect
+                bassFilterNode = audioCtx.createBiquadFilter(); // Node for bass boost
+                bassFilterNode.type = 'lowshelf'; // Low-shelf filter for bass boost
+                bassFilterNode.frequency.value = 80; // Frequency around 80 Hz for bass
+                bassFilterNode.gain.value = 0; // Default 0 dB gain
 
-                // Connect the main audio path: Source -> Dry Gain -> Destination
-                // And the reverb path: Source -> Convolver -> Wet Gain -> Destination
-                // The sourceNode (AudioBufferSourceNode) will be created and connected dynamically.
-                dryGainNode.connect(audioCtx.destination);
+                // Initialize the DynamicsCompressorNode
+                compressorNode = audioCtx.createDynamicsCompressor();
+                // Set compressor parameters for smooth, boomy bass without distortion
+                compressorNode.threshold.value = -24; 
+                compressorNode.knee.value = 30;      
+                compressorNode.ratio.value = 10;     
+                compressorNode.attack.value = 0.005; 
+                compressorNode.release.value = 0.15; 
+
+                // Initialize the Low Pass Filter Node
+                lowpassFilterNode = audioCtx.createBiquadFilter();
+                lowpassFilterNode.type = 'lowpass';
+                // Default high frequency (no muffling)
+                lowpassFilterNode.frequency.value = audioCtx.sampleRate / 2; // Nyquist frequency, effectively transparent
+                lowpassFilterNode.Q.value = 1; // Default Q value
+
+                // Connect the core chain that always exists, but is controlled by gains/toggles
+                // These connections are persistent and do not need to be re-established in playTrack
+                bassFilterNode.connect(compressorNode);
+                compressorNode.connect(dryGainNode);
                 convolverNode.connect(wetGainNode);
-                wetGainNode.connect(audioCtx.destination);
+                dryGainNode.connect(lowpassFilterNode);
+                wetGainNode.connect(lowpassFilterNode);
+                lowpassFilterNode.connect(audioCtx.destination);
 
                 // Set initial reverb wet gain to 0 (off)
                 wetGainNode.gain.value = 0;
-
+                
                 // Generate a default impulse response for the convolver
                 convolverNode.buffer = generateReverbImpulseResponse();
+
+                // Initialize Stereo Panner node
+                pannerNode = audioCtx.createStereoPanner();
+                pannerNode.pan.value = 0; // Default center
             }
             // Resume context if suspended (e.g., after user interaction)
             if (audioCtx.state === 'suspended') {
@@ -908,6 +1122,7 @@ toggleButton.addEventListener('click', () => {
             seekbar.value = 0;
             currentTimeSpan.textContent = '00:00';
             updatePlaylistUI(); // Highlight the current track in the list
+            // Do NOT call displayLyrics here, it's handled when lyrics panel is shown
         }
 
         /**
@@ -1035,13 +1250,13 @@ toggleButton.addEventListener('click', () => {
 
             initAudioContext(); // Ensure audio context is initialized and resumed
 
-            // Stop any existing source node before creating a new one
+            // Stop and disconnect existing source node completely before rebuilding connections
             if (currentSourceNode) {
                 try {
                     currentSourceNode.stop();
                     currentSourceNode.disconnect();
                 } catch (e) {
-                    console.warn("Error stopping previous source node:", e);
+                    console.warn("Error stopping source node:", e);
                 }
                 currentSourceNode = null;
             }
@@ -1055,38 +1270,58 @@ toggleButton.addEventListener('click', () => {
             currentSourceNode = audioCtx.createBufferSource();
             currentSourceNode.buffer = track.audioBuffer;
 
-            // Apply current pitch and tempo settings
-            applyPitch();
-            applyTempo();
+            // Apply current pitch and tempo settings directly to the source
+            applyPitch(); // Sets currentSourceNode.detune.value
+            applyTempo(); // Sets currentSourceNode.playbackRate.value
 
-            // Connect to the audio graph
-            currentSourceNode.connect(dryGainNode);
-            if (convolverNode) { // Only connect if convolverNode exists
-                currentSourceNode.connect(convolverNode);
+            // --- Disconnect previous connections from pannerNode to main effects ---
+            // This is crucial to ensure a clean graph for the new connections.
+            try {
+                if (pannerNode) { // Check if pannerNode exists
+                    pannerNode.disconnect(bassFilterNode);
+                    pannerNode.disconnect(convolverNode);
+                }
+            } catch (e) {
+                // Catch errors if a disconnection is attempted on a node that wasn't connected
+                console.warn("Error during pre-connection disconnection (expected for non-active nodes):", e);
             }
 
-            // Set up 'ended' event listener for the new source node
-            currentSourceNode.onended = () => {
-                if (currentSourceNode && currentSourceNode.buffer && currentSourceNode.buffer.duration - currentPlaybackOffset < 0.05) { // Check if it truly ended
-                    isPlaying = false;
-                    updatePlayPauseButton();
-                    cancelAnimationFrame(animationFrameId); // Stop updating seekbar
-                    if (isLooping) {
-                        currentPlaybackOffset = 0; // Reset for loop
-                        playTrack();
-                    } else {
-                        nextTrack();
-                    }
-                }
-            };
+            // --- Connect Source to Panner (if active) or directly to main effects ---
+            if (panToggle.checked) {
+                currentSourceNode.connect(pannerNode); // Source connects to panner
+                pannerNode.pan.value = parseFloat(panSlider.value); // Set pan value
+                pannerNode.connect(bassFilterNode); // Panner output connects to main dry path
+                pannerNode.connect(convolverNode); // Panner output connects to main wet path
+            } else {
+                if (pannerNode) pannerNode.pan.value = 0; // Reset pan value if effect is off
+                currentSourceNode.connect(bassFilterNode); // Source connects directly to main dry path
+                currentSourceNode.connect(convolverNode); // Source connects directly to main wet path
+            }
+
+            // --- Apply remaining effects (Bass, Reverb, LPF) ---
+            // These functions set parameters on already connected nodes.
+            applyBassBoost(); // Sets bassFilterNode.gain.value
+            applyReverbPreset(parseInt(reverbSlider.value)); // Sets wetGainNode.gain.value
+            applyLowPass(); // Sets lowpassFilterNode.frequency.value
+
+
+            // The offset parameter to start() is in terms of the buffer's time,
+            // which is affected by playbackRate.
+            const startOffsetInBuffer = currentPlaybackOffset / currentSourceNode.playbackRate.value;
+            
+            // Ensure we don't start beyond the buffer's actual length
+            if (startOffsetInBuffer >= currentSourceNode.buffer.duration) {
+                currentPlaybackOffset = 0;
+                nextTrack();
+                return;
+            }
 
             try {
-                // Start playback from the current offset
-                currentSourceNode.start(0, currentPlaybackOffset);
-                playbackStartTime = audioCtx.currentTime - (currentPlaybackOffset / currentSourceNode.playbackRate.value); // Adjust for playbackRate
+                currentSourceNode.start(0, startOffsetInBuffer);
+                playbackStartTime = audioCtx.currentTime;
                 isPlaying = true;
                 updatePlayPauseButton();
-                updateSeekbarLoop(); // Start the seekbar update loop
+                updateSeekbarLoop();
             } catch (error) {
                 console.error("Error starting audio playback:", error);
                 isPlaying = false;
@@ -1105,11 +1340,11 @@ toggleButton.addEventListener('click', () => {
                 } catch (e) {
                     console.warn("Error stopping source node:", e);
                 }
-                // Calculate current playback position before stopping
-                currentPlaybackOffset = (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
+                // Calculate current playback position in ORIGINAL track time
+                currentPlaybackOffset += (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
                 isPlaying = false;
                 updatePlayPauseButton();
-                cancelAnimationFrame(animationFrameId); // Stop updating seekbar
+                cancelAnimationFrame(animationFrameId);
             }
         }
 
@@ -1197,20 +1432,49 @@ toggleButton.addEventListener('click', () => {
                 return;
             }
 
-            const trackDuration = currentSourceNode.buffer.duration;
-            const currentAudioTime = (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
+            const trackOriginalDuration = playlist[currentTrackIndex].duration; // Use original duration
             
-            // Update the offset for accurate seeking/pausing
-            currentPlaybackOffset = currentAudioTime;
+            // Calculate current position in ORIGINAL track time
+            const elapsedRealTime = audioCtx.currentTime - playbackStartTime;
+            const currentPositionInOriginalTime = currentPlaybackOffset + (elapsedRealTime * currentSourceNode.playbackRate.value);
 
-            currentTimeSpan.textContent = formatTime(currentAudioTime);
+            currentTimeSpan.textContent = formatTime(currentPositionInOriginalTime);
 
-            if (isNaN(trackDuration) || trackDuration === 0) {
+            if (isNaN(trackOriginalDuration) || trackOriginalDuration === 0) {
                 seekbar.value = 0;
             } else {
-                const progress = (currentAudioTime / trackDuration) * 100;
+                const progress = (currentPositionInOriginalTime / trackOriginalDuration) * 100;
                 seekbar.value = progress;
-                totalTimeSpan.textContent = formatTime(trackDuration);
+                totalTimeSpan.textContent = formatTime(trackOriginalDuration); // Always show original total time
+            }
+
+            // Synchronize lyrics ONLY if the lyrics panel is visible
+            if (lyricsPanel.classList.contains('show')) {
+                syncLyrics();
+            }
+
+            // Check if current position in original time has exceeded original duration
+            if (currentPositionInOriginalTime >= trackOriginalDuration) {
+                // This is the custom end condition, overriding the native onended if tempo changes duration
+                isPlaying = false;
+                updatePlayPauseButton();
+                cancelAnimationFrame(animationFrameId); // Stop updating seekbar
+                currentPlaybackOffset = 0; // Reset for next play/loop
+                // Stop the current source node explicitly to prevent it from playing further
+                try {
+                    currentSourceNode.stop();
+                    currentSourceNode.disconnect();
+                } catch (e) {
+                    console.warn("Error stopping source node at end of track:", e);
+                }
+                currentSourceNode = null; // Clear the reference
+
+                if (isLooping) {
+                    playTrack(); // Loop
+                } else {
+                    nextTrack(); // Go to next track
+                }
+                return; // Stop further execution for this frame
             }
 
             animationFrameId = requestAnimationFrame(updateSeekbar);
@@ -1232,15 +1496,21 @@ toggleButton.addEventListener('click', () => {
         function seekTo() {
             if (!currentSourceNode || !currentSourceNode.buffer) return;
 
-            const seekTime = (seekbar.value / 100) * currentSourceNode.buffer.duration;
-            currentPlaybackOffset = seekTime; // Update the offset
+            // Calculate seek time based on original duration
+            const trackOriginalDuration = playlist[currentTrackIndex].duration;
+            const seekTimeInOriginal = (seekbar.value / 100) * trackOriginalDuration;
+            currentPlaybackOffset = seekTimeInOriginal; // Update offset in original time
 
             // If currently playing, stop and restart from the new seek position
             if (isPlaying) {
-                playTrack();
+                playTrack(); // This will use the updated currentPlaybackOffset
             } else {
                 // If paused, just update the current time display
                 currentTimeSpan.textContent = formatTime(currentPlaybackOffset);
+            }
+            // Also update lyrics position when seeking
+            if (lyricsPanel.classList.contains('show')) {
+                syncLyrics();
             }
         }
 
@@ -1262,6 +1532,8 @@ toggleButton.addEventListener('click', () => {
             updatePlaylistUI();
             uploadErrorMessage.classList.add('hidden'); // Hide any error message
             updateSaveButtonState(); // Update save button state
+            lyricsPanel.classList.remove('show'); // Hide lyrics panel
+            artwork.classList.remove('hidden-artwork'); // Ensure artwork is visible
         }
 
         // --- Effects Panel Functions ---
@@ -1270,7 +1542,7 @@ toggleButton.addEventListener('click', () => {
          * Updates the enabled/disabled state of the save button based on active effects.
          */
         function updateSaveButtonState() {
-            const isAnyEffectEnabled = pitchToggle.checked || tempoToggle.checked || reverbToggle.checked;
+            const isAnyEffectEnabled = pitchToggle.checked || tempoToggle.checked || reverbToggle.checked || bassToggle.checked || lowpassToggle.checked || panToggle.checked;
             saveTrackButton.disabled = !isAnyEffectEnabled;
         }
 
@@ -1291,7 +1563,6 @@ toggleButton.addEventListener('click', () => {
 
         /**
          * Updates the pitch based on the slider value.
-         * Slider range: -400 to +400 cents (-4 to +4 semitones).
          */
         function updatePitch() {
             applyPitch(); // Apply the current slider value
@@ -1349,6 +1620,7 @@ toggleButton.addEventListener('click', () => {
          * and the wet gain.
          * @param {number} presetIndex - The index of the reverb preset (0-5).
          * @param {AudioContext|OfflineAudioContext} context - The audio context to use.
+         * @returns {void}
          */
         function applyReverbPreset(presetIndex, context = audioCtx) {
             // Define reverb presets (wetMix: how much reverb is heard,
@@ -1405,11 +1677,148 @@ toggleButton.addEventListener('click', () => {
         }
 
         /**
-         * Exports the given AudioBuffer as a WAV file.
-         * @param {AudioBuffer} audioBuffer - The AudioBuffer to export.
-         * @param {string} filename - The desired filename (without extension).
+         * Applies the current bass boost setting to the bass filter node.
          */
-        function exportWAV(audioBuffer, filename) {
+        function applyBassBoost() {
+            if (bassFilterNode && bassToggle.checked) {
+                const gain = parseFloat(bassSlider.value);
+                bassFilterNode.gain.value = gain;
+                bassValue.textContent = `${gain} dB`;
+            } else if (bassFilterNode) {
+                bassFilterNode.gain.value = 0; // Reset to 0 dB gain
+                bassValue.textContent = '0 dB';
+            }
+        }
+
+        /**
+         * Updates the bass boost based on the slider value.
+         */
+        function updateBassBoost() {
+            applyBassBoost(); // Apply the current slider value
+        }
+
+        /**
+         * Toggles the bass boost effect on or off.
+         */
+        function toggleBassBoost() {
+            initAudioContext(); // Ensure audio context is initialized
+            const isEnabled = bassToggle.checked;
+            bassSlider.disabled = !isEnabled;
+            applyBassBoost(); // Apply or reset bass boost based on toggle state
+            updateSaveButtonState(); // Update save button state
+        }
+
+        /**
+         * Applies the low pass filter effect based on the slider value.
+         * Muffling percentage (0-100) maps to frequency (20000 Hz to 200 Hz logarithmically).
+         */
+        function applyLowPass() {
+            if (lowpassFilterNode && lowpassToggle.checked) {
+                const muffledPercentage = parseFloat(lowpassSlider.value);
+                // Map 0-100% to frequency range (e.g., 20000 Hz down to 200 Hz)
+                // Using a logarithmic scale for frequency to match human perception
+                const minFreq = 200; // Hz (fully muffled)
+                const maxFreq = audioCtx.sampleRate / 2; // Nyquist frequency, effectively transparent
+                
+                // Inverse logarithmic mapping: as slider goes up, frequency goes down
+                const freq = maxFreq * Math.pow(minFreq / maxFreq, muffledPercentage / 100);
+                
+                lowpassFilterNode.frequency.value = freq;
+                lowpassValue.textContent = `${muffledPercentage}%`;
+            } else if (lowpassFilterNode) {
+                // Reset to default (no muffling)
+                lowpassFilterNode.frequency.value = audioCtx.sampleRate / 2;
+                lowpassValue.textContent = '0%';
+            }
+        }
+
+        /**
+         * Updates the low pass filter based on the slider value.
+         */
+        function updateLowPass() {
+            applyLowPass(); // Apply the current slider value
+        }
+
+        /**
+         * Toggles the low pass filter effect on or off.
+         */
+        function toggleLowPass() {
+            initAudioContext(); // Ensure audio context is initialized
+            const isEnabled = lowpassToggle.checked;
+            lowpassSlider.disabled = !isEnabled;
+            applyLowPass(); // Apply or reset low pass filter based on toggle state
+            updateSaveButtonState(); // Update save button state
+        }
+
+        /**
+         * Applies the current Stereo Pan setting.
+         */
+        function applyPan() {
+            if (pannerNode && panToggle.checked) {
+                pannerNode.pan.value = parseFloat(panSlider.value);
+                let panText = "Center";
+                if (pannerNode.pan.value < -0.05) panText = "Left";
+                else if (pannerNode.pan.value > 0.05) panText = "Right";
+                panValue.textContent = panText;
+            } else if (pannerNode) {
+                pannerNode.pan.value = 0; // Reset to center
+                panValue.textContent = "Center";
+            }
+        }
+
+        /**
+         * Updates the Stereo Pan based on the slider value.
+         */
+        function updatePan() {
+            applyPan();
+        }
+
+        /**
+         * Toggles the Stereo Pan effect on or off.
+         */
+        function togglePan() {
+            initAudioContext();
+            const isEnabled = panToggle.checked;
+            panSlider.disabled = !isEnabled;
+            applyPan(); // Apply or reset pan based on toggle state
+            updateSaveButtonState();
+
+            // ONLY re-route audio if a track is currently playing
+            if (isPlaying && currentSourceNode) {
+                // Disconnect currentSourceNode from its current connections to the main effect chain
+                // (either directly or via pannerNode)
+                try {
+                    currentSourceNode.disconnect(bassFilterNode);
+                    currentSourceNode.disconnect(convolverNode);
+                } catch (e) { /* Expected error if not directly connected */ }
+                
+                // Disconnect pannerNode from its current connections to the main effect chain
+                try {
+                    pannerNode.disconnect(bassFilterNode);
+                    pannerNode.disconnect(convolverNode);
+                } catch (e) { /* Expected error if not connected */ }
+
+                // Now, establish the new connections based on the toggle state
+                if (isEnabled) {
+                    // If pan is ON, route: currentSourceNode -> pannerNode -> (bassFilterNode, convolverNode)
+                    currentSourceNode.connect(pannerNode);
+                    pannerNode.connect(bassFilterNode);
+                    pannerNode.connect(convolverNode);
+                } else {
+                    // If pan is OFF, route: currentSourceNode -> (bassFilterNode, convolverNode)
+                    currentSourceNode.connect(bassFilterNode);
+                    currentSourceNode.connect(convolverNode);
+                }
+            }
+        }
+
+
+        /**
+         * Converts an AudioBuffer to a WAV Blob.
+         * @param {AudioBuffer} audioBuffer - The AudioBuffer to convert.
+         * @returns {Blob} The WAV Blob.
+         */
+        function exportWAV(audioBuffer) {
             const numOfChan = audioBuffer.numberOfChannels;
             const sampleRate = audioBuffer.sampleRate;
             const format = 1; // 1 = PCM
@@ -1449,16 +1858,7 @@ toggleButton.addEventListener('click', () => {
             // Write PCM data
             floatTo16BitPCM(view, 44, audioBuffer);
 
-            const blob = new Blob([view], { type: 'audio/wav' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}_modified.wav`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url); // Clean up the URL
+            return new Blob([view], { type: 'audio/wav' });
         }
 
         function writeString(view, offset, string) {
@@ -1490,7 +1890,6 @@ toggleButton.addEventListener('click', () => {
         async function saveModifiedTrack() {
             if (currentTrackIndex === -1 || !playlist[currentTrackIndex] || !playlist[currentTrackIndex].audioBuffer) {
                 console.warn("No track loaded to save.");
-                // No popup, just prevent action
                 return;
             }
 
@@ -1500,10 +1899,12 @@ toggleButton.addEventListener('click', () => {
             const isPitchEnabled = pitchToggle.checked;
             const isTempoEnabled = tempoToggle.checked;
             const isReverbEnabled = reverbToggle.checked;
+            const isBassEnabled = bassToggle.checked;
+            const isLowPassEnabled = lowpassToggle.checked;
+            const isPanEnabled = panToggle.checked;
 
-            if (!isPitchEnabled && !isTempoEnabled && !isReverbEnabled) {
+            if (!isPitchEnabled && !isTempoEnabled && !isReverbEnabled && !isBassEnabled && !isLowPassEnabled && !isPanEnabled) {
                 console.warn("No effects applied. Please enable at least one effect to save.");
-                // No popup, just prevent action
                 return;
             }
 
@@ -1525,67 +1926,278 @@ toggleButton.addEventListener('click', () => {
 
                 const source = offlineCtx.createBufferSource();
                 source.buffer = originalBuffer;
+                source.detune.value = isPitchEnabled ? parseFloat(pitchSlider.value) : 0;
+                source.playbackRate.value = tempoFactor;
 
-                // Apply pitch
-                if (isPitchEnabled) {
-                    source.detune.value = parseFloat(pitchSlider.value);
+                let currentNode = source; // This node feeds the next effect in the chain
+
+                // --- Apply Stereo Pan Effect (if enabled) ---
+                if (isPanEnabled) {
+                    const offlinePanner = offlineCtx.createStereoPanner();
+                    offlinePanner.pan.value = parseFloat(panSlider.value);
+                    currentNode.connect(offlinePanner);
+                    currentNode = offlinePanner;
+                }
+                
+                // --- Core processing nodes (Bass, Compressor, Reverb, Lowpass) ---
+                // These nodes are created here for the offline context, and connected from `currentNode`.
+
+                const offlineBassFilter = offlineCtx.createBiquadFilter();
+                offlineBassFilter.type = 'lowshelf';
+                offlineBassFilter.frequency.value = 80;
+                offlineBassFilter.gain.value = isBassEnabled ? parseFloat(bassSlider.value) : 0;
+
+                const offlineCompressor = offlineCtx.createDynamicsCompressor();
+                offlineCompressor.threshold.value = -24; 
+                offlineCompressor.knee.value = 30;
+                offlineCompressor.ratio.value = 10;     
+                offlineCompressor.attack.value = 0.005;
+                offlineCompressor.release.value = 0.15;
+
+                const offlineLowpassFilter = offlineCtx.createBiquadFilter();
+                offlineLowpassFilter.type = 'lowpass';
+                offlineLowpassFilter.Q.value = 1;
+                if (isLowPassEnabled) {
+                    const muffledPercentage = parseFloat(lowpassSlider.value);
+                    const minFreq = 200; 
+                    const maxFreq = offlineCtx.sampleRate / 2;
+                    const freq = maxFreq * Math.pow(minFreq / maxFreq, muffledPercentage / 100);
+                    offlineLowpassFilter.frequency.value = freq;
                 } else {
-                    source.detune.value = 0;
+                    offlineLowpassFilter.frequency.value = offlineCtx.sampleRate / 2;
                 }
 
-                // Apply tempo
-                if (isTempoEnabled) {
-                    source.playbackRate.value = tempoFactor;
-                } else {
-                    source.playbackRate.value = 1.0;
-                }
-
-                // Reverb setup for offline context
-                // Create new gain and convolver nodes for the offline context
-                const offlineDryGain = offlineCtx.createGain();
-                const offlineWetGain = offlineCtx.createGain();
                 const offlineConvolver = offlineCtx.createConvolver();
-
+                const offlineWetGain = offlineCtx.createGain();
                 if (isReverbEnabled) {
                     const reverbPresetIndex = parseInt(reverbSlider.value);
                     const presets = [
-                        { wetMix: 0.0, duration: 0.1, decay: 0.1, label: "No Reverb" },     // 0: No Reverb
-                        { wetMix: 0.15, duration: 0.4, decay: 1.5, label: "Bathroom" },      // 1: Bathroom (shorter duration, slightly faster decay)
-                        { wetMix: 0.30, duration: 1.0, decay: 2.0, label: "Large Room" },    // 2: Large Room (medium duration, more pronounced decay)
-                        { wetMix: 0.45, duration: 2.0, decay: 2.5, label: "Concert Hall" },  // 3: Concert Hall (longer duration, smoother decay)
-                        { wetMix: 0.60, duration: 3.5, decay: 3.0, label: "Cathedral" },     // 4: Cathedral (very long, expansive decay)
-                        { wetMix: 0.75, duration: 4.5, decay: 3.5, label: "Maximum Reverb" } // 5: Maximum Reverb (even longer, more pronounced decay)
+                        { wetMix: 0.0, duration: 0.1, decay: 0.1, label: "No Reverb" },
+                        { wetMix: 0.15, duration: 0.4, decay: 1.5, label: "Bathroom" },
+                        { wetMix: 0.30, duration: 1.0, decay: 2.0, label: "Large Room" },
+                        { wetMix: 0.45, duration: 2.0, decay: 2.5, label: "Concert Hall" },
+                        { wetMix: 0.60, duration: 3.5, decay: 3.0, label: "Cathedral" },
+                        { wetMix: 0.75, duration: 4.5, decay: 3.5, label: "Maximum Reverb" }
                     ];
                     const preset = presets[reverbPresetIndex];
-
                     offlineConvolver.buffer = generateReverbImpulseResponse(preset.duration, preset.decay, offlineCtx);
                     offlineWetGain.gain.value = preset.wetMix;
-
-                    // Connect dry path
-                    source.connect(offlineDryGain);
-                    offlineDryGain.connect(offlineCtx.destination);
-
-                    // Connect wet path
-                    source.connect(offlineConvolver);
-                    offlineConvolver.connect(offlineWetGain);
-                    offlineWetGain.connect(offlineCtx.destination);
                 } else {
-                    // If reverb is not enabled, connect source directly to destination
-                    source.connect(offlineCtx.destination);
+                    offlineWetGain.gain.value = 0;
                 }
+
+                // Connect the dry path: currentNode -> Bass -> Compressor -> LowpassFilter
+                currentNode.connect(offlineBassFilter);
+                offlineBassFilter.connect(offlineCompressor);
+                offlineCompressor.connect(offlineLowpassFilter); // Dry path goes to LPF
+
+                // Connect the wet path: currentNode -> Convolver -> Wet Gain -> LowpassFilter
+                currentNode.connect(offlineConvolver);
+                offlineConvolver.connect(offlineWetGain);
+                offlineWetGain.connect(offlineLowpassFilter); // Wet path also goes to LPF
+
+                // Final connection to destination
+                offlineLowpassFilter.connect(offlineCtx.destination);
 
                 source.start(0);
                 const renderedBuffer = await offlineCtx.startRendering();
 
-                exportWAV(renderedBuffer, playlist[currentTrackIndex].title);
-                console.log("Track processed and downloaded successfully!");
+                const wavBlob = exportWAV(renderedBuffer); // Get the Blob
+                const url = URL.createObjectURL(wavBlob); // Create an Object URL from the Blob
+
+                // Trigger download using the Object URL
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${playlist[currentTrackIndex].title}_modified.wav`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Clean up the URL
 
             } catch (error) {
                 console.error("Error processing audio for saving:", error);
+                // Provide user feedback on error
+                saveTrackButton.textContent = "Save Failed!";
+                setTimeout(() => {
+                    updateSaveButtonState(); // Revert button state after a short delay
+                }, 3000);
             } finally {
-                // Revert button text and enable it
-                saveTrackButton.textContent = "Save Track";
-                updateSaveButtonState(); // Re-evaluate state based on toggles
+                // Revert button text and enable it if not already handled by error
+                if (saveTrackButton.textContent === "Processing...") {
+                    saveTrackButton.textContent = "Save Track";
+                    updateSaveButtonState(); // Re-evaluate state based on toggles
+                }
+            }
+        }
+
+        /**
+         * Parses LRC content into an array of lyric objects.
+         * @param {string} lrcContent - The raw content of an LRC file.
+         * @returns {Array<Object>} An array of { time: number, text: string } objects.
+         */
+        function parseLRC(lrcContent) {
+            const lines = lrcContent.split('\n');
+            const lyrics = [];
+            const timeTagRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g; // Matches [mm:ss.xx] or [mm:ss.xxx]
+
+            lines.forEach(line => {
+                const matches = [...line.matchAll(timeTagRegex)]; // Use spread to get all matches
+                if (matches.length > 0) {
+                    const lyricText = line.replace(timeTagRegex, '').trim();
+                    matches.forEach(match => {
+                        const minutes = parseInt(match[1], 10);
+                        const seconds = parseInt(match[2], 10);
+                        let milliseconds = parseInt(match[3], 10);
+
+                        // Handle two-digit milliseconds (e.g., .01) by multiplying by 10
+                        if (match[3].length === 2) {
+                            milliseconds *= 10;
+                        }
+
+                        const timeInSeconds = minutes * 60 + seconds + milliseconds / 1000;
+                        lyrics.push({ time: timeInSeconds, text: lyricText });
+                    });
+                }
+            });
+
+            // Sort lyrics by time to ensure correct order
+            lyrics.sort((a, b) => a.time - b.time);
+            return lyrics;
+        }
+
+        /**
+         * Renders lyrics to the display and sets up for synchronization.
+         * @param {Array<Object>|null} lyrics - Array of { time, text } or null if no lyrics.
+         */
+        function displayLyrics(lyrics) {
+            lyricsDisplay.innerHTML = ''; // Clear previous lyrics
+            currentLyricIndex = -1; // Reset highlight
+
+            if (!lyrics || lyrics.length === 0) {
+                lyricsDisplay.innerHTML = `
+                    <p class="no-lyrics-message">No lyrics found for this track.</p>
+                    <button id="upload-lrc-button" class="player-button upload-lrc-button">
+                        <i class="fas fa-file-upload" style="display:none;"></i> Upload LRC
+                    </button>
+                    <input type="file" id="lrc-upload-input" accept=".lrc">
+                `;
+                // Add class to center content when no lyrics
+                lyricsDisplay.classList.add('centered-content');
+
+                // IMPORTANT: Re-attach event listeners after recreating elements
+                const uploadLrcButton = document.getElementById('upload-lrc-button');
+                const lrcUploadInput = document.getElementById('lrc-upload-input');
+
+                if (uploadLrcButton && lrcUploadInput) {
+                    uploadLrcButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent click from bubbling to lyricsPanel and toggling back
+                        lrcUploadInput.click();
+                    });
+                    lrcUploadInput.addEventListener('change', handleLrcUpload);
+                }
+            } else {
+                // Remove class to align content to flex-start when lyrics are present
+                lyricsDisplay.classList.remove('centered-content');
+                lyrics.forEach((line, index) => {
+                    const p = document.createElement('p');
+                    p.className = 'lyrics-line';
+                    p.textContent = line.text;
+                    p.dataset.time = line.time; // Store time for syncing
+                    p.dataset.index = index; // Store index for highlighting
+                    lyricsDisplay.appendChild(p);
+                });
+            }
+            // Always scroll to top when displaying new lyrics (or no lyrics message)
+            lyricsDisplay.scrollTop = 0;
+        }
+
+        /**
+         * Synchronizes lyrics with the current playback time.
+         */
+        function syncLyrics() {
+            if (!isPlaying || !currentSourceNode || !currentSourceNode.buffer || !playlist[currentTrackIndex] || !playlist[currentTrackIndex].lyrics) {
+                return;
+            }
+
+            const currentLyrics = playlist[currentTrackIndex].lyrics;
+            const currentPositionInOriginalTime = currentPlaybackOffset + (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
+
+            // Find the current lyric line
+            let newLyricIndex = -1;
+            for (let i = 0; i < currentLyrics.length; i++) {
+                // Check if the current time is greater than or equal to the lyric's start time
+                // and less than the next lyric's start time (or end of lyrics)
+                if (currentPositionInOriginalTime >= currentLyrics[i].time &&
+                    (i + 1 === currentLyrics.length || currentPositionInOriginalTime < currentLyrics[i+1].time)) {
+                    newLyricIndex = i;
+                    break;
+                }
+            }
+
+            if (newLyricIndex !== currentLyricIndex) {
+                // Remove active class from previous lyric
+                if (currentLyricIndex !== -1) {
+                    const prevLyricElement = lyricsDisplay.querySelector(`[data-index="${currentLyricIndex}"]`);
+                    if (prevLyricElement) {
+                        prevLyricElement.classList.remove('active');
+                    }
+                }
+
+                // Add active class to new lyric
+                if (newLyricIndex !== -1) {
+                    const newLyricElement = lyricsDisplay.querySelector(`[data-index="${newLyricIndex}"]`);
+                    if (newLyricElement) {
+                        newLyricElement.classList.add('active');
+                        
+                        // Manually scroll to center the newLyricElement within lyricsDisplay
+                        const containerHeight = lyricsDisplay.clientHeight;
+                        const elementHeight = newLyricElement.clientHeight;
+                        const elementOffsetTop = newLyricElement.offsetTop; // Relative to lyricsDisplay's scroll top
+
+                        // Calculate the scroll position to center the element
+                        // This formula places the element's middle at the container's middle
+                        const scrollTo = elementOffsetTop - (containerHeight / 2) + (elementHeight / 2);
+
+                        // Apply the scroll smoothly
+                        lyricsDisplay.scrollTo({
+                            top: scrollTo,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+                currentLyricIndex = newLyricIndex;
+            }
+        }
+
+        /**
+         * Handles the upload of an LRC file.
+         * @param {Event} event - The change event from the file input.
+         */
+        async function handleLrcUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (currentTrackIndex === -1) {
+                showUploadError("Please load a music track first before uploading lyrics.");
+                return;
+            }
+
+            try {
+                const lrcContent = await file.text(); // This reads the file content
+                const parsedLyrics = parseLRC(lrcContent); // This parses the content
+
+                // Store lyrics with the current track
+                playlist[currentTrackIndex].lyrics = parsedLyrics;
+                displayLyrics(parsedLyrics); // Display the newly loaded lyrics
+                
+            } catch (error) {
+                console.error("Error loading or parsing LRC file:", error);
+                showUploadError("Failed to load LRC file. Please check the file format.");
+                // Re-display the upload prompt if parsing failed
+                displayLyrics(null); // This will re-render the "No lyrics" message and button
+            } finally {
+                // Clear the file input value so that selecting the same file again triggers change event
+                event.target.value = ''; // Use event.target.value to clear the specific input
             }
         }
 
@@ -1635,6 +2247,7 @@ toggleButton.addEventListener('click', () => {
                 let title = file.name.replace(/\.[^/.]+$/, ""); // Default title
                 let artist = "Unknown Artist"; // Default artist
                 let artworkDataURL = null; // Default artwork
+                let lyrics = null; // Initialize lyrics for the track
 
                 try {
                     const tags = await new Promise((resolve, reject) => {
@@ -1675,7 +2288,8 @@ toggleButton.addEventListener('click', () => {
                     src: fileURL,
                     duration: 0, // Duration will be updated after decoding
                     audioBuffer: null, // Placeholder for decoded audio buffer
-                    artwork: artworkDataURL // Store artwork data URL
+                    artwork: artworkDataURL, // Store artwork data URL
+                    lyrics: lyrics // Store lyrics (initially null)
                 });
             }
 
@@ -1732,9 +2346,40 @@ toggleButton.addEventListener('click', () => {
         tempoSlider.addEventListener('input', updateTempo);
         reverbToggle.addEventListener('change', toggleReverb);
         reverbSlider.addEventListener('input', () => applyReverbPreset(parseInt(reverbSlider.value)));
+        // Bass Boost event listeners
+        bassToggle.addEventListener('change', toggleBassBoost);
+        bassSlider.addEventListener('input', updateBassBoost);
+        // New Low Pass Filter event listeners
+        lowpassToggle.addEventListener('change', toggleLowPass);
+        lowpassSlider.addEventListener('input', updateLowPass);
+        // New Stereo Pan event listeners
+        panToggle.addEventListener('change', togglePan);
+        panSlider.addEventListener('input', updatePan);
+
 
         // Save track button listener
         saveTrackButton.addEventListener('click', saveModifiedTrack);
+
+        // Artwork click to show lyrics
+        artwork.addEventListener('click', () => {
+            if (currentTrackIndex !== -1 && playlist[currentTrackIndex]) {
+                displayLyrics(playlist[currentTrackIndex].lyrics);
+            } else {
+                displayLyrics(null); // No track loaded, show "No lyrics found"
+            }
+            artwork.classList.add('hidden-artwork'); // Fade out artwork
+            lyricsPanel.classList.add('show'); // Fade in lyrics panel
+        });
+
+        // Lyrics panel click to hide lyrics and show artwork
+        lyricsPanel.addEventListener('click', (event) => {
+            // Prevent clicks on the upload button from bubbling to lyricsPanel and toggling back
+            if (event.target.closest('.upload-lrc-button') || event.target.closest('#lrc-upload-input')) {
+                return;
+            }
+            lyricsPanel.classList.remove('show'); // Fade out lyrics panel
+            artwork.classList.remove('hidden-artwork'); // Fade in artwork
+        });
 
 
         // Initial UI setup
@@ -1743,10 +2388,17 @@ toggleButton.addEventListener('click', () => {
         updateShuffleButton();
         updatePlaylistUI(); // This will show "No tracks uploaded yet." initially
 
+        // Ensure lyrics panel is hidden and artwork is visible on initial load
+        lyricsPanel.classList.remove('show');
+        artwork.classList.remove('hidden-artwork');
+
         // Initial state for effects panel
         togglePitch(); // Set initial slider state for pitch
         toggleTempo(); // Set initial slider state for tempo
         toggleReverb(); // Set initial slider state for reverb
+        toggleBassBoost(); // Set initial slider state for bass boost
+        toggleLowPass(); // Set initial slider state for low pass filter
+        togglePan(); // Set initial state for pan
         updateSaveButtonState(); // Set initial state for save button
 </script>
 </div>
