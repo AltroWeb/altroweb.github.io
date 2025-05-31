@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JustDevCrap - Where Bugs Are Features</title>
+    <title>JustDevCrap</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="jdc.png">
     <style>
         /* Base Styles */
         body {
@@ -64,7 +65,6 @@
             background-color: rgba(3, 7, 18, 0.9); /* bg-gray-950 bg-opacity-90 */
             backdrop-filter: blur(8px); /* backdrop-blur-sm */
             z-index: 50; /* z-50 */
-            /* Removed padding from here, moved to .navbar-container */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
             border-bottom-left-radius: 0.75rem; /* rounded-b-xl */
             border-bottom-right-radius: 0.75rem; /* rounded-b-xl */
@@ -88,13 +88,36 @@
         }
 
         .navbar-links {
-            display: flex; /* flex */
-            gap: 0.75rem; /* Adjusted for better mobile fit */
+            display: none; /* Hidden by default on mobile */
+            flex-direction: column; /* Stack vertically on mobile */
+            width: 100%; /* Full width on mobile */
+            position: absolute; /* Position absolutely for overlay */
+            top: 100%; /* Below the navbar */
+            left: 0;
+            background-color: rgba(3, 7, 18, 0.95); /* Slightly darker background when open */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            border-bottom-left-radius: 0.75rem;
+            border-bottom-right-radius: 0.75rem;
+            text-align: center;
+            gap: 1rem; /* Space between links */
+        }
+
+        .navbar-links.active {
+            display: flex; /* Show when active */
         }
 
         @media (min-width: 768px) { /* md breakpoint */
             .navbar-links {
+                display: flex; /* Always show on desktop */
+                flex-direction: row; /* Row layout on desktop */
+                position: static; /* Remove absolute positioning */
+                background-color: transparent; /* Transparent background */
+                box-shadow: none;
+                padding: 0;
+                border-radius: 0;
                 gap: 2rem; /* md:space-x-8 */
+                width: auto; /* Allow links to take natural width */
             }
         }
 
@@ -108,11 +131,38 @@
             border: none;
             cursor: pointer;
             white-space: nowrap; /* Prevent text wrapping */
+            padding: 0.5rem 1rem; /* Add padding for better touch targets */
         }
 
         .navbar-button:hover {
             color: #86efac; /* hover:text-green-200 */
             transform: scale(1.05); /* hover:scale-105 */
+        }
+
+        /* Hamburger Icon */
+        .hamburger {
+            display: flex; /* Show on mobile */
+            flex-direction: column;
+            justify-content: space-around;
+            width: 2rem;
+            height: 2rem;
+            cursor: pointer;
+            z-index: 60; /* Ensure it's above the menu */
+        }
+
+        .hamburger-line {
+            width: 100%;
+            height: 3px;
+            background-color: #4ade80; /* Green color */
+            border-radius: 5px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Hide hamburger on desktop */
+        @media (min-width: 768px) {
+            .hamburger {
+                display: none;
+            }
         }
 
         /* Section Base Styles */
@@ -419,7 +469,12 @@
             <h1 class="navbar-title">
                 JustDevCrap_
             </h1>
-            <div class="navbar-links">
+            <div class="hamburger" id="hamburger-menu">
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+            </div>
+            <div class="navbar-links" id="navbar-links">
                 <button onclick="scrollToSection('home-section')" class="navbar-button">
                     Home
                 </button>
@@ -438,7 +493,7 @@
         <div class="home-content-box">
             <h1 id="decoding-text" class="decoding-text"></h1>
             <p class="home-tagline">
-                "Where bugs are features, and features are... well, also bugs."
+                Welcome to the world of leftover code pieces, that...work?
             </p>
         </div>
     </section>
@@ -452,32 +507,32 @@
                 <div class="project-card-overlay"></div>
                 <div class="project-card-content">
                     <div class="project-card-icon">💻</div>
-                    <h3 class="project-card-title">The 'It Works On My Machine' Compiler</h3>
-                    <p class="project-card-description">A revolutionary compiler that guarantees your code runs perfectly... as long as it's on my specific machine. Cross-platform compatibility? What's that?</p>
-                    <a href="#" class="project-card-button">
-                        View Project
+                    <h3 class="project-card-title">JASPL IDE</h3>
+                    <p class="project-card-description">Just A Simple Programming Language with an IDE. What to expect?</p>
+                    <a href="https://altroweb.github.io/justdevcrap/jaspl" class="project-card-button">
+                        View
                     </a>
                 </div>
             </div>
             <div class="project-card">
                 <div class="project-card-overlay"></div>
                 <div class="project-card-content">
-                    <div class="project-card-icon">♻️</div>
-                    <h3 class="project-card-title">Infinite Loop Generator</h3>
-                    <p class="project-card-description">Tired of your programs actually finishing? My patented Infinite Loop Generator ensures your CPU stays busy forever. Perfect for warming up your room!</p>
-                    <a href="#" class="project-card-button">
-                        View Project
+                    <div class="project-card-icon">🔫</div>
+                    <h3 class="project-card-title">Cube Shooter 3D</h3>
+                    <p class="project-card-description">Written in pure HTML, CSS and JS. And..some webGL too? Call it a crappy game, nothing else.</p>
+                    <a href="https://altroweb.github.io/justdevcrap/cubeshooter" class="project-card-button">
+                        View
                     </a>
                 </div>
             </div>
             <div class="project-card">
                 <div class="project-card-overlay"></div>
                 <div class="project-card-content">
-                    <div class="project-card-icon">📐</div>
-                    <h3 class="project-card-title">CSS Centering Algorithm (Patent Pending)</h3>
-                    <p class="project-card-description">After years of struggle, I've finally cracked the code to perfectly centering div elements. It only requires 300 lines of CSS and a blood sacrifice. Worth it.</p>
-                    <a href="#" class="project-card-button">
-                        View Project
+                    <div class="project-card-icon">📚</div>
+                    <h3 class="project-card-title">Mr. Crappy Helper</h3>
+                    <p class="project-card-description">Aha! Mr. Crappy does what you need for anything - study, research, code or..just casual fun. AI makes the job done.</p>
+                    <a href="https://altroweb.github.io/justdevcrap/crappyhelper" class="project-card-button">
+                        View
                     </a>
                 </div>
             </div>
@@ -490,13 +545,13 @@
         </h2>
         <div class="about-content-box">
             <p class="about-paragraph">
-                Welcome to the digital dumpster fire that is JustDevCrap's portfolio. I'm a developer who believes in pushing the boundaries of what's possible... and occasionally, what's stable. My code is like a box of chocolates: you never know what you're gonna get (mostly bugs, though).
+                The name says it all. Craps and pieces of trash written in code that actually work (maybe sometimes). You don't need much info. :)
             </p>
             <p class="about-paragraph">
-                I specialize in turning caffeine into code, and sometimes, that code even works. My passion lies in creating software that's both innovative and slightly terrifying. If you're looking for perfection, you've come to the wrong place. If you're looking for someone who gets things done, even if it involves a bit of duct tape and prayer, then you're in for a treat.
+             
             </p>
             <p class="about-paragraph">
-                Join me on this chaotic journey through the world of development, where every commit is an adventure and every deployment is a gamble.
+            And and and, You found this just because of the open-source portal, AltroWeb. Take a look into that, you'll like that ;)
             </p>
             <button
                 onclick="window.location.href = 'https://altroweb.github.io'"
@@ -515,6 +570,10 @@
     <script>
         // Smooth scrolling for navigation
         function scrollToSection(id) {
+            const navbarLinks = document.getElementById('navbar-links');
+            if (navbarLinks.classList.contains('active')) {
+                navbarLinks.classList.remove('active'); // Close menu after clicking a link
+            }
             document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -619,8 +678,23 @@
             startDecoding();
         });
 
-        // Set current year for copyright
+        // Hamburger Menu Toggle
         document.addEventListener('DOMContentLoaded', () => {
+            const hamburger = document.getElementById('hamburger-menu');
+            const navLinks = document.getElementById('navbar-links');
+
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+
+            // Close menu if clicked outside or on resize (for desktop view)
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) { // Matches the media query in CSS
+                    navLinks.classList.remove('active');
+                }
+            });
+
+            // Set current year for copyright
             document.getElementById('current-year').textContent = new Date().getFullYear();
         });
     </script>
