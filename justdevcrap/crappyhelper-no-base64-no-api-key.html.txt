@@ -1,0 +1,2295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr. Crappy Helper - AI Help</title>
+    <script src="marked.min.js"></script>
+    <script src="jspdf.umd.min.js"></script>
+    <script src="html2canvas.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="icon.png">
+
+    <style>
+        /* Custom styles for Inter font and improved aesthetics */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e8f0fe; /* Lighter blue background for Material You feel */
+            margin: 0;
+            padding: 16px; /* Slightly reduced padding */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better content flow */
+            min-height: 100vh;
+            box-sizing: border-box;
+            color: #212121; /* Default text color */
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for dark mode */
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 24px; /* More rounded corners, Material You style */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08); /* Softer shadow */
+            padding: 32px; /* Adjusted padding */
+            width: 100%;
+            max-width: 900px; /* Slightly narrower max-width */
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for dark mode */
+        }
+
+        h1 {
+            font-size: 2.25rem; /* text-4xl equivalent, slightly smaller for compactness */
+            font-weight: 800; /* Extrabold */
+            text-align: center;
+            color: #1a202c; /* Gray-800 */
+            margin-bottom: 24px; /* mb-6 */
+            transition: color 0.3s ease; /* Smooth transition for dark mode */
+        }
+
+        .mode-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px; /* Reduced gap */
+            margin-bottom: 24px; /* mb-6 */
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+
+        .mode-button {
+            padding: 10px 20px; /* py-2.5 px-5, slightly more compact */
+            border-radius: 9999px; /* rounded-full */
+            font-size: 1rem; /* text-base, more compact */
+            font-weight: 600; /* font-semibold */
+            background-color: #e0e0e0; /* Light gray for inactive */
+            color: #424242; /* Darker gray text */
+            transition: all 0.2s ease-in-out;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap; /* Prevent text wrapping inside button */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow */
+        }
+
+        .mode-button:hover {
+            background-color: #c0c0c0; /* Darker gray on hover */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* More prominent shadow on hover */
+        }
+
+        .mode-button.active {
+            background-image: linear-gradient(to right, #673ab7, #9c27b0); /* Deeper purple gradient */
+            color: #ffffff;
+            box-shadow: 0 4px 8px rgba(103, 58, 183, 0.3); /* Active button shadow */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px; /* Reduced gap */
+            margin-bottom: 24px; /* mb-6 */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .form-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 8px; /* Reduced margin */
+        }
+
+        label {
+            display: block;
+            color: #424242; /* Darker gray for labels */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 6px; /* Reduced margin */
+            transition: color 0.3s ease; /* Smooth transition for dark mode */
+        }
+
+        select, textarea, input[type="text"] {
+            width: 100%;
+            border: 1px solid #bdbdbd; /* Lighter border color */
+            border-radius: 12px; /* More rounded */
+            padding: 10px 14px; /* py-2.5 px-3.5, more compact */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.3s ease, color 0.3s ease;
+            box-sizing: border-box; /* Include padding in width */
+            resize: vertical; /* Allow vertical resizing for textareas and text inputs */
+            min-height: 44px; /* Minimum height for text inputs */
+            font-size: 0.95rem; /* Slightly larger font for readability */
+            background-color: #ffffff; /* Default background */
+            color: #212121; /* Default text color */
+        }
+
+        textarea {
+            min-height: 90px; /* Minimum height for textareas, slightly increased for better initial feel */
+        }
+
+        select:focus, textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #673ab7; /* Material You primary color */
+            box-shadow: 0 0 0 3px rgba(103, 58, 183, 0.2); /* Focus ring */
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px; /* mb-5 */
+        }
+
+        .toggle-container input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 22px; /* Slightly larger */
+            height: 22px; /* Slightly larger */
+            border: 2px solid #673ab7; /* Material You primary color */
+            border-radius: 6px; /* Slightly rounded */
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+            position: relative;
+        }
+
+        .toggle-container input[type="checkbox"]:checked {
+            background-color: #673ab7; /* Material You primary color */
+            border-color: #673ab7;
+        }
+
+        .toggle-container input[type="checkbox"]:checked::after {
+            content: '✔';
+            color: white;
+            font-size: 16px; /* Slightly larger checkmark */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .toggle-container label {
+            margin-left: 8px; /* ml-2 */
+            color: #424242; /* Darker gray */
+            font-size: 1rem; /* text-base */
+            font-weight: 600; /* font-semibold */
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column; /* Stack buttons on mobile */
+            justify-content: center;
+            gap: 12px; /* Reduced gap */
+            margin-bottom: 24px; /* mb-6 */
+        }
+
+        @media (min-width: 640px) { /* sm breakpoint */
+            .button-group {
+                flex-direction: row; /* Row on larger screens */
+            }
+        }
+
+        .btn {
+            font-weight: 700; /* font-bold */
+            padding: 12px 28px; /* py-3 px-7, adjusted for compactness */
+            border-radius: 9999px; /* rounded-full */
+            font-size: 1rem; /* text-base, more compact */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow */
+        }
+
+        .btn-primary {
+            background-image: linear-gradient(to right, #673ab7, #9c27b0); /* Deeper purple gradient */
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(103, 58, 183, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: #616161; /* Gray-700 */
+            color: #ffffff;
+        }
+
+        .btn-secondary:hover {
+            background-color: #424242; /* Gray-800 */
+        }
+
+        .btn-info {
+            background-color: #2196f3; /* Blue-500 */
+            color: #ffffff;
+        }
+
+        .btn-info:hover {
+            background-color: #1976d2; /* Blue-600 */
+        }
+
+        .btn-success {
+            background-color: #4caf50; /* Green-500 */
+            color: #ffffff;
+        }
+
+        .btn-success:hover {
+            background-color: #388e3c; /* Green-600 */
+        }
+
+        .btn-purple {
+            background-color: #805ad5; /* purple-500 */
+            color: #ffffff;
+        }
+
+        .btn-purple:hover {
+            background-color: #6b46c1; /* purple-600 */
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3); /* Lighter spinner for dark buttons */
+            border-left-color: #ffffff; /* White spinner part */
+            border-radius: 50%;
+            width: 20px; /* Slightly smaller */
+            height: 20px; /* Slightly smaller */
+            animation: spin 1s linear infinite;
+            margin-left: 8px; /* ml-2 */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background-color: #ffebee; /* Light red background */
+            color: #d32f2f; /* Dark red text */
+            border-left: 4px solid #d32f2f;
+            padding: 12px; /* p-3 */
+            border-radius: 8px; /* rounded-lg */
+            margin-bottom: 24px; /* mb-6 */
+            text-align: center;
+            font-size: 0.9rem;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        h2 {
+            font-size: 1.35rem; /* text-xl, slightly smaller */
+            font-weight: 700; /* bold */
+            color: #424242; /* Darker gray */
+            margin-bottom: 16px; /* mb-4 */
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .output-content {
+            background-color: #f5f5f5; /* Light gray background */
+            padding: 20px; /* p-5 */
+            border-radius: 16px; /* More rounded */
+            border: 1px solid #e0e0e0; /* Lighter border */
+            min-height: 250px; /* Slightly reduced min-height */
+            max-height: 500px; /* Slightly reduced max-height */
+            overflow-y: auto;
+            color: #333333; /* Darker text */
+            line-height: 1.6; /* leading-relaxed */
+            text-align: left;
+            resize: vertical; /* Allow vertical resizing */
+            font-size: 0.95rem; /* Consistent font size */
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .output-content p {
+            color: #757575; /* Gray-600 */
+            transition: color 0.3s ease;
+        }
+
+        /* Styles for the AI Summary content to ensure good PDF rendering */
+        #ai-summary-content h1, #ai-summary-content h2, #ai-summary-content h3,
+        #research-output-content h1, #research-output-content h2, #research-output-content h3,
+        #code-output-content h1, #code-output-content h2, #code-output-content h3 {
+            font-weight: bold;
+            margin-top: 1.2em; /* Reduced margin */
+            margin-bottom: 0.6em; /* Reduced margin */
+            color: #333333; /* Darker heading color */
+            transition: color 0.3s ease;
+        }
+        #ai-summary-content h1, #research-output-content h1, #code-output-content h1 { font-size: 1.8em; } /* Adjusted font size */
+        #ai-summary-content h2, #research-output-content h2, #code-output-content h2 { font-size: 1.3em; } /* Adjusted font size */
+        #ai-summary-content h3, #research-output-content h3, #code-output-content h3 { font-size: 1.1em; } /* Adjusted font size */
+        #ai-summary-content p, #research-output-content p, #code-output-content p {
+            margin-bottom: 0.8em; /* Reduced margin */
+        }
+        #ai-summary-content ul, #ai-summary-content ol,
+        #research-output-content ul, #research-output-content ol,
+        #code-output-content ul, #code-output-content ol {
+            margin-left: 1.2em; /* Reduced margin */
+            margin-bottom: 0.8em; /* Reduced margin */
+            list-style-type: disc; /* Default list style */
+        }
+        #ai-summary-content ol, #research-output-content ol, #code-output-content ol {
+            list-style-type: decimal;
+        }
+        #ai-summary-content strong, #research-output-content strong, #code-output-content strong {
+            font-weight: bold;
+        }
+        #ai-summary-content em, #research-output-content em, #code-output-content em {
+            font-style: italic;
+        }
+        /* Code block styling for PDF */
+        #ai-summary-content pre, #research-output-content pre, #code-output-content pre {
+            background-color: #e0e0e0; /* Lighter background for code */
+            padding: 0.8em; /* Reduced padding */
+            border-radius: 0.4em; /* Slightly less rounded */
+            overflow-x: auto;
+            margin-bottom: 0.8em; /* Reduced margin */
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.85em; /* Slightly smaller font */
+            transition: background-color 0.3s ease;
+        }
+
+        /* PDF download button styling (no longer fixed) */
+        .download-pdf-btn {
+            padding: 12px 28px;
+            border-radius: 9999px;
+            font-size: 1rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #4caf50; /* green-500 */
+            color: #ffffff;
+            margin-top: 20px; /* Adjusted margin-top */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .download-pdf-btn:hover {
+            background-color: #388e3c; /* green-600 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .download-pdf-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Custom Alert Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 24px; /* Adjusted padding */
+            border: 1px solid #e0e0e0;
+            width: 85%; /* Slightly wider */
+            max-width: 450px; /* Slightly narrower max-width */
+            border-radius: 16px; /* More rounded */
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25), 0 4px 8px rgba(0,0,0,0.1); /* More prominent shadow */
+            text-align: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .close-button {
+            color: #9e9e9e; /* Lighter gray */
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #616161; /* Darker gray on hover */
+            text-decoration: none;
+        }
+
+        /* File upload button styling */
+        .file-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px; /* More compact */
+            margin-bottom: 12px; /* Adjusted margin */
+        }
+
+        .file-input-group label {
+            margin-bottom: 0; /* Remove extra margin from label */
+        }
+
+        .file-input-group input[type="file"] {
+            display: block;
+            width: auto; /* Allow it to shrink */
+            max-width: 100%; /* Ensure it doesn't overflow */
+            font-size: 0.875rem; /* text-sm */
+            color: #757575; /* gray-600 */
+            transition: color 0.3s ease;
+        }
+
+        .file-input-group input[type="file"]::-webkit-file-upload-button {
+            margin-right: 10px; /* Adjusted margin */
+            padding: 8px 16px; /* Made more compact */
+            border-radius: 9999px; /* rounded-full */
+            border: 0;
+            font-size: 0.85rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            background-color: #e1bee7; /* Light purple */
+            color: #673ab7; /* Material You primary color */
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        .file-input-group input[type="file"]::file-selector-button {
+            margin-right: 10px; /* Adjusted margin */
+            padding: 8px 16px; /* Made more compact */
+            border-radius: 9999px; /* rounded-full */
+            border: 0;
+            font-size: 0.85rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            background-color: #e1bee7; /* Light purple */
+            color: #673ab7; /* Material You primary color */
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        .file-input-group input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: #d1c4e9; /* Darker light purple */
+        }
+
+        .file-input-group input[type="file"]::file-selector-button:hover {
+            background-color: #d1c4e9; /* Darker light purple */
+        }
+
+        .chat-message-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-message {
+            margin-bottom: 8px; /* Reduced margin */
+            padding: 10px 16px; /* Adjusted padding */
+            border-radius: 12px; /* More rounded */
+            max-width: 85%; /* Slightly wider messages */
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Subtle shadow */
+            transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .chat-message.user {
+            background-color: #e3f2fd; /* Light blue */
+            align-self: flex-end;
+            margin-left: auto;
+            text-align: right;
+            color: #212121; /* Darker text */
+        }
+
+        .chat-message.ai {
+            background-color: #f5f5f5; /* Light gray */
+            align-self: flex-start;
+            margin-right: auto;
+            text-align: left;
+            color: #212121; /* Darker text */
+        }
+
+        /* Custom intro and title layout */
+        .pdf-custom-inputs {
+            display: flex;
+            flex-direction: column; /* Stack vertically by default */
+            gap: 12px; /* Space between the two inputs */
+            margin-bottom: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .pdf-custom-inputs {
+                flex-direction: row; /* Side-by-side on larger screens */
+            }
+            .pdf-custom-inputs .form-group {
+                flex: 1; /* Distribute space evenly */
+            }
+        }
+
+        /* Code mode specific layout adjustments */
+        #code-mode-content .button-group {
+            flex-direction: column; /* Stack main action buttons */
+            align-items: stretch; /* Stretch buttons to full width */
+            gap: 12px;
+        }
+
+        #code-mode-content .button-group > .file-input-group {
+            margin-bottom: 0; /* Remove extra margin from file input group */
+            align-items: center; /* Center the file input */
+        }
+
+        #code-mode-content .button-group > .button-group { /* Nested button group for process/download/copy */
+            flex-direction: row; /* Keep these in a row on larger screens */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 12px;
+            margin-top: 12px; /* Space between file input and action buttons */
+        }
+
+        @media (max-width: 639px) { /* Adjust for smaller screens (sm breakpoint) */
+            body {
+                padding: 12px;
+            }
+            .container {
+                padding: 24px;
+                border-radius: 20px;
+            }
+            h1 {
+                font-size: 1.8rem;
+                margin-bottom: 20px;
+            }
+            .mode-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .mode-button {
+                width: 100%;
+                font-size: 0.95rem;
+                padding: 8px 16px;
+            }
+            .form-grid {
+                gap: 12px;
+            }
+            .btn {
+                width: 100%;
+                font-size: 0.95rem;
+                padding: 10px 20px;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .download-pdf-btn {
+                width: 100%;
+                font-size: 0.95rem;
+                padding: 10px 20px;
+                margin-top: 16px;
+            }
+            .output-content {
+                min-height: 180px;
+                padding: 16px;
+            }
+            .modal-content {
+                width: 90%;
+                padding: 20px;
+            }
+            #code-mode-content .button-group > .button-group {
+                flex-direction: column; /* Stack these buttons on very small screens */
+            }
+        }
+        a {
+          text-decoration: none;
+          color: gray;
+        }
+
+
+        a:hover {
+          text-decoration: underline;
+        }
+
+
+
+
+        h3 {
+          text-align: center;
+          font-size: 0.8rem;
+          color: gray;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #1a202c; /* Darker background */
+            color: #e2e8f0; /* Light text */
+        }
+
+        body.dark-mode .container {
+            background-color: #2d3748; /* Darker container background */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        body.dark-mode h1,
+        body.dark-mode h2,
+        body.dark-mode label {
+            color: #e2e8f0; /* Light text for headings and labels */
+        }
+
+        body.dark-mode .mode-button {
+            background-color: #4a5568; /* Darker gray for inactive mode buttons */
+            color: #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        body.dark-mode .mode-button:hover {
+            background-color: #616e7f; /* Even darker on hover */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        }
+
+        body.dark-mode .mode-button.active {
+            background-image: linear-gradient(to right, #553c9a, #805ad5); /* Adjusted purple gradient for dark mode */
+            box-shadow: 0 4px 8px rgba(85, 60, 154, 0.4);
+        }
+
+        body.dark-mode select,
+        body.dark-mode textarea,
+        body.dark-mode input[type="text"] {
+            background-color: #4a5568; /* Darker input fields */
+            border-color: #616e7f;
+            color: #e2e8f0;
+        }
+
+        body.dark-mode select:focus,
+        body.dark-mode textarea:focus,
+        body.dark-mode input[type="text"]:focus {
+            border-color: #805ad5; /* Dark mode focus color */
+            box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3);
+        }
+
+        body.dark-mode .toggle-container input[type="checkbox"] {
+            border-color: #805ad5; /* Dark mode checkbox border */
+        }
+
+        body.dark-mode .toggle-container input[type="checkbox"]:checked {
+            background-color: #805ad5; /* Dark mode checkbox checked background */
+            border-color: #805ad5;
+        }
+
+        body.dark-mode .error-message {
+            background-color: #4a1c1c; /* Darker red background */
+            color: #f8d7da; /* Lighter red text */
+            border-left-color: #ef5350;
+        }
+
+        body.dark-mode .output-content {
+            background-color: #4a5568; /* Darker output background */
+            border-color: #616e7f;
+            color: #e2e8f0; /* Light text */
+        }
+
+        body.dark-mode .output-content p {
+            color: #cbd5e0; /* Lighter gray for paragraphs */
+        }
+
+        body.dark-mode #ai-summary-content h1,
+        body.dark-mode #ai-summary-content h2,
+        body.dark-mode #ai-summary-content h3,
+        body.dark-mode #research-output-content h1,
+        body.dark-mode #research-output-content h2,
+        body.dark-mode #research-output-content h3,
+        body.dark-mode #code-output-content h1,
+        body.dark-mode #code-output-content h2,
+        body.dark-mode #code-output-content h3 {
+            color: #e2e8f0; /* Light text for headings in output */
+        }
+
+        body.dark-mode #ai-summary-content pre,
+        body.dark-mode #research-output-content pre,
+        body.dark-mode #code-output-content pre {
+            background-color: #2d3748; /* Darker background for code blocks */
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .modal-content {
+            background-color: #2d3748; /* Darker modal background */
+            border-color: #616e7f;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.2);
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .close-button {
+            color: #cbd5e0; /* Lighter close button */
+        }
+        body.dark-mode .close-button:hover,
+        body.dark-mode .close-button:focus {
+            color: #a0aec0; /* Even lighter on hover */
+        }
+
+        body.dark-mode .file-input-group input[type="file"] {
+            color: #cbd5e0;
+        }
+
+        body.dark-mode .file-input-group input[type="file"]::-webkit-file-upload-button,
+        body.dark-mode .file-input-group input[type="file"]::file-selector-button {
+            background-color: #6b46c1; /* Darker purple for file upload button */
+            color: #ffffff;
+        }
+
+        body.dark-mode .file-input-group input[type="file"]::-webkit-file-upload-button:hover,
+        body.dark-mode .file-input-group input[type="file"]::file-selector-button:hover {
+            background-color: #553c9a;
+        }
+
+        body.dark-mode .chat-message.user {
+            background-color: #4a5568; /* Darker blue for user chat */
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .chat-message.ai {
+            background-color: #2d3748; /* Darker gray for AI chat */
+            color: #e2e8f0;
+        }
+
+        body.dark-mode a {
+            color: #9f7aea; /* Lighter purple for links in dark mode */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Mr. Crappy Helper</h1>
+
+        <div class="mode-buttons">
+            <button id="mode-default" class="mode-button active">Default</button>
+            <button id="mode-research" class="mode-button">Research</button>
+            <button id="mode-code" class="mode-button">Code</button>
+            <button id="mode-casual" class="mode-button">Casual Chat</button>
+        </div>
+
+        <div class="toggle-container" style="margin-top: 10px;">
+            <input type="checkbox" id="dark-mode-toggle">
+            <label for="dark-mode-toggle">Dark Mode</label>
+        </div>
+
+        <div id="default-mode-content">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="class-select">Select ur class/grade (idk if ur even graduate):</label>
+                    <select id="class-select">
+                        <option value="">-- Select Class/Grade --</option>
+                        <option value="1">1st</option>
+                        <option value="2">2nd</option>
+                        <option value="3">3rd</option>
+                        <option value="4">4th</option>
+                        <option value="5">5th</option>
+                        <option value="6">6th</option>
+                        <option value="7">7th</option>
+                        <option value="8">8th</option>
+                        <option value="9">9th</option>
+                        <option value="10">10th</option>
+                        <option value="11">11th</option>
+                        <option value="12">12th</option>
+                    </select>
+                </div>
+
+                <div id="stream-container" class="form-group hidden">
+                    <label for="stream-select">Which stream did you took? (Hope you don't regret it ToT)</label>
+                    <select id="stream-select">
+                        <option value="">-- Select Stream --</option>
+                        <option value="Science">Science</option>
+                        <option value="Commerce">Commerce</option>
+                        <option value="Arts">Arts</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="subject-select">Select Subject:</label>
+                    <select id="subject-select">
+                        <option value="">-- Select Subject --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="topic-input">Describe the topic you want:</label>
+                <input type="text" id="topic-input" placeholder="e.g., 'Coulomb's Law' or 'Photosynthesis'">
+            </div>
+
+            <div id="ncert-toggle-container" class="toggle-container hidden">
+                <input type="checkbox" id="ncert-toggle">
+                <label for="ncert-toggle">NCERT Style (ahhh...)</label>
+            </div>
+
+            <div class="pdf-custom-inputs">
+                <div class="form-group">
+                    <label for="pdf-title-input">Want any custom title on PDF? here u go:</label>
+                    <input type="text" id="pdf-title-input" placeholder="e.g., 'My Science Notes'">
+                </div>
+                <div class="form-group">
+                    <label for="pdf-custom-text-input">Any other custom text?</label>
+                    <textarea id="pdf-custom-text-input" rows="2" placeholder="e.g., 'Prepared for my exam revision.'"></textarea>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="fetch-summarize-btn" class="btn btn-primary">
+                    <span id="button-text">Gimme AI summary</span>
+                    <div id="loading-spinner" class="loading-spinner hidden"></div>
+                </button>
+            </div>
+
+            <div id="error-message" class="error-message hidden"></div>
+
+            <div class="form-group">
+                <h2>AI Summary</h2>
+                <div id="ai-summary-content" class="output-content">
+                    <p>
+                        Remember. AI is AI. Use it, but don't trust it fully. :)
+                    </p>
+                </div>
+            </div>
+            <div class="button-group">
+                <button id="download-pdf-btn" class="btn download-pdf-btn" disabled>
+                    Download Summary as PDF
+                </button>
+            </div>
+        </div>
+
+        <div id="research-mode-content" class="hidden">
+            <div class="form-group">
+                <label for="research-query-input">Any research topic on your mind?</label>
+                <input type="text" id="research-query-input" placeholder="e.g., 'Explain Quantum Entanglement simply' or 'Impact of AI on society'">
+            </div>
+            <div class="pdf-custom-inputs">
+                <div class="form-group">
+                    <label for="research-pdf-title-input">Want any custom title on PDf? here u go:</label>
+                    <input type="text" id="research-pdf-title-input" placeholder="e.g., 'My Research Notes'">
+                </div>
+                <div class="form-group">
+                    <label for="research-pdf-custom-text-input">Any other custom text?</label>
+                    <textarea id="research-pdf-custom-text-input" rows="2" placeholder="e.g., 'Detailed explanation for my project.'"></textarea>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="fetch-research-btn" class="btn btn-primary">
+                    <span id="research-button-text">gimme the research content</span>
+                    <div id="research-loading-spinner" class="loading-spinner hidden"></div>
+                </button>
+            </div>
+            <div id="research-error-message" class="error-message hidden"></div>
+            <div class="form-group">
+                <h2>Research content</h2>
+                <div id="research-output-content" class="output-content">
+                    <p>
+                       Note - Using it for really big projects may make ur teacher doubtful. If you do so, then get ready to be beaten up.
+                    </p>
+                </div>
+            </div>
+            <div class="button-group">
+                <button id="download-research-pdf-btn" class="btn download-pdf-btn" disabled>
+                    Download Research as PDF
+                </button>
+            </div>
+        </div>
+
+        <div id="code-mode-content" class="hidden">
+            <div class="form-group">
+                <label for="code-language-select">Select a programming language:</label>
+                <select id="code-language-select">
+                    <option value="">-- Select Language --</option>
+                    <option value="Python">Python</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="HTML">HTML</option>
+                    <option value="CSS">CSS</option>
+                    <option value="Java">Java</option>
+                    <option value="C++">C++</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="code-input">Use this cute box to solve ur coding issues:</label>
+                <textarea id="code-input" rows="10" placeholder="Paste your code here for debugging, or describe what code you need help writing..."></textarea>
+            </div>
+            <div class="button-group">
+                <div class="file-input-group">
+                    <label class="sr-only" style="display: none;" for="code-upload-input">Choose file</label>
+                    <input type="file" id="code-upload-input">
+                </div>
+                <div class="button-group">
+                    <button id="process-code-btn" class="btn btn-primary">
+                        <span id="code-button-text">Process Code</span>
+                        <div id="code-loading-spinner" class="loading-spinner hidden"></div>
+                    </button>
+                    <button id="download-code-txt-btn" class="btn btn-secondary" disabled>
+                        Download TXT
+                    </button>
+                    <button id="copy-code-btn" class="btn btn-info" disabled>
+                        Copy Code
+                    </button>
+                </div>
+            </div>
+            <div id="code-error-message" class="error-message hidden"></div>
+            <div class="form-group">
+                <h2>Code Output / Explanation</h2>
+                <div id="code-output-content" class="output-content">
+                    <p>
+                        The AI will provide code, debugging help, or explanations here.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="casual-mode-content" class="hidden">
+            <div class="form-group">
+                <label for="chat-input">Chat with the AI:</label>
+                <textarea id="chat-input" rows="5" placeholder="Type your message here..."></textarea>
+            </div>
+            <div class="button-group">
+                <button id="send-chat-btn" class="btn btn-primary">
+                    <span id="chat-button-text">Send Message</span>
+                    <div id="chat-loading-spinner" class="loading-spinner hidden"></div>
+                </button>
+                <button id="download-chat-history-btn" class="btn btn-purple" disabled>
+                    Download Chat History
+                </button>
+            </div>
+            <div id="chat-error-message" class="error-message hidden"></div>
+            <div class="form-group">
+                <h2>Chat History</h2>
+                <div id="chat-output-content" class="output-content chat-message-container">
+                    <p class="chat-message ai">
+                        Start chatting with the AI. Remember, AI responses are generated and might not always be perfect.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="custom-alert-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h3>AI Response Warning</h3>
+                <p id="alert-message">
+                    This AI response is generated and may contain inaccuracies or biases. Always verify critical information.
+                </p>
+                <button id="alert-ok-button" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+        <h3>This application uses the <a href="https://aistudio.google.com/app/apikey">Gemini API</a> by which is completely free for anyone. If any API error occurs, I will try to get new API key as soon as possible.</h3>
+        <h2>Made by <a href="https://altroweb.github.io/justdevcrap/">JustDevCrap.</a> With ☕</h2>
+    </div>
+
+    <script>
+        // --- BASE64 FONT DATA ---
+        // IMPORTANT: You MUST replace this dummy string with the actual Base64 string
+        // of a Noto Sans Devanagari Regular TTF/OTF font file.
+        // Follow the instructions below to get this string.
+        // Ensure this string does NOT start with 'data:mime/type;base64,'
+        // It should start directly with the Base64 encoded data (e.g., 'AAEAAA...' or 'AAEAAAASAQAABAAg...')
+        const notoSansDevanagariRegularBase64 = '';
+
+        // --- DOM Elements ---
+        const modeButtons = {
+            default: document.getElementById('mode-default'),
+            research: document.getElementById('mode-research'),
+            code: document.getElementById('mode-code'),
+            casual: document.getElementById('mode-casual')
+        };
+
+        const modeContents = {
+            default: document.getElementById('default-mode-content'),
+            research: document.getElementById('research-mode-content'),
+            code: document.getElementById('code-mode-content'),
+            casual: document.getElementById('casual-mode-content')
+        };
+
+        // Dark Mode Elements
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const body = document.body;
+
+        // Default Mode Elements
+        const classSelect = document.getElementById('class-select');
+        const streamContainer = document.getElementById('stream-container');
+        const streamSelect = document.getElementById('stream-select');
+        const subjectSelect = document.getElementById('subject-select');
+        const topicInput = document.getElementById('topic-input');
+        const ncertToggleContainer = document.getElementById('ncert-toggle-container');
+        const ncertToggle = document.getElementById('ncert-toggle');
+        const pdfTitleInput = document.getElementById('pdf-title-input');
+        const pdfCustomTextInput = document.getElementById('pdf-custom-text-input');
+        const fetchSummarizeBtn = document.getElementById('fetch-summarize-btn');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+        const buttonText = document.getElementById('button-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const aiSummaryContentDiv = document.getElementById('ai-summary-content');
+        const errorMessageDiv = document.getElementById('error-message');
+
+        // Research Mode Elements
+        const researchQueryInput = document.getElementById('research-query-input');
+        const researchPdfTitleInput = document.getElementById('research-pdf-title-input');
+        const researchPdfCustomTextInput = document.getElementById('research-pdf-custom-text-input');
+        const fetchResearchBtn = document.getElementById('fetch-research-btn');
+        const researchButtonText = document.getElementById('research-button-text');
+        const researchLoadingSpinner = document.getElementById('research-loading-spinner');
+        const researchOutputContentDiv = document.getElementById('research-output-content');
+        const researchErrorMessageDiv = document.getElementById('research-error-message');
+        const downloadResearchPdfBtn = document.getElementById('download-research-pdf-btn');
+
+        // Code Mode Elements
+        const codeLanguageSelect = document.getElementById('code-language-select');
+        const codeInput = document.getElementById('code-input');
+        const codeUploadInput = document.getElementById('code-upload-input');
+        const processCodeBtn = document.getElementById('process-code-btn');
+        const codeButtonText = document.getElementById('code-button-text');
+        const codeLoadingSpinner = document.getElementById('code-loading-spinner');
+        const codeOutputContentDiv = document.getElementById('code-output-content');
+        const codeErrorMessageDiv = document.getElementById('error-message'); // Corrected to use common error div
+        const downloadCodeTxtBtn = document.getElementById('download-code-txt-btn');
+        const copyCodeBtn = document.getElementById('copy-code-btn');
+
+        // Casual Mode Elements
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
+        const chatButtonText = document.getElementById('chat-button-text');
+        const chatLoadingSpinner = document.getElementById('chat-loading-spinner');
+        const chatOutputContentDiv = document.getElementById('chat-output-content');
+        const chatErrorMessageDiv = document.getElementById('error-message'); // Corrected to use common error div
+        const downloadChatHistoryBtn = document.getElementById('download-chat-history-btn');
+
+        // Custom Alert Modal Elements
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const closeAlertButton = document.querySelector('#custom-alert-modal .close-button');
+        const alertOkButton = document.getElementById('alert-ok-button');
+        const alertMessage = document.getElementById('alert-message');
+
+        // --- State Variables ---
+        let currentMode = 'default';
+        let selectedClass = '';
+        let selectedStream = '';
+        let selectedSubject = '';
+        let isLoading = false;
+        let chatHistory = []; // For casual mode
+        let hasShownCasualModeAlert = false; // New flag for casual mode alert
+
+
+        // --- Mock NCERT Notes Data ---
+        const mockNcertNotes = {
+            "1": {
+                "EVS": `EVS for Class 1 introduces children to their surroundings, family, school, and basic concepts of nature. Topics include 'My Family', 'My School', 'Plants Around Us', 'Animals Around Us', 'Water', and 'Air'. It focuses on observation and simple understanding of the environment.`,
+                "General Science": `General Science for Class 1 covers very basic scientific observations like 'Living and Non-living Things', 'Parts of the Body', 'Sense Organs', and 'Different Types of Weather'. It aims to build curiosity about the world.`,
+                "Maths": `Mathematics for Class 1 focuses on number recognition (1-100), counting, addition, subtraction, shapes, and patterns. Simple word problems are also introduced.`,
+                "English": `English for Class 1 emphasizes alphabet recognition, phonics, simple words, short sentences, and basic storytelling. It includes rhymes and picture-based learning.`,
+                "Hindi": `Hindi for Class 1 focuses on recognizing Hindi alphabets (वर्णमाला), simple two and three-letter words, basic sentence formation, and short poems.`,
+                "Computer": `Computer for Class 1 introduces basic computer parts (monitor, keyboard, mouse) and their functions. It covers simple uses of computers for drawing and games.`
+            },
+            "2": {
+                "EVS": `EVS for Class 2 expands on environmental concepts, including 'Our Food', 'Our Clothes', 'Houses We Live In', 'Means of Transport', 'Communication', and 'Festivals'. It encourages understanding of daily life and community.`,
+                "General Science": `General Science for Class 2 covers topics like 'Plants and Their Uses', 'Animals and Their Homes', 'Human Body Systems (basic)', 'Force and Simple Machines', and 'Light and Shadow'. It introduces more detailed scientific concepts.`,
+                "Maths": `Mathematics for Class 2 focuses on numbers up to 1000, addition and subtraction with carrying/borrowing, multiplication tables (up to 10), simple division, time, money, and measurement.`,
+                "English": `English for Class 2 builds on sentence formation, simple grammar (nouns, verbs), reading comprehension of short stories, and creative writing of simple paragraphs.`,
+                "Hindi": `Hindi for Class 2 reinforces word formation, sentence construction, reading short stories, and writing simple paragraphs in Hindi. It includes more complex grammar rules.`,
+                "Computer": `Computer for Class 2 covers basic operations like starting/shutting down a computer, using the mouse and keyboard effectively, and simple drawing tools like Paint.`
+            },
+            "3": {
+                "EVS": `EVS for Class 3 integrates science, social studies, and environmental education. Topics include 'Family and Friends', 'Plants and Animals', 'Water', 'Travel', 'Food', and 'Shelter'. It promotes interconnectedness of themes.`,
+                "General Science": `General Science for Class 3 covers 'Living World', 'Human Body', 'Food and Health', 'Force and Motion', 'Light, Sound, and Heat', and 'Weather and Climate'. It introduces scientific principles in everyday life.`,
+                "Maths": `Mathematics for Class 3 includes numbers up to 10,000, all four basic operations (addition, subtraction, multiplication, division), fractions (basic), geometry (lines, angles, shapes), and data handling.`,
+                "English": `English for Class 3 focuses on developing reading fluency, understanding complex sentences, grammar (tenses, adjectives), and writing short essays or letters.`,
+                "Hindi": `Hindi for Class 3 emphasizes reading longer texts, understanding nuances of grammar, and writing descriptive passages and short stories in Hindi.`,
+                "Computer": `Computer for Class 3 introduces more advanced features of operating systems, word processing basics (MS Word/LibreOffice Writer), and internet safety.`
+            },
+            "4": {
+                "EVS": `EVS for Class 4 deepens understanding of environmental issues and social structures. Topics include 'Our Country', 'Our Culture', 'Natural Resources', 'Disasters', and 'Public Services'. It encourages civic responsibility.`,
+                "General Science": `General Science for Class 4 covers 'Plants and Animals', 'Human Body and Health', 'Matter and Materials', 'Force, Work, and Energy', 'Light and Sound', and 'Natural Phenomena'. It introduces fundamental scientific concepts.`,
+                "Maths": `Mathematics for Class 4 covers large numbers (up to lakhs), advanced operations, factors and multiples, decimals, fractions, perimeter, area, volume (basic), and advanced data handling.`,
+                "English": `English for Class 4 focuses on enhancing vocabulary, complex sentence structures, narrative writing, poetry analysis, and formal letter writing.`,
+                "Hindi": `Hindi for Class 4 focuses on advanced grammar, literary analysis of poems and stories, and creative writing including essays and dialogues in Hindi.`,
+                "Computer": `Computer for Class 4 introduces concepts of computer networks, presentation software (MS PowerPoint/Impress), and basic programming logic using visual tools like Scratch.`
+            },
+            "5": {
+                "EVS": `EVS for Class 5 integrates environmental studies with social and scientific concepts. Topics include 'Migration', 'Forests', 'Water Resources', 'Pollution', 'First Aid', and 'Indian Constitution (basic)'. It promotes critical thinking about societal issues.`,
+                "General Science": `General Science for Class 5 includes 'Food Production', 'Human Body Systems', 'Diseases and Prevention', 'Properties of Matter', 'Renewable and Non-renewable Resources', and 'Space and Astronomy'. It provides a broader scientific perspective.`,
+                "Maths": `Mathematics for Class 5 includes numbers up to crores, advanced operations, HCF and LCM, fractions and decimals (advanced), percentages (basic), geometry (3D shapes), and advanced data interpretation.`,
+                "English": `English for Class 5 focuses on developing strong literary comprehension, advanced grammar, argumentative writing, creative storytelling, and public speaking skills.`,
+                "Hindi": `Hindi for Class 5 emphasizes in-depth literary analysis, complex grammar structures, and diverse forms of creative writing, including debates and reports in Hindi.`,
+                "Computer": `Computer for Class 5 covers advanced topics like database management systems (basic concepts), web browsing and email, and an introduction to coding concepts.`
+            },
+            "6": {
+                "Science": `Science for Class 6 introduces basic concepts of motion, light, electricity, and magnetism. Key topics include types of motion, measurement of distance, properties of light, simple circuits, and magnets.`,
+                "Maths": `Mathematics for Class 6 covers numbers (integers, fractions, decimals), algebra (basic concepts), geometry (basic shapes, symmetry), ratio and proportion, and data handling.`,
+                "SST": `Social Science for Class 6 introduces ancient history (early humans, first farmers, early cities), geography (earth, maps, major landforms), and social and political life (diversity, government, local administration).`,
+                "Hindi": `Hindi for Class 6 focuses on reading comprehension of stories and poems, grammar (nouns, pronouns, verbs), and writing simple essays and letters.`,
+                "English": `English for Class 6 includes prose and poetry from the Honeysuckle and A Pact with the Sun textbooks, focusing on comprehension, vocabulary, and basic grammar.`,
+                "Computer": `Computer for Class 6 covers operating systems, word processing software, presentation software, and an introduction to the internet and email.`
+            },
+            "7": {
+                "Science": `Science for Class 7 expands on motion, force, heat, light, and electricity. Topics include speed, types of forces, heat transfer, reflection of light, and electric current and its effects.`,
+                "Maths": `Mathematics for Class 7 covers integers, fractions, decimals, rational numbers, exponents, algebraic expressions, linear equations, lines and angles, triangles, congruence, symmetry, and data handling.`,
+                "SST": `Social Science for Class 7 covers medieval history (new kings and kingdoms, Delhi Sultans, Mughals), geography (environment, water, air, human environment), and social and political life (democracy, state government, gender).`,
+                "Hindi": `Hindi for Class 7 focuses on enhancing reading comprehension, grammar (adjectives, adverbs, tenses), and writing descriptive passages, dialogues, and short stories.`,
+                "English": `English for Class 7 includes prose and poetry from the Honeycomb and An Alien Hand textbooks, focusing on literary analysis, advanced vocabulary, and creative writing.`,
+                "Computer": `Computer for Class 7 covers advanced features of word processors, spreadsheets (MS Excel/Calc), programming in Scratch, and understanding cyber safety.`
+            },
+            "8": {
+                "Maths": `
+                    Chapter 1: Rational Numbers
+                    Rational numbers are numbers that can be expressed in the form p/q, where p and q are integers and q ≠ 0.
+                    Properties: Closure, Commutativity, Associativity. Distributivity: a × (b + c) = a × b + a × c.
+                    Additive inverse: -a/b. Multiplicative inverse (reciprocal): b/a.
+                    Zero (0) is the additive identity. One (1) is the multiplicative identity.
+                    Representation on number line. Finding rational numbers between two given rational numbers.
+
+                    Chapter 2: Linear Equations in One Variable
+                    An algebraic equation has an equality sign and involves variables.
+                    A linear equation in one variable has a single variable with the highest power of 1.
+                    Example: 2x - 3 = 7.
+                    Solution: Value of variable that makes equation true.
+                    Methods: Adding/Subtracting same number, Multiplying/Dividing by same non-zero number on both sides.
+                    Applications in word problems.
+
+                    Chapter 3: Understanding Quadrilaterals
+                    Polygons: Simple closed figures made of line segments.
+                    Classification by sides: triangle, quadrilateral, pentagon, etc.
+                    Diagonals: Connect non-consecutive vertices.
+                    Convex and Concave Polygons. Regular and Irregular Polygons.
+                    Angle Sum Property: Sum of interior angles of n-sided polygon = (n - 2) × 180°.
+                    Sum of exterior angles = 360°.
+                    Types of Quadrilaterals: Trapezium, Kite, Parallelogram, Rhombus, Rectangle, Square.
+                `,
+                "Science": `
+                    Chapter 1: Crop Production and Management
+                    Agriculture: Farming for crops and animals.
+                    Crops: Plants grown on large scale. Types: Kharif (rainy, e.g., paddy), Rabi (winter, e.g., wheat).
+                    Practices: Soil preparation (ploughing), Sowing (seed drill), Manuring (organic/inorganic), Irrigation (sprinkler, drip), Weed protection (weedicides), Harvesting, Storage.
+                    Animal husbandry: Rearing livestock.
+
+                    Chapter 2: Microorganisms: Friend and Foe
+                    Microorganisms (microbes): Tiny organisms not visible to naked eye.
+                    Categories: Bacteria, Fungi, Protozoa, Algae, Viruses.
+                    Friendly: Curd/bread making (Lactobacillus, yeast), Alcohol production, Antibiotics (penicillin), Vaccines, Soil fertility (Rhizobium), Decomposition.
+                    Harmful: Cause diseases (pathogens) in humans (cholera), animals (anthrax), plants (citrus canker). Food poisoning.
+                    Food preservation: Chemical, heat/cold (pasteurization), packing.
+                    Nitrogen cycle: Circulation of nitrogen in nature.
+
+                    Chapter 3: Synthetic Fibres and Plastics
+                    Fibres: Thin material strands. Natural (cotton, wool), Synthetic (rayon, nylon, polyester).
+                    Synthetic fibre properties: Strong, durable, cheap, easy to maintain.
+                    Plastics: Mouldable polymers.
+                    Types: Thermoplastics (soften on heating, e.g., polythene), Thermosetting plastics (don't soften, e.g., bakelite).
+                    Plastics and environment: Non-biodegradable. 4R principle: Reduce, Reuse, Recycle, Recover.
+                `,
+                "English": `
+                    Chapter 1: The Best Christmas Present in the World (by Michael Morpurgo)
+                    Summary: A story about a letter found by the narrator that tells of a Christmas truce between British and German soldiers during World War I.
+                    Key themes: Peace, humanity, war and its impact, hope, connection.
+
+                    Chapter 2: The Ant and the Cricket
+                    Summary: A fable about a hardworking ant and a lazy cricket, teaching the importance of planning and hard work.
+                    Key themes: Hard work, foresight, responsibility, consequences of laziness.
+
+                    Chapter 3: The Tsunami
+                    Summary: Describes the devastating 2004 tsunami and the stories of survival and resilience of people and animals.
+                    Key themes: Natural disaster, survival, empathy, human-animal connection.
+                `,
+                "Hindi": `Hindi for Class 8 covers grammar, prose, and poetry, focusing on improving reading, writing, and comprehension skills in Hindi. Key topics include sentence structure, verb forms, and understanding various literary forms.`,
+                "Social Science": `Social Science for Class 8 covers History (From Trade to Territory, The Company's Rule), Geography (Resources, Agriculture), and Social and Political Life (The Indian Constitution, Understanding Secularism). It provides an integrated view of society and governance.`,
+                "Biology": `Biology for Class 8 introduces basic concepts of life, cells, human body systems, and health. Key topics include cell structure, human organ systems (digestive, respiratory, circulatory), diseases and their prevention, and basic plant life.`,
+                "Physics": `Physics for Class 8 covers fundamental concepts like force, friction, pressure, sound, light, and electricity. Important topics include types of forces, laws of motion, properties of light and sound, and basic circuits.`,
+                "Chemistry": `Chemistry for Class 8 introduces matter, elements, compounds, mixtures, and common chemical reactions. Key concepts include states of matter, atomic structure basics, acids, bases, salts, and combustion.`
+            },
+            "9": {
+                "Maths": `Mathematics for Class 9 covers topics such as Number Systems, Polynomials, Coordinate Geometry, Linear Equations in Two Variables, Introduction to Euclid's Geometry, Lines and Angles, Triangles, Quadrilaterals, Areas of Parallelograms and Triangles, Circles, Constructions, Heron's Formula, Surface Areas and Volumes, and Statistics and Probability. These topics build foundational understanding for higher classes.`,
+                "Science": `Science for Class 9 delves into topics like Matter in Our Surroundings, Is Matter Around Us Pure, Atoms and Molecules, Structure of the Atom, The Fundamental Unit of Life, Tissues, Diversity in Living Organisms, Motion, Force and Laws of Motion, Gravitation, Work and Energy, Sound, Why Do We Fall Ill, Natural Resources, and Improvement in Food Resources.`,
+                "English": `English for Class 9 includes prose and poetry from the Beehive and Moments textbooks. Topics often explore themes of childhood, adventure, nature, and human relationships, focusing on comprehension, literary devices, and writing skills.`,
+                "Hindi": `Hindi for Class 9 focuses on advanced grammar, prose, and poetry, enhancing literary appreciation and writing proficiency. It covers topics like complex sentence structures, literary analysis, and creative writing.`,
+                "Social Science": `Social Science for Class 9 covers India and the Contemporary World – I (History: The French Revolution, Socialism in Europe and the Russian Revolution), Contemporary India – I (Geography: India - Size and Location, Physical Features of India), Democratic Politics – I (Political Science: Democracy in the Contemporary World, Constitutional Design), and Economics (The Story of Village Palampur, People as Resource).`,
+                "Biology": `Biology for Class 9 focuses on the diversity of living organisms, fundamental unit of life (cell), and tissues. It covers cell structure and function, types of plant and animal tissues, and classification of plants and animals.`,
+                "Physics": `Physics for Class 9 covers Motion, Force and Laws of Motion, Gravitation, Work and Energy, Work and Energy, and Sound. Key concepts include velocity, acceleration, Newton's laws, universal law of gravitation, kinetic and potential energy, and properties of sound waves.`,
+                "Chemistry": `Chemistry for Class 9 includes Matter in Our Surroundings, Is Matter Around Us Pure, Atoms and Molecules, and Structure of the Atom. It explores the states of matter, separation techniques, laws of chemical combination, atomic and molecular masses, and the structure of atoms including electrons, protons, and neutrons.`
+            },
+            "10": {
+                "Maths": `
+                    Chapter 1: Real Numbers
+                    Euclid's Division Lemma: Given positive integers a and b, there exist unique integers q and r satisfying a = bq + r, where 0 ≤ r < b.
+                    Euclid's Division Algorithm: Used to find the HCF of two positive integers.
+                    Fundamental Theorem of Arithmetic: Every composite number can be expressed (factorised) as a product of primes, and this factorisation is unique, apart from the order in which the prime factors occur.
+                    Revisiting Irrational Numbers: Proofs that √2, √3, √5 are irrational.
+                    Revisiting Rational Numbers and their Decimal Expansions:
+                    - If x = p/q is a rational number such that the prime factorisation of q is of the form 2^n 5^m, where n, m are non-negative integers, then x has a decimal expansion which terminates.
+                    - If x = p/q is a rational number such that the prime factorisation of q is not of the form 2^n 5^m, then x has a non-terminating repeating decimal expansion.
+
+                    Chapter 2: Polynomials
+                    Polynomials: An algebraic expression of the form a_n x^n + a_{n-1} x^{n-1} + ... + a_1 x + a_0, where a_i are real numbers and n is a non-negative integer.
+                    Degree of a polynomial: The highest power of the variable.
+                    Types of polynomials: Linear (degree 1), Quadratic (degree 2), Cubic (degree 3).
+                    Zeros of a polynomial: The values of x for which the polynomial becomes zero. Graphically, these are the x-intercepts.
+                    Relationship between zeros and coefficients of a polynomial:
+                    - For a quadratic polynomial ax^2 + bx + c:
+                        Sum of zeros (α + β) = -b/a
+                        Product of zeros (αβ) = c/a
+                    - For a cubic polynomial ax^3 + bx^2 + cx + d:
+                        Sum of zeros (α + β + γ) = -b/a
+                        Sum of products of zeros taken two at a time (αβ + βγ + γα) = c/a
+                        Product of zeros (αβγ) = -d/a
+                    Division Algorithm for Polynomials: If p(x) and g(x) are any two polynomials with g(x) ≠ 0, then we can find polynomials q(x) and r(x) such that p(x) = g(x) × q(x) + r(x), where r(x) = 0 or degree of r(x) < degree of g(x).
+
+                    Chapter 3: Pair of Linear Equations in Two Variables
+                    General form: a_1 x + b_1 y + c_1 = 0 and a_2 x + b_2 y + c_2 = 0.
+                    Graphical method of solving:
+                    - Intersecting lines: Unique solution (consistent). (a_1/a_2 ≠ b_1/b_2)
+                    - Coincident lines: Infinitely many solutions (consistent and dependent). (a_1/a_2 = b_1/b_2 = c_1/c_2)
+                    - Parallel lines: No solution (inconsistent). (a_1/a_2 = b_1/b_2 ≠ c_1/c_2)
+                    Algebraic methods of solving:
+                    1. Substitution Method
+                    2. Elimination Method
+                    3. Cross-Multiplication Method
+                    Equations reducible to a pair of linear equations.
+                `,
+                "Science": `
+                    Chapter 1: Chemical Reactions and Equations
+                    Chemical reaction: A process that involves rearrangement of the molecular or ionic structure of a substance, as opposed to a change in physical form or a nuclear reaction.
+                    Chemical equation: A symbolic representation of a chemical reaction in the form of symbols and formulae.
+                    Balancing chemical equations (Law of Conservation of Mass).
+                    Types of chemical reactions:
+                    1. Combination reaction: A + B → AB
+                    2. Decomposition reaction: AB → A + B (thermal, electrolytic, photolytic)
+                    3. Displacement reaction: A + BC → AC + B (more reactive displaces less reactive)
+                    4. Double displacement reaction: AB + CD → AD + CB (precipitation, neutralization)
+                    5. Oxidation and Reduction (Redox reactions):
+                       - Oxidation: Gain of oxygen, loss of hydrogen, loss of electrons.
+                       - Reduction: Loss of oxygen, gain of hydrogen, gain of electrons.
+                       - Oxidizing agent: Substance that oxidizes another substance and itself gets reduced.
+                       - Reducing agent: Substance that reduces another substance and itself gets oxidized.
+                    Corrosion: The process by which metals are eaten up gradually by the action of air, moisture, or a chemical on their surface (e.g., rusting of iron).
+                    Rancidity: The oxidation of fats and oils in food, leading to unpleasant smell and taste.
+
+                    Chapter 2: Acids, Bases and Salts
+                    Acids: Sour taste, turn blue litmus red, produce H+ ions in water (Arrhenius).
+                    Bases: Bitter taste, turn red litmus blue, produce OH- ions in water (Arrhenius).
+                    Indicators: Substances that change color in acidic or basic solutions (litmus, methyl orange, phenolphthalein).
+                    pH scale: Measures the strength of acids and bases (0-14). pH < 7 is acidic, pH = 7 is neutral, pH > 7 is basic.
+                    Importance of pH in everyday life (digestive system, soil, tooth decay).
+                    Salts: Formed by the reaction of an acid and a base (neutralization reaction).
+                    Common salt (NaCl): Raw material for chemicals like NaOH, bleaching powder, baking soda, washing soda.
+                    - NaOH (Caustic Soda): 2NaCl(aq) + 2H2O(l) → 2NaOH(aq) + Cl2(g) + H2(g) (Chlor-alkali process)
+                    - Bleaching Powder (CaOCl2): Ca(OH)2 + Cl2 → CaOCl2 + H2O
+                    - Baking Soda (NaHCO3): NaCl + H2O + CO2 + NH3 → NH4Cl + NaHCO3
+                    - Washing Soda (Na2CO3·10H2O): 2NaHCO3 → Na2CO3 + H2O + CO2; Na2CO3 + 10H2O → Na2CO3·10H2O
+                    Plaster of Paris (CaSO4·½H2O): CaSO4·2H2O (Gypsum) --(heat)--> CaSO4·½H2O + 1½H2O
+
+                    Chapter 3: Metals and Non-metals
+                    Metals: Lustrous, malleable, ductile, sonorous, good conductors of heat and electricity (e.g., iron, copper, gold).
+                    Non-metals: Opposite properties (e.g., carbon, sulfur, oxygen).
+                    Chemical properties:
+                    - Reaction with oxygen: Metals form basic oxides, non-metals form acidic or neutral oxides.
+                    - Reaction with water: Some metals react with water to form metal hydroxide and hydrogen gas.
+                    - Reaction with acids: Metals react with dilute acids to form salt and hydrogen gas.
+                    - Reaction with bases.
+                    - Displacement reactions: More reactive metal displaces less reactive metal from its salt solution.
+                    Reactivity series of metals.
+                    Ionic compounds: Formed by transfer of electrons (e.g., NaCl, MgO). Properties: High melting/boiling points, soluble in water, conduct electricity in molten state or solution.
+                    Occurrence of metals: Minerals, ores.
+                    Metallurgy: Extraction of metals from their ores.
+                    Corrosion and its prevention (painting, oiling, greasing, galvanising, anodising, alloying).
+                `,
+                "English": `
+                    Chapter 1: A Letter to God (by G.L. Fuentes)
+                    Summary: A poor farmer, Lencho, writes a letter to God asking for money after his crops are destroyed by a hailstorm.
+                    Key themes: Faith, hope, human belief in divine help.
+
+                    Chapter 2: Nelson Mandela: Long Walk to Freedom
+                    Summary: An excerpt from Nelson Mandela's autobiography, focusing on his inauguration as the first black president of South Africa and the struggle against apartheid.
+                    Key themes: Freedom, struggle, discrimination, leadership, peace.
+
+                    Chapter 3: Two Stories about Flying
+                    Part I: His First Flight (by Liam O'Flaherty) - A young seagull's fear of flying and how he overcomes it.
+                    Part II: The Black Aeroplane (by Frederick Forsyth) - A pilot's mysterious experience flying through storm clouds.
+                    Key themes: Courage, overcoming fear, mystery, self-confidence.
+                `,
+                "Hindi": `Hindi for Class 10 covers advanced grammar, prose, and poetry, including literary analysis and essay writing. It prepares students for board examinations with a focus on comprehensive language skills.`,
+                "Social Science": `Social Science for Class 10 covers India and the Contemporary World – II (History: The Rise of Nationalism in Europe, Nationalism in India), Contemporary India – II (Geography: Resources and Development, Water Resources), Democratic Politics – II (Political Science: Power Sharing, Federalism), and Understanding Economic Development (Economics: Development, Sectors of the Indian Economy).`,
+                "Biology": `Biology for Class 10 covers Life Processes, Control and Coordination, How do Organisms Reproduce, Heredity and Evolution, and Our Environment. Key topics include nutrition, respiration, circulation, excretion, nervous and hormonal control, asexual and sexual reproduction, genetics, and ecosystems.`,
+                "Physics": `Physics for Class 10 covers Light (Reflection and Refraction), Human Eye and Colourful World, Electricity, and Magnetic Effects of Electric Current. Important concepts include laws of reflection/refraction, lenses, human eye defects, Ohm's law, circuits, magnetic fields, and electromagnetic induction.`,
+                "Chemistry": `Chemistry for Class 10 includes Chemical Reactions and Equations, Acids, Bases and Salts, Metals and Non-metals, Carbon and its Compounds, and Periodic Classification of Elements. Key topics cover balancing equations, properties of acids/bases, reactivity series, organic compounds, and periodic trends.`
+            },
+            "11": {
+                "Science": {
+                    "Physics": `
+                        Chapter 1: Electric Charges and Fields
+                        Electric Charge: Intrinsic property of matter, quantized (q = ne), conserved.
+                        Coulomb's Law: F = k |q1 q2| / r². k = 1/(4πε₀) ≈ 9 × 10⁹ Nm²/C².
+                        Electric Field (E): Force per unit charge (E = F/q₀). E due to point charge: E = k q / r².
+                        Electric Field Lines: Properties (originate +, terminate -, never cross, tangent gives E direction).
+                        Electric Dipole: Equal & opposite charges (p = q × 2a). Torque in uniform E: τ = p × E = pE sinθ.
+                        Electric Flux (Φ_E): ∫ E ⋅ dA. Gauss's Law: Φ_E = q_enclosed / ε₀.
+
+                        Chapter 2: Electrostatic Potential and Capacitance
+                        Electric Potential (V): Work done per unit charge (V = W/q₀). Potential difference: V_B - V_A = W_AB / q₀.
+                        V due to point charge: V = k q / r.
+                        Equipotential Surfaces: Constant potential. E ⊥ surface, no work done on surface.
+                        Electric potential energy of charges.
+                        Conductors & Insulators. Electrostatic shielding.
+                        Capacitance (C): Ability to store charge (C = Q/V). Unit: Farad (F).
+                        Capacitance of parallel plate capacitor: C = ε₀ A / d. Dielectric effect: C' = K C.
+                        Capacitor combinations: Series (1/C_eq = Σ 1/C_i), Parallel (C_eq = Σ C_i).
+                        Energy stored: U = ½CV² = ½Q²/C = ½QV.
+
+                        Chapter 3: Current Electricity
+                        Electric Current (I): Rate of charge flow (I = dQ/dt). Unit: Ampere (A).
+                        Drift velocity (v_d): Average electron velocity. I = n e A v_d.
+                        Ohm's Law: V = IR. Resistance (R): R = ρ L / A. Resistivity (ρ).
+                        Conductance (G) = 1/R, Conductivity (σ) = 1/1/ρ. Temperature dependence.
+                        Carbon resistors, color code. Cells: EMF, Internal Resistance. Series/parallel cells.
+                        Kirchhoff's Laws:
+                        1. KCL: Σ currents in = Σ currents out (Charge conservation).
+                        2. KVL: Σ potential changes in loop = 0 (Energy conservation).
+                        Wheatstone Bridge: Balanced P/Q = R/S. Meter Bridge.
+                        Potentiometer: Measures EMF, compares EMFs, measures internal resistance.
+                    `,
+                    "Chemistry": `
+                        Chapter 1: Some Basic Concepts of Chemistry
+                        Chemistry: Study of matter, properties, changes.
+                        Matter: States (solid, liquid, gas), mixtures (homogeneous, heterogeneous), pure substances (elements, compounds).
+                        Measurement: Physical/Chemical properties. SI units. Dimensional Analysis. Uncertainty (significant figures, precision, accuracy).
+                        Laws of Chemical Combination: Conservation of Mass, Definite Proportions, Multiple Proportions, Gay Lussac's Law, Avogadro's Law.
+                        Dalton's Atomic Theory. Atomic/Molecular Mass.
+                        Mole Concept: 1 mole = 6.022 × 10^23 particles (Avogadro number, N_A).
+                        Percentage Composition. Empirical/Molecular Formula.
+                        Stoichiometry: Limiting reagent calculations.
+                        Concentration: Mass %, mole fraction, molarity (M), molality (m).
+                        Molarity (M) = moles of solute / volume of solution (L)
+                        Molality (m) = moles of solute / mass of solvent (kg)
+
+                        Chapter 2: Structure of Atom
+                        Subatomic Particles: Electrons (Thomson), Protons (Goldstein), Neutrons (Chadwick).
+                        Atomic Models: Thomson (Plum Pudding), Rutherford (Nuclear Model), Bohr (Hydrogen Atom - quantized orbits, mvr = n(h/2π)).
+                        Limitations of Bohr's Model.
+                        Dual Nature of Matter (de Broglie): λ = h/mv.
+                        Heisenberg's Uncertainty Principle: Δx Δp ≥ h/4π.
+                        Quantum Mechanical Model: Orbitals (s, p, d shapes).
+                        Quantum Numbers: Principal (n), Azimuthal (l), Magnetic (m_l), Spin (m_s).
+                        Electronic Configuration: Aufbau, Pauli, Hund's rule.
+
+                        Chapter 3: Classification of Elements and Periodicity in Properties
+                        Periodic Classification: Dobereiner's Triads, Newlands' Octaves, Mendeleev's Periodic Law.
+                        Modern Periodic Law (Moseley): Properties are periodic functions of atomic numbers.
+                        Modern Periodic Table: Periods, Groups, s-, p-, d-, f-blocks.
+                        Periodic Trends:
+                        1. Atomic Radius: Decreases across period, increases down group.
+                        2. Ionic Radius: Cations < parent, Anions > parent.
+                        3. Ionization Enthalpy: Increases across period, decreases down group.
+                        4. Electron Gain Enthalpy: More negative across period, less negative down group.
+                        5. Electronegativity: Increases across period, decreases down group.
+                        6. Valency/Oxidation State.
+                        7. Metallic/Non-metallic Character.
+                    `,
+                    "Biology": `
+                        Chapter 1: The Living World
+                        What is Living? Growth, Reproduction, Metabolism, Cellular organization, Consciousness.
+                        Diversity: Biodiversity.
+                        Taxonomy: Principles of classification.
+                        Taxonomic Categories: Species, Genus, Family, Order, Class, Phylum/Division, Kingdom.
+                        Taxonomical Aids: Herbarium, Botanical Gardens, Museum, Zoological Parks, Key.
+
+                        Chapter 2: Biological Classification
+                        Kingdom Monera: Bacteria (archaebacteria, eubacteria), Mycoplasma.
+                        Kingdom Protista: Chrysophytes, Dinoflagellates, Euglenoids, Slime Moulds, Protozoans.
+                        Kingdom Fungi: Nutrition, reproduction. Classes: Phycomycetes, Ascomycetes, Basidiomycetes, Deuteromycetes.
+                        Kingdom Plantae: Algae, Bryophytes, Pteridophytes, Gymnosperms, Angiosperms.
+                        Kingdom Animalia: Invertebrates and Vertebrates.
+                        Viruses, Viroids, Prions, Lichens.
+
+                        Chapter 3: Plant Kingdom
+                        Algae: Chlorophyceae (green), Phaeophyceae (brown), Rhodophyceae (red).
+                        Bryophytes: Liverworts and Mosses.
+                        Pteridophytes: Horsetails and Ferns.
+                        Gymnosperms: Conifers, Cycads.
+                        Angiosperms: Monocots and Dicots.
+                        Plant Life Cycles and Alternation of Generations.
+                    `,
+                    "English": `English for Class 12 Science stream focuses on advanced literary analysis, critical reading, and refined writing skills. It includes texts from Flamingo and Vistas, covering diverse themes and literary styles, preparing students for higher education.`,
+                    "Maths": `Mathematics for Class 12 Science stream includes Relations and Functions, Inverse Trigonometric Functions, Matrices, Determinants, Continuity and Differentiability, Applications of Derivatives, Integrals, Applications of Integrals, Differential Equations, Vector Algebra, Three Dimensional Geometry, Linear Programming, and Probability.`,
+                    "Hindi": `Hindi for Class 12 Science stream covers advanced Hindi literature, grammar, and composition, focusing on critical analysis and creative writing for board examinations and higher studies.`,
+                    "Physical Education": `Physical Education for Class 12 Science stream covers the theoretical aspects of physical fitness, sports, and healthy living. Topics include Olympic values, yoga, psychology and sports, and physical activity and leadership.`,
+                    "Information Practices": `Information Practices for Class 12 Science stream introduces concepts of computer systems, data handling using Pandas, database concepts with SQL, and an introduction to emerging trends in IT. It focuses on practical application of computing.`
+                },
+                "Commerce": {
+                    "Accountancy": `Accountancy for Class 12 Commerce covers advanced partnership accounting, company accounts (share capital, debentures), and analysis of financial statements. Key topics include admission, retirement, death of a partner, dissolution of partnership, and cash flow statements.`,
+                    "Business Studies": `Business Studies for Class 12 Commerce focuses on Principles and Functions of Management and Business Finance and Marketing. Topics include nature and significance of management, principles of management, planning, organizing, staffing, directing, controlling, financial management, financial markets, marketing management, and consumer protection.`,
+                    "Economics": `Economics for Class 12 Commerce typically covers Macroeconomics and Indian Economic Development. Topics include national income, money and banking, government budget, balance of payments, and detailed analysis of Indian economy post-independence, including reforms and challenges.`,
+                    "Maths": `Mathematics for Class 12 Commerce often includes topics like Relations and Functions, Matrices, Determinants, Calculus (differentiation and integration basics), Linear Programming, Probability, and Financial Mathematics, with an emphasis on business applications.`,
+                    "Statistics": `Statistics for Class 12 Commerce covers advanced statistical methods, including probability distributions, sampling theory, regression analysis, and time series analysis, essential for business and economic analysis.`,
+                    "English": `English for Class 12 Commerce stream focuses on developing strong communication skills, business English, and critical thinking through prose and poetry. It prepares students for professional communication and competitive exams.`,
+                    "Hindi": `Hindi for Class 12 Commerce stream focuses on practical Hindi for business communication, official correspondence, and literary appreciation. It enhances proficiency for professional and academic contexts.`,
+                    "Physical Education": `Physical Education for Class 12 Commerce stream covers the theoretical aspects of physical fitness, sports, and healthy living. Topics include Olympic values, yoga, psychology and sports, and physical activity and leadership.`,
+                    "Information Practices": `Information Practices for Class 12 Commerce stream introduces concepts of computer systems, data handling using Pandas, database concepts with SQL, and an introduction to emerging trends in IT. It focuses on practical application of computing.`
+                },
+                "Arts": {
+                    "History": `History for Class 12 Arts covers themes in Indian History, including Harappan Archaeology, Political and Economic History, Social Histories, Cultural Developments, Perceptions of the Past, Colonialism, Nationalism, and Partition.`,
+                    "Economics": `Economics for Class 12 Arts typically covers Macroeconomics and Indian Economic Development. Topics include national income, money and banking, government budget, balance of payments, and detailed analysis of Indian economy post-independence, including reforms and challenges.`,
+                    "Geography": `Geography for Class 12 Arts covers human geography (population, human activities, transport, communication) and Indian geography (people, economy, planning, sustainable development).`,
+                    "Political Science": `Political Science for Class 12 Arts introduces Indian Constitution at Work and Political Theory. Topics include rights, equality, justice, federalism, local governments, and the philosophy behind political concepts.`,
+                    "Sociology": `Sociology for Class 12 Arts explores Indian society, social structure, social change, and various social issues. Topics include demographic structure, social institutions, patterns of inequality, and challenges like communalism and casteism.`,
+                    "Psychology": `Psychology for Class 12 Arts delves deeper into psychological concepts, including self and personality, human development, stress management, psychological disorders, therapy, and social psychology.`,
+                    "English": `English for Class 12 Arts stream focuses on advanced literary analysis, critical reading, and creative writing. It includes diverse literary texts to enhance appreciation and expression for higher studies.`,
+                    "Hindi": `Hindi for Class 12 Arts stream focuses on in-depth study of Hindi literature, critical analysis of texts, and advanced composition skills. It prepares students for higher literary studies and competitive exams.`,
+                    "Physical Education": `Physical Education for Class 12 Arts stream covers the theoretical aspects of physical fitness, sports, and healthy living. Topics include Olympic values, yoga, psychology and sports, and physical activity and leadership.`,
+                    "Information Practices": `Information Practices for Class 12 Arts stream introduces concepts of computer systems, data handling using Pandas, database concepts with SQL, and an introduction to emerging trends in IT. It focuses on practical application of computing.`
+                }
+            }
+        };
+
+        // Define available subjects for each class/stream
+        const availableSubjects = {
+            "1": ["EVS", "General Science", "Maths", "English", "Hindi", "Computer"],
+            "2": ["EVS", "General Science", "Maths", "English", "Hindi", "Computer"],
+            "3": ["EVS", "General Science", "Maths", "English", "Hindi", "Computer"],
+            "4": ["EVS", "General Science", "Maths", "English", "Hindi", "Computer"],
+            "5": ["EVS", "General Science", "Maths", "English", "Hindi", "Computer"],
+            "6": ["Science", "Maths", "SST", "Hindi", "English", "Computer"],
+            "7": ["Science", "Maths", "SST", "Hindi", "English", "Computer"],
+            "8": ["Maths", "Science", "Social Science", "English", "Hindi", "Biology", "Physics", "Chemistry"],
+            "9": ["Maths", "Science", "Social Science", "English", "Hindi", "Biology", "Physics", "Chemistry"],
+            "10": ["Maths", "Science", "Social Science", "English", "Hindi", "Biology", "Physics", "Chemistry"],
+            "11": {
+                "Science": ["Physics", "Chemistry", "Biology", "Maths", "English", "Hindi", "Physical Education", "Information Practices"],
+                "Commerce": ["Accountancy", "Business Studies", "Economics", "Maths", "Statistics", "English", "Hindi", "Physical Education", "Information Practices"],
+                "Arts": ["History", "Economics", "Geography", "Political Science", "Sociology", "Psychology", "English", "Hindi", "Physical Education", "Information Practices"]
+            },
+            "12": {
+                "Science": ["Physics", "Chemistry", "Biology", "Maths", "English", "Hindi", "Physical Education", "Information Practices"],
+                "Commerce": ["Accountancy", "Business Studies", "Economics", "Maths", "Statistics", "English", "Hindi", "Physical Education", "Information Practices"],
+                "Arts": ["History", "Economics", "Geography", "Political Science", "Sociology", "Psychology", "English", "Hindi", "Physical Education", "Information Practices"]
+            }
+        };
+
+        // --- Dark Mode Logic ---
+        function applyDarkMode(isDark) {
+            if (isDark) {
+                body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        }
+
+        // Check local storage for dark mode preference on load
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === 'enabled') {
+            applyDarkMode(true);
+            darkModeToggle.checked = true;
+        } else {
+            applyDarkMode(false);
+            darkModeToggle.checked = false;
+        }
+
+        // Event listener for dark mode toggle
+        darkModeToggle.addEventListener('change', () => {
+            applyDarkMode(darkModeToggle.checked);
+        });
+
+        // --- Mode Switching Logic ---
+        function switchMode(mode) {
+            // Deactivate all mode buttons and hide all content divs
+            Object.values(modeButtons).forEach(btn => {
+                btn.classList.remove('active');
+            });
+            Object.values(modeContents).forEach(contentDiv => {
+                contentDiv.classList.add('hidden');
+            });
+
+            // Activate the selected mode button and show its content div
+            modeButtons[mode].classList.add('active');
+            modeContents[mode].classList.remove('hidden');
+
+            currentMode = mode;
+            clearAllModeOutputs(); // Clear outputs when switching modes
+            hideAllErrorMessages(); // Hide errors when switching modes
+            setLoading(false, currentMode); // Reset loading state and button states for the new mode
+
+            // Show casual mode alert only once when switching to it
+            if (mode === 'casual' && !hasShownCasualModeAlert) {
+                customAlert("Welcome to Casual Chat mode! Remember, AI responses are generated and might not always be perfect.");
+                hasShownCasualModeAlert = true;
+            }
+        }
+
+        // Event listeners for mode buttons
+        modeButtons.default.addEventListener('click', () => switchMode('default'));
+        modeButtons.research.addEventListener('click', () => switchMode('research'));
+        modeButtons.code.addEventListener('click', () => switchMode('code'));
+        modeButtons.casual.addEventListener('click', () => switchMode('casual'));
+
+        // --- Helper Functions ---
+
+        function showErrorMessage(message, targetDiv) {
+            targetDiv.textContent = message;
+            targetDiv.classList.remove('hidden');
+        }
+
+        function hideAllErrorMessages() {
+            errorMessageDiv.classList.add('hidden');
+            errorMessageDiv.textContent = '';
+            researchErrorMessageDiv.classList.add('hidden');
+            researchErrorMessageDiv.textContent = '';
+            codeErrorMessageDiv.classList.add('hidden');
+            codeErrorMessageDiv.textContent = '';
+            chatErrorMessageDiv.classList.add('hidden');
+            chatErrorMessageDiv.textContent = '';
+        }
+
+        function setLoading(state, mode) {
+            isLoading = state;
+            let btnText, spinner, actionBtn;
+            let pdfBtn, txtBtn, copyBtn; // Specific buttons for each mode
+
+            switch (mode) {
+                case 'default':
+                    btnText = buttonText;
+                    spinner = loadingSpinner;
+                    actionBtn = fetchSummarizeBtn;
+                    pdfBtn = downloadPdfBtn;
+                    break;
+                case 'research':
+                    btnText = researchButtonText;
+                    spinner = researchLoadingSpinner;
+                    actionBtn = fetchResearchBtn;
+                    pdfBtn = downloadResearchPdfBtn;
+                    break;
+                case 'code':
+                    btnText = codeButtonText;
+                    spinner = codeLoadingSpinner;
+                    actionBtn = processCodeBtn;
+                    txtBtn = downloadCodeTxtBtn;
+                    copyBtn = copyCodeBtn;
+                    break;
+                case 'casual':
+                    btnText = chatButtonText;
+                    spinner = chatLoadingSpinner;
+                    actionBtn = sendChatBtn;
+                    txtBtn = downloadChatHistoryBtn; // Reusing txtBtn for chat history
+                    break;
+            }
+
+            if (isLoading) {
+                btnText.textContent = 'Processing...';
+                spinner.classList.remove('hidden');
+                actionBtn.disabled = true;
+                if (pdfBtn) pdfBtn.disabled = true;
+                if (txtBtn) txtBtn.disabled = true;
+                if (copyBtn) copyBtn.disabled = true;
+            } else {
+                actionBtn.disabled = false;
+                spinner.classList.add('hidden');
+                if (mode === 'default') btnText.textContent = 'Gimme AI summary';
+                else if (mode === 'research') btnText.textContent = 'gimme the research content';
+                else if (mode === 'code') btnText.textContent = 'Process Code';
+                else if (mode === 'casual') btnText.textContent = 'Send Message';
+
+                // Enable/disable specific buttons based on content for each mode
+                if (mode === 'default') {
+                    if (aiSummaryContentDiv.textContent.trim() !== 'Remember. AI is AI. Use it, but don\'t trust it fully. :)' &&
+                        aiSummaryContentDiv.textContent.trim() !== 'AI could not generate a response for default mode. Please try again or with different input.' &&
+                        aiSummaryContentDiv.textContent.trim() !== 'An error occurred during processing for default mode.') {
+                        pdfBtn.disabled = false;
+                    } else {
+                        pdfBtn.disabled = true;
+                    }
+                } else if (mode === 'research') {
+                    if (researchOutputContentDiv.textContent.trim() !== 'Note - Using it for really big projects may make ur teacher doubtful. If you do so, then get ready to be beaten up.' &&
+                        researchOutputContentDiv.textContent.trim() !== 'AI could not generate a response for research mode. Please try again or with different input.' &&
+                        researchOutputContentDiv.textContent.trim() !== 'An error occurred during processing for research mode.') {
+                        pdfBtn.disabled = false;
+                    } else {
+                        pdfBtn.disabled = true;
+                    }
+                } else if (mode === 'code') {
+                    if (codeOutputContentDiv.textContent.trim() !== 'You little! using AI to code??!! seriously??!! 😭' &&
+                        codeOutputContentDiv.textContent.trim() !== 'AI could not generate a response for code mode. Please try again or with different input.' &&
+                        codeOutputContentDiv.textContent.trim() !== 'An error occurred during processing for code mode.') {
+                        txtBtn.disabled = false;
+                        copyBtn.disabled = false;
+                    } else {
+                        txtBtn.disabled = true;
+                        copyBtn.disabled = true;
+                    }
+                } else if (mode === 'casual') {
+                    if (chatHistory.length > 0) { // Enable download if there's any chat history
+                        txtBtn.disabled = false;
+                    } else {
+                        txtBtn.disabled = true;
+                    }
+                }
+            }
+        }
+
+
+        function clearAllModeOutputs() {
+            aiSummaryContentDiv.innerHTML = '<p>Remember. AI is AI. Use it, but don\'t trust it fully. :)</p>';
+            researchOutputContentDiv.innerHTML = '<p>Note - Using it for really big projects may make ur teacher doubtful. If you do so, then get ready to be beaten up.</p>';
+            codeOutputContentDiv.innerHTML = '<p>You little! using AI to code??!! seriously??!! 😭</p>';
+            chatOutputContentDiv.innerHTML = '<p class="chat-message ai">Start chatting with the AI. Remember, AI responses are generated and might not always be perfect.</p>';
+            chatHistory = []; // Clear chat history
+        }
+
+        // Custom Alert Modal Functions
+        function customAlert(message) {
+            alertMessage.textContent = message;
+            customAlertModal.style.display = 'flex'; // Use flex to center
+        }
+
+        closeAlertButton.onclick = function() {
+            customAlertModal.style.display = 'none';
+        }
+        alertOkButton.onclick = function() {
+            customAlertModal.style.display = 'none';
+        }
+        window.onclick = function(event) {
+            if (event.target == customAlertModal) {
+                customAlertModal.style.display = 'none';
+            }
+        }
+
+        // --- Core AI Fetch Function (Generalized) ---
+        async function fetchAIResponse(prompt, outputDiv, errorDiv, mode, isCasual = false) {
+            setLoading(true, mode);
+            hideAllErrorMessages();
+
+            try {
+                let currentChatHistory = [];
+                if (isCasual) {
+                    currentChatHistory = [...chatHistory]; // Use a copy for the API call
+                }
+                currentChatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: currentChatHistory };
+                const apiKey = ""; // API key automatically provided by Canvas
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const aiResponseText = result.candidates[0].content.parts[0].text;
+
+                    if (isCasual) {
+                        chatHistory.push({ role: "model", parts: [{ text: aiResponseText }] });
+                        renderChatHistory();
+                        // Removed customAlert from here, now triggered only on mode switch
+                    } else {
+                        outputDiv.innerHTML = marked.parse(aiResponseText);
+                    }
+                } else {
+                    outputDiv.textContent = `AI could not generate a response for ${mode} mode. Please try again or with different input.`;
+                }
+            } catch (error) {
+                console.error(`Error during AI processing for ${mode} mode:`, error);
+                showErrorMessage(`Failed to get AI response: ${error.message}. Please try again.`, errorDiv);
+                outputDiv.textContent = `An error occurred during processing for ${mode} mode.`;
+            } finally {
+                setLoading(false, mode);
+            }
+        }
+
+        // --- Default Mode Functions ---
+        function populateSubjectDropdown() {
+            subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>'; // Clear existing options
+            let subjects = [];
+
+            if (parseInt(selectedClass) >= 11) {
+                if (selectedStream && availableSubjects[selectedClass] && availableSubjects[selectedClass][selectedStream]) {
+                    subjects = availableSubjects[selectedClass][selectedStream];
+                }
+            } else if (selectedClass) {
+                subjects = availableSubjects[selectedClass];
+            }
+
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+            selectedSubject = ''; // Reset selected subject when dropdown changes
+        }
+
+        classSelect.addEventListener('change', () => {
+            selectedClass = classSelect.value;
+            const classNum = parseInt(selectedClass);
+
+            if (classNum >= 11) { // Only show stream for 11th and 12th
+                streamContainer.classList.remove('hidden');
+            } else {
+                streamContainer.classList.add('hidden');
+                streamSelect.value = '';
+                selectedStream = '';
+            }
+
+            if (classNum >= 6) { // Show NCERT toggle for 6th to 12th
+                ncertToggleContainer.classList.remove('hidden');
+            } else {
+                ncertToggleContainer.classList.add('hidden');
+                ncertToggle.checked = false; // Uncheck it if hidden
+            }
+
+            populateSubjectDropdown(); // Update subjects based on class/stream
+            clearResultsDefaultMode();
+            hideAllErrorMessages();
+            setLoading(false, 'default');
+        });
+
+        streamSelect.addEventListener('change', () => {
+            selectedStream = streamSelect.value;
+            populateSubjectDropdown(); // Update subjects based on class/stream
+            clearResultsDefaultMode();
+            hideAllErrorMessages();
+            setLoading(false, 'default');
+        });
+
+        subjectSelect.addEventListener('change', () => {
+            selectedSubject = subjectSelect.value;
+            clearResultsDefaultMode();
+            hideAllErrorMessages();
+            setLoading(false, 'default');
+        });
+
+        topicInput.addEventListener('input', () => {
+            clearResultsDefaultMode();
+            hideAllErrorMessages();
+            setLoading(false, 'default');
+        });
+
+        fetchSummarizeBtn.addEventListener('click', async () => {
+            if (!selectedClass || !selectedSubject) {
+                showErrorMessage('Please select both Class and Subject.', errorMessageDiv);
+                return;
+            }
+            if ((parseInt(selectedClass) >= 11) && !selectedStream) {
+                showErrorMessage('Please select a Stream for 11th and 12th class.', errorMessageDiv);
+                return;
+            }
+
+            let notes = '';
+            if (parseInt(selectedClass) >= 11) {
+                notes = mockNcertNotes[selectedClass]?.[selectedStream]?.[selectedSubject] || `General overview for Class ${selectedClass} ${selectedStream} ${selectedSubject}. This content serves as a base for AI summarization.`;
+            } else {
+                notes = mockNcertNotes[selectedClass]?.[selectedSubject] || `General overview for Class ${selectedClass} ${selectedSubject}. This content serves as a base for AI summarization.`;
+            }
+
+            const specificTopic = topicInput.value.trim();
+            let prompt = '';
+            const classNum = parseInt(selectedClass);
+            const isNcertChecked = ncertToggle.checked;
+
+            if (classNum <= 5) {
+                prompt = `As an expert tutor for young learners, summarize the following notes for a student of Class ${selectedClass}.
+                Explain it like you are teaching a kid, using very simple language, short sentences, and relatable examples.
+                Focus on core concepts. Use emojis and simple bullet points to make it engaging.
+                `;
+                if (specificTopic) {
+                    prompt += `\n\n**Focus ONLY on the specific topic: "${specificTopic}".** If the provided notes below do not extensively cover this exact topic, use your general educational knowledge to explain "${specificTopic}" in a kid-friendly style.`;
+                } else {
+                    prompt += `\n\nMake it easy for a kid to understand and remember.`;
+                }
+            } else if (classNum <= 7) {
+                prompt = `As an expert tutor, summarize the following notes for a student of Class ${selectedClass}.
+                Teach as per a ${selectedClass}th grade student, using simple and clear language.`;
+                if (isNcertChecked) {
+                    prompt += ` The explanation should strictly adhere to the NCERT syllabus and style.`;
+                }
+                prompt += `
+                Include important topics and concepts. Organize the summary logically with clear headings (using Markdown like #, ##, ### for sections).
+                Use bold (**text**), italics (*text*), and lists (- item) for text decoration where appropriate to highlight key points.`;
+                if (specificTopic) {
+                    prompt += `\n\n**Crucially, your summary must focus ONLY on the specific topic: "${specificTopic}".** If the provided notes below do not extensively cover this exact topic, use your general educational knowledge to explain "${specificTopic}" in a ${selectedClass}th-grade appropriate style.`;
+                } else {
+                    prompt += `\n\nFocus on the core concepts from the provided notes, making it easy for a student to understand and revise.`;
+                }
+            } else { // Class 8 and above
+                prompt = `As an expert educational researcher and tutor, provide a concise and simple summary for a student of Class ${selectedClass}${selectedStream ? ' ' + selectedStream : ''} ${selectedSubject}.`;
+                if (isNcertChecked) {
+                    prompt += ` The summary should be strictly in the style of an NCERT textbook, focusing on clarity and ease of understanding for students.`;
+                } else {
+                    prompt += ` The summary should be clear and easy to understand for students.`;
+                }
+                prompt += `
+                Include all relevant formulas, equations, and important topics clearly.
+                Organize the summary logically with clear headings (using Markdown like #, ##, ### for chapters/sections).
+                Use bold (**text**), italics (*text*), and lists (- item) for text decoration where appropriate to highlight key points.`;
+
+                if (specificTopic) {
+                    prompt += `\n\n**Crucially, your summary must focus ONLY on the specific topic: "${specificTopic}".** If the provided notes below do not extensively cover this exact topic, use your general educational knowledge to explain "${specificTopic}" in the ${isNcertChecked ? 'NCERT style' : 'general educational style'}, clearly stating if the information is from general knowledge versus the provided text.`;
+                } else {
+                    prompt += `\n\nFocus on the core concepts from the provided notes, making it easy for a student to understand and revise.`;
+                }
+            }
+
+            prompt += `\n\nHere are the notes to summarize:\n${notes}`;
+
+            await fetchAIResponse(prompt, aiSummaryContentDiv, errorMessageDiv, 'default');
+        });
+
+        function clearResultsDefaultMode() {
+            aiSummaryContentDiv.innerHTML = '<p>The AI-generated summary, including important topics, formulas, and equations, will appear here.</p>';
+        }
+
+        // --- Research Mode Functions ---
+        fetchResearchBtn.addEventListener('click', async () => {
+            const researchQuery = researchQueryInput.value.trim();
+            if (!researchQuery) {
+                showErrorMessage('Please enter a research query.', researchErrorMessageDiv);
+                return;
+            }
+
+            const prompt = `As an expert educational researcher, provide a detailed and easily understandable explanation for the following topic: "${researchQuery}".
+            Structure the explanation with clear headings, bullet points, and examples.
+            Ensure the language is accessible for a student, avoiding overly complex jargon where possible, but maintaining scientific accuracy.
+            Include relevant background, key concepts, implications, and any notable facts.
+            Format the output using Markdown (headings, bold, italics, lists, code blocks).`;
+
+            await fetchAIResponse(prompt, researchOutputContentDiv, researchErrorMessageDiv, 'research');
+        });
+
+        // --- Code Mode Functions ---
+        codeUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    codeInput.value = e.target.result;
+                };
+                reader.onerror = (e) => {
+                    showErrorMessage('Failed to read file.', codeErrorMessageDiv);
+                    console.error('File reading error:', e);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        processCodeBtn.addEventListener('click', async () => {
+            const code = codeInput.value.trim();
+            const language = codeLanguageSelect.value;
+
+            if (!code && !language) {
+                showErrorMessage('Please enter code/problem or select a language.', codeErrorMessageDiv);
+                return;
+            }
+
+            let prompt = `As an expert programmer and debugger, analyze the following code or problem description.`;
+            if (language) {
+                prompt += ` The language is ${language}.`;
+            }
+            prompt += `\n\nYour task is to either:
+            1.  **Debug:** If code is provided, identify and explain bugs, suggest fixes, and provide the corrected code.
+            2.  **Write Code:** If a problem is described, write clear, well-commented code in the specified language to solve it.
+            3.  **Explain:** Explain the provided code or concept in detail.
+
+            Ensure your response is well-formatted using Markdown, including code blocks, explanations, and bullet points.`;
+
+            if (code) {
+                prompt += `\n\nCode/Problem:\n\`\`\`${language.toLowerCase() || 'text'}\n${code}\n\`\`\``;
+            } else {
+                prompt += `\n\nProblem Description:\n${codeInput.placeholder}`; // Use placeholder if no code
+            }
+
+            await fetchAIResponse(prompt, codeOutputContentDiv, codeErrorMessageDiv, 'code');
+        });
+
+        // FIX: Corrected download TXT functionality
+        downloadCodeTxtBtn.addEventListener('click', () => {
+            const codeContent = codeOutputContentDiv.textContent.trim();
+            if (codeContent && codeContent !== 'You little! using AI to code??!! seriously??!! 😭' &&
+                codeContent !== 'AI could not generate a response for code mode. Please try again or with different input.' &&
+                codeContent !== 'An error occurred during processing for code mode.') {
+                const blob = new Blob([codeContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `code_output_${new Date().toLocaleDateString().replace(/\//g, '-')}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                showErrorMessage('No code output to download.', codeErrorMessageDiv);
+            }
+        });
+
+        copyCodeBtn.addEventListener('click', () => {
+            const codeContent = codeOutputContentDiv.textContent.trim();
+            if (codeContent && codeContent !== 'You little! using AI to code??!! seriously??!! 😭' &&
+                codeContent !== 'AI could not generate a response for code mode. Please try again or with different input.' &&
+                codeContent !== 'An error occurred during processing for code mode.') {
+                // Use execCommand for clipboard copy due to potential iframe restrictions
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = codeContent;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                    // Optional: Provide a visual cue that copy was successful
+                    copyCodeBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyCodeBtn.textContent = 'Copy Code';
+                    }, 2000);
+                } catch (err) {
+                    showErrorMessage('Failed to copy code. Please copy manually.', codeErrorMessageDiv);
+                    console.error('Copy command failed:', err);
+                } finally {
+                    document.body.removeChild(tempTextArea);
+                }
+            } else {
+                showErrorMessage('No code output to copy.', codeErrorMessageDiv);
+            }
+        });
+
+
+        // --- Casual Mode Functions ---
+        sendChatBtn.addEventListener('click', async () => {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) {
+                showErrorMessage('Please type a message to chat.', chatErrorMessageDiv);
+                return;
+            }
+
+            // Add user message to chat history and render
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+            renderChatHistory();
+            chatInput.value = ''; // Clear input
+
+            const prompt = userMessage; // The AI will respond to the direct message
+            await fetchAIResponse(prompt, chatOutputContentDiv, chatErrorMessageDiv, 'casual', true);
+        });
+
+        function renderChatHistory() {
+            chatOutputContentDiv.innerHTML = ''; // Clear current display
+            chatHistory.forEach(entry => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message');
+                if (entry.role === 'user') {
+                    messageElement.classList.add('user');
+                    messageElement.innerHTML = `<strong>You:</strong> ${marked.parse(entry.parts[0].text)}`;
+                } else {
+                    messageElement.classList.add('ai');
+                    messageElement.innerHTML = `<strong>AI:</strong> ${marked.parse(entry.parts[0].text)}`;
+                }
+                chatOutputContentDiv.appendChild(messageElement);
+            });
+            chatOutputContentDiv.scrollTop = chatOutputContentDiv.scrollHeight; // Scroll to bottom
+        }
+
+        downloadChatHistoryBtn.addEventListener('click', () => {
+            if (chatHistory.length === 0) {
+                showErrorMessage('No chat history to download.', chatErrorMessageDiv);
+                return;
+            }
+
+            let historyText = "Chat History:\n\n";
+            chatHistory.forEach(entry => {
+                const role = entry.role === 'user' ? 'You' : 'AI';
+                historyText += `${role}: ${entry.parts[0].text}\n\n`;
+            });
+
+            const blob = new Blob([historyText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `chat_history_${new Date().toLocaleDateString().replace(/\//g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+
+        /**
+         * Adds formatted HTML content from a given DOM element to the jsPDF document,
+         * handling page breaks and basic text styling.
+         * @param {jsPDF} doc The jsPDF document instance.
+         * @param {HTMLElement} contentElement The DOM element containing the HTML content (e.g., aiSummaryContentDiv).
+         * @param {number} startY The initial Y position on the PDF page.
+         * @param {number} margin The page margin in mm.
+         * @param {number} pageHeight The height of a single PDF page in mm.
+         * @returns {number} The final Y position after adding all content.
+         */
+        function addFormattedContentToPdf(doc, contentElement, startY, margin, pageHeight) {
+            let currentY = startY;
+            const defaultFontSize = 12;
+            const defaultLineHeight = 7; // mm per line, approximate
+            const paragraphSpacing = 5; // mm after each paragraph/block
+
+            // Helper to check for page break and add new page
+            const checkPageBreak = (requiredHeight) => {
+                if (currentY + requiredHeight > pageHeight - margin) {
+                    doc.addPage();
+                    currentY = margin;
+                }
+            };
+
+            // The font name 'NotoSansDevanagari' should match what you used when adding the font.
+            const hindiFontFamily = 'NotoSansDevanagari'; // This is the family name passed to addFont
+            const hindiFontStyle = 'normal'; // This is the style passed to addFont
+
+            // Try to get the font object to confirm it's loaded and get its internal name
+            let loadedHindiFont = null;
+            try {
+                if (notoSansDevanagariRegularBase64 && notoSansDevanagariRegularBase64 !== 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=') { // Check against dummy string
+                    loadedHindiFont = doc.getFont(hindiFontFamily, hindiFontStyle);
+                    if (!loadedHindiFont || !loadedHindiFont.id) {
+                        console.warn(`Font '${hindiFontFamily}' with style '${hindiFontStyle}' not properly loaded. Hindi characters will fallback to Helvetica.`);
+                    }
+                }
+            } catch (e) {
+                console.error(`Error getting font '${hindiFontFamily}':`, e);
+                // This catch block might indicate a deeper issue if getFont itself throws an error.
+            }
+
+
+            // Iterate through each direct child of the contentElement
+            for (const child of contentElement.children) {
+                const tagName = child.tagName.toLowerCase();
+                let textContent = child.textContent.trim();
+                let lines = [];
+                let currentFontFamily = 'helvetica'; // Default font for English/Latin text
+                let currentStyle = 'normal'; // Default style
+                let fontSize = defaultFontSize;
+                let align = 'left';
+
+                // Check if text content contains Hindi characters (Devanagari Unicode range)
+                const containsHindi = /[\u0900-\u097F]/.test(textContent);
+
+                if (containsHindi && loadedHindiFont && loadedHindiFont.id) {
+                    currentFontFamily = hindiFontFamily; // Use the custom Hindi font family
+                    currentStyle = hindiFontStyle; // Use the custom Hindi font style
+                } else {
+                    // For non-Hindi text, check for bold/italic from HTML tags
+                    if (child.querySelector('strong') || child.querySelector('b')) {
+                        currentStyle = 'bold';
+                    } else if (child.querySelector('em') || child.querySelector('i')) {
+                        currentStyle = 'italic';
+                    } else {
+                        currentStyle = 'normal';
+                    }
+                    currentFontFamily = 'helvetica'; // Ensure Helvetica for non-Hindi text
+                }
+
+                // Determine formatting based on tag
+                switch (tagName) {
+                    case 'h1':
+                        fontSize = 22;
+                        align = 'center';
+                        checkPageBreak(fontSize / 2 + paragraphSpacing);
+                        doc.setFontSize(fontSize);
+                        doc.setFont(currentFontFamily, currentStyle);
+                        doc.text(textContent, doc.internal.pageSize.getWidth() / 2, currentY, { align: align });
+                        currentY += fontSize / 2 + paragraphSpacing;
+                        break;
+                    case 'h2':
+                        fontSize = 18;
+                        align = 'center';
+                        checkPageBreak(fontSize / 2 + paragraphSpacing);
+                        doc.setFontSize(fontSize);
+                        doc.setFont(currentFontFamily, currentStyle);
+                        doc.text(textContent, doc.internal.pageSize.getWidth() / 2, currentY, { align: align });
+                        currentY += fontSize / 2 + paragraphSpacing;
+                        break;
+                    case 'h3':
+                        fontSize = 16;
+                        checkPageBreak(fontSize / 2 + paragraphSpacing);
+                        doc.setFontSize(fontSize);
+                        doc.setFont(currentFontFamily, currentStyle);
+                        doc.text(textContent, margin, currentY);
+                        currentY += fontSize / 2 + paragraphSpacing;
+                        break;
+                    case 'p':
+                        doc.setFontSize(defaultFontSize);
+                        doc.setFont(currentFontFamily, currentStyle);
+                        lines = doc.splitTextToSize(textContent, doc.internal.pageSize.getWidth() - 2 * margin);
+                        lines.forEach(line => {
+                            checkPageBreak(defaultLineHeight);
+                            doc.text(line, margin, currentY);
+                            currentY += defaultLineHeight;
+                        });
+                        currentY += paragraphSpacing;
+                        break;
+                    case 'ul':
+                    case 'ol':
+                        doc.setFontSize(defaultFontSize);
+                        const listIndent = 10; // mm for indentation
+                        for (let i = 0; i < child.children.length; i++) {
+                            const listItem = child.children[i];
+                            if (listItem.tagName.toLowerCase() === 'li') {
+                                let listItemText = listItem.textContent.trim();
+                                const prefix = (tagName === 'ul' ? '• ' : `${i + 1}. `);
+
+                                const listItemContainsHindi = /[\u0900-\u097F]/.test(listItemText);
+                                let listItemFontFamily = 'helvetica';
+                                let listItemStyle = 'normal';
+
+                                if (listItemContainsHindi && loadedHindiFont && loadedHindiFont.id) {
+                                    listItemFontFamily = hindiFontFamily;
+                                    listItemStyle = hindiFontStyle;
+                                } else {
+                                    if (listItem.querySelector('strong') || listItem.querySelector('b')) {
+                                        listItemStyle = 'bold';
+                                    } else if (listItem.querySelector('em') || listItem.querySelector('i')) {
+                                        listItemStyle = 'italic';
+                                    }
+                                    listItemFontFamily = 'helvetica';
+                                }
+                                doc.setFont(listItemFontFamily, listItemStyle);
+
+                                const listItemLines = doc.splitTextToSize(prefix + listItemText, doc.internal.pageSize.getWidth() - 2 * margin - listIndent);
+                                listItemLines.forEach(line => {
+                                    checkPageBreak(defaultLineHeight);
+                                    doc.text(line, margin + listIndent, currentY);
+                                    currentY += defaultLineHeight;
+                                });
+                                currentY += 2; // Small spacing between list items
+                            }
+                        }
+                        currentY += paragraphSpacing;
+                        break;
+                    case 'pre': // For code blocks, typically contains a <code> child
+                        doc.setFont('courier', 'normal'); // Monospace font for code
+                        fontSize = 10; // Smaller font for code
+                        doc.setFontSize(fontSize);
+                        const codeText = child.textContent; // Get text content of pre (which includes code)
+                        const codeLines = codeText.split('\n'); // Preserve line breaks in code
+                        codeLines.forEach(line => {
+                            checkPageBreak(defaultLineHeight);
+                            doc.text(line, margin, currentY);
+                            currentY += defaultLineHeight;
+                        });
+                        currentY += paragraphSpacing;
+                        break;
+                    default:
+                        doc.setFontSize(defaultFontSize);
+                        doc.setFont(currentFontFamily, currentStyle);
+                        lines = doc.splitTextToSize(textContent, doc.internal.pageSize.getWidth() - 2 * margin);
+                        lines.forEach(line => {
+                            checkPageBreak(defaultLineHeight);
+                            doc.text(line, margin, currentY);
+                            currentY += defaultLineHeight;
+                        });
+                        currentY += paragraphSpacing;
+                        break;
+                }
+                // Reset font and size for the next block to default
+                doc.setFontSize(defaultFontSize);
+                doc.setFont('helvetica', 'normal'); // Reset to default Helvetica for safety
+            }
+            return currentY; // Return final Y position
+        }
+
+
+        // --- PDF Download Function (Text-based Rendering) ---
+        async function downloadPdf(event) {
+            let contentDiv;
+            let filenamePrefix;
+            let customTitle = '';
+            let customText = '';
+            let errorTargetDiv;
+
+            if (currentMode === 'default') {
+                contentDiv = aiSummaryContentDiv;
+                const className = selectedClass ? `Class_${selectedClass}` : 'Class';
+                const streamName = selectedStream ? `${streamSelect.options[streamSelect.selectedIndex].text}_` : '';
+                const subjectName = selectedSubject ? `${subjectSelect.options[subjectSelect.selectedIndex].text}_` : '';
+                const topicName = topicInput.value.trim() ? `${topicInput.value.trim().replace(/\s+/g, '_')}_` : '';
+                filenamePrefix = `NCERT_Summary_${className}_${streamName}${subjectName}${topicName}`;
+                customTitle = pdfTitleInput.value.trim();
+                customText = pdfCustomTextInput.value.trim();
+                errorTargetDiv = errorMessageDiv;
+            } else if (currentMode === 'research') {
+                contentDiv = researchOutputContentDiv;
+                const query = researchQueryInput.value.trim().replace(/\s+/g, '_').substring(0, 30);
+                filenamePrefix = `Research_Summary_${query}_`;
+                customTitle = researchPdfTitleInput.value.trim();
+                customText = researchPdfCustomTextInput.value.trim();
+                errorTargetDiv = researchErrorMessageDiv;
+            } else {
+                return; // Not applicable for other modes
+            }
+
+            if (!contentDiv || contentDiv.textContent.trim() === '' ||
+                contentDiv.textContent.trim().includes('Remember. AI is AI. Use it, but don\'t trust it fully. :)') ||
+                contentDiv.textContent.trim().includes('Note - Using it for really big projects may make ur teacher doubtful.') ||
+                contentDiv.textContent.trim().includes('The AI-generated summary') ||
+                contentDiv.textContent.trim().includes('Enter your research query')) {
+                showErrorMessage('No content to download. Please generate a summary first.', errorTargetDiv);
+                return;
+            }
+
+            const doc = new jspdf.jsPDF();
+            const margin = 20; // mm
+            let y = margin; // Starting Y position
+
+            // --- FONT EMBEDDING ---
+            try {
+                if (notoSansDevanagariRegularBase64 && notoSansDevanagariRegularBase64 !== 'AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=') { // Check against dummy string
+                    doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', notoSansDevanagariRegularBase64);
+                    doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
+                    console.log("Noto Sans Devanagari Regular font added successfully.");
+                } else {
+                    const errorMsg = "Hindi font data is missing or placeholder. To render Hindi characters, you MUST provide the Base64 string of the Noto Sans Devanagari Regular TTF font. Direct linking to local files is not supported by browsers.";
+                    console.error(errorMsg);
+                    showErrorMessage(errorMsg, errorTargetDiv);
+                    // Do not return, let it try with default font or fail gracefully
+                }
+            } catch (fontError) {
+                const errorMsg = `Failed to load Hindi font. Please ensure the Base64 font data is correct (TTF/OTF, no 'data:...' prefix). Error: ${fontError.message}`;
+                console.error("Error adding Hindi font to jsPDF:", fontError);
+                showErrorMessage(errorMsg, errorTargetDiv);
+                // Continue execution, jsPDF will likely use a fallback or render squares
+            }
+            // --- END FONT EMBEDDING ---
+
+
+            // Add custom title
+            if (customTitle) {
+                doc.setFontSize(22);
+                doc.text(customTitle, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                y += 15; // Space after title
+            }
+
+            // Add custom introduction text
+            if (customText) {
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0); // Black color
+                const splitText = doc.splitTextToSize(customText, doc.internal.pageSize.getWidth() - 2 * margin);
+                doc.text(splitText, margin, y);
+                y += (splitText.length * 7) + 10; // 7mm per line approx, plus extra space
+            }
+
+            // Add the formatted content from the output div
+            y = addFormattedContentToPdf(doc, contentDiv, y, margin, doc.internal.pageSize.getHeight());
+
+            const filename = `${filenamePrefix}${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`;
+            doc.save(filename);
+        }
+
+        // Event listeners for PDF download buttons
+        downloadPdfBtn.addEventListener('click', downloadPdf);
+        downloadResearchPdfBtn.addEventListener('click', downloadPdf);
+
+
+        // Initial setup
+        populateSubjectDropdown(); // Populate subjects on initial load for default mode
+        switchMode('default'); // Start in default mode
+    </script>
+</body>
+</html>
