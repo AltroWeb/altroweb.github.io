@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cube Shooter 3D - By JustDevCrap</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #222; font-family: 'Inter', sans-serif; }
+        canvas { display: block; width: 100%; height: 100vh; }
+
+        /* Info and Score Panels (Desktop/General UI) */
+        #info-panel, #score-panel, #level-panel, #health-panel {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #info-panel { top: 10px; left: 10px; }
+        #score-panel { top: 10px; right: 10px; }
+        #level-panel { top: 45px; right: 10px; }
+        #health-panel { top: 80px; right: 10px; color: #f00; } /* Health in red */
+
+        /* Desktop Game Controls (Pause, Menu, Restart) */
+        #game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 900;
+        }
+
+        #game-controls button {
+            background-color: #0077ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #game-controls button:hover {
+            background-color: #005bb5;
+            transform: translateY(-2px);
+        }
+        #game-controls button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Game Status Panel (Menu, Paused, Game Over) */
+        #game-status-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            font-size: 18px;
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            border: 2px solid #0077ff;
+        }
+        #game-status-panel h2 {
+            margin-top: 0;
+            color: #0077ff;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        #game-status-panel p {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        #game-status-panel button {
+            background-color: #0077ff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin: 5px; /* Add margin for multiple buttons */
+        }
+        
+        
+        #game-status-panel #custom-footnote a {
+    /* ... existing styles ... */
+    padding: 0 5px; /* Added padding around the link text */
+    color: white;
+  
+}
+       
+        
+        
+        
+        
+        #game-status-panel button:hover {
+            background-color: #005bb5;
+            transform: translateY(-2px);
+        }
+        #game-status-panel button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Mobile Controls Styling */
+        #mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 950; /* Above regular game controls */
+            /* Initially hidden, shown via media query */
+            display: none;
+        }
+
+        #dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px); /* 3 columns, 60px each */
+            grid-template-rows: repeat(3, 60px);    /* 3 rows, 60px each */
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .dpad-button {
+            background-color: rgba(50, 50, 50, 0.8);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1.5em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none; /* Prevent text selection on touch */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            transition: background-color 0.1s ease;
+        }
+
+        .dpad-button:active {
+            background-color: #0077ff;
+            border-color: #005bb5;
+        }
+
+        /* Specific grid placement for D-pad buttons */
+        #dpad-up { grid-area: 1 / 2 / 2 / 3; }
+        #dpad-left { grid-area: 2 / 1 / 3 / 2; }
+        #dpad-center { grid-area: 2 / 2 / 3 / 3; visibility: hidden;} /* Center button hidden for a traditional D-pad look */
+        #dpad-right { grid-area: 2 / 3 / 3 / 4; }
+        #dpad-down { grid-area: 3 / 2 / 4 / 3; }
+
+        #fire-button {
+            width: 100px;
+            height: 100px;
+            background-color: #ff4500; /* Orange-red for fire */
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; /* Circular button */
+            font-size: 2em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.1s ease;
+        }
+
+        #fire-button:active {
+            background-color: #cc3700;
+            transform: scale(0.95); /* Slightly shrink on press */
+        }
+
+        /* New mobile pause button styling */
+        #mobile-pause-button {
+            width: 80px; /* Smaller than fire button */
+            height: 80px;
+            background-color: #4CAF50; /* Green for pause */
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            font-size: 1.5em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.1s ease;
+            position: absolute; /* Position relative to the viewport */
+            left: 20px; /* Align to the left side of the screen */
+            top: 20px; /* Position from the top of the viewport */
+            z-index: 960; /* Higher than other mobile controls */
+        }
+
+        #mobile-pause-button:active {
+            background-color: #388E3C;
+            transform: scale(0.95);
+        }
+
+
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            #info-panel { display: none; } /* Hide desktop info on mobile */
+            #game-controls { display: none; } /* Hide desktop pause/menu buttons */
+            #mobile-controls {
+                display: flex;
+                position: absolute; /* Re-position mobile-controls for D-pad and Fire button */
+                top: auto; /* Reset top */
+                bottom: 20px; /* Keep D-pad and fire at bottom */
+                width: 100%;
+                justify-content: space-between;
+                padding: 0 20px;
+                box-sizing: border-box;
+                z-index: 950;
+            }
+            #mobile-pause-button {
+                display: flex; /* Show mobile pause button */
+            }
+        }
+
+        @media (min-width: 769px) {
+            #info-panel { display: block; }
+            #game-controls { display: flex; }
+            #mobile-controls { display: none; } /* Hide mobile controls */
+            #mobile-pause-button { display: none; } /* Hide mobile pause button */
+        }
+    </style>
+</head>
+<body>
+    <div id="info-panel">
+        <strong>Controls:</strong><br>
+        Arrow Keys: Move Cube<br>
+        Spacebar: Shoot Projectile<br>
+        Mouse Drag: Rotate Camera<br>
+        Mouse Scroll: Zoom Camera<br>
+        'P' Key: Pause Game
+    </div>
+    <div id="score-panel">Score: <span id="score-value">0</span></div>
+    <div id="level-panel">Level: <span id="level-value">1</span></div>
+    <div id="health-panel">Health: <span id="health-value">100</span></div>
+
+    <div id="game-controls">
+        <button id="pause-button">Pause</button>
+        <button id="main-menu-button">Main Menu</button>
+        <button id="restart-button">Restart</button>
+    </div>
+
+    <div id="mobile-pause-button">II</div>
+
+    <div id="mobile-controls">
+        <div id="dpad">
+            <div id="dpad-up" class="dpad-button">▲</div>
+            <div id="dpad-left" class="dpad-button">◀</div>
+            <div id="dpad-center" class="dpad-button"></div>
+            <div id="dpad-right" class="dpad-button">▶</div>
+            <div id="dpad-down" class="dpad-button">▼</div>
+        </div>
+        <div id="fire-button">🔥</div>
+    </div>
+
+    <div id="game-status-panel">
+        <h2 id="status-title"></h2>
+        <p id="status-message"></p>
+        <div id="status-buttons">
+            </div><br>
+            <div id="custom-footnote">
+              <p>Made by<a href="https://altroweb.github.io/justdevcrap/justdevcrap.html" target="_self">JustDevCrap</a> with pure ☕
+</p>
+    </div>
+            
+            
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- Global Game Variables ---
+        let scene, camera, renderer;
+        let playerCube;
+        const projectiles = [];
+        const enemies = [];
+        const obstacles = []; // This array will hold both level-specific and boundary walls
+        const keys = {};
+
+        // Game State Management
+        const GAME_STATE = {
+            MENU: 'MENU',
+            PLAYING: 'PLAYING',
+            PAUSED: 'PAUSED',
+            LEVEL_COMPLETE: 'LEVEL_COMPLETE',
+            GAME_OVER: 'GAME_OVER',
+            GAME_WIN: 'GAME_WIN'
+        };
+        let currentGameState = GAME_STATE.MENU;
+
+        // Game Data
+        let score = 0;
+        let playerHealth = 100;
+        const initialPlayerHealth = 100;
+        const damagePerCollision = 20; // Damage taken by player on enemy hit
+        const scoreReductionOnHit = 50; // Score reduced on player-enemy collision
+        let currentLevelIndex = 0;
+        let enemiesRemaining = 0;
+        let isEndlessMode = false; // New: Flag for endless mode
+        let endlessWaveCount = 0; // New: Tracks waves in endless mode
+
+        // Player collision cooldown to prevent immediate re-damage from same enemy
+        const playerHitCooldown = 1000; // 1 second
+        const enemyHitCooldowns = new Map(); // Map to store last hit time for each enemy
+
+        // Camera Control Variables
+        let cameraDistance = 20;
+        let cameraAngleX = Math.PI / 4; // Vertical angle (0 to PI)
+        let cameraAngleY = 0; // Horizontal angle (0 to 2*PI)
+        const minCameraDistance = 5;
+        const maxCameraDistance = 50;
+        const cameraRotationSpeed = 0.005;
+        const cameraZoomSpeed = 0.05; // Adjusted for smoother zoom
+        let isDragging = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+
+        // UI Elements
+        const scoreValueElement = document.getElementById('score-value');
+        const levelValueElement = document.getElementById('level-value');
+        const healthValueElement = document.getElementById('health-value');
+        const gameStatusPanel = document.getElementById('game-status-panel');
+        const statusTitleElement = document.getElementById('status-title');
+        const statusMessageElement = document.getElementById('status-message');
+        const statusButtonsContainer = document.getElementById('status-buttons'); // Container for dynamic buttons
+
+        const pauseButton = document.getElementById('pause-button');
+        const mainMenuButton = document.getElementById('main-menu-button');
+        const restartButton = document.getElementById('restart-button');
+
+        // Mobile Controls Elements
+        const dpadUp = document.getElementById('dpad-up');
+        const dpadDown = document.getElementById('dpad-down');
+        const dpadLeft = document.getElementById('dpad-left');
+        const dpadRight = document.getElementById('dpad-right');
+        const fireButton = document.getElementById('fire-button');
+        const mobilePauseButton = document.getElementById('mobile-pause-button'); // New mobile pause button reference
+
+
+        // Collision Detection Helpers (re-used to avoid constant re-allocation)
+        const tempProjectileSphere = new THREE.Sphere();
+        const tempEnemySphere = new THREE.Sphere();
+        const tempObstacleBox = new THREE.Box3();
+        const tempPlayerBox = new THREE.Box3(); // For player collision
+
+        // Store previous positions for collision response
+        const playerPreviousPosition = new THREE.Vector3();
+
+        // --- Level Definitions ---
+        const levels = [
+            {
+                name: "Training Grounds",
+                enemies: [
+                    { type: 'sphere', position: { x: 10, y: 1, z: -15 }, speed: 0.08 },
+                    { type: 'sphere', position: { x: -10, y: 1, z: -20 }, speed: 0.08 },
+                ],
+                obstacles: [
+                    { type: 'box', position: { x: 0, y: 2.5, z: -10 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 15, y: 2.5, z: 0 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: -15, y: 2.5, z: 0 }, size: { x: 2, y: 5, z: 2 } }
+                ]
+            },
+            {
+                name: "Maze Runner",
+                enemies: [
+                    { type: 'sphere', position: { x: 15, y: 1, z: -10 }, speed: 0.12 },
+                    { type: 'sphere', position: { x: -15, y: 1, z: -15 }, speed: 0.12 },
+                    { type: 'sphere', position: { x: 0, y: 1, z: -25 }, speed: 0.12 },
+                ],
+                obstacles: [
+                    { type: 'box', position: { x: -5, y: 2.5, z: -10 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 5, y: 2.5, z: -15 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 0, y: 2.5, z: -20 }, size: { x: 2, y: 5, z: 10 } },
+                    { type: 'box', position: { x: -10, y: 2.5, z: -25 }, size: { x: 5, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 10, y: 2.5, z: -5 }, size: { x: 2, y: 5, z: 10 } },
+                    { type: 'box', position: { x: -10, y: 2.5, z: 5 }, size: { x: 10, y: 5, z: 2 } }
+                ]
+            },
+            {
+                name: "Final Gauntlet",
+                enemies: [
+                    { type: 'sphere', position: { x: 18, y: 1, z: -10 }, speed: 0.15 },
+                    { type: 'sphere', position: { x: -18, y: 1, z: -10 }, speed: 0.15 },
+                    { type: 'sphere', position: { x: 0, y: 1, z: -30 }, speed: 0.18 },
+                    { type: 'sphere', position: { x: 10, y: 1, z: -20 }, speed: 0.15 },
+                    { type: 'sphere', position: { x: -10, y: 1, z: -20 }, speed: 0.15 },
+                ],
+                obstacles: [
+                    { type: 'box', position: { x: 0, y: 2.5, z: -15 }, size: { x: 2, y: 5, z: 15 } },
+                    { type: 'box', position: { x: 10, y: 2.5, z: -5 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: -10, y: 2.5, z: -5 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 0, y: 2.5, z: 5 }, size: { x: 2, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 20, y: 2.5, z: -20 }, size: { x: 5, y: 5, z: 2 } },
+                    { type: 'box', position: { x: -20, y: 2.5, z: -20 }, size: { x: 5, y: 5, z: 2 } },
+                    { type: 'box', position: { x: 0, y: 2.5, z: -35 }, size: { x: 20, y: 5, z: 2 } }
+                ]
+            }
+        ];
+
+        // --- Game Initialization ---
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x444444); // Dark grey background
+
+            // Camera setup (initial position, will be updated by orbit logic)
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 20); // Initial position before orbit calculation
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7);
+            scene.add(directionalLight);
+
+            // Player Cube
+            const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+            const cubeMaterial = new THREE.MeshLambertMaterial({ color: 0x0077ff });
+            playerCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            playerCube.position.set(0, 1, 0);
+            scene.add(playerCube);
+            // Ensure bounding box is computed for player cube geometry for collision detection
+            playerCube.geometry.computeBoundingBox();
+
+
+            // Ground Plane - Made larger for "infinite" feel
+            const planeGeometry = new THREE.PlaneGeometry(150, 150);
+            const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x333333, side: THREE.DoubleSide });
+            const groundPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+            groundPlane.rotation.x = -Math.PI / 2;
+            groundPlane.position.y = 0;
+            scene.add(groundPlane);
+
+            // Add Boundary Walls
+            const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x555555 }); // Darker grey for boundary walls
+            const wallHeight = 10;
+            const wallThickness = 1;
+            const mapSize = 150; // Corresponds to ground plane size
+            const wallOffset = mapSize / 2 - wallThickness / 2; // Position walls at the edge of the map
+
+            // North Wall (along Z-axis, negative X)
+            const northWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, mapSize), wallMaterial);
+            northWall.position.set(-wallOffset, wallHeight / 2, 0);
+            scene.add(northWall);
+            obstacles.push(northWall); // Add to obstacles for collision
+            northWall.geometry.computeBoundingBox();
+
+            // South Wall (along Z-axis, positive X)
+            const southWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, mapSize), wallMaterial);
+            southWall.position.set(wallOffset, wallHeight / 2, 0);
+            scene.add(southWall);
+            obstacles.push(southWall);
+            southWall.geometry.computeBoundingBox();
+
+            // East Wall (along X-axis, positive Z)
+            const eastWall = new THREE.Mesh(new THREE.BoxGeometry(mapSize, wallHeight, wallThickness), wallMaterial);
+            eastWall.position.set(0, wallHeight / 2, -wallOffset);
+            scene.add(eastWall);
+            obstacles.push(eastWall);
+            eastWall.geometry.computeBoundingBox();
+
+            // West Wall (along X-axis, negative Z)
+            const westWall = new THREE.Mesh(new THREE.BoxGeometry(mapSize, wallHeight, wallThickness), wallMaterial);
+            westWall.position.set(0, wallHeight / 2, wallOffset);
+            scene.add(westWall);
+            obstacles.push(westWall);
+            westWall.geometry.computeBoundingBox();
+
+
+            // Event Listeners for Desktop Controls
+            window.addEventListener('keydown', onKeyDown);
+            window.addEventListener('keyup', onKeyUp);
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('wheel', onMouseWheel); // For zooming
+            window.addEventListener('resize', onWindowResize);
+
+            // Button Event Listeners for Desktop UI
+            pauseButton.addEventListener('click', togglePause);
+            mainMenuButton.addEventListener('click', goToMainMenu);
+            restartButton.addEventListener('click', restartGame);
+
+            // Event Listeners for Mobile Controls
+            // Use 'pointerdown' and 'pointerup' for broader compatibility (mouse and touch)
+            dpadUp.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['ArrowUp'] = true; });
+            dpadUp.addEventListener('pointerup', (e) => { e.preventDefault(); keys['ArrowUp'] = false; });
+            dpadUp.addEventListener('pointerleave', (e) => { keys['ArrowUp'] = false; }); // Release if finger slides off
+
+            dpadDown.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['ArrowDown'] = true; });
+            dpadDown.addEventListener('pointerup', (e) => { e.preventDefault(); keys['ArrowDown'] = false; });
+            dpadDown.addEventListener('pointerleave', (e) => { keys['ArrowDown'] = false; });
+
+            dpadLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['ArrowLeft'] = true; });
+            dpadLeft.addEventListener('pointerup', (e) => { e.preventDefault(); keys['ArrowLeft'] = false; });
+            dpadLeft.addEventListener('pointerleave', (e) => { keys['ArrowLeft'] = false; });
+
+            dpadRight.addEventListener('pointerdown', (e) => { e.preventDefault(); keys['ArrowRight'] = true; });
+            dpadRight.addEventListener('pointerup', (e) => { e.preventDefault(); keys['ArrowRight'] = false; });
+            dpadRight.addEventListener('pointerleave', (e) => { keys['ArrowRight'] = false; });
+
+            fireButton.addEventListener('pointerdown', (e) => { e.preventDefault(); shootProjectile(); });
+            // For fire button, typically you want a single shot per tap, so no need for pointerup to release a 'key' state.
+
+            // New: Event Listener for Mobile Pause Button
+            mobilePauseButton.addEventListener('pointerdown', (e) => { e.preventDefault(); togglePause(); });
+
+
+            // Initial game state display
+            updateUI();
+            showGameStatus(GAME_STATE.MENU);
+        }
+
+        // --- UI Update Functions ---
+        function updateUI() {
+            scoreValueElement.textContent = score;
+            // In endless mode, level display can be "Endless Wave X"
+            if (isEndlessMode) {
+                levelValueElement.textContent = `Endless Wave ${endlessWaveCount}`;
+            } else {
+                levelValueElement.textContent = currentLevelIndex + 1;
+            }
+            healthValueElement.textContent = playerHealth;
+            // Update health color
+            if (playerHealth > 60) {
+                healthValueElement.style.color = '#0f0'; // Green
+            } else if (playerHealth > 30) {
+                healthValueElement.style.color = '#ff0'; // Yellow
+            } else {
+                healthValueElement.style.color = '#f00'; // Red
+            }
+        }
+
+        function showGameStatus(state) {
+            currentGameState = state;
+            statusButtonsContainer.innerHTML = ''; // Clear previous buttons
+
+            if (state === GAME_STATE.MENU) {
+                gameStatusPanel.style.display = 'block';
+                statusTitleElement.textContent = "Cube Shooter 3D";
+                statusMessageElement.textContent = "just a crappy webgl shooting game. enjoy lol :)";
+                const startButton = document.createElement('button');
+                startButton.textContent = "Start Game"; 
+                startButton.onclick = startGame;
+                statusButtonsContainer.appendChild(startButton);
+
+                // New: Endless Mode button on Main Menu
+                const endlessModeButton = document.createElement('button');
+                endlessModeButton.textContent = "Endless Mode";
+                endlessModeButton.onclick = () => {
+                    isEndlessMode = true;
+                    currentLevelIndex = 0; // Start from level 1's enemies for endless mode
+                    endlessWaveCount = 1; // Start wave count
+                    startGame();
+                };
+                statusButtonsContainer.appendChild(endlessModeButton);
+
+            } else if (state === GAME_STATE.PAUSED) {
+                gameStatusPanel.style.display = 'block';
+                statusTitleElement.textContent = "Game Paused";
+                statusMessageElement.textContent = "Choose an option:";
+                const resumeButton = document.createElement('button');
+                resumeButton.textContent = "Resume";
+                resumeButton.onclick = togglePause;
+                statusButtonsContainer.appendChild(resumeButton);
+                const menuButton = document.createElement('button');
+                menuButton.textContent = "Main Menu";
+                menuButton.onclick = goToMainMenu;
+                statusButtonsContainer.appendChild(menuButton);
+                const restartBtn = document.createElement('button');
+                restartBtn.textContent = "Restart Level 1";
+                restartBtn.onclick = restartGame;
+                statusButtonsContainer.appendChild(restartBtn);
+            } else if (state === GAME_STATE.LEVEL_COMPLETE) {
+                // New: Check for Level 3 completion to offer Endless Mode
+                if (currentLevelIndex === levels.length - 1 && !isEndlessMode) { // If last level and not already in endless mode
+                    gameStatusPanel.style.display = 'block';
+                    statusTitleElement.textContent = "All Levels Completed!";
+                    statusMessageElement.textContent = "Do you want to continue in Endless Mode?";
+
+                    const endlessYesButton = document.createElement('button');
+                    endlessYesButton.textContent = "Yes, Endless Mode";
+                    endlessYesButton.onclick = () => {
+                        isEndlessMode = true;
+                        currentLevelIndex = 0; // Loop back to level 1 for endless waves
+                        endlessWaveCount = 1; // Start wave count for endless mode
+                        startGame();
+                    };
+                    statusButtonsContainer.appendChild(endlessYesButton);
+
+                    const endlessNoButton = document.createElement('button');
+                    endlessNoButton.textContent = "No, Finish Game";
+                    endlessNoButton.onclick = () => {
+                        showGameStatus(GAME_STATE.GAME_WIN); // Proceed to game win screen
+                    };
+                    statusButtonsContainer.appendChild(endlessNoButton);
+
+                } else {
+                    // Regular level completion (not the last level or already in endless mode)
+                    gameStatusPanel.style.display = 'block';
+                    statusTitleElement.textContent = `Level ${currentLevelIndex + 1} Complete!`;
+                    statusMessageElement.textContent = `Score: ${score}. Prepare for the next challenge.`;
+                    const nextLevelButton = document.createElement('button');
+                    nextLevelButton.textContent = "Next Level";
+                    nextLevelButton.onclick = () => {
+                        currentLevelIndex++;
+                        if (currentLevelIndex < levels.length) {
+                            startGame(); // Load next level
+                        } else {
+                            // This case should ideally be handled by the endless mode prompt above
+                            // but as a fallback, go to GAME_WIN if somehow missed.
+                            showGameStatus(GAME_STATE.GAME_WIN);
+                        }
+                    };
+                    statusButtonsContainer.appendChild(nextLevelButton);
+                }
+            } else if (state === GAME_STATE.GAME_OVER) {
+                gameStatusPanel.style.display = 'block';
+                statusTitleElement.textContent = "Game Over!";
+                statusMessageElement.textContent = `You were defeated. Final Score: ${score}.`;
+                const restartBtn = document.createElement('button');
+                restartBtn.textContent = "Restart Game";
+                restartBtn.onclick = restartGame;
+                statusButtonsContainer.appendChild(restartBtn);
+                const menuButton = document.createElement('button');
+                menuButton.textContent = "Main Menu";
+                menuButton.onclick = goToMainMenu;
+                statusButtonsContainer.appendChild(menuButton);
+            } else if (state === GAME_STATE.GAME_WIN) {
+                gameStatusPanel.style.display = 'block';
+                statusTitleElement.textContent = "Congratulations! You Win!";
+                statusMessageElement.textContent = `You mastered all levels! Final Score: ${score}.`;
+                const playAgainButton = document.createElement('button');
+                playAgainButton.textContent = "Play Again";
+                playAgainButton.onclick = restartGame; // Restart from level 1
+                statusButtonsContainer.appendChild(playAgainButton);
+                const menuButton = document.createElement('button');
+                menuButton.textContent = "Main Menu";
+                menuButton.onclick = goToMainMenu;
+                statusButtonsContainer.appendChild(menuButton);
+            } else { // PLAYING
+                gameStatusPanel.style.display = 'none';
+            }
+        }
+
+        // --- Game Flow Functions ---
+        function resetGame() {
+            score = 0;
+            playerHealth = initialPlayerHealth;
+            currentLevelIndex = 0;
+            isEndlessMode = false; // Reset endless mode flag
+            endlessWaveCount = 0; // Reset endless wave count
+            enemyHitCooldowns.clear(); // Clear cooldowns on reset
+            updateUI();
+            clearLevelSpecificEntities(); // Clears only level-specific entities, boundary walls remain
+            playerCube.position.set(0, 1, 0); // Reset player position
+            cameraDistance = 20; // Reset camera
+            cameraAngleX = Math.PI / 4;
+            cameraAngleY = 0;
+        }
+
+        function startGame() {
+            clearLevelSpecificEntities();
+            // If in endless mode, always load enemies based on currentLevelIndex (which loops)
+            // For now, we'll just reload level 1's enemies if in endless mode.
+            // A more advanced endless mode would dynamically generate enemies.
+            loadLevel(currentLevelIndex);
+            showGameStatus(GAME_STATE.PLAYING);
+        }
+
+        function goToMainMenu() {
+            resetGame();
+            showGameStatus(GAME_STATE.MENU);
+        }
+
+        function restartGame() {
+            resetGame(); // Resets to level 1
+            startGame();
+        }
+
+        function togglePause() {
+            if (currentGameState === GAME_STATE.PLAYING) {
+                showGameStatus(GAME_STATE.PAUSED);
+            } else if (currentGameState === GAME_STATE.PAUSED) {
+                showGameStatus(GAME_STATE.PLAYING);
+            }
+        }
+
+        // Clears only enemies and projectiles, obstacles are handled by loadLevel
+        function clearLevelSpecificEntities() {
+            // Remove all projectiles
+            while (projectiles.length > 0) {
+                const p = projectiles.pop();
+                scene.remove(p);
+                // Dispose geometries and materials to free up memory
+                if (p.geometry) p.geometry.dispose();
+                if (p.material) p.material.dispose();
+            }
+            // Remove all enemies
+            while (enemies.length > 0) {
+                const e = enemies.pop();
+                scene.remove(e);
+                if (e.geometry) e.geometry.dispose();
+                if (e.material) e.material.dispose();
+            }
+            // Remove only level-specific obstacles (not boundary walls)
+            // Iterate backwards to safely remove elements
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                // Assuming the first 4 obstacles added in init() are boundary walls
+                // This is a simple heuristic; a more robust solution would tag boundary walls during creation.
+                if (i >= 4) {
+                    const o = obstacles[i];
+                    scene.remove(o);
+                    if (o.geometry) o.geometry.dispose();
+                    if (o.material) o.material.dispose();
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function loadLevel(levelIndex) {
+            const levelData = levels[levelIndex];
+            if (!levelData) {
+                console.error("Level data not found for index:", levelIndex);
+                showGameStatus(GAME_STATE.GAME_OVER); // Fallback to game over
+                return;
+            }
+
+            // --- Create Level-Specific Obstacles FIRST ---
+            levelData.obstacles.forEach(obstacleDef => {
+                const boxSize = obstacleDef.size || { x: 2, y: 5, z: 2 };
+                const obstacleGeometry = new THREE.BoxGeometry(boxSize.x, boxSize.y, boxSize.z);
+                const obstacleMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown obstacles
+                const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+                obstacle.position.set(obstacleDef.position.x, obstacleDef.position.y, obstacleDef.position.z);
+                scene.add(obstacle);
+                obstacles.push(obstacle); // Add to the global obstacles array
+                obstacle.geometry.computeBoundingBox(); // Ensure bounding box is computed for obstacles
+            });
+
+            // --- Create Enemies (after all obstacles are in place for spawn check) ---
+            enemiesRemaining = 0;
+            const enemyGeometry = new THREE.SphereGeometry(1, 32, 32); // Re-use geometry
+            const enemyMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 }); // Red enemies
+
+            // Determine enemy count and speed based on endless mode or current level
+            let enemiesToSpawn = [];
+            let enemySpeedMultiplier = 1;
+
+            if (isEndlessMode) {
+                // For endless mode, dynamically increase difficulty
+                // Example: Add more enemies and make them faster with each wave
+                const baseEnemies = levels[0].enemies; // Use level 1's enemies as base
+                const numEnemies = baseEnemies.length + (endlessWaveCount - 1) * 2; // Add 2 enemies per wave
+                enemySpeedMultiplier = 1 + (endlessWaveCount - 1) * 0.02; // Increase speed slightly
+
+                for (let i = 0; i < numEnemies; i++) {
+                    // Randomize position within a reasonable range for endless mode
+                    const randomX = (Math.random() - 0.5) * 60; // -30 to 30
+                    const randomZ = (Math.random() - 0.5) * 60 - 20; // -50 to 10 (further from player start)
+                    enemiesToSpawn.push({
+                        type: 'sphere',
+                        position: { x: randomX, y: 1, z: randomZ },
+                        speed: baseEnemies[0].speed * enemySpeedMultiplier
+                    });
+                }
+            } else {
+                enemiesToSpawn = levelData.enemies;
+            }
+
+
+            enemiesToSpawn.forEach(enemyDef => {
+                let canSpawn = true;
+                // Create a temporary mesh to check its bounding box at the proposed spawn position
+                const tempEnemyMesh = new THREE.Mesh(enemyGeometry, enemyMaterial);
+                tempEnemyMesh.position.set(enemyDef.position.x, enemyDef.position.y, enemyDef.position.z);
+                tempEnemyMesh.geometry.computeBoundingBox(); // Ensure bounding box is computed for temp enemy
+                const enemySpawnBox = new THREE.Box3().setFromObject(tempEnemyMesh);
+
+                // Check against all obstacles (boundary walls + level-specific)
+                for (const existingObstacle of obstacles) {
+                    const obstacleBox = new THREE.Box3().setFromObject(existingObstacle);
+                    if (enemySpawnBox.intersectsBox(obstacleBox)) {
+                        console.warn(`Enemy tried to spawn inside an obstacle at x:${enemyDef.position.x}, y:${enemyDef.position.y}, z:${enemyDef.position.z}. Skipping this enemy.`);
+                        canSpawn = false;
+                        break;
+                    }
+                }
+
+                if (canSpawn) {
+                    const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+                    enemy.position.copy(tempEnemyMesh.position); // Copy position from temp mesh
+                    enemy.speed = enemyDef.speed;
+                    enemy.previousPosition = new THREE.Vector3().copy(enemy.position); // Store initial previous position
+                    scene.add(enemy);
+                    enemies.push(enemy);
+                    enemiesRemaining++;
+                    enemy.geometry.computeBoundingSphere();
+                    enemy.geometry.computeBoundingBox();
+                }
+            });
+
+            updateUI();
+        }
+
+        function checkLevelCompletion() {
+            if (enemiesRemaining <= 0 && currentGameState === GAME_STATE.PLAYING) {
+                if (isEndlessMode) {
+                    endlessWaveCount++; // Increment wave count
+                    score += 500; // Bonus for completing a wave in endless mode
+                    playerHealth = Math.min(initialPlayerHealth, playerHealth + 20); // Regenerate some health
+                    updateUI();
+                    clearLevelSpecificEntities(); // Clear existing enemies and projectiles
+                    loadLevel(0); // Reload enemies based on level 0 (or a more complex endless logic)
+                } else {
+                    showGameStatus(GAME_STATE.LEVEL_COMPLETE);
+                }
+            }
+        }
+
+        // --- Player Actions ---
+        function shootProjectile() {
+            if (currentGameState !== GAME_STATE.PLAYING) return;
+
+            const projectileGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const projectileMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500 }); // Orange
+            const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
+
+            // Ensure bounding sphere is computed for projectile geometry
+            projectile.geometry.computeBoundingSphere();
+
+            // Position projectile slightly in front of the player
+            projectile.position.copy(playerCube.position);
+            projectile.position.z -= 1.5;
+            projectile.position.y += 0.5; // Shoot slightly above ground
+
+            projectile.velocity = new THREE.Vector3(0, 0, -0.7); // Faster projectile
+            scene.add(projectile);
+            projectiles.push(projectile);
+        }
+
+        // --- Event Handlers ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            keys[event.code] = true;
+            if (event.code === 'Space') {
+                shootProjectile();
+            }
+            // Allow pausing with 'P' key
+            if (event.code === 'KeyP' && (currentGameState === GAME_STATE.PLAYING || currentGameState === GAME_STATE.PAUSED)) {
+                togglePause();
+            }
+        }
+
+        function onKeyUp(event) {
+            keys[event.code] = false;
+        }
+
+        function onMouseDown(event) {
+            // Only allow camera drag if not interacting with mobile controls
+            // Check if the click/touch originated from within the mobile controls div
+            if (event.target.closest('#mobile-controls') || event.target.closest('#mobile-pause-button')) {
+                isDragging = false; // Prevent camera drag if interacting with mobile controls
+                return;
+            }
+            isDragging = true;
+            previousMouseX = event.clientX;
+            previousMouseY = event.clientY;
+        }
+
+        function onMouseUp(event) {
+            isDragging = false;
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+
+            const deltaX = event.clientX - previousMouseX;
+            const deltaY = event.clientY - previousMouseY;
+
+            cameraAngleY -= deltaX * cameraRotationSpeed;
+            cameraAngleX -= deltaY * cameraRotationSpeed;
+
+            // Clamp vertical angle to prevent flipping
+            cameraAngleX = Math.max(0.1, Math.min(Math.PI - 0.1, cameraAngleX)); // Avoid 0 and PI for stability
+
+            previousMouseX = event.clientX;
+            previousMouseY = event.clientY;
+        }
+
+        function onMouseWheel(event) {
+            event.preventDefault(); // Prevent page scrolling
+            cameraDistance += event.deltaY * cameraZoomSpeed;
+            cameraDistance = Math.max(minCameraDistance, Math.min(maxCameraDistance, cameraDistance));
+        }
+
+        // --- Game Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (currentGameState === GAME_STATE.PLAYING) {
+                // Store player's previous position for collision response
+                playerPreviousPosition.copy(playerCube.position);
+
+                // Player Movement
+                const moveSpeed = 0.2;
+                if (keys['ArrowUp']) {
+                    playerCube.position.z -= moveSpeed;
+                }
+                if (keys['ArrowDown']) {
+                    playerCube.position.z += moveSpeed;
+                }
+                if (keys['ArrowLeft']) {
+                    playerCube.position.x -= moveSpeed;
+                }
+                if (keys['ArrowRight']) {
+                    playerCube.position.x += moveSpeed;
+                }
+
+                // Player-Obstacle Collision
+                tempPlayerBox.setFromObject(playerCube);
+                for (let k = 0; k < obstacles.length; k++) {
+                    const obstacle = obstacles[k];
+                    tempObstacleBox.setFromObject(obstacle);
+                    if (tempPlayerBox.intersectsBox(tempObstacleBox)) {
+                        playerCube.position.copy(playerPreviousPosition); // Revert position
+                        break; // Only revert once per frame
+                    }
+                }
+
+                // Enemy Movement (Chasing Player) and Obstacle Collision
+                enemies.forEach(enemy => {
+                    enemy.previousPosition.copy(enemy.position); // Store enemy's previous position
+
+                    // Calculate direction towards player
+                    const directionToPlayer = new THREE.Vector3().subVectors(playerCube.position, enemy.position);
+                    directionToPlayer.y = 0; // Keep movement on the XZ plane
+                    directionToPlayer.normalize();
+
+                    // Move enemy towards player
+                    enemy.position.add(directionToPlayer.multiplyScalar(enemy.speed));
+
+                    // Enemy-Obstacle Collision
+                    const tempEnemyBoxForObstacle = new THREE.Box3(); // Use a new temp box for enemy-obstacle check
+                    tempEnemyBoxForObstacle.setFromObject(enemy);
+                    for (let k = 0; k < obstacles.length; k++) {
+                        const obstacle = obstacles[k];
+                        tempObstacleBox.setFromObject(obstacle);
+                        if (tempEnemyBoxForObstacle.intersectsBox(tempObstacleBox)) {
+                            enemy.position.copy(enemy.previousPosition); // Revert enemy position
+                            break; // Revert once, then check next enemy
+                        }
+                    }
+                });
+
+                // Player-Enemy Collision Detection
+                tempPlayerBox.setFromObject(playerCube); // Update player's bounding box after its movement
+                const currentTime = performance.now();
+
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    // Update tempEnemySphere to represent enemy's world bounding sphere
+                    tempEnemySphere.copy(enemy.geometry.boundingSphere);
+                    enemy.updateMatrixWorld(); // Ensure world matrix is up-to-date
+                    tempEnemySphere.applyMatrix4(enemy.matrixWorld);
+
+                    // Fix: Use tempPlayerBox for player collision, not tempPlayerSphere (which wasn't defined)
+                    if (tempPlayerBox.intersectsSphere(tempEnemySphere)) {
+                        // Check cooldown before applying damage
+                        const lastHitTime = enemyHitCooldowns.get(enemy) || 0;
+                        if (currentTime - lastHitTime > playerHitCooldown) {
+                            playerHealth -= damagePerCollision;
+                            score = Math.max(0, score - scoreReductionOnHit); // Prevent negative score
+                            updateUI();
+                            enemyHitCooldowns.set(enemy, currentTime); // Update last hit time
+
+                            // Simple pushback for the enemy
+                            let pushbackDirection = new THREE.Vector3().subVectors(enemy.position, playerCube.position).normalize();
+                            enemy.position.add(pushbackDirection.multiplyScalar(3)); // Push enemy away by 3 units
+
+                            if (playerHealth <= 0) {
+                                showGameStatus(GAME_STATE.GAME_OVER);
+                            }
+                        }
+                        // Enemy does NOT disappear on player collision
+                    }
+                }
+
+
+                // Projectile Movement and Collision Detection
+                for (let i = projectiles.length - 1; i >= 0; i--) {
+                    const projectile = projectiles[i];
+                    projectile.position.add(projectile.velocity);
+
+                    // Update tempProjectileSphere to represent projectile's world bounding sphere
+                    tempProjectileSphere.copy(projectile.geometry.boundingSphere);
+                    projectile.updateMatrixWorld(); // Ensure world matrix is up-to-date
+                    tempProjectileSphere.applyMatrix4(projectile.matrixWorld);
+
+                    // Check collision with Enemies
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        const enemy = enemies[j];
+                        // Update tempEnemySphere to represent enemy's world bounding sphere
+                        tempEnemySphere.copy(enemy.geometry.boundingSphere);
+                        enemy.updateMatrixWorld(); // Ensure world matrix is up-to-date
+                        tempEnemySphere.applyMatrix4(enemy.matrixWorld);
+
+                        if (tempProjectileSphere.intersectsSphere(tempEnemySphere)) {
+                            // Hit! Remove both projectile and enemy
+                            scene.remove(projectile);
+                            projectiles.splice(i, 1);
+                            scene.remove(enemy);
+                            enemies.splice(j, 1);
+                            enemyHitCooldowns.delete(enemy); // Remove enemy from cooldown map
+                            score += 100; // Increase score
+                            enemiesRemaining--;
+                            updateUI();
+                            checkLevelCompletion();
+                            break; // Projectile is gone, no need to check other enemies
+                        }
+                    }
+
+                    // Check collision with Obstacles (only if projectile still exists after enemy check)
+                    if (projectiles.includes(projectile)) { // Check if projectile was not removed by enemy collision
+                        for (let k = obstacles.length - 1; k >= 0; k--) {
+                            const obstacle = obstacles[k];
+                            // tempProjectileSphere is already updated from the enemy collision check
+                            if (tempProjectileSphere.intersectsBox(tempObstacleBox.setFromObject(obstacle))) {
+                                // Hit obstacle, remove projectile
+                                scene.remove(projectile);
+                                projectiles.splice(i, 1);
+                                break; // Projectile is gone
+                            }
+                        }
+                    }
+
+                    // Remove projectile if it goes too far (beyond the map boundaries)
+                    const mapBoundary = 75; // Half of 150 map size
+                    if (projectile.position.z < -mapBoundary || projectile.position.z > mapBoundary ||
+                        projectile.position.x < -mapBoundary || projectile.position.x > mapBoundary) {
+                        scene.remove(projectile);
+                        projectiles.splice(i, 1);
+                    }
+                }
+            }
+
+            // Update Camera Position (always update, even if game is paused for menu/status)
+            // Calculate camera position based on player, distance, and angles
+            const targetX = playerCube.position.x;
+            const targetY = playerCube.position.y;
+            const targetZ = playerCube.position.z;
+
+            camera.position.x = targetX + cameraDistance * Math.sin(cameraAngleY) * Math.sin(cameraAngleX);
+            camera.position.y = targetY + cameraDistance * Math.cos(cameraAngleX);
+            camera.position.z = targetZ + cameraDistance * Math.cos(cameraAngleY) * Math.sin(cameraAngleX);
+
+            camera.lookAt(playerCube.position); // Always look at the player
+
+            renderer.render(scene, camera);
+        }
+
+        // Start the game when the window loads
+        window.onload = function () {
+            init(); // Initialize the scene and game elements
+            animate(); // Start the animation loop
+        };
+    </script>
+</body>
+</html>
