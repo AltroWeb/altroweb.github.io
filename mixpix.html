@@ -8,685 +8,698 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="all.min.css">
     
     <script src="jsmediatags.min.js"></script>
     
     <style>
     html {
-  scroll-behavior: smooth;
-}
+        scroll-behavior: smooth;
+    }
     
-        body {
-            font-family: "Radio Canada Big";
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-        }
+    body {
+        font-family: "Radio Canada Big";
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
-        .card {
-            background-color: #2b2828;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin: 1.2rem;
-            flex-basis: calc(33.33% - 2rem);
-            text-align: center;
-            padding: 1rem;
-            transition: transform 0.3s ease-in-out;
-              padding: 1.5rem;
-            width: 100%;
-            max-width: 28rem; /* Max width for the entire card */
-            display: flex;
-            flex-direction: column;
-             align-items: center;
-             position: relative;
-        }
+    .card {
+        background-color: #2b2828;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 1.2rem;
+        flex-basis: calc(33.33% - 2rem);
+        text-align: center;
+        padding: 1rem;
+        transition: transform 0.3s ease-in-out;
+        padding: 1.5rem;
+        width: 100%;
+        max-width: 28rem; /* Max width for the entire card */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
 
-        .card:hover {
-            transform: translateY(-5px);
-        }
+    .card:hover {
+        transform: translateY(-5px);
+    }
 
-        h1 {
-            font-size: 3rem;
-            margin-top: 0;
-            color: #fff;
-         
-        }
+    h1 {
+        font-size: 3rem;
+        margin-top: 0;
+        color: #fff;
+    }
 
-        p {
-            font-size: 1.2rem;
-            color: #fff;
-        }
-        h3 {
-            color: #fff;
-        }
-        h5 {
-            font-size: 1.1rem;
-            color: #fff;
-        }
-        
-        a {
+    p {
         font-size: 1.2rem;
-            color: #fff;
+        color: #fff;
+    }
+    h3 {
+        color: #fff;
+    }
+    h5 {
+        font-size: 1.1rem;
+        color: #fff;
+    }
+    
+    a {
+        font-size: 1.2rem;
+        color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+        .card {
+            flex-basis: calc(50% - 2rem);
         }
-        
-        @media (max-width: 768px) {
-            .card {
-                flex-basis: calc(50% - 2rem);
-            }
+    }
+
+    @media (max-width: 480px) {
+        .card {
+            flex-basis: 100%;
         }
+    }
+    /*Blur CSS start*/
+    body {
+        transition: filter 0.5s, opacity 0.5s;
+    }
 
-        @media (max-width: 480px) {
-            .card {
-                flex-basis: 100%;
-            }
-        }
-/*Blur CSS start*/
-        body {
-  transition: filter 0.5s, opacity 0.5s;
-}
+    .blurred {
+        filter: blur(10px);
+        opacity: 0.5;
+    }
 
-.blurred {
-  filter: blur(10px);
-  opacity: 0.5;
-}
+    toggleBlur {
+        position: relative;
+        z-index: 1;
+    }
+    /*Blur CSS end*/
 
+    /* Custom seekbar styling */
+    input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        background: #474747; /* Darker gray track */
+        outline: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.2s ease-in-out;
+    }
 
-toggleBlur {
-  position: relative;
-  z-index: 1;
-}
-/*Blur CSS end*/
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff; /* Blue thumb */
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        transition: background 0.2s ease-in-out;
+    }
 
+    input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        transition: background 0.2s ease-in-out;
+    }
 
+    input[type="range"]::-ms-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        cursor: pointer;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        transition: background 0.2s ease-in-out;
+    }
 
+    /* Hover effect for seekbar */
+    input[type="range"]:hover::-webkit-slider-thumb {
+        background: #e8e8e8; /* Darker blue on hover */
+    }
+    input[type="range"]:hover::-moz-range-thumb {
+        background: #e8e8e8;
+    }
+    input[type="range"]:hover::-ms-thumb {
+        background: #e8e8e8;
+    }
 
- /* Custom seekbar styling */
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            background: #474747; /* Darker gray track */
-            outline: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.2s ease-in-out;
-        }
+    /* Player button styling with gradients and shadows */
+    .player-button {
+        background: #383838;
+        border: none;
+        color: white;
+        font-size: 1.25rem; /* Larger icons */
+        padding: 0.75rem;
+        border-radius: 10px; /* Fully rounded */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        justify-content: center;
+        align-items: center; /* Corrected from align: center */
+        cursor: pointer;
+    }
 
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #fff; /* Blue thumb */
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            transition: background 0.2s ease-in-out;
-        }
+    .player-button:hover {
+        background: #2e2e2e; /* Darker gradient on hover */
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 3px 5px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px); /* Slight lift effect */
+    }
 
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            transition: background 0.2s ease-in-out;
-        }
+    .player-button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
-        input[type="range"]::-ms-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            transition: background 0.2s ease-in-out;
-        }
+    /* Specific styling for play/pause button */
+    #play-pause-button {
+        width: 60px; /* Larger */
+        height: 60px;
+        font-size: 1.8rem;
+    }
 
-        /* Hover effect for seekbar */
-        input[type="range"]:hover::-webkit-slider-thumb {
-            background: #e8e8e8; /* Darker blue on hover */
-        }
-        input[type="range"]:hover::-moz-range-thumb {
-            background: #e8e8e8;
-        }
-        input[type="range"]:hover::-ms-thumb {
-            background: #e8e8e8;
-        }
+    /* Active state for loop/shuffle buttons */
+    .player-button.active {
+        background: #2e2e2e; /* dark color for active */
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); /* Inset shadow */
+    }
 
-        /* Player button styling with gradients and shadows */
-        .player-button {
-            background: #383838;
-            border: none;
-            color: white;
-            font-size: 1.25rem; /* Larger icons */
-            padding: 0.75rem;
-            border-radius: 10px; /* Fully rounded */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-            transition: all 0.2s ease-in-out;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* Corrected from align: center */
-            cursor: pointer;
-        }
+    /* Style for the track list items */
+    .track-item {
+        background-color: #3d3d3d; /* Slightly lighter gray for non-active list items */
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        transition: background-color 0.2s ease-in-out;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        .player-button:hover {
-            background: #2e2e2e; /* Darker gradient on hover */
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15), 0 3px 5px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px); /* Slight lift effect */
-        }
+    .track-item:hover {
+        background-color:  #5c5c5c; /* Lighter gray on hover */
+    }
 
-        .player-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+    .track-item.active-track {
+        background-color: #5c5c5c; /* strong white for active track */
+        font-weight: bold;
+    }
 
-        /* Specific styling for play/pause button */
-        #play-pause-button {
-            width: 60px; /* Larger */
-            height: 60px;
-            font-size: 1.8rem;
-        }
+    /* Styles for truncating long track titles with ellipsis */
+    .track-title-container {
+        flex-grow: 1;
+        min-width: 0;
+        text-align: center; /* Center text within the container */
+    }
 
-        /* Active state for loop/shuffle buttons */
-        .player-button.active {
-            background: #2e2e2e; /* dark color for active */
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2); /* Inset shadow */
-        }
+    .track-title-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-        /* Style for the track list items */
-        .track-item {
-            background-color: #3d3d3d; /* Slightly lighter gray for non-active list items */
-            border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.5rem;
-            transition: background-color 0.2s ease-in-out;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    /* Toggle Switch Styling */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 24px;
+    }
 
-        .track-item:hover {
-            background-color:  #5c5c5c; /* Lighter gray on hover */
-        }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
 
-        .track-item.active-track {
-            background-color: #5c5c5c; /* strong white for active track */
-            font-weight: bold;
-        }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #474747;
+        transition: .4s;
+        border-radius: 24px;
+    }
 
-        /* Styles for truncating long track titles with ellipsis */
-        .track-title-container {
-            flex-grow: 1;
-            min-width: 0;
-            text-align: center; /* Center text within the container */
-        }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
 
-        .track-title-text {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    input:checked + .toggle-slider {
+        background-color: #474747; /* Green for active */
+    }
 
-        /* Toggle Switch Styling */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 24px;
-        }
+    input:focus + .toggle-slider {
+        box-shadow: 0 0 1px #474747;
+    }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+    input:checked + .toggle-slider:before {
+        transform: translateX(16px);
+    }
 
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #474747;
-            transition: .4s;
-            border-radius: 24px;
-        }
+    /* Individual Panel Styles (no background, shadow, margin-top) */
+    .player-container,
+    .track-list-container,
+    .effects-panel {
+        background-color: transparent; /* Remove individual panel backgrounds */
+        box-shadow: none; /* Remove individual panel shadows */
+        margin-top: 0; /* Remove individual panel top margins */
+        padding: 0; /* Remove individual panel padding, handled by main-player-card */
+        width: 100%; /* Ensure they take full width of parent card */
+        max-width: none; /* Remove max-width, handled by main-player-card */
+        border-radius: 0; /* Remove individual panel border-radius */
+    }
 
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
+    /* Artwork/Lyrics Wrapper */
+    .artwork-lyrics-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 12rem;
+        height: 12rem;
+        margin: 0 auto 1.5rem auto;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
 
-        input:checked + .toggle-slider {
-            background-color: #474747; /* Green for active */
-        }
-
-        input:focus + .toggle-slider {
-            box-shadow: 0 0 1px #474747;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(16px);
-        }
-
-        /* Individual Panel Styles (no background, shadow, margin-top) */
-        .player-container,
-        .track-list-container,
-        .effects-panel {
-            background-color: transparent; /* Remove individual panel backgrounds */
-            box-shadow: none; /* Remove individual panel shadows */
-            margin-top: 0; /* Remove individual panel top margins */
-            padding: 0; /* Remove individual panel padding, handled by main-player-card */
-            width: 100%; /* Ensure they take full width of parent card */
-            max-width: none; /* Remove max-width, handled by main-player-card */
-            border-radius: 0; /* Remove individual panel border-radius */
-        }
-
-        /* Artwork/Lyrics Wrapper */
+    @media (min-width: 640px) {
         .artwork-lyrics-wrapper {
-            position: relative;
-            width: 100%; /* Take full width of parent */
-            max-width: 12rem; /* Initial max-width from original artwork */
-            height: 12rem; /* Fixed height for square aspect ratio */
-            margin: 0 auto 1.5rem auto; /* Centered horizontally, maintains bottom margin */
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            overflow: hidden; /* Crucial for containing absolute children */
+            max-width: 17rem;
+            height: 17rem;
         }
+    }
+    @media (min-width: 768px) {
+        .artwork-lyrics-wrapper {
+            max-width: 22rem;
+            height: 22rem;
+        }
+    }
 
-        @media (min-width: 640px) {
-            .artwork-lyrics-wrapper {
-                max-width: 17rem;
-                height: 17rem;
-            }
-        }
-        @media (min-width: 768px) {
-            .artwork-lyrics-wrapper {
-                max-width: 22rem;
-                height: 22rem;
-            }
-        }
+    /* Artwork */
+    .player-container img#artwork {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        margin-bottom: 0;
+        cursor: pointer;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    }
+    /* Class to hide artwork when lyrics are shown */
+    .player-container img#artwork.hidden-artwork {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none; /* Prevent clicks when hidden */
+    }
 
-        /* Artwork */
-        .player-container img#artwork {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            margin-bottom: 0; /* Remove original margin */
-            cursor: pointer;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-        }
-        /* Class to hide artwork when lyrics are shown */
-        .player-container img#artwork.hidden-artwork {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none; /* Prevent clicks when hidden */
-        }
+    /* Track Info Section */
+    .player-container .text-center.w-full {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
 
-        /* Track Info Section */
-        .player-container .text-center.w-full {
-            margin-bottom: 1.5rem; /* Spacing below track info */
-            text-align: center; /* <-- ENSURE THIS IS PRESENT */
-        }
+    /* Track Title */
+    #track-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #fff;
+    }
 
-        /* Track Title */
-        #track-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #fff; /* Light blue for titles */
-        }
+    /* Artist Name */
+    #artist-name {
+        color: #e0e0e0;
+        font-size: 1.125rem;
+    }
 
-        /* Artist Name */
-        #artist-name {
-            color: #e0e0e0; /* Gray for artist name */
-            font-size: 1.125rem;
-        }
+    /* Seekbar group container */
+    .seekbar-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+    .seekbar-group > *:not(:first-child) {
+        margin-top: 0.5rem;
+    }
 
-        /* Seekbar group container */
-        .seekbar-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 1.5rem; /* Spacing below seekbar */
-        }
-        .seekbar-group > *:not(:first-child) {
-            margin-top: 0.5rem;
-        }
+    /* Time display */
+    .time-display {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        font-size: 0.875rem;
+        color: #e0e0e0;
+    }
 
-        /* Time display */
-        .time-display {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            font-size: 0.875rem;
-            color: #e0e0e0;
-        }
+    /* Player Controls */
+    .player-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+    .player-controls > *:not(:first-child) {
+        margin-left: 1rem;
+    }
 
-        /* Player Controls */
-        .player-controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            margin-bottom: 1.5rem; /* Spacing below controls */
-        }
-        .player-controls > *:not(:first-child) {
-            margin-left: 1rem;
-        }
+    /* Upload Button */
+    #upload-button {
+        font-family: "Radio Canada Big", sans-serif;
+        background-color: #383838;
+        color: white;
+        font-weight: 700;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease-in-out;
+        transform: scale(1);
+        outline: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        font-size: 1.2rem;
+    }
+    #upload-button:hover {
+        background-color: #2e2e2e;
+        transform: scale(1.05);
+    }
+    #upload-button:focus {
+        box-shadow: 0 0 0 2px #e0e0e0, 0 0 0 4px #e0e0e0;
+    }
+    #upload-button .fas {
+        margin-right: 0.5rem;
+    }
 
-        /* Upload Button */
-        #upload-button {
-        font-family: "Radio Canada Big", sans-serif; /* Apply body font */
-            background-color: #383838; /* dark background */
-            color: white;
-            font-weight: 700;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease-in-out;
-            transform: scale(1);
-            outline: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none; /* Removed border */
-            font-size: 1.2rem;
-            
-        }
-        #upload-button:hover {
-            background-color: #2e2e2e; /* Darker on hover */
-            transform: scale(1.05);
-        }
-        #upload-button:focus {
-            box-shadow: 0 0 0 2px #e0e0e0, 0 0 0 4px #e0e0e0;
-        }
-        #upload-button .fas {
-            margin-right: 0.5rem;
-        }
+    /* Upload Error Message */
+    #upload-error-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        text-align: center;
+    }
+    .hidden {
+        display: none;
+    }
 
-        /* Upload Error Message */
-        #upload-error-message {
-            color: #ef4444; /* Red for error messages */
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-            text-align: center;
-        }
-        .hidden {
-            display: none;
-        }
+    /* Track List Container Specifics */
+    .track-list-container {
+        position: relative;
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
 
-        /* Track List Container Specifics */
-        .track-list-container {
-            position: relative;
-            /* No margin-top here, handled by card's gap */
-            padding-top: 1.5rem; /* Add internal padding back */
-            padding-bottom: 1.5rem;
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-        }
+    /* Flex spacer to push content */
+    .flex-spacer {
+        flex-grow: 1;
+    }
 
-/* Flex spacer to push content */
-.flex-spacer {
-    flex-grow: 1; /* These will expand and push content */
-}
+    /* Playlist header */
+    .playlist-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        position: relative;
+    }
 
+    /* Playlist title */
+    .track-list-container h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #fff;
+        flex-grow: 1;
+        text-align: left;
+    }
 
+    /* Clear playlist button */
+    #clear-playlist-button {
+        color: #e0e0e0;
+        transition: color 0.2s ease-in-out;
+        font-size: 1.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+    }
+    #clear-playlist-button:hover {
+        color: #fff;
+    }
 
-        /* Playlist header */
-        .playlist-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Center the heading */
-            margin-bottom: 1rem;
-            position: relative;
-        }
+    /* Playlist list */
+    #playlist-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 15rem;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+        color: #fff;
+    }
+    #playlist-list > li:not(:first-child) {
+        margin-top: 0.5rem;
+    }
 
-        /* Playlist title */
-        .track-list-container h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #fff; /* Light blue for titles */
-            flex-grow: 1;
-            text-align: left; /* Ensure playlist title is centered */
-            
-        }
+    /* No tracks message */
+    #playlist-list li.text-gray-400 {
+        color: #e0e0e0;
+        text-align: center;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
 
-        /* Clear playlist button */
-        #clear-playlist-button {
-            color: #e0e0e0;
-            transition: color 0.2s ease-in-out;
-            font-size: 1.5rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            
+    /* Effects Panel Specifics */
+    .effects-panel {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    .effects-panel h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #ffffff;
+        text-align: left;
+    }
 
-            
-        }
-        #clear-playlist-button:hover {
-            color: #fff; /* Red on hover */
-        }
+    /* Effects section spacing */
+    .effects-panel .effect-group {
+        margin-bottom: 1.5rem;
+    }
+    .effects-panel .effect-group:last-child {
+        margin-bottom: 0;
+    }
+    .effects-panel .effect-group.hidden {
+        display: none;
+    }
 
-        /* Playlist list */
-        #playlist-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 15rem;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-            color: #fff;
-        }
-        #playlist-list > li:not(:first-child) {
-            margin-top: 0.5rem;
-        }
+    /* Effect label and toggle alignment */
+    .effects-panel .effect-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
 
-        /* No tracks message */
-        #playlist-list li.text-gray-400 {
-            color: #e0e0e0;
-            text-align: center;
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
+    /* Effect label text */
+    .effects-panel label.text-lg {
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: #ffffff;
+    }
 
-        /* Effects Panel Specifics */
-        .effects-panel {
-            /* No margin-top here, handled by main-player-card's gap */
-            padding-top: 1.5rem; /* Add internal padding back */
-            padding-bottom: 1.5rem;
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-        }
-        .effects-panel h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #ffffff; /* white for titles */
-            text-align: left;
-        }
+    /* Slider value display */
+    .effects-panel .slider-value-display {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        color: #e0e0e0;
+        margin-top: 0.25rem;
+    }
 
-        /* Effects section spacing */
-        .effects-panel .effect-group {
-            margin-bottom: 1.5rem;
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .main-player-card {
+            width: 95%;
+            padding: 1rem;
         }
-        .effects-panel .effect-group:last-child {
-            margin-bottom: 0; /* Remove margin from last effect group */
-        }
-        .effects-panel .effect-group.hidden {
-            display: none;
-        }
-
-        /* Effect label and toggle alignment */
-        .effects-panel .effect-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Effect label text */
-        .effects-panel label.text-lg {
-            font-size: 1.125rem;
-            font-weight: 500;
-            color: #ffffff;
-        }
-
-        /* Slider value display */
-        .effects-panel .slider-value-display {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.875rem;
-            color: #e0e0e0;
-            margin-top: 0.25rem;
-            
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .main-player-card {
-                width: 95%;
-                padding: 1rem;
-            }
-            .player-controls button {
-                font-size: 1rem;
-                padding: 0.5rem;
-            }
-            #play-pause-button {
-                width: 50px;
-                height: 50px;
-                font-size: 1.5rem;
-            }
-            #clear-playlist-button {
-                top: 0.5rem;
-                right: 0.5rem;
-                font-size: 1.2rem;
-                padding: 0.3rem;
-            }
-        }
-
-        /* General alignment for other content */
-        p[align="center"], h3[align="center"] {
-            text-align: center;
-        }
-
-        /* Save Track Button Specific Styling */
-        #save-track-button {
-            font-family: "Radio Canada Big", sans-serif; /* Match body font */
-            font-size: 1rem; /* Adjust font size */
-            padding: 0.5rem 1rem; /* Adjust padding */
-            /* Remove icon related styles if any were present */
-        }
-
-        /* Lyrics Panel Styling */
-        .lyrics-panel {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black overlay */
-            border-radius: 0.5rem; /* Match wrapper's border-radius */
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Changed to flex-start for lyrics content */
-            align-items: center;
-            padding: 1rem; /* Internal padding for content */
-            box-sizing: border-box; /* Include padding in width/height */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-            z-index: 2; /* Ensure it's above artwork */
-            cursor: pointer; /* Make the lyrics panel itself clickable to toggle back */
-        }
-
-        .lyrics-panel.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .lyrics-display {
-            flex-grow: 1;
-            width: 100%;
-            height: 100%; /* Changed from max-height to height to force it to take full available space */
-            overflow-y: auto; /* Ensure scrolling is contained here */
-            text-align: center;
-            padding: 0; /* Padding handled by .lyrics-panel */
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-            scroll-behavior: smooth; /* Smooth scrolling for lyrics */
-            display: flex; /* Use flexbox for vertical centering if content is short */
-            flex-direction: column;
-            /* justify-content will be set by JS based on content */
-            align-items: center; /* Center horizontally */
-        }
-
-        .lyrics-display.centered-content {
-            justify-content: center; /* For "No lyrics found" message */
-        }
-
-        .lyrics-line {
-            color: #b0b0b0; /* Lighter gray for inactive lyrics */
-            font-size: 1.2rem; /* Fixed base font size */
-            padding: 0.3rem 0;
-            transition: color 0.3s ease-in-out, font-weight 0.3s ease-in-out; /* Removed font-size/transform transition */
-            line-height: 1.5;
-            font-weight: 500;
-        }
-
-        .lyrics-line.active {
-            color: #ffffff; /* White for active lyric */
-            font-weight: 700; /* Bolder for active lyric */
-            /* Removed font-size and transform to prevent jitter */
-        }
-
-        .no-lyrics-message {
-            color: #e0e0e0;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            margin: auto; /* Center if flex container */
-        }
-
-        .upload-lrc-button {
-            margin-top: 1rem;
-            font-family: "Radio Canada Big", sans-serif; /* Remove this line */
-
+        .player-controls button {
             font-size: 1rem;
-            padding: 0.75rem 1.25rem;
-            margin: auto; /* Center if flex container */
-            cursor: pointer; /* Ensure button is clickable */
+            padding: 0.5rem;
         }
-        /* Hidden input for LRC upload */
-        #lrc-upload-input {
-            display: none;
+        #play-pause-button {
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
         }
+        #clear-playlist-button {
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 1.2rem;
+            padding: 0.3rem;
+        }
+    }
+
+    /* General alignment for other content */
+    p[align="center"], h3[align="center"] {
+        text-align: center;
+    }
+
+    /* Save Track Button Specific Styling */
+    #save-track-button {
+        font-family: "Radio Canada Big", sans-serif;
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Lyrics Panel Styling */
+    .lyrics-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: transparent; /* Make panel background transparent to show overlay */
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 1rem;
+        box-sizing: border-box;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        z-index: 2;
+        cursor: pointer;
+        overflow: hidden; /* Ensure overlay respects border-radius */
+    }
+
+    .lyrics-panel.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* New overlay for blurred artwork background */
+    .lyrics-background-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        filter: blur(20px); /* Apply blur directly to the background image */
+        -webkit-filter: blur(20px); /* For Safari support */
+        background-color: #000000; /* Solid black */
+        opacity: 10; /* Control overall transparency of this overlay */
+        z-index: -1; /* Place behind lyrics content */
+    }
+
+
+    .lyrics-display {
+        flex-grow: 1;
+        width: 100%;
+        height: 100%;
+        overflow-y: scroll;
+        text-align: center;
+        padding: 0;
+        -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        scroll-behavior: smooth;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* Hide scrollbar for all devices */
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+        position: relative; /* Ensure lyrics content is above the overlay */
+        z-index: 1;
+    }
+
+    /* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+    .lyrics-display::-webkit-scrollbar {
+        display: none;
+    }
+
+    .lyrics-display.centered-content {
+        justify-content: center;
+    }
+
+    .lyrics-line {
+        color: #e0e0e0; /* Brighter gray for normal lines */
+        font-size: 1.2rem;
+        padding: 0.3rem 0;
+        transition: color 0.4s ease-in-out, font-weight 0.4s ease-in-out, transform 0.4s ease-out, opacity 0.4s ease-in-out, text-shadow 0.4s ease-in-out; /* Adjusted transition duration */
+        line-height: 1.5;
+        font-weight: 500;
+        transform: scale(1); /* Default scale */
+        opacity: 0.7; /* Slightly dim non-active lines */
+    }
+
+    .lyrics-line.active {
+        color: #ffffff; /* Pure white for highlighted lines */
+        font-weight: 700;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 15px rgba(255, 255, 255, 0.3); /* Subtle white glow (glaze effect) */
+        transform: scale(1.05); /* Slightly larger for "pull off" effect */
+        opacity: 1; /* Fully opaque active line */
+    }
+
+    .no-lyrics-message {
+        color: #e0e0e0;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        margin: auto;
+    }
+
+    .upload-lrc-button {
+        margin-top: 1rem;
+        font-family: "Radio Canada Big", sans-serif;
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+        margin: auto;
+        cursor: pointer;
+    }
+    /* Hidden input for LRC upload */
+    #lrc-upload-input {
+        display: none;
+    }
 
     </style>
 </head>
@@ -702,6 +715,7 @@ toggleBlur {
                 <img id="artwork" src="https://placehold.co/300x300/333333/FFFFFF?text=No+Artwork" alt="Album Artwork">
 
                 <div id="lyrics-panel" class="lyrics-panel">
+                    <div class="lyrics-background-overlay" id="lyrics-background-overlay"></div>
                     <div id="lyrics-display" class="lyrics-display">
                         </div>
                 </div>
@@ -721,11 +735,34 @@ toggleBlur {
             </div>
 
             <div class="player-controls">
-                <button id="shuffle-button" class="player-button"><i class="fas fa-random"></i></button>
-                <button id="prev-button" class="player-button"><i class="fas fa-backward-step"></i></button>
-                <button id="play-pause-button" class="player-button"><i class="fas fa-play"></i></button>
-                <button id="next-button" class="player-button"><i class="fas fa-forward-step"></i></button>
-                <button id="loop-button" class="player-button"><i class="fas fa-redo-alt"></i></button>
+                <button id="shuffle-button" class="player-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="white" width="24" height="24">
+                        <path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM64 256c0-17.7 14.3-32 32-32H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-17.7 0-32-14.3-32-32zM96 416c0-17.7 14.3-32 32-32H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H128c-17.7 0-32-14.3-32-32z"/>
+                    </svg>
+                </button>
+                <button id="prev-button" class="player-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white" width="24" height="24">
+                        <path d="M192 64c8.188 0 16.38 3.125 22.62 9.375c12.5 12.5 12.5 32.75 0 45.25L77.25 256L214.6 393.4c12.5 12.5 12.5 32.75 0 45.25s-32.75 12.5-45.25 0l-160-160c-12.5-12.5-12.5-32.75 0-45.25l160-160C175.6 67.19 183.8 64 192 64zM320 64c17.69 0 32 14.31 32 32v320c0 17.69-14.31 32-32 32s-32-14.31-32-32V96C288 78.31 302.3 64 320 64z"/>
+                    </svg>
+                </button>
+                <button id="play-pause-button" class="player-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white" width="24" height="24">
+                        <path d="M73.05 7.854c-11.12 8.358-17.05 22.42-17.05 36.88v422.3c0 14.46 5.922 28.52 17.05 36.88c11.13 8.358 25.17 10.42 38.38 5.497l300-211.6c12.98-4.874 21.62-17.15 21.62-31.02c0-13.88-8.637-26.15-21.62-31.02l-300-211.6C98.22-2.569 84.18-0.4957 73.05 7.854z"/>
+                    </svg>
+                </button>
+                <button id="next-button" class="player-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white" width="24" height="24">
+                                                <path d="M192 448c-8.188 0-16.38-3.125-22.62-9.375c-12.5-12.5-12.5-32.75 0-45.25L306.8 256L169.4 118.6c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0l160 160c12.5 12.5 12.5 32.75 0 45.25l-160 160C208.4 444.8 200.2 448 192 448zM64 448c-17.69 0-32-14.31-32-32V96c0-17.69 14.31-32 32-32S96 78.31 96 96v320C96 433.7 81.69 448 64 448z"/>
+
+                    </svg>
+                </button>
+                <button id="loop-button" class="player-button">
+                    <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 122.88 62.63" style="enable-background:new 0 0 122.88 62.63" xml:space="preserve" fill="white" width="24" height="24">
+                        <g>
+                            <path d="M44.94,20.02c-7.77-8.05-18.67-13.18-27.82-4.34c-2.99,2.88-5.13,6.8-6.07,11c-1.12,4.98-0.28,9.53,1.79,13.28 c1.84,3.34,4.65,6.07,7.96,7.95c3.32,1.89,7.1,2.91,10.85,2.8c4.12-0.12,8.24-1.64,11.7-4.91c4.89-4.63,9.16-11.55,13.33-18.3 c4.56-7.38,9-14.57,14.45-19.43c3.89-3.47,8.05-5.71,12.27-6.94c6.06-1.76,12.12-1.37,17.63,0.55c5.42,1.88,10.28,5.22,14.02,9.42 c3.18,3.56,5.6,7.8,6.92,12.33c1.92,6.6,0.76,14.51-2.74,21.43c-2.48,4.89-6.16,9.38-10.78,12.62c-4.75,3.33-10.47,5.34-16.87,5.15 c-7.32-0.22-15.4-3.3-23.73-10.6l6.93-7.92c6.31,5.53,12.08,7.85,17.09,8c3.98,0.12,7.56-1.15,10.56-3.25 c3.13-2.19,5.66-5.3,7.4-8.74c2.36-4.66,3.2-9.75,2.04-13.75c-0.86-2.96-2.5-5.79-4.69-8.25c-2.6-2.92-5.92-5.22-9.56-6.49 c-3.55-1.23-7.44-1.5-11.28-0.38c-2.73,0.79-5.5,2.31-8.19,4.71c-4.37,3.9-8.39,10.4-12.51,17.08c-4.54,7.35-9.19,14.88-15.03,20.4 c-5.48,5.19-12.07,7.6-18.67,7.8c-5.71,0.17-11.4-1.34-16.34-4.16c-4.96-2.82-9.2-6.96-12-12.04c-3.24-5.87-4.55-12.96-2.82-20.67 c1.39-6.18,4.58-11.97,9.05-16.28c3.01-2.9,6.6-5.15,10.63-6.42c4.06-1.28,8.52-1.55,13.24-0.49c6.08,1.37,12.51,4.96,18.85,11.54 L44.94,20.02L44.94,20.02z"/>
+                        </g>
+                    </svg>
+                </button>
             </div>
 
             <input type="file" id="music-upload" accept="audio/*" multiple class="hidden">
@@ -734,17 +771,21 @@ toggleBlur {
         </div>
 
 <button id="upload-button">
-                <i class="fas fa-upload"></i> Upload Music
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="white" width="20" height="20" style="margin-right: 0.5rem;">
+                    <path d="M288 109.3V352c0 17.7-14.3 32-32 32s-32-14.3-32-32V109.3L135.5 184.5c-12.5 12.5-32.75 12.5-45.25 0s-12.5-32.75 0-45.25l160-160c12.5-12.5 32.75-12.5 45.25 0l160 160c12.5 12.5 12.5 32.75 0 45.25s-32.75 12.5-45.25 0L288 109.3zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352v96c0 35.2 28.8 64 64 64H448c35.2 0 64-28.8 64-64V352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 0-1.375 0-1.75 0H64c0 0-1.375 0-1.75 0V352z"/>
+                </svg>
+                Upload Music
             </button>
-
 
 
         <div class="track-list-container">
             <div class="playlist-header">
                 <h3>Playlist</h3>
                 <button id="clear-playlist-button">
-                <i class="fas fa-times-circle"></i>
-            </button>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="white" width="24" height="24">
+                        <path d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM343.1 329.1c-9.375 9.375-24.56 9.375-33.94 0L256 290.1L202.9 343.1c-9.375 9.375-24.56 9.375-33.94 0c-9.375-9.375-9.375-24.56 0-33.94L222.1 256L169 202.9c-9.375-9.375-9.375-24.56 0-33.94s24.56-9.375 33.94 0L256 222.1L309.1 169c9.375-9.375 24.56-9.375 33.94 0s9.375 24.56 0 33.94L290.1 256L343.1 309.1C352.5 318.6 352.5 329.1 343.1 329.1z"/>
+                    </svg>
+                </button>
             </div>
             
             <ul id="playlist-list">
@@ -956,6 +997,7 @@ toggleButton.addEventListener('click', () => {
 
         // New Lyrics Panel elements
         const lyricsPanel = document.getElementById('lyrics-panel');
+        const lyricsBackgroundOverlay = document.getElementById('lyrics-background-overlay'); // Get the new overlay div
         const lyricsDisplay = document.getElementById('lyrics-display');
         // Removed closeLyricsButton as it's now a toggle
 
@@ -1130,9 +1172,17 @@ toggleButton.addEventListener('click', () => {
          */
         function updatePlayPauseButton() {
             if (isPlaying) {
-                playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+                playPauseButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="white" width="24" height="24">
+                        <path d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"/>
+                    </svg>
+                `;
             } else {
-                playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+                playPauseButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white" width="24" height="24">
+                        <path d="M73.05 7.854c-11.12 8.358-17.05 22.42-17.05 36.88v422.3c0 14.46 5.922 28.52 17.05 36.88c11.13 8.358 25.17 10.42 38.38 5.497l300-211.6c12.98-4.874 21.62-17.15 21.62-31.02c0-13.88-8.637-26.15-21.62-31.02l-300-211.6C98.22-2.569 84.18-0.4957 73.05 7.854z"/>
+                    </svg>
+                `;
             }
         }
 
@@ -1534,6 +1584,7 @@ toggleButton.addEventListener('click', () => {
             updateSaveButtonState(); // Update save button state
             lyricsPanel.classList.remove('show'); // Hide lyrics panel
             artwork.classList.remove('hidden-artwork'); // Ensure artwork is visible
+            lyricsBackgroundOverlay.style.backgroundImage = ''; // Clear background image on overlay
         }
 
         // --- Effects Panel Functions ---
@@ -2077,7 +2128,10 @@ toggleButton.addEventListener('click', () => {
                 lyricsDisplay.innerHTML = `
                     <p class="no-lyrics-message">No lyrics found for this track.</p>
                     <button id="upload-lrc-button" class="player-button upload-lrc-button">
-                        <i class="fas fa-file-upload" style="display:none;"></i> Upload LRC
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white" width="20" height="20" style="margin-right: 0.5rem; display:none;">
+                            <path d="M144 0H248c22.1 0 40 17.9 40 40v48c0 22.1-17.9 40-40 40H144c-22.1 0-40-17.9-40-40V40c0-22.1 17.9-40 40-40zm-48 96H288V416c0 35.3-28.7 64-64 64H160c-35.3 0-64-28.7-64-64V96zM64 416c0 70.7 57.3 128 128 128s128-57.3 128-128V96H384V416c0 97.2-78.8 176-176 176S32 513.2 32 416V96H64V416z"/>
+                        </svg>
+                        Upload LRC
                     </button>
                     <input type="file" id="lrc-upload-input" accept=".lrc">
                 `;
@@ -2364,8 +2418,16 @@ toggleButton.addEventListener('click', () => {
         artwork.addEventListener('click', () => {
             if (currentTrackIndex !== -1 && playlist[currentTrackIndex]) {
                 displayLyrics(playlist[currentTrackIndex].lyrics);
+                // Set background image on the new overlay div
+                const currentArtworkSrc = artwork.src;
+                if (currentArtworkSrc && !currentArtworkSrc.includes('No+Artwork')) {
+                    lyricsBackgroundOverlay.style.backgroundImage = `url('${currentArtworkSrc}')`;
+                } else {
+                    lyricsBackgroundOverlay.style.backgroundImage = ''; // Clear if no valid artwork
+                }
             } else {
                 displayLyrics(null); // No track loaded, show "No lyrics found"
+                lyricsBackgroundOverlay.style.backgroundImage = ''; // Clear background
             }
             artwork.classList.add('hidden-artwork'); // Fade out artwork
             lyricsPanel.classList.add('show'); // Fade in lyrics panel
@@ -2379,6 +2441,7 @@ toggleButton.addEventListener('click', () => {
             }
             lyricsPanel.classList.remove('show'); // Fade out lyrics panel
             artwork.classList.remove('hidden-artwork'); // Fade in artwork
+            lyricsBackgroundOverlay.style.backgroundImage = ''; // Clear background image on overlay
         });
 
 
@@ -2391,6 +2454,8 @@ toggleButton.addEventListener('click', () => {
         // Ensure lyrics panel is hidden and artwork is visible on initial load
         lyricsPanel.classList.remove('show');
         artwork.classList.remove('hidden-artwork');
+        lyricsBackgroundOverlay.style.backgroundImage = ''; // Ensure cleared on load
+
 
         // Initial state for effects panel
         togglePitch(); // Set initial slider state for pitch
