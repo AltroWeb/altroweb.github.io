@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JASPL IDE</title>
+    <style>
+        /* Custom CSS for the IDE itself */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=Fira+Code:wght@400&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        header p {
+            font-size: 1.125rem;
+            color: #a0aec0;
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #cbd5e0;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            color: #a0aec0;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', 'monospace';
+            resize: vertical;
+            min-height: 200px;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            outline: none;
+            width: 100%;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.2s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            border-color: #63b3ed;
+        }
+
+        .flex-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .run-button {
+            background-color: #4299e1;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+
+        .run-button:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .run-button:active {
+            transform: translateY(0);
+            background-color: #2b6cb0;
+        }
+
+        .output-console {
+            background-color: #1a202c;
+            border: 1px solid #4a5568;
+            color: #a0aec0;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', 'monospace';
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+        }
+
+        /* GUI Output Area: Plain white background */
+        .gui-output {
+            background-color: white;
+            border: 1px solid #4a5568;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column; /* Changed to column for gap to work vertically */
+            align-items: flex-start; /* Align items to the left */
+            font-family: sans-serif; /* Default plain font */
+            color: black; /* Default plain color */
+        }
+
+        /* Basic styling for form elements in GUI output */
+        .gui-output button {
+            /* Default button styles */
+            background-color: transparent; /* Make it plain by default */
+            color: black; /* Make text black by default */
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid #ccc; /* Add a light border to make it visible */
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .gui-output button:hover {
+            border-color: #888;
+        }
+        .gui-output input[type="text"],
+        .gui-output input[type="range"] {
+            padding: 0.5rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.25rem;
+            background-color: white; /* Ensure textboxes are white */
+            color: black; /* Ensure textbox text is black */
+        }
+        .gui-output input[type="radio"],
+        .gui-output input[type="checkbox"],
+        .gui-output input[type="file"] {
+            margin-right: 0.25rem; /* Space between input and label */
+        }
+        .gui-output label {
+            /* Reset label styles inherited from global, ensure they are black/sans-serif */
+            color: black;
+            font-family: sans-serif;
+            font-size: 1rem; /* Default font size for elements inside output */
+            font-weight: normal;
+            margin-bottom: 0; /* Remove margin-bottom from global label */
+        }
+        .gui-output span, .gui-output a {
+            color: black; /* Default text elements to black */
+            background-color: transparent; /* Default background for text elements */
+        }
+
+        /* Canvas will still have a dashed border to be visible on white background */
+        canvas {
+            border: 1px dashed #63b3ed;
+        }
+
+        /* Basic animation keyframes (will be applied via JS for styling) */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes zoomIn { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes zoomOut { from { transform: scale(1); } to { transform: scale(0); } }
+        @keyframes expand { from { transform: scale(0.5); } to { transform: scale(1.2); } } /* Simple scale for expand */
+        @keyframes shrink { from { transform: scale(1.2); } to { transform: scale(0.5); } } /* Simple scale for shrink */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem 0;
+            color: #a0aec0;
+            font-size: 0.875rem;
+            margin-top: 2rem;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+            header h1 {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>JASPL IDE</h1>
+            <p>Your Simple Programming Environment</p>
+        </header>
+
+        <main>
+            <div>
+                <label for="code-editor">JASPL Code:</label>
+                <textarea id="code-editor" placeholder="Write your JASPL code here..."></textarea>
+            </div>
+
+            <div class="flex-center">
+                <button id="run-button" class="run-button">Run Code</button>
+            </div>
+
+            <div>
+                <label for="gui-output">GUI Output:</label>
+                <div id="gui-output" class="gui-output">
+                    </div>
+            </div>
+
+            <div>
+                <label for="output-console">Console Output:</label>
+                <pre id="output-console" class="output-console">Console messages and errors will appear here.</pre>
+            </div>
+        </main>
+
+        <footer>
+            &copy; 2025 JASPL IDE. All rights reserved.
+        </footer>
+    </div>
+
+    <script>
+        // Get references to the DOM elements
+        const codeEditor = document.getElementById('code-editor');
+        const runButton = document.getElementById('run-button');
+        const outputConsole = document.getElementById('output-console');
+        const guiOutputDiv = document.getElementById('gui-output');
+
+        // Map to store references to created elements by their ID (for the current program's elements)
+        const currentProgramElements = new Map();
+        // Set to keep track of imported Google Fonts to avoid duplicates
+        const importedGoogleFonts = new Set();
+
+        // Simulated file system for JASPL programs
+        // In a real application, these would be fetched from a server or local storage
+        const jasplFiles = {
+            'C:/code/program2.jaspl': `
+                @jaspl
+                start
+                create text with id(p2Text) content(This is from Program 2!)
+                add gap
+                create button with id(p2Button) content(P2 Button)
+                create checkbox with id(chkbox) content(P2 Checkbox)
+                end
+            `,
+            'C:/Files/program3.jaspl': `
+                @jaspl
+                @jaspl-style
+                start
+                create text with id(p3Text) content(Hello from Program 3!)
+                style p3Text (color=green, font=Arial, font-style=bold)
+                add gap
+                create button with id(p3Button) content(P3 Button)
+                end
+            `
+        };
+
+        /**
+         * Clears both the GUI output area and the console output area.
+         */
+        function clearOutputs() {
+            guiOutputDiv.innerHTML = '';
+            outputConsole.textContent = '';
+            currentProgramElements.clear(); // Clear element map on new run
+            // Do NOT clear importedGoogleFonts as they are global to the page
+        }
+
+        /**
+         * Appends a message to the console output.
+         * @param {string} message - The message to append.
+         * @param {boolean} isError - True if the message is an error, false otherwise.
+         */
+        function logToConsole(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            outputConsole.textContent += `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}\n`;
+            outputConsole.scrollTop = outputConsole.scrollHeight; // Scroll to bottom
+        }
+
+        /**
+         * Dynamically imports a Google Font by adding a <link> tag to the document head.
+         * @param {string} fontUrl - The URL of the Google Font.
+         */
+        function importGoogleFont(fontUrl) {
+            if (importedGoogleFonts.has(fontUrl)) {
+                return; // Already imported
+            }
+
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = fontUrl;
+            document.head.appendChild(link);
+            importedGoogleFonts.add(fontUrl);
+            logToConsole(`Imported Google Font: ${fontUrl}`);
+        }
+
+        /**
+         * Applies individual styles to a JASPL element.
+         * This function is NOT used for css-mode.
+         * @param {HTMLElement} element - The DOM element to style.
+         * @param {string} styleAttribute - The style attribute name (e.g., 'color').
+         * @param {string} value - The style value.
+         * @param {string} lineContext - The original line of code or context for error reporting.
+         */
+        function applyStyle(element, styleAttribute, value, lineContext) {
+            switch (styleAttribute) {
+                case 'color':
+                    element.style.color = value;
+                    break;
+                case 'bgcolor': // NEW: Background color attribute
+                    element.style.backgroundColor = value;
+                    break;
+                case 'border-thickness':
+                    element.style.borderWidth = `${parseFloat(value)}px`;
+                    element.style.borderStyle = element.style.borderStyle || 'solid'; // Ensure border style is set
+                    break;
+                case 'border-color':
+                    element.style.borderColor = value;
+                    element.style.borderStyle = element.style.borderStyle || 'solid'; // Ensure border style is set
+                    break;
+                case 'font':
+                    // Check if it's a Google Fonts URL
+                    if (value.startsWith('https://fonts.googleapis.com/css2?family=')) {
+                        importGoogleFont(value);
+                        // Extract font family name from URL for font-family property
+                        const fontNameMatch = value.match(/family=([^&:]+)/);
+                        if (fontNameMatch && fontNameMatch[1]) {
+                            element.style.fontFamily = `'${decodeURIComponent(fontNameMatch[1].replace(/\+/g, ' '))}','sans-serif'`;
+                        } else {
+                            logToConsole(`Warning: Could not parse font family from URL: ${value} on ${lineContext}`, true);
+                            element.style.fontFamily = value; // Fallback to direct value
+                        }
+                    } else {
+                        element.style.fontFamily = value;
+                    }
+                    break;
+                case 'font-style':
+                    if (value.includes('bold')) {
+                        element.style.fontWeight = 'bold';
+                    } else {
+                        element.style.fontWeight = 'normal';
+                    }
+                    if (value.includes('italic')) {
+                        element.style.fontStyle = 'italic';
+                    } else {
+                        element.style.fontStyle = 'normal';
+                    }
+                    if (value.includes('strikethrough')) {
+                        element.style.textDecoration = 'line-through';
+                    } else {
+                        element.style.textDecoration = 'none';
+                    }
+                    if (value.includes('monospaced')) {
+                        element.style.fontFamily = `'Fira Code', 'Monaco', 'Consolas', 'monospace'`;
+                    }
+                    if (value === 'none') {
+                        element.style.fontWeight = 'normal';
+                        element.style.fontStyle = 'normal';
+                        element.style.textDecoration = 'none';
+                        element.style.fontFamily = ''; // Reset to default
+                    }
+                    break;
+                case 'animation':
+                    const animationMatch = value.match(/^(fade-in|fade-out|zoom-in|zoom-out|expand|shrink|shake)(?:\(([\d.]+)\))?$/i);
+                    if (animationMatch) {
+                        const animationType = animationMatch[1];
+                        const duration = animationMatch[2] ? parseFloat(animationMatch[2]) : 1; // Default 1s
+                        element.style.animation = `${animationType} ${duration}s forwards`;
+                    } else {
+                        logToConsole(`Warning: Invalid animation syntax: ${value} on ${lineContext}`, true);
+                    }
+                    break;
+                default:
+                    logToConsole(`Warning: Unknown style attribute: ${styleAttribute} on ${lineContext}`, true);
+                    break;
+            }
+        }
+
+        /**
+         * Applies linking behavior to an element.
+         * @param {HTMLElement} element - The DOM element to make clickable.
+         * @param {string} url - The URL to link to.
+         * @param {string} lineContext - The original line of code or context for error reporting.
+         */
+        function applyLinkingBehavior(element, url, lineContext) {
+            try {
+                const fullUrl = new URL(url).href; // Validate URL
+                if (element.tagName === 'A') {
+                    element.href = fullUrl;
+                    element.target = '_blank';
+                } else {
+                    // For other elements, make them clickable but warn if it's typically non-interactive
+                    if (element.tagName !== 'BUTTON' && element.tagName !== 'INPUT' && element.tagName !== 'SPAN') {
+                         logToConsole(`Warning: Applying 'links to' to non-interactive element type '${element.tagName}' on ${lineContext}.`, true);
+                    }
+                    element.style.cursor = 'pointer';
+                    element.onclick = () => {
+                        window.open(fullUrl, '_blank');
+                    };
+                }
+                logToConsole(`Applied 'links to' (${fullUrl}) to element '${element.id || element.tagName}' on ${lineContext}`);
+            } catch (e) {
+                logToConsole(`Error applying 'links to' to '${element.id || element.tagName}' from ${lineContext}: Invalid URL '${url}'`, true);
+            }
+        }
+
+        /**
+         * Applies source behavior to an element (executes a JASPL file on click).
+         * @param {HTMLElement} element - The DOM element to make clickable.
+         * @param {string} filePath - The path to the JASPL file to execute.
+         * @param {string} lineContext - The original line of code or context for error reporting.
+         */
+        function applySourceBehavior(element, filePath, lineContext) {
+            element.style.cursor = 'pointer';
+            element.onclick = () => {
+                logToConsole(`Attempting to execute sourced file '${filePath}' via element click.`);
+                const sourcedCode = jasplFiles[filePath];
+                if (sourcedCode) {
+                    const sourcedBlock = parseJASPLCode(sourcedCode); // Use the new single-block parser
+                    if (sourcedBlock) {
+                        // When a sourced file is executed via element click, it should add its elements
+                        // to the main guiOutputDiv, but its elements should not be stored in currentProgramElements
+                        // as they belong to a different program context.
+                        executeJASPLProgram(sourcedBlock, new Set(), new Map(), guiOutputDiv);
+                    } else {
+                        logToConsole(`Error: Sourced file '${filePath}' is malformed or empty.`, true);
+                    }
+                } else {
+                    logToConsole(`Error: Sourced file '${filePath}' not found in simulated file system.`, true);
+                }
+            };
+            logToConsole(`Applied 'source' (${filePath}) to element '${element.id || element.tagName}' on ${lineContext}`);
+        }
+
+
+        /**
+         * Represents a parsed JASPL program block (single block per file).
+         * @typedef {Object} ProgramBlock
+         * @property {string} name - The name of the program block (always 'jaspl' for valid files).
+         * @property {boolean} canStyle - True if this block can use inline 'style' commands.
+         * @property {Array<{path: string, alias: string|null}>} sourceDeclarations - Array of sourced files with their aliases.
+         * @property {string[]} lines - The raw lines of code within the program's 'start' and 'end' tags.
+         */
+
+        /**
+         * Parses a single JASPL code string into a ProgramBlock.
+         * Assumes only one program block per file, starting with @jaspl.
+         * @param {string} code - The full JASPL code string.
+         * @returns {ProgramBlock|null} The parsed program block, or null if malformed.
+         */
+        function parseJASPLCode(code) {
+            const lines = code.split('\n').map(line => line.trim()).filter(line => line !== '');
+            if (lines.length === 0) {
+                logToConsole("Error: Provided code is empty after trimming.", true);
+                return null;
+            }
+
+            let programBlock = {
+                name: null, // Will be set to 'jaspl'
+                canStyle: false,
+                sourceDeclarations: [],
+                lines: []
+            };
+            let inProgramContent = false; // True when inside start...end
+            let foundStart = false;
+            let foundEnd = false;
+            let foundJasplTag = false; // To ensure @jaspl is found and only once
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                // Check for specific declaration tags first, allowing them before @jaspl or start
+                const jasplStyleTagMatch = line === '@jaspl-style';
+                const sourceTagMatch = line.match(/^@source\s*\(([^)]*)\)(?:\s+with\s+id\s*\(([^)]*)\))?$/);
+                const programNameTagMatch = line.match(/^@([a-zA-Z0-9_-]+)$/); // Generic @tag check for @jaspl
+
+                if (jasplStyleTagMatch) {
+                    if (inProgramContent) {
+                        logToConsole(`Error: '@jaspl-style' found inside 'start...end' block on line ${i + 1}. Must be before 'start'.`, true);
+                        return null;
+                    }
+                    programBlock.canStyle = true;
+                    logToConsole(`Styling enabled for program.`);
+                    continue; // Process next line
+                }
+
+                if (sourceTagMatch) {
+                    if (inProgramContent) {
+                        logToConsole(`Error: '@source' found inside 'start...end' block on line ${i + 1}. Must be before 'start'.`, true);
+                        return null;
+                    }
+                    const path = sourceTagMatch[1].trim();
+                    const alias = sourceTagMatch[2] ? sourceTagMatch[2].trim() : null;
+                    if (path) {
+                        programBlock.sourceDeclarations.push({ path, alias });
+                        logToConsole(`Detected source import: ${path}${alias ? ` with alias '${alias}'` : ''}`);
+                    } else {
+                        logToConsole(`Warning: Empty path for @source on line ${i + 1}.`, true);
+                    }
+                    continue; // Process next line
+                }
+
+                // Now, check for the main program definition tag (@jaspl)
+                if (programNameTagMatch) {
+                    if (programNameTagMatch[1] !== 'jaspl') {
+                        logToConsole(`Error: Invalid program definition tag '@${programNameTagMatch[1]}' on line ${i + 1}. Only '@jaspl' is allowed as a program definition tag.`, true);
+                        return null;
+                    }
+                    if (foundJasplTag) {
+                        logToConsole(`Error: Duplicate '@jaspl' tag found on line ${i + 1}. Only one '@jaspl' tag is allowed per file.`, true);
+                        return null;
+                    }
+                    programBlock.name = 'jaspl';
+                    foundJasplTag = true;
+                    continue; // Process next line
+                }
+
+                if (line === 'start') {
+                    if (foundStart) {
+                        logToConsole(`Error: Duplicate 'start' tag on line ${i + 1}. Only one 'start...end' block per file.`, true);
+                        return null;
+                    }
+                    if (!foundJasplTag) {
+                        logToConsole(`Error: 'start' tag found before '@jaspl' tag on line ${i + 1}. '@jaspl' is required before 'start'.`, true);
+                        return null;
+                    }
+                    foundStart = true;
+                    inProgramContent = true;
+                    continue; // Process next line
+                }
+
+                if (line === 'end') {
+                    if (!foundStart || foundEnd) {
+                        logToConsole(`Error: 'end' tag without a matching 'start' or duplicate 'end' on line ${i + 1}.`, true);
+                        return null;
+                    }
+                    foundEnd = true;
+                    inProgramContent = false;
+                    break; // Stop parsing after 'end'
+                }
+
+                if (inProgramContent) {
+                    programBlock.lines.push(line);
+                } else if (line.length > 0) {
+                    logToConsole(`Warning: Line "${line}" on line ${i + 1} is outside the main program block or placed incorrectly. Ignoring.`, true);
+                }
+            }
+
+            if (!foundJasplTag) {
+                logToConsole(`Error: No '@jaspl' program definition tag found in the file. It is required.`, true);
+                return null;
+            }
+            if (!foundStart || !foundEnd) {
+                logToConsole(`Error: Missing 'start' or 'end' tags for the program.`, true);
+                return null;
+            }
+
+            return programBlock;
+        }
+
+        /**
+         * Executes a block of JASPL commands (e.g., from a do() block).
+         * @param {string} commandsString - The string containing JASPL commands.
+         * @param {Map<string, HTMLElement>} elementsMap - The map of elements for the current execution context (e.g., currentProgramElements).
+         * @param {Map<string, Map<string, HTMLElement>>} globalSourceAliasMap - The map of elements from all sourced files.
+         * @param {HTMLElement} targetDiv - The DOM element where GUI elements should be appended.
+         * @param {string} lineContext - Context string for error reporting (e.g., "element 'id' clicked do block").
+         * @param {boolean} canStyle - Whether styling is enabled for the parent program.
+         */
+        function executeJASPLCommandsBlock(commandsString, elementsMap, globalSourceAliasMap, targetDiv, lineContext, canStyle) {
+            const lines = commandsString.split('\n').map(line => line.trim()).filter(line => line !== '');
+
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                const currentLineContext = `${lineContext} - line ${index + 1}`; // More specific context
+                try {
+                    // Regexes for commands (same as in main execution)
+                    const elementCommandRegex = /^(create|add)\s+(button|radiobutton|slider|checkbox|textbox|uploadbutton|canvas|text|url|window|instance)(?:\s+with\s+id\s*\(([^)]*)\))?(?:\s+content\s*\(([^)]*)\))?(?:\s+links\s+to\s*\(([^)]*)\))?(?:\s+source\s*\(([^)]*)\))?(?:\s+from\s+id\s*\(([^)]*)\)\s+source\s+with\s+id\s*\(([^)]*)\))?$/i;
+                    const gapCommandRegex = /^add\s+gap(?:\s*\(([\d.]+)\))?$/i;
+                    const styleCommandRegex = /^style\s+([a-zA-Z0-9_-]+)\s+(.*)$/;
+                    const linksToCommandRegex = /^([a-zA-Z0-9_-]+)\s+links\s+to\s*\(([^)]*)\)$/i;
+                    const sourceCommandRegex = /^([a-zA-Z0-9_-]+)\s+source\s*\(([^)]*)\)$/i;
+                    const whenDoCommandRegex = /^when\s+([a-zA-Z0-9_-]+)\s+(clicked|hovered|double-clicked|hold|release|selected)\s+do\s*\(([\s\S]*)\)$/i;
+
+
+                    let match;
+
+                    if (match = trimmedLine.match(elementCommandRegex)) {
+                        const command = match[1].toLowerCase();
+                        const elementType = match[2].toLowerCase();
+                        const elementId = match[3] ? match[3].trim() : '';
+                        const contentValue = match[4] ? match[4].trim() : null;
+                        const linksToUrl = match[5] ? match[5].trim() : null;
+                        const sourcePath = match[6] ? match[6].trim() : null;
+                        const fromId = match[7] ? match[7].trim() : null;
+                        const sourceAlias = match[8] ? match[8].trim() : null;
+
+                        let newElement = null;
+                        let labelForInput = null;
+
+                        if (fromId && sourceAlias) {
+                            if (command !== 'add') {
+                                logToConsole(`Error: 'from id()' can only be used with 'add' command, not '${command}' on ${currentLineContext}.`, true);
+                                return;
+                            }
+                            if (elementId) {
+                                logToConsole(`Warning: 'with id()' is redundant when using 'from id()' on ${currentLineContext}. The ID will be inherited from the sourced element.`, true);
+                            }
+
+                            const sourceMap = globalSourceAliasMap.get(sourceAlias);
+                            if (sourceMap) {
+                                const originalElement = sourceMap.get(fromId);
+                                if (originalElement) {
+                                    newElement = originalElement.cloneNode(true);
+                                    if (elementId) {
+                                        newElement.id = elementId;
+                                    } else if (originalElement.id) {
+                                        newElement.id = `${originalElement.id}-cloned-${Date.now()}`;
+                                    }
+
+                                    // If cloned element was an input with a label, and content is provided, update its label
+                                    if (contentValue !== null && (newElement.tagName === 'INPUT' && (newElement.type === 'radio' || newElement.type === 'checkbox' || newElement.type === 'file' || newElement.type === 'range'))) {
+                                        let existingLabel = newElement.nextElementSibling;
+                                        if (existingLabel && existingLabel.tagName === 'LABEL' && existingLabel.htmlFor === newElement.id) {
+                                            existingLabel.textContent = contentValue;
+                                            labelForInput = existingLabel;
+                                        } else { // Create a new label if none exists
+                                            labelForInput = document.createElement('label');
+                                            labelForInput.textContent = contentValue;
+                                            labelForInput.htmlFor = newElement.id;
+                                        }
+                                    } else if (contentValue !== null) { // For other elements (button, span, a), update textContent
+                                        newElement.textContent = contentValue;
+                                    }
+                                    logToConsole(`Added cloned element '${fromId}' from source '${sourceAlias}' with new ID: ${newElement.id} in ${currentLineContext}`);
+                                } else {
+                                    logToConsole(`Error: Element with ID '${fromId}' not found in source '${sourceAlias}' on ${currentLineContext}.`, true);
+                                    return;
+                                }
+                            } else {
+                                logToConsole(`Error: Source alias '${sourceAlias}' not found or not loaded on ${currentLineContext}.`, true);
+                                return;
+                            }
+                        } else if (fromId || sourceAlias) {
+                            logToConsole(`Error: Malformed 'from id()' or 'source with id()' usage on ${currentLineContext}. Both 'from id(<id>)' and 'source with id(<alias>)' are required together.`, true);
+                            return;
+                        } else {
+                            // Regular create/add command
+                            switch (elementType) {
+                                case 'button':
+                                    newElement = document.createElement('button');
+                                    newElement.textContent = contentValue !== null ? contentValue : '';
+                                    newElement.style.backgroundColor = 'transparent'; // Default to plain
+                                    newElement.style.color = 'black'; // Default to plain
+                                    newElement.style.border = '1px solid #ccc'; // Default to plain
+                                    break;
+                                case 'radiobutton':
+                                case 'checkbox':
+                                case 'slider':
+                                case 'uploadbutton':
+                                    newElement = document.createElement('input');
+                                    if (elementType === 'radiobutton') newElement.type = 'radio';
+                                    if (elementType === 'checkbox') newElement.type = 'checkbox';
+                                    if (elementType === 'slider') { newElement.type = 'range'; newElement.min = '0'; newElement.max = '100'; newElement.value = '50'; }
+                                    if (elementType === 'uploadbutton') newElement.type = 'file';
+
+                                    if (elementType === 'radiobutton') newElement.name = `jaspl-radio-group-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+                                    
+                                    labelForInput = document.createElement('label');
+                                    labelForInput.textContent = contentValue !== null ? contentValue : '';
+                                    break;
+                                case 'textbox':
+                                    newElement = document.createElement('input');
+                                    newElement.type = 'text';
+                                    newElement.placeholder = contentValue !== null ? contentValue : '';
+                                    newElement.style.backgroundColor = 'white'; // Default to plain
+                                    newElement.style.color = 'black'; // Default to plain
+                                    break;
+                                case 'canvas':
+                                    newElement = document.createElement('canvas');
+                                    newElement.width = 300;
+                                    newElement.height = 200;
+                                    newElement.style.border = '1px dashed #63b3ed';
+                                    break;
+                                case 'text':
+                                    newElement = document.createElement('span');
+                                    newElement.textContent = contentValue !== null ? contentValue : '';
+                                    newElement.style.color = 'black'; // Default to plain
+                                    newElement.style.backgroundColor = 'transparent'; // Default to plain
+                                    break;
+                                case 'url':
+                                    newElement = document.createElement('a');
+                                    newElement.textContent = contentValue !== null ? contentValue : '';
+                                    newElement.href = '#';
+                                    newElement.target = '_blank';
+                                    newElement.style.color = 'black'; // Default to plain
+                                    newElement.style.backgroundColor = 'transparent'; // Default to plain
+                                    break;
+                                case 'window':
+                                    const windowName = elementId || `JASPL_Window_${Date.now()}`;
+                                    const newWindow = window.open('', windowName, 'width=600,height=400,resizable=yes,scrollbars=yes');
+                                    if (newWindow) {
+                                        newWindow.document.write(`<!DOCTYPE html><html><head><title>JASPL Window: ${windowName}</title></head><body style="background-color: white; font-family: sans-serif; color: black;"></body></html>`);
+                                        newWindow.document.close();
+                                        logToConsole(`Created new JASPL window: ${windowName} in ${currentLineContext}`);
+                                    } else {
+                                        logToConsole("Failed to open new window. Popup blocker might be active.", true);
+                                    }
+                                    return;
+                                case 'instance':
+                                    const instanceName = elementId || `JASPL_Instance_${Date.now()}`;
+                                    const newInstance = window.open('about:blank', instanceName);
+                                    if (newInstance) {
+                                        newInstance.document.write(`<!DOCTYPE html><html><head><title>JASPL Instance: ${instanceName}</title></head><body style="background-color: white; font-family: sans-serif; color: black;"></body></html>`);
+                                        newInstance.document.close();
+                                        logToConsole(`Created new JASPL instance/tab: ${instanceName} in ${currentLineContext}`);
+                                    } else {
+                                        logToConsole("Failed to open new instance/tab. Popup blocker might be active.", true);
+                                    }
+                                    return;
+                                default:
+                                    logToConsole(`Unknown element type or command: ${elementType} on ${currentLineContext}.`, true);
+                                    return;
+                            }
+                        }
+
+
+                        if (newElement) {
+                            if (!newElement.id && elementId) {
+                                newElement.id = elementId;
+                            } else if (!newElement.id) {
+                                newElement.id = `jaspl-auto-id-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                                logToConsole(`Generated ID '${newElement.id}' for element on ${currentLineContext}.`);
+                            }
+
+                            if (linksToUrl) applyLinkingBehavior(newElement, linksToUrl, currentLineContext);
+                            if (sourcePath) applySourceBehavior(newElement, sourcePath, currentLineContext);
+
+                            if (labelForInput) {
+                                const wrapper = document.createElement('div');
+                                wrapper.style.display = 'flex';
+                                wrapper.style.alignItems = 'center';
+                                wrapper.style.gap = '0.5rem';
+                                wrapper.appendChild(newElement);
+                                labelForInput.setAttribute('for', newElement.id);
+                                labelForInput.style.color = 'black';
+                                labelForInput.style.fontFamily = 'unset';
+                                labelForInput.style.fontWeight = 'unset';
+                                labelForInput.style.fontStyle = 'unset';
+                                labelForInput.style.textDecoration = 'unset';
+
+                                wrapper.appendChild(labelForInput);
+                                targetDiv.appendChild(wrapper);
+                                elementsMap.set(newElement.id, newElement);
+                            } else {
+                                targetDiv.appendChild(newElement);
+                                elementsMap.set(newElement.id, newElement);
+                            }
+                            logToConsole(`${command === 'create' ? 'Created' : 'Added'} ${elementType} with ID: ${newElement.id} in ${currentLineContext}.`);
+                        }
+                    } else if (match = trimmedLine.match(gapCommandRegex)) {
+                        const gapPixels = match[1] ? parseFloat(match[1]) : 0;
+                        const gapElement = document.createElement('div');
+                        if (gapPixels > 0) {
+                            gapElement.style.height = `${gapPixels}px`;
+                            logToConsole(`Added gap of ${gapPixels}px in ${currentLineContext}`);
+                        } else {
+                            gapElement.style.height = '1em';
+                            logToConsole(`Added default gap (line break) in ${currentLineContext}`);
+                        }
+                        targetDiv.appendChild(gapElement);
+                    } else if (match = trimmedLine.match(styleCommandRegex)) {
+                        if (!canStyle) { // Check if styling is enabled for the parent program
+                            logToConsole(`Error: 'style' command used on ${currentLineContext} but '@jaspl-style' declaration is missing for the main program.`, true);
+                            return;
+                        }
+                        const elementId = match[1];
+                        const styleContent = match[2].trim();
+
+                        // NEW: Search for element in local map, then in global sourced maps
+                        let elementToStyle = elementsMap.get(elementId);
+                        if (!elementToStyle) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                elementToStyle = sourcedMap.get(elementId);
+                                if (elementToStyle) break;
+                            }
+                        }
+
+                        if (elementToStyle) {
+                            const cssModeMatch = styleContent.match(/^css-mode\s*\((.*)\)$/i);
+                            if (cssModeMatch) {
+                                const rawCss = cssModeMatch[1].trim();
+                                elementToStyle.style.cssText = rawCss;
+                                logToConsole(`Styled element '${elementId}' with CSS-mode: ${rawCss} in ${currentLineContext}`);
+                            } else {
+                                const regularStyleMatch = styleContent.match(/^\((.*)\)$/);
+                                if (regularStyleMatch) {
+                                    const stylesString = regularStyleMatch[1];
+                                    const styleAttributes = stylesString.split(',').map(s => s.trim()).filter(s => s !== '');
+                                    styleAttributes.forEach(attr => {
+                                        const parts = attr.split('=').map(p => p.trim());
+                                        if (parts.length === 2) {
+                                            const attrName = parts[0].toLowerCase().replace(/\s+/g, '-');
+                                            const attrValue = parts[1];
+
+                                            if (attrName === 'content') {
+                                                if (elementToStyle.tagName === 'INPUT' && (elementToStyle.type === 'radio' || elementToStyle.type === 'checkbox' || elementToStyle.type === 'file' || elementToStyle.type === 'range')) {
+                                                    let associatedLabel = document.querySelector(`label[for="${elementToStyle.id}"]`);
+                                                    if (associatedLabel) {
+                                                        associatedLabel.textContent = attrValue;
+                                                        logToConsole(`Updated content for label of element '${elementId}' in ${currentLineContext}.`);
+                                                    } else {
+                                                        logToConsole(`Warning: Cannot set 'content' for input '${elementId}' without an associated label on ${currentLineContext}.`, true);
+                                                    }
+                                                } else {
+                                                    elementToStyle.textContent = attrValue;
+                                                    logToConsole(`Updated content for element '${elementId}' in ${currentLineContext}.`);
+                                                }
+                                            } else {
+                                                if (attrName === 'links-to' || attrName === 'source') {
+                                                    logToConsole(`Error: '${attrName.replace('-', ' ')}' cannot be used as a style attribute for element '${elementId}' on ${currentLineContext}. Use direct or standalone command.`, true);
+                                                } else {
+                                                    applyStyle(elementToStyle, attrName, attrValue, currentLineContext);
+                                                    logToConsole(`Styled element '${elementId}': ${attrName}=${attrValue} in ${currentLineContext}`);
+                                                }
+                                            }
+                                        } else {
+                                            logToConsole(`Warning: Malformed style attribute: "${attr}" for element '${elementId}' on ${currentLineContext}.`, true);
+                                        }
+                                    });
+                                } else {
+                                    logToConsole(`Syntax Error: Malformed style command: "${line}" on ${currentLineContext}.`, true);
+                                }
+                            }
+                        } else {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for styling on ${currentLineContext}. Ensure element is created before styling.`, true);
+                        }
+                    } else if (match = trimmedLine.match(linksToCommandRegex)) {
+                        const elementId = match[1];
+                        const url = match[2].trim();
+                        // NEW: Search for element in local map, then in global sourced maps
+                        let elementToLink = elementsMap.get(elementId);
+                        if (!elementToLink) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                elementToLink = sourcedMap.get(elementId);
+                                if (elementToLink) break;
+                            }
+                        }
+                        if (elementToLink) {
+                            applyLinkingBehavior(elementToLink, url, currentLineContext);
+                        } else {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for 'links to' command on ${currentLineContext}.`, true);
+                        }
+                    } else if (match = trimmedLine.match(sourceCommandRegex)) {
+                        const elementId = match[1];
+                        const filePath = match[2].trim();
+                        // NEW: Search for element in local map, then in global sourced maps
+                        let elementToSource = elementsMap.get(elementId);
+                        if (!elementToSource) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                elementToSource = sourcedMap.get(elementId);
+                                if (elementToSource) break;
+                            }
+                        }
+                        if (elementToSource) {
+                            applySourceBehavior(elementToSource, filePath, currentLineContext);
+                        } else {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for 'source' command on ${currentLineContext}.`, true);
+                        }
+                    }
+                    else if (match = trimmedLine.match(whenDoCommandRegex)) {
+                        logToConsole(`Warning: Nested 'when...do' blocks are not allowed in 'do' blocks on ${currentLineContext}. Ignoring.`, true);
+                    }
+                    else {
+                        logToConsole(`Syntax Error: Unrecognized command or malformed line: "${line}" on ${currentLineContext}.`, true);
+                    }
+                } catch (error) {
+                    logToConsole(`Runtime Error on ${currentLineContext}: ${error.message}`, true);
+                }
+            });
+        }
+
+
+        /**
+         * Executes a single JASPL program block, including sourcing other files.
+         * @param {ProgramBlock} programBlock - The parsed program block to execute.
+         * @param {Set<string>} [executedFilePaths=new Set()] - Tracks file paths already executed to prevent infinite recursion.
+         * @param {Map<string, Map<string, HTMLElement>>} [globalSourceAliasMap=new Map()] - Stores elements from sourced files by their alias.
+         * @param {HTMLElement} [outputTargetDiv=guiOutputDiv] - The DOM element where GUI elements should be appended.
+         * @param {Map<string, HTMLElement>} [localElementsMap=currentProgramElements] - The map to store elements created by *this specific* program execution.
+         */
+        function executeJASPLProgram(
+            programBlock,
+            executedFilePaths = new Set(),
+            globalSourceAliasMap = new Map(),
+            outputTargetDiv = guiOutputDiv,
+            localElementsMap = currentProgramElements // Default to main elements map
+        ) {
+            const programIdentifier = programBlock.name || `anonymous_program_${Date.now()}`;
+            if (executedFilePaths.has(programIdentifier)) {
+                logToConsole(`Warning: Circular dependency detected for program '${programIdentifier}'. Skipping to prevent infinite loop.`, true);
+                return;
+            }
+            executedFilePaths.add(programIdentifier);
+
+            logToConsole(`Executing program block: @${programBlock.name}`);
+
+            // Process all @source declarations first
+            for (const declaration of programBlock.sourceDeclarations) {
+                logToConsole(`Sourcing file: ${declaration.path}`);
+                const sourcedCode = jasplFiles[declaration.path];
+                if (sourcedCode) {
+                    const sourcedBlock = parseJASPLCode(sourcedCode);
+                    if (sourcedBlock) {
+                        const sourcedElements = new Map();
+                        executeJASPLProgram(sourcedBlock, executedFilePaths, globalSourceAliasMap, outputTargetDiv, sourcedElements);
+
+                        if (declaration.alias) {
+                            globalSourceAliasMap.set(declaration.alias, sourcedElements);
+                            logToConsole(`Stored elements from '${declaration.path}' under alias '${declaration.alias}'.`);
+                        } else {
+                            logToConsole(`Warning: Sourced file '${declaration.path}' has no alias. Its elements cannot be referenced by 'from id()'.`, true);
+                        }
+                    } else {
+                        logToConsole(`Error: Sourced file '${declaration.path}' is malformed.`, true);
+                    }
+                } else {
+                    logToConsole(`Error: Sourced file '${declaration.path}' not found in simulated file system.`, true);
+                }
+            }
+
+            // Then, execute the lines of the current program block
+            programBlock.lines.forEach((line, lineIndex) => {
+                const trimmedLine = line.trim();
+                const lineContext = `main program line ${lineIndex + 1}`;
+                try {
+                    // Regex for create/add commands: "create <element> [with id(<id>)] [content(<text>)] [links to(<url>)] [source(<path>)]"
+                    // Also handles "add <element> from id(<remoteId>) source with id(<sourceId>)"
+                    const elementCommandRegex = /^(create|add)\s+(button|radiobutton|slider|checkbox|textbox|uploadbutton|canvas|text|url|window|instance)(?:\s+with\s+id\s*\(([^)]*)\))?(?:\s+content\s*\(([^)]*)\))?(?:\s+links\s+to\s*\(([^)]*)\))?(?:\s+source\s*\(([^)]*)\))?(?:\s+from\s+id\s*\(([^)]*)\)\s+source\s+with\s+id\s*\(([^)]*)\))?$/i;
+                    const gapCommandRegex = /^add\s+gap(?:\s*\(([\d.]+)\))?$/i;
+                    const styleCommandRegex = /^style\s+([a-zA-Z0-9_-]+)\s+(.*)$/;
+                    const linksToCommandRegex = /^([a-zA-Z0-9_-]+)\s+links\s+to\s*\(([^)]*)\)$/i;
+                    const sourceCommandRegex = /^([a-zA-Z0-9_-]+)\s+source\s*\(([^)]*)\)$/i;
+                    const whenDoCommandRegex = /^when\s+([a-zA-Z0-9_-]+)\s+(clicked|hovered|double-clicked|hold|release|selected)\s+do\s*\(([\s\S]*)\)$/i;
+
+
+                    let match;
+
+                    if (match = trimmedLine.match(elementCommandRegex)) {
+                        const command = match[1].toLowerCase();
+                        const elementType = match[2].toLowerCase();
+                        const elementId = match[3] ? match[3].trim() : '';
+                        const contentValue = match[4] ? match[4].trim() : null;
+                        const linksToUrl = match[5] ? match[5].trim() : null;
+                        const sourcePath = match[6] ? match[6].trim() : null;
+                        const fromId = match[7] ? match[7].trim() : null;
+                        const sourceAlias = match[8] ? match[8].trim() : null;
+
+                        let newElement = null;
+                        let labelForInput = null;
+
+                        if (fromId && sourceAlias) {
+                            if (command !== 'add') {
+                                logToConsole(`Error: 'from id()' can only be used with 'add' command, not '${command}' on ${lineContext}.`, true);
+                                return;
+                            }
+                            if (elementId) {
+                                logToConsole(`Warning: 'with id()' is redundant when using 'from id()' on ${lineContext}. The ID will be inherited from the sourced element.`, true);
+                            }
+
+                            const sourceMap = globalSourceAliasMap.get(sourceAlias);
+                            if (sourceMap) {
+                                const originalElement = sourceMap.get(fromId);
+                                if (originalElement) {
+                                    newElement = originalElement.cloneNode(true);
+                                    if (elementId) {
+                                        newElement.id = elementId;
+                                    } else if (originalElement.id) {
+                                        newElement.id = `${originalElement.id}-cloned-${Date.now()}`;
+                                    }
+
+                                    // If cloned element was an input with a label, and content is provided, update its label
+                                    if (contentValue !== null && (newElement.tagName === 'INPUT' && (newElement.type === 'radio' || newElement.type === 'checkbox' || newElement.type === 'file' || newElement.type === 'range'))) {
+                                        let existingLabel = newElement.nextElementSibling;
+                                        if (existingLabel && existingLabel.tagName === 'LABEL' && existingLabel.htmlFor === newElement.id) {
+                                            existingLabel.textContent = contentValue;
+                                            labelForInput = existingLabel;
+                                        } else { // Create a new label if none exists
+                                            labelForInput = document.createElement('label');
+                                            labelForInput.textContent = contentValue;
+                                            labelForInput.htmlFor = newElement.id;
+                                        }
+                                    } else if (contentValue !== null) { // For other elements (button, span, a), update textContent
+                                        newElement.textContent = contentValue;
+                                    }
+                                    logToConsole(`Added cloned element '${fromId}' from source '${sourceAlias}' with new ID: ${newElement.id}`);
+                                } else {
+                                    logToConsole(`Error: Element with ID '${fromId}' not found in source '${sourceAlias}' on ${lineContext}.`, true);
+                                    return;
+                                }
+                            } else {
+                                logToConsole(`Error: Source alias '${sourceAlias}' not found or not loaded on ${lineContext}.`, true);
+                                return;
+                            }
+                        } else if (fromId || sourceAlias) {
+                            logToConsole(`Error: Malformed 'from id()' or 'source with id()' usage on ${lineContext}. Both 'from id(<id>)' and 'source with id(<alias>)' are required together.`, true);
+                            return;
+                        } else {
+                            // Regular create/add command
+                            switch (elementType) {
+                                case 'button':
+                                    newElement = document.createElement('button');
+                                    newElement.textContent = contentValue !== null ? contentValue : '';
+                                    newElement.style.backgroundColor = 'transparent'; // Default to plain
+                                    newElement.style.color = 'black'; // Default to plain
+                                    newElement.style.border = '1px solid #ccc'; // Default to plain
+                                    break;
+                                case 'radiobutton':
+                                case 'checkbox':
+                                case 'slider':
+                                case 'uploadbutton':
+                                    newElement = document.createElement('input');
+                                    if (elementType === 'radiobutton') newElement.type = 'radio';
+                                    if (elementType === 'checkbox') newElement.type = 'checkbox';
+                                    if (elementType === 'slider') { newElement.type = 'range'; newElement.min = '0'; newElement.max = '100'; newElement.value = '50'; }
+                                    if (elementType === 'uploadbutton') newElement.type = 'file';
+
+                                    if (elementType === 'radiobutton') newElement.name = `jaspl-radio-group-${programBlock.name}-${Date.now()}`;
+                                    
+                                    labelForInput = document.createElement('label');
+                                    labelForInput.textContent = contentValue !== null ? contentValue : '';
+                                    break;
+                                case 'textbox':
+                                    newElement = document.createElement('input');
+                                    newElement.type = 'text';
+                                    newElement.placeholder = contentValue !== null ? contentValue : '';
+                                    newElement.style.backgroundColor = 'white'; // Default to plain
+                                    newElement.style.color = 'black'; // Default to plain
+                                    break;
+                                case 'canvas':
+                                    newElement = document.createElement('canvas');
+                                    newElement.width = 300;
+                                    newElement.height = 200;
+                                    newElement.style.border = '1px dashed #63b3ed';
+                                    break;
+                                case 'text':
+                                    newElement = document.createElement('span');
+                                    newElement.textContent = contentValue !== null ? contentValue : '';
+                                    newElement.style.color = 'black'; // Default to plain
+                                    newElement.style.backgroundColor = 'transparent'; // Default to plain
+                                    break;
+                                case 'url':
+                                    newElement = document.createElement('a');
+                                    newElement.textContent = contentValue !== null ? contentValue : '';
+                                    newElement.href = '#';
+                                    newElement.target = '_blank';
+                                    newElement.style.color = 'black'; // Default to plain
+                                    newElement.style.backgroundColor = 'transparent'; // Default to plain
+                                    break;
+                                case 'window':
+                                    const windowName = elementId || `JASPL_Window_${programBlock.name}_${Date.now()}`;
+                                    const newWindow = window.open('', windowName, 'width=600,height=400,resizable=yes,scrollbars=yes');
+                                    if (newWindow) {
+                                        newWindow.document.write(`<!DOCTYPE html><html><head><title>JASPL Window: ${windowName}</title></head><body style="background-color: white; font-family: sans-serif; color: black;"></body></html>`);
+                                        newWindow.document.close();
+                                        logToConsole(`Created new JASPL window: ${windowName}`);
+                                    } else {
+                                        logToConsole("Failed to open new window. Popup blocker might be active.", true);
+                                    }
+                                    return;
+                                case 'instance':
+                                    const instanceName = elementId || `JASPL_Instance_${programBlock.name}_${Date.now()}`;
+                                    const newInstance = window.open('about:blank', instanceName);
+                                    if (newInstance) {
+                                        newInstance.document.write(`<!DOCTYPE html><html><head><title>JASPL Instance: ${instanceName}</title></head><body style="background-color: white; font-family: sans-serif; color: black;"></body></html>`);
+                                        newInstance.document.close();
+                                        logToConsole(`Created new JASPL instance/tab: ${instanceName}`);
+                                    } else {
+                                        logToConsole("Failed to open new instance/tab. Popup blocker might be active.", true);
+                                    }
+                                    return;
+                                default:
+                                    logToConsole(`Unknown element type or command: ${elementType} on ${lineContext}.`, true);
+                                    return;
+                            }
+                        }
+
+
+                        if (newElement) {
+                            if (!newElement.id && elementId) {
+                                newElement.id = elementId;
+                            } else if (!newElement.id) {
+                                newElement.id = `jaspl-auto-id-${programBlock.name}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                                logToConsole(`Generated ID '${newElement.id}' for element on ${lineContext}.`);
+                            }
+
+                            if (linksToUrl) applyLinkingBehavior(newElement, linksToUrl, lineContext);
+                            if (sourcePath) applySourceBehavior(newElement, sourcePath, lineContext);
+
+                            if (labelForInput) {
+                                const wrapper = document.createElement('div');
+                                wrapper.style.display = 'flex';
+                                wrapper.style.alignItems = 'center';
+                                wrapper.style.gap = '0.5rem';
+                                wrapper.appendChild(newElement);
+                                labelForInput.setAttribute('for', newElement.id);
+                                labelForInput.style.color = 'black';
+                                labelForInput.style.fontFamily = 'unset';
+                                labelForInput.style.fontWeight = 'unset';
+                                labelForInput.style.fontStyle = 'unset';
+                                labelForInput.style.textDecoration = 'unset';
+
+                                wrapper.appendChild(labelForInput);
+                                outputTargetDiv.appendChild(wrapper);
+                                localElementsMap.set(newElement.id, newElement);
+                            } else {
+                                outputTargetDiv.appendChild(newElement);
+                                localElementsMap.set(newElement.id, newElement);
+                            }
+                            logToConsole(`${command === 'create' ? 'Created' : 'Added'} ${elementType} with ID: ${newElement.id}`);
+                        }
+                    } else if (match = trimmedLine.match(gapCommandRegex)) {
+                        const gapPixels = match[1] ? parseFloat(match[1]) : 0;
+                        const gapElement = document.createElement('div');
+                        if (gapPixels > 0) {
+                            gapElement.style.height = `${gapPixels}px`;
+                            logToConsole(`Added gap of ${gapPixels}px`);
+                        } else {
+                            gapElement.style.height = '1em';
+                            logToConsole('Added default gap (line break)');
+                        }
+                        outputTargetDiv.appendChild(gapElement);
+                    } else if (match = trimmedLine.match(styleCommandRegex)) {
+                        if (!programBlock.canStyle) {
+                            logToConsole(`Error: 'style' command used in program '@${programBlock.name}' on ${lineContext} but '@jaspl-style' declaration is missing for this program.`, true);
+                            return;
+                        }
+                        const elementId = match[1];
+                        const styleContent = match[2].trim();
+
+                        // Search for element in local map, then in global sourced maps
+                        let elementToStyle = localElementsMap.get(elementId);
+                        if (!elementToStyle) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                elementToStyle = sourcedMap.get(elementId);
+                                if (elementToStyle) break;
+                            }
+                        }
+
+                        if (elementToStyle) {
+                            const cssModeMatch = styleContent.match(/^css-mode\s*\((.*)\)$/i);
+                            if (cssModeMatch) {
+                                const rawCss = cssModeMatch[1].trim();
+                                elementToStyle.style.cssText = rawCss;
+                                logToConsole(`Styled element '${elementId}' with CSS-mode: ${rawCss}`);
+                            } else {
+                                const regularStyleMatch = styleContent.match(/^\((.*)\)$/);
+                                if (regularStyleMatch) {
+                                    const stylesString = regularStyleMatch[1];
+                                    const styleAttributes = stylesString.split(',').map(s => s.trim()).filter(s => s !== '');
+                                    styleAttributes.forEach(attr => {
+                                        const parts = attr.split('=').map(p => p.trim());
+                                        if (parts.length === 2) {
+                                            const attrName = parts[0].toLowerCase().replace(/\s+/g, '-');
+                                            const attrValue = parts[1];
+
+                                            if (attrName === 'content') {
+                                                if (elementToStyle.tagName === 'INPUT' && (elementToStyle.type === 'radio' || elementToStyle.type === 'checkbox' || elementToStyle.type === 'file' || elementToStyle.type === 'range')) {
+                                                    let associatedLabel = document.querySelector(`label[for="${elementToStyle.id}"]`);
+                                                    if (associatedLabel) {
+                                                        associatedLabel.textContent = attrValue;
+                                                        logToConsole(`Updated content for label of element '${elementId}'.`);
+                                                    } else {
+                                                        logToConsole(`Warning: Cannot set 'content' for input '${elementId}' without an associated label on ${lineContext}.`, true);
+                                                    }
+                                                } else {
+                                                    elementToStyle.textContent = attrValue;
+                                                    logToConsole(`Updated content for element '${elementId}'.`);
+                                                }
+                                            } else {
+                                                if (attrName === 'links-to' || attrName === 'source') {
+                                                    logToConsole(`Error: '${attrName.replace('-', ' ')}' cannot be used as a style attribute for element '${elementId}' on ${lineContext}. Use direct or standalone command.`, true);
+                                                } else {
+                                                    applyStyle(elementToStyle, attrName, attrValue, lineContext);
+                                                    logToConsole(`Styled element '${elementId}': ${attrName}=${attrValue}`);
+                                                }
+                                            }
+                                        } else {
+                                            logToConsole(`Warning: Malformed style attribute: "${attr}" for element '${elementId}' on ${lineContext}.`, true);
+                                        }
+                                    });
+                                } else {
+                                    logToConsole(`Syntax Error: Malformed style command: "${line}" on ${lineContext}.`, true);
+                                }
+                            }
+                        } else {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for styling on ${lineContext}. Ensure element is created before styling.`, true);
+                        }
+                    } else if (match = trimmedLine.match(linksToCommandRegex)) {
+                        const elementId = match[1];
+                        const url = match[2].trim();
+                        // Search for element in local map, then in global sourced maps
+                        let elementToLink = localElementsMap.get(elementId);
+                        if (!elementToLink) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                elementToLink = sourcedMap.get(elementId);
+                                if (elementToLink) break;
+                            }
+                        }
+                        if (elementToLink) {
+                            applyLinkingBehavior(elementToLink, url, lineContext);
+                        } else {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for 'links to' command on ${lineContext}.`, true);
+                        }
+                    } else if (match = trimmedLine.match(sourceCommandRegex)) {
+                        const elementId = match[1];
+                        const filePath = match[2].trim();
+                        // Search for element in local map, then in global sourced maps
+                        let elementToSource = localElementsMap.get(elementId);
+                        if (!elementToSource) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                elementToSource = sourcedMap.get(elementId);
+                                if (elementToSource) break;
+                            }
+                        }
+                        if (elementToSource) {
+                            applySourceBehavior(elementToSource, filePath, lineContext);
+                        } else {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for 'source' command on ${lineContext}.`, true);
+                        }
+                    }
+                    else if (match = trimmedLine.match(whenDoCommandRegex)) {
+                        const elementId = match[1];
+                        const action = match[2].toLowerCase();
+                        const doBlockContent = match[3].trim();
+                        
+                        // Search for target element in local map, then in global sourced maps
+                        let targetElement = localElementsMap.get(elementId);
+                        if (!targetElement) {
+                            for (const sourcedMap of globalSourceAliasMap.values()) {
+                                targetElement = sourcedMap.get(elementId);
+                                if (targetElement) break;
+                            }
+                        }
+
+                        if (!targetElement) {
+                            logToConsole(`Error: Element with ID '${elementId}' not found for 'when' block on ${lineContext}.`, true);
+                            return;
+                        }
+
+                        let domEvent;
+                        switch (action) {
+                            case 'clicked':       domEvent = 'click'; break;
+                            case 'hovered':       domEvent = 'mouseenter'; break;
+                            case 'double-clicked': domEvent = 'dblclick'; break;
+                            case 'hold':          domEvent = 'mousedown'; break;
+                            case 'release':       domEvent = 'mouseup'; break;
+                            case 'selected':
+                                if (targetElement.tagName === 'INPUT' || targetElement.tagName === 'SELECT' || targetElement.tagName === 'TEXTAREA') {
+                                    domEvent = 'change';
+                                } else {
+                                    logToConsole(`Warning: 'selected' action is not typically supported for element type '${targetElement.tagName}' (ID: ${elementId}) on ${lineContext}. Only works reliably for input elements.`, true);
+                                    return;
+                                }
+                                break;
+                            default:
+                                logToConsole(`Error: Unknown action '${action}' for 'when' block on ${lineContext}.`, true);
+                                return;
+                        }
+
+                        targetElement.addEventListener(domEvent, () => {
+                            logToConsole(`Event '${action}' triggered for element '${elementId}'. Executing 'do' block.`);
+                            // Pass all necessary maps and flags to the commands block
+                            executeJASPLCommandsBlock(doBlockContent, localElementsMap, globalSourceAliasMap, outputTargetDiv, `element '${elementId}' ${action} do block`, programBlock.canStyle);
+                        });
+                        logToConsole(`Attached '${action}' event listener to element '${elementId}'.`);
+                    }
+                    else {
+                        logToConsole(`Syntax Error: Unrecognized command or malformed line: "${line}" on ${lineContext}.`, true);
+                    }
+                } catch (error) {
+                    logToConsole(`Runtime Error on ${lineContext}: ${error.message}`, true);
+                }
+            });
+        }
+
+        // Main execution flow
+        runButton.addEventListener('click', () => {
+            clearOutputs();
+            const code = codeEditor.value;
+            const mainProgramBlock = parseJASPLCode(code);
+
+            if (mainProgramBlock) {
+                const globalSourceAliasMap = new Map();
+                executeJASPLProgram(mainProgramBlock, new Set(), globalSourceAliasMap, guiOutputDiv, currentProgramElements);
+            } else {
+                logToConsole("Failed to parse the main JASPL program. Please check syntax.", true);
+            }
+            logToConsole('JASPL execution finished.');
+        });
+
+        // Set some initial placeholder code to demonstrate new features
+        codeEditor.value = `@jaspl
+@jaspl-style
+@source(C:/code/program2.jaspl) with id(p2_module)
+@source(C:/Files/program3.jaspl) with id(p3_styles)
+start
+create text with id(mainText) content(Welcome to JASPL Main Program!)
+style mainText (color=#FF5733, font=https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap, font-style=bold, animation=fade-in(2))
+add gap(15)
+
+create button with id(clickMeButton) content(Click Me!)
+style clickMeButton (bgcolor=lightblue, color=blue, border-thickness=2px, border-color=darkblue)
+when clickMeButton clicked do (
+    style clickMeButton (content=Clicked!, bgcolor=red, color=white)
+    create text with id(dynamicText) content(Button was clicked!)
+    style dynamicText (color=purple, font-style=italic)
+    add gap
+)
+when clickMeButton hovered do (
+    style clickMeButton (bgcolor=darkblue, color=yellow)
+)
+when clickMeButton release do (
+    style clickMeButton (bgcolor=lightblue, color=blue)
+)
+add gap
+
+add button from id(p2Button) source with id(p2_module)
+style p2Button (bgcolor=gray, color=white, font-style=bold) // Styling a cloned element
+add gap
+
+add checkbox from id(chkbox) source with id(p2_module)
+when chkbox selected do (
+    create text with id(chkStatus) content(Checkbox state changed!)
+    style chkStatus (color=orange)
+    add gap(5)
+)
+add gap
+
+create button with id(runP3Button) content(Run Program 3) source(C:/Files/program3.jaspl)
+style runP3Button (bgcolor=teal, color=white, font-style=bold)
+add gap
+
+create checkbox with id(acceptTerms) content(I accept the terms and conditions)
+add gap
+
+create radiobutton with id(optionX) content(Option X)
+create radiobutton with id(optionY) content(Option Y)
+add gap(30)
+
+create textbox with id(yourName) content(Enter your name here)
+end`;
+    </script>
+</body>
+</html>
