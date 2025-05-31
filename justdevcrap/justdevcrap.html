@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustDevCrap - Where Bugs Are Features</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Roboto Mono', monospace; /* Applied Roboto Mono to all elements */
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            min-height: 100vh; /* min-h-screen */
+            background-color: #030712; /* bg-gray-950 */
+            color: #4ade80; /* text-green-400 */
+            overflow-x: hidden; /* overflow-x-hidden */
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-down {
+            animation: fadeInDown 1s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 1s ease-out forwards;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        .glitch-text {
+            animation: glitch 0.5s infinite alternate;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            position: fixed; /* fixed */
+            top: 0; /* top-0 */
+            left: 0; /* left-0 */
+            width: 100%; /* w-full */
+            background-color: rgba(3, 7, 18, 0.9); /* bg-gray-950 bg-opacity-90 */
+            backdrop-filter: blur(8px); /* backdrop-blur-sm */
+            z-index: 50; /* z-50 */
+            /* Removed padding from here, moved to .navbar-container */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+            border-bottom-left-radius: 0.75rem; /* rounded-b-xl */
+            border-bottom-right-radius: 0.75rem; /* rounded-b-xl */
+        }
+
+        .navbar-container {
+            max-width: 1280px; /* container */
+            margin-left: auto; /* mx-auto */
+            margin-right: auto; /* mx-auto */
+            display: flex; /* flex */
+            justify-content: space-between; /* justify-between */
+            align-items: center; /* items-center */
+            padding: 1rem; /* Added padding here for consistent spacing */
+        }
+
+        .navbar-title {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* font-bold */
+            color: #22c55e; /* text-green-500 */
+            animation: pulse 2s infinite; /* animate-pulse */
+        }
+
+        .navbar-links {
+            display: flex; /* flex */
+            gap: 0.75rem; /* Adjusted for better mobile fit */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .navbar-links {
+                gap: 2rem; /* md:space-x-8 */
+            }
+        }
+
+        .navbar-button {
+            font-family: 'Roboto Mono', monospace; /* Ensure Roboto Mono for buttons */
+            color: #4ade80; /* text-green-400 */
+            transition: color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition-colors duration-300 transform */
+            transform: scale(1); /* Initial scale */
+            outline: none; /* focus:outline-none */
+            background: none;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        .navbar-button:hover {
+            color: #86efac; /* hover:text-green-200 */
+            transform: scale(1.05); /* hover:scale-105 */
+        }
+
+        /* Section Base Styles */
+        .section {
+            min-height: 100vh; /* min-h-screen */
+            display: flex; /* flex */
+            flex-direction: column; /* flex-col */
+            align-items: center; /* items-center */
+            justify-content: center; /* justify-center */
+            padding-top: 4rem; /* pt-16 (for home section to clear fixed nav) */
+            padding-bottom: 5rem; /* py-20 */
+            padding-left: 1rem; /* px-4 */
+            padding-right: 1rem; /* px-4 */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .section {
+                padding-left: 2rem; /* md:px-8 */
+                padding-right: 2rem; /* md:px-8 */
+            }
+        }
+
+        /* Home Section */
+        .home-section {
+            position: relative; /* relative */
+            height: 100vh; /* h-screen */
+            overflow: hidden; /* overflow-hidden */
+        }
+
+        .matrix-rain-canvas {
+            position: absolute; /* absolute */
+            inset: 0; /* inset-0 */
+            z-index: 0; /* z-0 */
+        }
+
+        .home-content-box {
+            position: relative; /* relative */
+            z-index: 10; /* z-10 */
+            text-align: center; /* text-center */
+            padding: 1rem; /* p-4 */
+            background-color: rgba(17, 24, 39, 0.7); /* bg-gray-900 bg-opacity-70 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            border: 1px solid #047857; /* border border-green-700 */
+        }
+
+        .decoding-text {
+            font-size: 3rem; /* text-5xl */
+            font-weight: 700; /* font-bold */
+            color: #fff; /* text-white */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .decoding-text {
+                font-size: 4.5rem; /* md:text-7xl */
+            }
+        }
+
+        .home-tagline {
+            margin-top: 1rem; /* mt-4 */
+            font-size: 1.125rem; /* text-lg */
+            color: #6ee7b7; /* text-green-300 */
+            animation: fadeInUp 1s ease-out forwards; /* animate-fade-in-up */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .home-tagline {
+                font-size: 1.25rem; /* md:text-xl */
+            }
+        }
+
+        /* Projects Section */
+        .projects-section {
+            background-color: #111827; /* bg-gray-900 */
+        }
+
+        .projects-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #22c55e; /* text-green-500 */
+            margin-bottom: 3rem; /* mb-12 */
+            animation: fadeInDown 1s ease-out forwards; /* animate-fade-in-down */
+        }
+
+        .projects-title .error-text {
+            color: #f87171; /* text-red-400 */
+        }
+
+        .project-cards-grid {
+            display: grid; /* grid */
+            grid-template-columns: repeat(1, minmax(0, 1fr)); /* grid-cols-1 */
+            gap: 2rem; /* gap-8 */
+            width: 100%; /* w-full */
+            max-width: 72rem; /* max-w-6xl */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .project-cards-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)); /* md:grid-cols-2 */
+            }
+        }
+
+        @media (min-width: 1024px) { /* lg breakpoint */
+            .project-cards-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr)); /* lg:grid-cols-3 */
+            }
+        }
+
+        /* Project Card */
+        .project-card {
+            background-color: #1f2937; /* bg-gray-800 */
+            padding: 1.5rem; /* p-6 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* shadow-xl */
+            border: 1px solid #047857; /* border border-green-700 */
+            transition: border-color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition-all duration-300 transform */
+            transform: scale(1); /* Initial scale */
+            position: relative; /* relative */
+            overflow: hidden; /* overflow-hidden */
+        }
+
+        .project-card:hover {
+            border-color: #22c55e; /* hover:border-green-500 */
+            transform: scale(1.05); /* hover:scale-105 */
+        }
+
+        .project-card-overlay {
+            position: absolute; /* absolute */
+            inset: 0; /* inset-0 */
+            background-image: linear-gradient(to bottom right, #1f2937, #111827); /* bg-gradient-to-br from-gray-800 to-gray-900 */
+            opacity: 0; /* opacity-0 */
+            transition: opacity 0.3s ease-in-out; /* transition-opacity duration-300 */
+        }
+
+        .project-card:hover .project-card-overlay {
+            opacity: 1; /* group-hover:opacity-100 */
+        }
+
+        .project-card-content {
+            position: relative; /* relative */
+            z-index: 10; /* z-10 */
+        }
+
+        .project-card-icon {
+            font-size: 3rem; /* text-5xl */
+            margin-bottom: 1rem; /* mb-4 */
+            text-align: center; /* text-center */
+        }
+
+        .project-card-title {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            color: #6ee7b7; /* text-green-300 */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+
+        .project-card-description {
+            color: #9ca3af; /* text-gray-400 */
+            font-size: 0.875rem; /* text-sm */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+
+        .project-card-button {
+            display: inline-block; /* inline-block */
+            background-color: #16a34a; /* bg-green-600 */
+            color: #fff; /* text-white */
+            padding: 0.5rem 1.5rem; /* px-6 py-2 */
+            border-radius: 9999px; /* rounded-full */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition-all duration-300 transform */
+            transform: scale(1); /* Initial scale */
+            outline: none; /* focus:outline-none */
+            text-decoration: none; /* Remove underline from link */
+        }
+
+        .project-card-button:hover {
+            background-color: #15803d; /* hover:bg-green-700 */
+            transform: scale(1.05); /* hover:scale-105 */
+        }
+
+        .project-card-button:focus {
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.5); /* focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 */
+        }
+
+        /* About Section */
+        .about-section {
+            background-color: #030712; /* bg-gray-950 */
+        }
+
+        .about-title {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #22c55e; /* text-green-500 */
+            margin-bottom: 3rem; /* mb-12 */
+            animation: fadeInDown 1s ease-out forwards; /* animate-fade-in-down */
+        }
+
+        .about-title .highlight-text {
+            color: #c084fc; /* text-purple-400 */
+        }
+
+        .about-content-box {
+            background-color: #1f2937; /* bg-gray-800 */
+            padding: 2rem; /* p-8 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            border: 1px solid #047857; /* border border-green-700 */
+            max-width: 48rem; /* max-w-3xl */
+            text-align: center; /* text-center */
+            font-size: 1.125rem; /* text-lg */
+            line-height: 1.625; /* leading-relaxed */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .about-content-box {
+                font-size: 1.25rem; /* md:text-xl */
+            }
+        }
+
+        .about-paragraph {
+            margin-bottom: 1.5rem; /* mb-6 */
+            color: #a7f3d0; /* text-green-200 */
+        }
+
+        .about-paragraph:last-of-type {
+            margin-bottom: 2rem; /* mb-8 */
+        }
+
+        /* Altroweb Button */
+        .altroweb-button {
+            font-family: 'Roboto Mono', monospace; /* Ensure Roboto Mono for button */
+            background-color: #9333ea; /* bg-purple-600 */
+            color: #fff; /* text-white */
+            padding: 0.75rem 2rem; /* px-8 py-3 */
+            border-radius: 9999px; /* rounded-full */
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition-all duration-300 transform */
+            transform: scale(1); /* Initial scale */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+            outline: none; /* focus:outline-none */
+            position: relative; /* relative */
+            overflow: hidden; /* overflow-hidden */
+            margin-bottom: 2rem; /* mb-8 */
+            border: none; /* Remove default button border */
+            cursor: pointer;
+        }
+
+        .altroweb-button:hover {
+            background-color: #7e22ce; /* hover:bg-purple-700 */
+            transform: scale(1.05); /* hover:scale-105 */
+        }
+
+        .altroweb-button:focus {
+            box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.5); /* focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50 */
+        }
+
+        .altroweb-button-text {
+            position: relative; /* relative */
+            z-index: 10; /* z-10 */
+        }
+
+        .altroweb-button-overlay {
+            position: absolute; /* absolute */
+            inset: 0; /* inset-0 */
+            background-color: #581c87; /* bg-purple-800 */
+            opacity: 0; /* opacity-0 */
+            transition: opacity 0.3s ease-in-out; /* transition-opacity duration-300 */
+        }
+
+        .altroweb-button:hover .altroweb-button-overlay {
+            opacity: 1; /* group-hover:opacity-100 */
+        }
+
+        .altroweb-button-stripe {
+            position: absolute; /* absolute */
+            top: 0; /* top-0 */
+            left: 0; /* left-0 */
+            width: 1rem; /* w-4 */
+            height: 100%; /* h-full */
+            background-color: #a855f7; /* bg-purple-500 */
+            transform: skewX(-12deg) translateX(-100%); /* transform -skew-x-12 -translate-x-full */
+            transition: transform 0.5s ease-in-out; /* transition-transform duration-500 */
+        }
+
+        .altroweb-button:hover .altroweb-button-stripe {
+            transform: skewX(-12deg) translateX(100%); /* group-hover:translate-x-full */
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 3rem; /* mt-12 */
+            font-size: 0.875rem; /* text-sm */
+            color: #6b7280; /* text-gray-500 */
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <h1 class="navbar-title">
+                JustDevCrap_
+            </h1>
+            <div class="navbar-links">
+                <button onclick="scrollToSection('home-section')" class="navbar-button">
+                    Home
+                </button>
+                <button onclick="scrollToSection('projects-section')" class="navbar-button">
+                    Projects
+                </button>
+                <button onclick="scrollToSection('about-section')" class="navbar-button">
+                    About
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home-section" class="section home-section">
+        <canvas id="matrix-rain-canvas" class="matrix-rain-canvas"></canvas>
+        <div class="home-content-box">
+            <h1 id="decoding-text" class="decoding-text"></h1>
+            <p class="home-tagline">
+                "Where bugs are features, and features are... well, also bugs."
+            </p>
+        </div>
+    </section>
+
+    <section id="projects-section" class="section projects-section">
+        <h2 class="projects-title">
+            <span class="error-text">Error 404:</span> Projects Found?
+        </h2>
+        <div class="project-cards-grid">
+            <div class="project-card">
+                <div class="project-card-overlay"></div>
+                <div class="project-card-content">
+                    <div class="project-card-icon">💻</div>
+                    <h3 class="project-card-title">The 'It Works On My Machine' Compiler</h3>
+                    <p class="project-card-description">A revolutionary compiler that guarantees your code runs perfectly... as long as it's on my specific machine. Cross-platform compatibility? What's that?</p>
+                    <a href="#" class="project-card-button">
+                        View Project
+                    </a>
+                </div>
+            </div>
+            <div class="project-card">
+                <div class="project-card-overlay"></div>
+                <div class="project-card-content">
+                    <div class="project-card-icon">♻️</div>
+                    <h3 class="project-card-title">Infinite Loop Generator</h3>
+                    <p class="project-card-description">Tired of your programs actually finishing? My patented Infinite Loop Generator ensures your CPU stays busy forever. Perfect for warming up your room!</p>
+                    <a href="#" class="project-card-button">
+                        View Project
+                    </a>
+                </div>
+            </div>
+            <div class="project-card">
+                <div class="project-card-overlay"></div>
+                <div class="project-card-content">
+                    <div class="project-card-icon">📐</div>
+                    <h3 class="project-card-title">CSS Centering Algorithm (Patent Pending)</h3>
+                    <p class="project-card-description">After years of struggle, I've finally cracked the code to perfectly centering div elements. It only requires 300 lines of CSS and a blood sacrifice. Worth it.</p>
+                    <a href="#" class="project-card-button">
+                        View Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about-section" class="section about-section">
+        <h2 class="about-title">
+            About <span class="highlight-text">JustDevCrap</span>
+        </h2>
+        <div class="about-content-box">
+            <p class="about-paragraph">
+                Welcome to the digital dumpster fire that is JustDevCrap's portfolio. I'm a developer who believes in pushing the boundaries of what's possible... and occasionally, what's stable. My code is like a box of chocolates: you never know what you're gonna get (mostly bugs, though).
+            </p>
+            <p class="about-paragraph">
+                I specialize in turning caffeine into code, and sometimes, that code even works. My passion lies in creating software that's both innovative and slightly terrifying. If you're looking for perfection, you've come to the wrong place. If you're looking for someone who gets things done, even if it involves a bit of duct tape and prayer, then you're in for a treat.
+            </p>
+            <p class="about-paragraph">
+                Join me on this chaotic journey through the world of development, where every commit is an adventure and every deployment is a gamble.
+            </p>
+            <button
+                onclick="window.location.href = 'https://altroweb.github.io'"
+                class="altroweb-button"
+            >
+                <span class="altroweb-button-text">Back to Altroweb</span>
+                <span class="altroweb-button-overlay"></span>
+                <span class="altroweb-button-stripe"></span>
+            </button>
+        </div>
+        <footer class="footer">
+            &copy; <span id="current-year"></span> JustDevCrap. All rights reserved. (Mostly.)
+        </footer>
+    </section>
+
+    <script>
+        // Smooth scrolling for navigation
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Matrix Rain Effect
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('matrix-rain-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+            const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
+            const fontSize = 16;
+            const columns = Math.floor(width / fontSize);
+            const drops = Array(columns).fill(1); // Each drop starts at y=1
+
+            const draw = () => {
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.05)'; // Fading effect
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = '#0F0'; // Green text
+                ctx.font = `${fontSize}px monospace`;
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                    // Send the drop back to the top randomly after it reaches the bottom
+                    if (drops[i] * fontSize * 1.5 > height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            };
+
+            let animationFrameId;
+            const animate = () => {
+                draw();
+                animationFrameId = requestAnimationFrame(animate);
+            };
+
+            const handleResize = () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                // Re-initialize drops for new width
+                const newColumns = Math.floor(width / fontSize);
+                drops.length = newColumns;
+                for (let i = 0; i < newColumns; i++) {
+                    if (drops[i] === undefined) {
+                        drops[i] = 1;
+                    }
+                }
+            };
+
+            window.addEventListener('resize', handleResize);
+            animate();
+        });
+
+        // Decoding Text Effect
+        document.addEventListener('DOMContentLoaded', () => {
+            const targetText = "JustDevCrap";
+            const decodingTextElement = document.getElementById('decoding-text');
+            const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
+            let decodeIndex = 0;
+            let intervalId;
+
+            const generateRandomChar = () => characters.charAt(Math.floor(Math.random() * characters.length));
+
+            const startDecoding = () => {
+                let currentTextArray = Array(targetText.length).fill('');
+                for (let i = 0; i < targetText.length; i++) {
+                    currentTextArray[i] = generateRandomChar();
+                }
+                decodingTextElement.textContent = currentTextArray.join('');
+                decodingTextElement.classList.add('glitch-text'); // Add glitch class initially
+
+                intervalId = setInterval(() => {
+                    if (decodeIndex < targetText.length) {
+                        currentTextArray[decodeIndex] = targetText[decodeIndex];
+
+                        // Randomly change some other characters to maintain the "decoding" look
+                        for (let i = decodeIndex + 1; i < targetText.length; i++) {
+                            if (Math.random() < 0.3) { // Adjust probability for more/less random chars
+                                currentTextArray[i] = generateRandomChar();
+                            }
+                        }
+                        decodingTextElement.textContent = currentTextArray.join('');
+                        decodeIndex++;
+                    } else {
+                        // Ensure all characters are correct after decoding
+                        currentTextArray.forEach((char, i) => {
+                            if (char !== targetText[i]) {
+                                currentTextArray[i] = targetText[i];
+                            }
+                        });
+                        decodingTextElement.textContent = currentTextArray.join('');
+                        clearInterval(intervalId);
+                        decodingTextElement.classList.remove('glitch-text'); // Remove glitch class after decoding
+                    }
+                }, 100); // Speed of decoding
+            };
+
+            startDecoding();
+        });
+
+        // Set current year for copyright
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+        });
+    </script>
+</body>
+</html>
