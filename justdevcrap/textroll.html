@@ -1109,7 +1109,6 @@
         let isTyping = false;
         let typingTimeout = null;
         const TYPING_INDICATOR_TIMEOUT_MS = 3000; // 3 seconds after last keypress to clear typing status
-        const TYPING_UPDATE_INTERVAL_MS = 1000; // Update Firestore every 1 second while typing
 
         // Utility function to generate a random room code (6 characters)
         const generateRoomCode = () => {
@@ -1296,7 +1295,7 @@
                     await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Error signing in:", error);
-                    showModal("Authentication Error", "Could not sign in. Please try again.", () => { hideModal(); }); // MODIFIED
+                    showModal("Authentication Error", "Could not sign in. Please try again.", () => { hideModal(); });
                 }
             }
             updateUI(); // Show UI after authentication
@@ -1321,7 +1320,7 @@
             }
 
             if (roomExists) {
-                showModal("Error", "Could not generate a unique room code. Please try again.", () => { hideModal(); }); // MODIFIED
+                showModal("Error", "Could not generate a unique room code. Please try again.", () => { hideModal(); });
                 return null;
             }
 
@@ -1359,7 +1358,7 @@
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
-                showModal("Creation Failed", "Failed to create room. Please try again.", () => { hideModal(); }); // MODIFIED
+                showModal("Creation Failed", "Failed to create room. Please try again.", () => { hideModal(); });
                 return null;
             }
         };
@@ -1371,12 +1370,12 @@
             const maxParticipants = parseInt(maxParticipantsInput.value, 10);
 
             if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
+                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); });
                 return;
             }
 
             if (isNaN(maxParticipants) || maxParticipants < 2 || maxParticipants > 10) {
-                showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => { hideModal(); }); // MODIFIED
+                showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => { hideModal(); });
                 return;
             }
 
@@ -1385,7 +1384,7 @@
                 currentRoom = room;
                 roomCodeInput.value = room.code;
                 createPasswordInput.value = '';
-                await setupRoomListeners(room.code); // MODIFIED: AWAIT this call
+                await setupRoomListeners(room.code);
                 updateUI();
             }
         });
@@ -1445,7 +1444,7 @@
                     });
                 }
 
-                await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
+                await setupRoomListeners(roomCode);
                 updateUI();
                 hideModal(); // Hide modal on successful join
             } catch (error) {
@@ -1453,7 +1452,7 @@
                 let errorMessage = "Failed to join room. Please try again.";
                 if (error.message.includes("Room full")) errorMessage = "Room is now full. Please try another room.";
                 if (error.message.includes("Username taken")) errorMessage = "Username was taken. Please choose another.";
-                showModal("Join Failed", errorMessage, () => { hideModal(); }); // MODIFIED
+                showModal("Join Failed", errorMessage, () => { hideModal(); });
             }
         };
 
@@ -1463,11 +1462,11 @@
             const roomCode = roomCodeInput.value.trim().toUpperCase();
 
             if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
+                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); });
                 return;
             }
             if (!roomCode) {
-                showModal("Invalid Room Code", "Please enter a room code.", () => { hideModal(); }); // MODIFIED
+                showModal("Invalid Room Code", "Please enter a room code.", () => { hideModal(); });
                 return;
             }
 
@@ -1477,7 +1476,7 @@
                 const roomDoc = await getDoc(roomRef);
 
                 if (!roomDoc.exists()) {
-                    showModal("Room Not Found", "The room code you entered does not exist.", () => { hideModal(); }); // MODIFIED
+                    showModal("Room Not Found", "The room code you entered does not exist.", () => { hideModal(); });
                     return;
                 }
 
@@ -1532,7 +1531,7 @@
 
             } catch (error) {
                 console.error("Error joining room (initial check):", error);
-                showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => { hideModal(); }); // MODIFIED
+                showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => { hideModal(); });
             }
         });
 
@@ -1540,7 +1539,7 @@
         joinRandomRoomBtn.addEventListener('click', async () => {
             const username = randomUsernameInput.value.trim();
             if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
+                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); });
                 return;
             }
 
@@ -1596,11 +1595,11 @@
                     await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.maxParticipants);
                 } else {
                     // No suitable random room found, do NOT create a new one
-                    showModal("No Random Rooms Available", "Sorry, no random rooms are currently available. Please try again later or create a new room in Default Mode.", () => { hideModal(); }); // MODIFIED
+                    showModal("No Random Rooms Available", "Sorry, no random rooms are currently available. Please try again later or create a new room in Default Mode.", () => { hideModal(); });
                 }
             } catch (error) {
                 console.error("Error finding random room:", error);
-                showModal("Error", "Failed to find a random room. Please try again.", () => { hideModal(); }); // MODIFIED
+                showModal("Error", "Failed to find a random room. Please try again.", () => { hideModal(); });
             }
         };
 
@@ -1620,7 +1619,7 @@
 
                 showModal("Room Timed Out", "This room has been deleted due to inactivity.", async () => {
                     handleLeaveRoomCleanUp();
-                    hideModal(); // MODIFIED
+                    hideModal();
                     // Attempt to delete the room document. This is idempotent.
                     try {
                         await deleteDoc(roomDocRef);
@@ -1637,12 +1636,18 @@
             if (!currentRoom || !currentUserId) return;
 
             const typingStatusDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/typingStatus`, currentUserId);
-            const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
+            // Get the username from currentUserObject if available, otherwise from input fields
+            const usernameToUse = currentUserObject ? currentUserObject.username : (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
+
+            if (!usernameToUse) {
+                console.warn("Attempted to update typing status without a valid username.");
+                return;
+            }
 
             try {
                 if (isTypingStatus) {
                     await setDoc(typingStatusDocRef, {
-                        username: currentUsername,
+                        username: usernameToUse,
                         timestamp: serverTimestamp()
                     });
                 } else {
@@ -1760,7 +1765,9 @@
                 const currentTime = Date.now();
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Filter out the current user and users whose typing status is too old
+                    // Filter out the current user and users whose typing status is too old.
+                    // The TYPING_INDICATOR_TIMEOUT_MS helps clean up stale typing indicators
+                    // if a user closes their browser without proper cleanup.
                     if (doc.id !== currentUserId && data.timestamp && (currentTime - data.timestamp.toDate().getTime() < TYPING_INDICATOR_TIMEOUT_MS)) {
                         typingUsers.push(data.username);
                     }
@@ -1814,13 +1821,14 @@
 
             } catch (error) {
                 console.error("Error sending message:", error);
-                showModal("Message Failed", "Failed to send message. Please try again.", () => { hideModal(); }); // MODIFIED
+                showModal("Message Failed", "Failed to send message. Please try again.", () => { hideModal(); });
             }
         });
 
         // NEW: Event listener for typing input
         newMessageInput.addEventListener('input', () => {
-            const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
+            // Get the username from currentUserObject if available, otherwise from input fields
+            const currentUsername = currentUserObject ? currentUserObject.username : (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
             if (!currentUsername) return; // Don't send typing status if no username
 
             if (!isTyping) {
@@ -1888,7 +1896,7 @@
                 }
                 catch (error) {
                     console.error("Error leaving room:", error);
-                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => { hideModal(); }); // MODIFIED
+                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => { hideModal(); });
                 }
             }, true); // Show cancel button
         });
