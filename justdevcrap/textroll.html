@@ -321,7 +321,7 @@
         }
         /* Specific adjustment for the toggle button within the home screen */
         #home-screen .dark-mode-toggle-container {
-            margin-top: 2rem; /* Added to push the button down slightly */
+            margin-top: 2rem;
         }
         #dark-mode-toggle, #dark-mode-toggle-chat {
             background-color: var(--card-bg);
@@ -365,30 +365,12 @@
         #home-screen.hidden {
             display: none;
         }
-        /* New header for home screen to position dark mode toggle */
-        #home-screen .header-home {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem; /* Spacing below the header */
-            padding-bottom: 1rem; /* Padding for the bottom border */
-            border-bottom: 1px solid var(--border-color); /* Separator line */
-            gap: 1rem; /* Space between elements in the header */
-        }
-        #home-screen .header-home h1 {
+        #home-screen h1 {
             font-size: 3rem;
             font-weight: 800;
             color: var(--header-text);
+            margin-bottom: 1.5rem;
             letter-spacing: -0.025em;
-            margin-bottom: 0; /* Remove default h1 margin as it's in a flex container */
-            flex-grow: 1; /* Allow h1 to take available space */
-            text-align: center; /* Center the title */
-        }
-        /* New rule for the spacer to balance the dark mode toggle */
-        .header-spacer {
-            /* Calculate width/height based on the button's padding and font-size */
-            width: calc(1.25rem + 2 * 0.75rem);
-            height: calc(1.25rem + 2 * 0.75rem);
         }
         #home-screen p {
             color: var(--text-color-secondary);
@@ -727,9 +709,9 @@
                 max-width: 100%;
                 border-radius: 0.5rem;
             }
-            #home-screen .header-home h1 { /* Adjusted for new header */
+            #home-screen h1 {
                 font-size: 2.5rem;
-                /* margin-bottom: 1rem; REMOVED as it's handled by flex container */
+                margin-bottom: 1rem;
             }
             #home-screen p {
                 font-size: 1rem;
@@ -835,19 +817,20 @@
 
 
     <div id="home-screen" class="hidden">
-        <div class="header-home">
-            <div class="dark-mode-toggle-container">
-                <button id="dark-mode-toggle">
-                    <span class="icon-moon-text">🌙</span>
-                    <span class="icon-sun-text">☀️</span>
-                </button>
-            </div>
-            <h1>Textroll</h1>
-            <div class="header-spacer"></div>
-        </div>
+        
+        <h1>Textroll</h1>
         <p>
             Connect and chat anonymously with friends or strangers!
         </p>
+
+
+<div class="dark-mode-toggle-container">
+            <button id="dark-mode-toggle">
+                <span class="icon-moon-text">🌙</span>
+                <span class="icon-sun-text">☀️</span>
+                </button>
+        </div>
+<br><br>
 
         <div id="mode-selection">
             <button id="default-mode-btn" class="active">Default Mode</button>
@@ -1696,35 +1679,35 @@
         };
 
         // Function to handle page exit (browser close, tab close, navigation away)
-        const handlePageExit = async () => {
+        const handlePageExit = () => { // Made synchronous as beforeunload doesn't wait for async
             if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
                 // This is a best-effort attempt as browser might terminate before write completes.
-                // No await here as beforeunload is synchronous.
+                // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
                 try {
-                    // Fetch the latest room data to ensure we're removing the correct user object
-                    const roomDoc = await getDoc(roomRef);
-                    if (roomDoc.exists()) {
-                        const roomData = roomDoc.data();
-                        const currentUsersInFirestore = roomData.users || [];
-                        const userToReallyRemove = currentUsersInFirestore.find(u => u.userId === currentUserId);
+                    getDoc(roomRef).then(roomDoc => {
+                        if (roomDoc.exists()) {
+                            const roomData = roomDoc.data();
+                            const currentUsersInFirestore = roomData.users || [];
+                            const userToReallyRemove = currentUsersInFirestore.find(u => u.userId === currentUserId);
 
-                        if (userToReallyRemove) {
-                            const updatedUsers = currentUsersInFirestore.filter(u => u.userId !== currentUserId);
-                            if (updatedUsers.length === 0) {
-                                // If no users left, delete the room
-                                deleteDoc(roomRef).catch(e => console.warn("Failed to delete room on exit (best-effort):", e));
-                            } else {
-                                // Otherwise, just update the user list and lastActivity
-                                updateDoc(roomRef, {
-                                    users: arrayRemove(userToReallyRemove),
-                                    lastActivity: serverTimestamp()
-                                }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+                            if (userToReallyRemove) {
+                                const updatedUsers = currentUsersInFirestore.filter(u => u.userId !== currentUserId);
+                                if (updatedUsers.length === 0) {
+                                    // If no users left, delete the room
+                                    deleteDoc(roomRef).catch(e => console.warn("Failed to delete room on exit (best-effort):", e));
+                                } else {
+                                    // Otherwise, just update the user list and lastActivity
+                                    updateDoc(roomRef, {
+                                        users: arrayRemove(userToReallyRemove),
+                                        lastActivity: serverTimestamp()
+                                    }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+                                }
                             }
                         }
-                    }
+                    }).catch(e => console.warn("Error attempting to remove user on page exit (getDoc):", e));
                 } catch (e) {
-                    console.warn("Error attempting to remove user on page exit:", e);
+                    console.warn("Error attempting to remove user on page exit (outer catch):", e);
                 }
             }
         };
