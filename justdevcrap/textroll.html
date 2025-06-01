@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textroll Chat App</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="textroll.png">
     <style>
         /* CSS Variables for Theming */
         :root {
@@ -312,13 +313,17 @@
 
         /* Dark Mode Toggle Button */
         .dark-mode-toggle-container {
-            position: absolute;
-            top: 1rem;
-            right: 1rem; /* Default for home screen */
+            /* Removed absolute positioning for chat screen, now part of flex header */
             z-index: 10; /* Ensure it's above other elements in the card */
             display: flex; /* To center emoji */
             align-items: center;
             justify-content: center;
+        }
+        /* Specific adjustment for the toggle button within the home screen */
+        #home-screen .dark-mode-toggle-container {
+            position: absolute; /* Keep absolute for home screen */
+            top: 1rem;
+            right: 1rem;
         }
         #dark-mode-toggle, #dark-mode-toggle-chat {
             background-color: var(--card-bg);
@@ -336,11 +341,6 @@
         }
         #dark-mode-toggle:active, #dark-mode-toggle-chat:active {
             transform: scale(0.95);
-        }
-
-        /* Specific adjustment for the toggle button within the chat room screen */
-        #chat-room-screen .dark-mode-toggle-container {
-            right: 5rem; /* Move it left to make space for the Leave Room button */
         }
 
         /* Text Icon specific styles */
@@ -436,6 +436,7 @@
         }
         #join-room-btn, #join-random-room-btn { /* Apply purple to both join buttons */
             background-color: var(--button-bg-purple);
+            color: #fff; /* Ensure text is white for contrast */
         }
         #join-room-btn:hover, #join-random-room-btn:hover {
             background-color: var(--button-hover-purple);
@@ -472,11 +473,15 @@
             margin-bottom: 1rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
+            gap: 1rem; /* Add gap for spacing between header elements */
         }
         #chat-room-screen h2 {
             font-size: 1.875rem;
             font-weight: 700;
             color: var(--header-text);
+            /* Allow h2 to grow and take available space, pushing other elements */
+            flex-grow: 1;
+            text-align: center; /* Center the room code text */
         }
         #current-room-code {
             color: var(--room-code-text);
@@ -752,13 +757,10 @@
             #send-message-btn {
                 padding: 0.6rem 1rem;
             }
-            .dark-mode-toggle-container {
-                top: 0.5rem;
-                right: 0.5rem;
-            }
-            #dark-mode-toggle, #dark-mode-toggle-chat {
-                padding: 0.6rem;
-                font-size: 1rem;
+            /* Adjust dark mode toggle position for mobile in chat screen */
+            #chat-room-screen .header .dark-mode-toggle-container {
+                /* No specific right/left needed, flexbox handles it */
+                margin-right: 0.5rem; /* Small margin to the right of the toggle */
             }
             #mode-selection {
                 flex-direction: column;
@@ -781,7 +783,7 @@
             <h3 id="modal-title"></h3>
             <p id="modal-message"></p>
             <div class="input-group hidden" id="modal-password-input-group">
-                <label for="modal-password-input"></label>
+                <label for="modal-password-input" class="hidden">Enter password:</label>
                 <input type="password" id="modal-password-input" placeholder="Room password" />
                 <span id="modal-password-error" class="hidden"></span> </div>
             <div id="modal-buttons">
@@ -821,7 +823,7 @@
             <button id="dark-mode-toggle">
                 <span class="icon-moon-text">🌙</span>
                 <span class="icon-sun-text">☀️</span>
-            </button>
+                </button>
         </div>
         <h1>Textroll</h1>
         <p>
@@ -916,13 +918,13 @@
     </div>
 
     <div id="chat-room-screen" class="hidden">
-        <div class="dark-mode-toggle-container">
-            <button id="dark-mode-toggle-chat">
-                <span class="icon-moon-text">🌙</span>
-                <span class="icon-sun-text">☀️</span>
-            </button>
-        </div>
         <div class="header">
+            <div class="dark-mode-toggle-container">
+                <button id="dark-mode-toggle-chat">
+                    <span class="icon-moon-text">🌙</span>
+                    <span class="icon-sun-text">☀️</span>
+                </button>
+            </div>
             <h2>
                 Room: <span id="current-room-code"></span>
             </h2>
@@ -1434,13 +1436,15 @@
                 showModal("Anonymous Chat Warning", "You are about to join a random, unmoderated, and temporary chat room. Do not share personal information.", async () => {
                     localStorage.setItem('randomWarningShown', 'true'); // Mark as shown
                     await findRandomRoom(username);
-                    hideModal(); // Hide modal after warning and finding room
+                    // The findRandomRoom function will call showModal again if no rooms are found,
+                    // or performJoinRoomTransaction which calls hideModal on success.
+                    // So, no hideModal() here.
                 }, true, () => {
                     // User cancelled the warning, do nothing
                 });
             } else {
                 await findRandomRoom(username);
-                hideModal(); // Hide modal after finding room directly
+                // No hideModal() here, as findRandomRoom will handle it (or its subsequent calls)
             }
         });
 
@@ -1471,7 +1475,7 @@
                     const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomToJoin.code);
 
                     // Attempt to join the selected room
-                    await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.users, roomToJoin.maxParticipants);
+                    await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.maxParticipants);
                 } else {
                     // No suitable random room found, do NOT create a new one
                     showModal("No Random Rooms Available", "Sorry, no random rooms are currently available. Please try again later or create a new room in Default Mode.", () => { hideModal(); }); // MODIFIED
