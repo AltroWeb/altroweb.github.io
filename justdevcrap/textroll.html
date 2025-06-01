@@ -1179,16 +1179,20 @@
             messagesContainer.innerHTML = ''; // Clear existing messages
             
             // Find the current user's join timestamp
-            const currentUserJoinTimestamp = currentRoom?.users?.find(u => u.userId === currentUserId)?.joinTimestamp?.toDate().getTime();
+            // Convert Firestore Timestamp to Date object for comparison if it's not already
+            const currentUserJoinTimestamp = currentRoom?.users?.find(u => u.userId === currentUserId)?.joinTimestamp;
+            const currentUserJoinTime = currentUserJoinTimestamp instanceof Date ? currentUserJoinTimestamp.getTime() : (currentUserJoinTimestamp?.toDate ? currentUserJoinTimestamp.toDate().getTime() : 0);
+
 
             const filteredMessages = messages.filter(msg => {
                 // If currentUserJoinTimestamp is not available, show all messages (fallback)
                 // or if message timestamp is missing, include it.
-                if (!currentUserJoinTimestamp || !msg.timestamp) {
+                if (!currentUserJoinTime || !msg.timestamp) {
                     return true; 
                 }
-                const messageTime = msg.timestamp.toDate().getTime();
-                return messageTime >= currentUserJoinTimestamp;
+                // Convert message timestamp to Date object for comparison if it's not already
+                const messageTime = msg.timestamp instanceof Date ? msg.timestamp.getTime() : (msg.timestamp.toDate ? msg.timestamp.toDate().getTime() : 0);
+                return messageTime >= currentUserJoinTime;
             });
 
             if (filteredMessages.length === 0) {
@@ -1212,7 +1216,7 @@
                     const timestampDiv = document.createElement('div');
                     timestampDiv.className = "timestamp";
                     // Ensure timestamp is a Date object before calling toLocaleTimeString
-                    const date = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date();
+                    const date = msg.timestamp && (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate());
                     timestampDiv.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                     contentDiv.appendChild(senderSpan);
@@ -1267,8 +1271,8 @@
             }
 
             const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
-            // Include joinTimestamp when creating the user object
-            const user = { userId: currentUserId, username: username, joinTimestamp: serverTimestamp() };
+            // Include joinTimestamp as a Date object when creating the user object
+            const user = { userId: currentUserId, username: username, joinTimestamp: new Date() };
             const roomData = {
                 code: newRoomCode,
                 users: [user],
@@ -1334,7 +1338,7 @@
 
                     if (existingUserIndex !== -1) {
                         // User is already in the room, update their joinTimestamp and username
-                        usersInRoom[existingUserIndex].joinTimestamp = serverTimestamp();
+                        usersInRoom[existingUserIndex].joinTimestamp = new Date(); // Use Date object
                         usersInRoom[existingUserIndex].username = username; // Update username in case it changed
                     } else {
                         // New user joining
@@ -1344,7 +1348,7 @@
                         if (usersInRoom.some(u => u.username.toLowerCase() === username.toLowerCase())) {
                             return Promise.reject(new Error("Username taken (re-check)"));
                         }
-                        const newUser = { userId: currentUserId, username: username, joinTimestamp: serverTimestamp() };
+                        const newUser = { userId: currentUserId, username: username, joinTimestamp: new Date() }; // Use Date object
                         usersInRoom.push(newUser);
                     }
 
