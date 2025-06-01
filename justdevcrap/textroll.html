@@ -1043,6 +1043,7 @@
         const privacyPolicyModalContent = document.getElementById('privacy-policy-modal-content');
         const privacyPolicyCloseBtn = document.getElementById('privacy-policy-close-btn');
 
+
         // Dark Mode Elements
         const darkModeToggleHome = document.getElementById('dark-mode-toggle');
         const darkModeToggleChat = document.getElementById('dark-mode-toggle-chat');
@@ -1215,9 +1216,9 @@
 
                     const timestampDiv = document.createElement('div');
                     timestampDiv.className = "timestamp";
-                    // Ensure timestamp is a Date object before calling toLocaleTimeString
-                    const date = msg.timestamp && (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate());
-                    timestampDiv.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    // Ensure timestamp is not null/undefined before attempting to convert and format
+                    const date = msg.timestamp ? (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate()) : null;
+                    timestampDiv.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; // Display empty string if date is null
 
                     contentDiv.appendChild(senderSpan);
                     contentDiv.appendChild(textP); // Always append text for now
@@ -1319,7 +1320,7 @@
                 currentRoom = room;
                 roomCodeInput.value = room.code;
                 createPasswordInput.value = '';
-                setupRoomListeners(room.code);
+                await setupRoomListeners(room.code); // MODIFIED: AWAIT this call
                 updateUI();
             }
         });
@@ -1366,7 +1367,7 @@
                 window.addEventListener('beforeunload', handlePageExit);
                 document.addEventListener('visibilitychange', handleVisibilityChange);
 
-                setupRoomListeners(roomCode);
+                await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
                 updateUI();
                 hideModal(); // Hide modal on successful join
             } catch (error) {
@@ -1525,68 +1526,6 @@
             }
         };
 
-
-        // Setup real-time listeners for room data and messages
-        const setupRoomListeners = (roomCode) => {
-            // Unsubscribe previous listeners if any
-            if (unsubscribeRoomListener) unsubscribeRoomListener();
-            if (unsubscribeMessagesListener) unsubscribeMessagesListener();
-            // Clear any existing inactivity timer
-            if (inactivityTimer) {
-                clearInterval(inactivityTimer);
-                inactivityTimer = null;
-            }
-
-
-            const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
-            const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
-
-            // Listen for room data changes (users, capacity)
-            unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const roomData = docSnap.data();
-                    currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity }; // Update maxParticipants and lastActivity
-                    renderParticipants(currentRoom.users);
-                    maxParticipantsDisplay.textContent = currentRoom.maxParticipants; // Update display
-
-                    // Reset inactivity timer on any room data update
-                    if (inactivityTimer) {
-                        clearInterval(inactivityTimer);
-                    }
-                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000); // Check every minute
-
-                    // Check for inactivity immediately on snapshot
-                    checkInactivity(roomDocRef);
-
-                } else {
-                    // Room no longer exists (deleted by another client or timeout)
-                    showModal("Room Ended", "The room you were in has ended.", () => {
-                        handleLeaveRoomCleanUp();
-                        hideModal(); // MODIFIED
-                    });
-                }
-            }, (error) => {
-                console.error("Error listening to room:", error);
-                showModal("Connection Error", "Failed to get room updates. Please check your internet connection.", () => { hideModal(); }); // MODIFIED
-            });
-
-            // Listen for messages
-            unsubscribeMessagesListener = onSnapshot(query(messagesCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
-                const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderMessages(newMessages);
-                // Also update room's last activity when a message is received (implies activity)
-                if (currentRoom && currentRoom.code) {
-                    const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                    updateDoc(roomRef, {
-                        lastActivity: serverTimestamp()
-                    }).catch(e => console.error("Error updating last activity on message receive:", e));
-                }
-            }, (error) => {
-                console.error("Error listening to messages:", error);
-                showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => { hideModal(); }); // MODIFIED
-            });
-        };
-
         // Function to check for room inactivity
         const checkInactivity = async (roomDocRef) => {
             if (!currentRoom || !currentRoom.lastActivity) return;
@@ -1615,6 +1554,106 @@
             }
         };
 
+        // Setup real-time listeners for room data and messages
+        const setupRoomListeners = async (roomCode) => { // MODIFIED: Made async
+            // Unsubscribe previous listeners if any
+            if (unsubscribeRoomListener) unsubscribeRoomListener();
+            if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+            // Clear any existing inactivity timer
+            if (inactivityTimer) {
+                clearInterval(inactivityTimer);
+                inactivityTimer = null;
+            }
+
+            const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
+            const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
+
+            // --- Step 1: Ensure currentRoom is populated first ---
+            // Fetch room data once to ensure currentRoom is immediately available
+            try {
+                const roomDoc = await getDoc(roomDocRef);
+                if (roomDoc.exists()) {
+                    const roomData = roomDoc.data();
+                    currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity };
+                    // Ensure currentUserObject is also set here, in case it's not fully propagated from transaction yet
+                    currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
+                    renderParticipants(currentRoom.users);
+                    maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
+                } else {
+                    // Room no longer exists, handle immediately
+                    showModal("Room Ended", "The room you were in has ended.", () => {
+                        handleLeaveRoomCleanUp();
+                        hideModal();
+                    });
+                    return; // Exit if room doesn't exist
+                }
+            } catch (error) {
+                console.error("Error fetching initial room data:", error);
+                showModal("Connection Error", "Failed to get initial room data. Please check your internet connection.", () => { hideModal(); });
+                return; // Exit if initial fetch fails
+            }
+
+            // --- Step 2: Fetch and render initial messages ---
+            try {
+                const initialMessagesQuery = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
+                const initialMessagesSnapshot = await getDocs(initialMessagesQuery);
+                const initialMessages = initialMessagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderMessages(initialMessages);
+            } catch (error) {
+                console.error("Error fetching initial messages:", error);
+                showModal("Connection Error", "Failed to get initial messages. Please check your internet connection.", () => { hideModal(); });
+                return; // Exit if initial fetch fails
+            }
+
+            // --- Step 3: Set up real-time listeners for subsequent changes ---
+
+            // Listen for room data changes (users, capacity)
+            unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const roomData = docSnap.data();
+                    currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity };
+                    currentUserObject = currentRoom.users.find(u => u.userId === currentUserId); // Re-ensure this is updated
+                    renderParticipants(currentRoom.users);
+                    maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
+
+                    // Reset inactivity timer on any room data update
+                    if (inactivityTimer) {
+                        clearInterval(inactivityTimer);
+                    }
+                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000); // Check every minute
+
+                    // Check for inactivity immediately on snapshot
+                    checkInactivity(roomDocRef);
+
+                } else {
+                    // Room no longer exists (deleted by another client or timeout)
+                    showModal("Room Ended", "The room you were in has ended.", () => {
+                        handleLeaveRoomCleanUp();
+                        hideModal();
+                    });
+                }
+            }, (error) => {
+                console.error("Error listening to room:", error);
+                showModal("Connection Error", "Failed to get room updates. Please check your internet connection.", () => { hideModal(); });
+            });
+
+            // Listen for subsequent messages
+            unsubscribeMessagesListener = onSnapshot(query(messagesCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
+                const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderMessages(newMessages); // This will now handle real-time updates after initial load
+                // Also update room's last activity when a message is received (implies activity)
+                if (currentRoom && currentRoom.code) {
+                    const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                    updateDoc(roomRef, {
+                        lastActivity: serverTimestamp()
+                    }).catch(e => console.error("Error updating last activity on message receive:", e));
+                }
+            }, (error) => {
+                console.error("Error listening to messages:", error);
+                showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => { hideModal(); });
+            });
+        };
+
 
         // Handle sending a message
         messageForm.addEventListener('submit', async (e) => {
@@ -1634,8 +1673,8 @@
                     senderId: currentUserId,
                     senderUsername: (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim()),
                     type: 'text', // Explicitly set type to text
-                    text: newMessageText,
                     timestamp: serverTimestamp(),
+                    text: newMessageText,
                 });
 
                 // Update room's lastActivity after sending a message
@@ -1690,7 +1729,8 @@
                     });
                     handleLeaveRoomCleanUp();
                     hideModal(); // Hide modal after successful leave
-                } catch (error) {
+                }
+                catch (error) {
                     console.error("Error leaving room:", error);
                     showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => { hideModal(); }); // MODIFIED
                 }
