@@ -596,7 +596,7 @@
         }
         .message-item.status-message .message-content {
             background-color: transparent; /* No background for status */
-            color: var(--text-color-secondary); /* Lighter text text-color */
+            color: var(--text-color-secondary); /* Lighter text color */
             font-style: italic;
             text-align: center;
             max-width: 90%; /* Allow wider for status messages */
@@ -1626,6 +1626,7 @@
                     // Ensure currentUserObject is also set here, in case it's not fully propagated from transaction yet
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                     // IMPORTANT: Convert the Firestore Timestamp to a JavaScript Date for internal consistency
+                    // This conversion is done here to ensure currentUserObject is always a JS Date for local use
                     if (currentUserObject && currentUserObject.joinTimestamp && currentUserObject.joinTimestamp.toDate) {
                         currentUserObject.joinTimestamp = currentUserObject.joinTimestamp.toDate();
                     }
@@ -1772,31 +1773,23 @@
                         const roomDoc = await transaction.get(roomRef);
                         if (roomDoc.exists()) {
                             const roomData = roomDoc.data();
-                            const currentUsers = roomData.users || [];
+                            let currentUsers = roomData.users || [];
 
-                            // Create a mutable copy of currentUserObject to ensure correct timestamp type for arrayRemove
-                            const userObjectToRemove = { ...currentUserObject };
-                            // Convert back to Firestore Timestamp for arrayRemove
-                            if (userObjectToRemove.joinTimestamp instanceof Date) {
-                                userObjectToRemove.joinTimestamp = Timestamp.fromDate(userObjectToRemove.joinTimestamp);
-                            }
+                            // Filter out the current user by userId
+                            const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
 
-                            if (userObjectToRemove) { // Ensure the user is actually found in the list
-                                const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId || u.username !== currentUserObject.username);
-
-                                if (updatedUsers.length === 0) {
-                                    // If no users left, delete the room
-                                    transaction.delete(roomRef);
-                                } else {
-                                    // Otherwise, just update the user list and lastActivity
-                                    transaction.update(roomRef, {
-                                        users: arrayRemove(userObjectToRemove), // Use the modified object with Firestore Timestamp
-                                        lastActivity: serverTimestamp() // Update last activity on leave
-                                    });
-                                }
+                            if (updatedUsers.length === 0) {
+                                // If no users left, delete the room
+                                transaction.delete(roomRef);
                             } else {
-                                console.warn("Attempted to leave room, but user not found in participants list in Firestore. Proceeding with cleanup.");
+                                // Otherwise, just update the user list and lastActivity
+                                transaction.update(roomRef, {
+                                    users: updatedUsers,
+                                    lastActivity: serverTimestamp() // Update last activity on leave
+                                });
                             }
+                        } else {
+                            console.warn("Room document not found during leave transaction. It might have been deleted already.");
                         }
                     });
                     handleLeaveRoomCleanUp();
@@ -1804,7 +1797,7 @@
                 }
                 catch (error) {
                     console.error("Error leaving room:", error);
-                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => { hideModal(); }); // MODIFIED
+                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => { hideModal(); });
                 }
             }, true); // Show cancel button
         });
@@ -1831,32 +1824,46 @@
 
         // Function to handle page exit (browser close, tab close, navigation away)
         const handlePageExit = () => {
-            if (currentRoom && currentUserId && currentUserObject) {
+            if (currentRoom && currentUserId) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
                 
-                // Create a mutable copy of currentUserObject to ensure correct timestamp type for arrayRemove
-                const userObjectToUpdate = { ...currentUserObject };
-                // Convert back to Firestore Timestamp for arrayRemove
-                if (userObjectToUpdate.joinTimestamp instanceof Date) {
-                    userObjectToUpdate.joinTimestamp = Timestamp.fromDate(userObjectToUpdate.joinTimestamp);
-                }
+                // We need a username for the leave message. If currentUserObject is available, use its username.
+                // Otherwise, fall back to the input field, though on page exit, currentUserObject should ideally be set.
+                const usernameForLeaveMessage = currentUserObject ? currentUserObject.username : (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
 
                 // Send a "leave" status message on page exit (best effort)
+                // This is a fire-and-forget operation as beforeunload is synchronous
                 addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`), {
                     senderId: currentUserId,
-                    senderUsername: userObjectToUpdate.username, // Use the stored username
+                    senderUsername: usernameForLeaveMessage,
                     type: 'status',
-                    text: `${userObjectToUpdate.username} has left the room.`,
+                    text: `${usernameForLeaveMessage} has left the room.`,
                     timestamp: serverTimestamp(),
                 }).catch(e => console.warn("Failed to send leave message on exit (best-effort):", e));
 
-                // Directly attempt to remove the user object.
-                // This is a best-effort attempt as the browser might terminate before the write completes.
-                // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
-                updateDoc(roomRef, {
-                    users: arrayRemove(userObjectToUpdate), // Use the modified object with Firestore Timestamp
-                    lastActivity: serverTimestamp() // Update last activity on exit
-                }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+                // Use a transaction for robust user removal. This is also fire-and-forget
+                // as beforeunload is synchronous and won't wait for promises.
+                runTransaction(db, async (transaction) => {
+                    const roomDoc = await transaction.get(roomRef);
+                    if (roomDoc.exists()) {
+                        const roomData = roomDoc.data();
+                        let currentUsers = roomData.users || [];
+
+                        // Filter out the current user by userId. This is the most reliable way.
+                        const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
+
+                        if (updatedUsers.length === 0) {
+                            // If no users left, delete the room
+                            transaction.delete(roomRef);
+                        } else {
+                            // Otherwise, just update the user list and lastActivity
+                            transaction.update(roomRef, {
+                                users: updatedUsers,
+                                lastActivity: serverTimestamp() // Update last activity on exit
+                            });
+                        }
+                    }
+                }).catch(e => console.warn("Failed to remove user from room on exit (best-effort transaction):", e));
             }
         };
 
