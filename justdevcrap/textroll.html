@@ -596,7 +596,7 @@
         }
         .message-item.status-message .message-content {
             background-color: transparent; /* No background for status */
-            color: var(--text-color-secondary); /* Lighter text color */
+            color: var(--text-color-secondary); /* Lighter text text-color */
             font-style: italic;
             text-align: center;
             max-width: 90%; /* Allow wider for status messages */
@@ -1317,8 +1317,6 @@
             try {
                 await setDoc(roomRef, roomData);
                 // currentUserObject will be set reliably in setupRoomListeners
-                // window.addEventListener('beforeunload', handlePageExit); // REMOVED
-                // document.addEventListener('visibilitychange', handleVisibilityChange); // REMOVED
 
                 // Add join status message
                 await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${newRoomCode}/messages`), {
@@ -1402,10 +1400,7 @@
                     currentRoom = { code: roomCode, users: usersInRoom, maxParticipants: maxAllowedUsers };
                 });
                 
-                // After successful transaction, find the user object with the correct joinTimestamp
                 // currentUserObject will be set reliably in setupRoomListeners
-                // window.addEventListener('beforeunload', handlePageExit); // REMOVED
-                // document.addEventListener('visibilitychange', handleVisibilityChange); // REMOVED
 
                 // Only send join message if the user was not already in the room (i.e., actually joined, not just updated timestamp)
                 if (!wasUserAlreadyInRoom) {
@@ -1629,7 +1624,11 @@
                     const roomData = roomDoc.data();
                     currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity };
                     // Ensure currentUserObject is also set here, in case it's not fully propagated from transaction yet
-                    currentUserObject = currentRoom.users.find(u => u.userId === currentUserId); // currentUserObject now has Firestore Timestamp
+                    currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
+                    // IMPORTANT: Convert the Firestore Timestamp to a JavaScript Date for internal consistency
+                    if (currentUserObject && currentUserObject.joinTimestamp && currentUserObject.joinTimestamp.toDate) {
+                        currentUserObject.joinTimestamp = currentUserObject.joinTimestamp.toDate();
+                    }
                     renderParticipants(currentRoom.users);
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
 
@@ -1670,6 +1669,10 @@
                     const roomData = docSnap.data();
                     currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity };
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId); // Re-ensure this is updated
+                    // IMPORTANT: Convert the Firestore Timestamp to a JavaScript Date for internal consistency
+                    if (currentUserObject && currentUserObject.joinTimestamp && currentUserObject.joinTimestamp.toDate) {
+                        currentUserObject.joinTimestamp = currentUserObject.joinTimestamp.toDate();
+                    }
                     renderParticipants(currentRoom.users);
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
 
@@ -1773,6 +1776,7 @@
 
                             // Create a mutable copy of currentUserObject to ensure correct timestamp type for arrayRemove
                             const userObjectToRemove = { ...currentUserObject };
+                            // Convert back to Firestore Timestamp for arrayRemove
                             if (userObjectToRemove.joinTimestamp instanceof Date) {
                                 userObjectToRemove.joinTimestamp = Timestamp.fromDate(userObjectToRemove.joinTimestamp);
                             }
@@ -1832,6 +1836,7 @@
                 
                 // Create a mutable copy of currentUserObject to ensure correct timestamp type for arrayRemove
                 const userObjectToUpdate = { ...currentUserObject };
+                // Convert back to Firestore Timestamp for arrayRemove
                 if (userObjectToUpdate.joinTimestamp instanceof Date) {
                     userObjectToUpdate.joinTimestamp = Timestamp.fromDate(userObjectToUpdate.joinTimestamp);
                 }
