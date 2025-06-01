@@ -248,7 +248,37 @@
         #modal-ok-btn:hover {
             background-color: var(--button-hover-blue);
         }
-        /* Password error message */
+        /* Password input group and error */
+        #modal-password-input-group {
+            margin-bottom: 1.5rem; /* Spacing below the group */
+            padding: 0.75rem; /* Internal padding for the group */
+            border: 1px solid var(--input-border); /* Subtle border */
+            border-radius: 0.5rem; /* Rounded corners */
+            background-color: var(--input-bg-disabled); /* Light background */
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .dark-mode #modal-password-input-group {
+            background-color: var(--border-color); /* Darker background for dark mode */
+        }
+        #modal-password-input-group label {
+            margin-bottom: 0.75rem; /* More space below label */
+            padding-left: 0.25rem; /* Align text with input */
+        }
+        #modal-password-input {
+            width: 100%;
+            padding: 0.8rem; /* Slightly more padding for input field */
+            border: 1px solid var(--input-border);
+            border-radius: 0.5rem;
+            background-color: var(--card-bg);
+            color: var(--text-color-primary);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
+            font-size: 1rem; /* Ensure good readability */
+        }
+        #modal-password-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--focus-ring-indigo); /* Slightly thicker focus ring */
+            border-color: transparent;
+        }
         #modal-password-error {
             color: #ef4444; /* red-500 */
             font-size: 0.875rem;
@@ -256,10 +286,6 @@
             text-align: left;
             display: block; /* Ensure it takes its own line */
         }
-        #modal-password-error.hidden {
-            display: none;
-        }
-
         /* IMPORTANT: Force hidden elements to be display: none */
         .hidden {
             display: none !important;
@@ -272,7 +298,7 @@
             box-shadow: 0 0 0 2px var(--focus-ring-blue);
         }
         #modal-cancel-btn:focus, #privacy-policy-close-btn:focus {
-            box_shadow: 0 0 0 2px var(--focus-ring-gray);
+            box-shadow: 0 0 0 2px var(--focus-ring-gray);
         }
         #leave-room-btn:focus {
             box-shadow: 0 0 0 2px var(--focus-ring-red);
@@ -940,7 +966,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-             // Your web app's Firebase configuration
+              // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
     apiKey: "AIzaSyA8ErpL72u6bTzPuOx51l4Mb51NDCDBDBY",
@@ -951,7 +977,6 @@
     appId: "1:928701458132:web:5eec69352bd35998023d41",
     measurementId: "G-DP3QEKB09S"
   };
-
 
         // Use your Firebase projectId for the Firestore path. This is crucial.
         const textrollAppId = firebaseConfig.projectId;
@@ -1064,15 +1089,16 @@
             }
 
             modalPasswordInput.value = ''; // Clear password input on modal open
-            // modalPasswordError.classList.add('hidden'); // Already handled above
 
-            modalOkBtn.onclick = () => {
-                onConfirmCallback();
-                hideModal();
+            // IMPORTANT CHANGE HERE: onConfirmCallback now handles hiding the modal
+            modalOkBtn.onclick = async () => { // Make it async if onConfirmCallback is async
+                await onConfirmCallback(); // Execute the callback
+                // The callback itself should decide when to hide the modal.
+                // If it doesn't hide it, it means the modal should stay open (e.g., for error)
             };
             modalCancelBtn.onclick = () => {
                 onCancelCallback();
-                hideModal();
+                hideModal(); // Cancel always hides the modal
             };
 
             modalOverlay.classList.remove('hidden');
@@ -1196,7 +1222,7 @@
                     await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Error signing in:", error);
-                    showModal("Authentication Error", "Could not sign in. Please try again.", () => {});
+                    showModal("Authentication Error", "Could not sign in. Please try again.", () => { hideModal(); }); // MODIFIED
                 }
             }
             updateUI(); // Show UI after authentication
@@ -1221,7 +1247,7 @@
             }
 
             if (roomExists) {
-                showModal("Error", "Could not generate a unique room code. Please try again.", () => {});
+                showModal("Error", "Could not generate a unique room code. Please try again.", () => { hideModal(); }); // MODIFIED
                 return null;
             }
 
@@ -1247,7 +1273,7 @@
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
-                showModal("Creation Failed", "Failed to create room. Please try again.", () => {});
+                showModal("Creation Failed", "Failed to create room. Please try again.", () => { hideModal(); }); // MODIFIED
                 return null;
             }
         };
@@ -1259,12 +1285,12 @@
             const maxParticipants = parseInt(maxParticipantsInput.value, 10);
 
             if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => {});
+                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
                 return;
             }
 
             if (isNaN(maxParticipants) || maxParticipants < 2 || maxParticipants > 10) {
-                showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => {});
+                showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => { hideModal(); }); // MODIFIED
                 return;
             }
 
@@ -1275,6 +1301,7 @@
                 createPasswordInput.value = '';
                 setupRoomListeners(room.code);
                 updateUI();
+                // hideModal(); // This is handled by performJoinRoomTransaction or the error callbacks
             }
         });
 
@@ -1308,12 +1335,13 @@
 
                 setupRoomListeners(roomCode);
                 updateUI();
+                hideModal(); // Hide modal on successful join
             } catch (error) {
                 console.error("Error joining room (transaction):", error);
                 let errorMessage = "Failed to join room. Please try again.";
                 if (error.message.includes("Room full")) errorMessage = "Room is now full. Please try another room.";
                 if (error.message.includes("Username taken")) errorMessage = "Username was taken. Please choose another.";
-                showModal("Join Failed", errorMessage, () => {});
+                showModal("Join Failed", errorMessage, () => { hideModal(); }); // MODIFIED
             }
         };
 
@@ -1323,11 +1351,11 @@
             const roomCode = roomCodeInput.value.trim().toUpperCase();
 
             if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => {});
+                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
                 return;
             }
             if (!roomCode) {
-                showModal("Invalid Room Code", "Please enter a room code.", () => {});
+                showModal("Invalid Room Code", "Please enter a room code.", () => { hideModal(); }); // MODIFIED
                 return;
             }
 
@@ -1337,7 +1365,7 @@
                 const roomDoc = await getDoc(roomRef);
 
                 if (!roomDoc.exists()) {
-                    showModal("Room Not Found", "The room code you entered does not exist.", () => {});
+                    showModal("Room Not Found", "The room code you entered does not exist.", () => { hideModal(); }); // MODIFIED
                     return;
                 }
 
@@ -1346,12 +1374,12 @@
                 const maxAllowedUsers = roomData.maxParticipants || 4; // Use room's maxParticipants or default
 
                 if (currentUsers.length >= maxAllowedUsers) {
-                    showModal("Room Full", `This room has reached its maximum capacity (${maxAllowedUsers} users).`, () => {});
+                    showModal("Room Full", `This room has reached its maximum capacity (${maxAllowedUsers} users).`, () => { hideModal(); }); // MODIFIED
                     return;
                 }
 
                 if (currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-                    showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => {});
+                    showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => { hideModal(); }); // MODIFIED
                     return;
                 }
 
@@ -1361,23 +1389,22 @@
                         showModal(
                             "Enter Password",
                             "This room is password protected. Please enter the password.",
-                            async () => {
+                            async () => { // This is onConfirmCallback
                                 const enteredPassword = modalPasswordInput.value.trim();
                                 if (enteredPassword === roomData.password) {
                                     modalPasswordError.classList.add('hidden'); // Clear error if correct
-                                    // hideModal() is called by showModal's internal logic after onConfirmCallback
                                     await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                                    // hideModal() is called by performJoinRoomTransaction on success
                                 } else {
                                     modalPasswordError.textContent = "Incorrect password. Please try again.";
                                     modalPasswordError.classList.remove('hidden');
                                     modalPasswordInput.value = ''; // Clear input for re-entry
-                                    // Re-show the modal to allow re-entry
-                                    promptForPassword(); // Call itself to re-open the modal with error
+                                    // Do NOT call hideModal() here. Modal stays open.
                                 }
                             },
                             true, // showCancel
                             () => { // onCancelCallback
-                                // User cancelled, do nothing specific here, hideModal will be called.
+                                // User cancelled, hideModal will be called by showModal's default cancel logic.
                             },
                             true // showPasswordInput
                         );
@@ -1389,7 +1416,7 @@
 
             } catch (error) {
                 console.error("Error joining room (initial check):", error);
-                showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => {});
+                showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => { hideModal(); }); // MODIFIED
             }
         });
 
@@ -1397,7 +1424,7 @@
         joinRandomRoomBtn.addEventListener('click', async () => {
             const username = randomUsernameInput.value.trim();
             if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => {});
+                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
                 return;
             }
 
@@ -1407,11 +1434,13 @@
                 showModal("Anonymous Chat Warning", "You are about to join a random, unmoderated, and temporary chat room. Do not share personal information.", async () => {
                     localStorage.setItem('randomWarningShown', 'true'); // Mark as shown
                     await findRandomRoom(username);
+                    hideModal(); // Hide modal after warning and finding room
                 }, true, () => {
                     // User cancelled the warning, do nothing
                 });
             } else {
                 await findRandomRoom(username);
+                hideModal(); // Hide modal after finding room directly
             }
         });
 
@@ -1445,11 +1474,11 @@
                     await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.users, roomToJoin.maxParticipants);
                 } else {
                     // No suitable random room found, do NOT create a new one
-                    showModal("No Random Rooms Available", "Sorry, no random rooms are currently available. Please try again later or create a new room in Default Mode.", () => {});
+                    showModal("No Random Rooms Available", "Sorry, no random rooms are currently available. Please try again later or create a new room in Default Mode.", () => { hideModal(); }); // MODIFIED
                 }
             } catch (error) {
                 console.error("Error finding random room:", error);
-                showModal("Error", "Failed to find a random room. Please try again.", () => {});
+                showModal("Error", "Failed to find a random room. Please try again.", () => { hideModal(); }); // MODIFIED
             }
         };
 
@@ -1490,11 +1519,12 @@
                     // Room no longer exists (deleted by another client or timeout)
                     showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
+                        hideModal(); // MODIFIED
                     });
                 }
             }, (error) => {
                 console.error("Error listening to room:", error);
-                showModal("Connection Error", "Failed to get room updates. Please check your internet connection.", () => {});
+                showModal("Connection Error", "Failed to get room updates. Please check your internet connection.", () => { hideModal(); }); // MODIFIED
             });
 
             // Listen for messages
@@ -1510,7 +1540,7 @@
                 }
             }, (error) => {
                 console.error("Error listening to messages:", error);
-                showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => {});
+                showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => { hideModal(); }); // MODIFIED
             });
         };
 
@@ -1530,6 +1560,7 @@
 
                 showModal("Room Timed Out", "This room has been deleted due to inactivity.", async () => {
                     handleLeaveRoomCleanUp();
+                    hideModal(); // MODIFIED
                     // Attempt to delete the room document. This is idempotent.
                     try {
                         await deleteDoc(roomDocRef);
@@ -1572,7 +1603,7 @@
                 newMessageInput.value = ''; // Clear input
             } catch (error) {
                 console.error("Error sending message:", error);
-                showModal("Message Failed", "Failed to send message. Please try again.", () => {});
+                showModal("Message Failed", "Failed to send message. Please try again.", () => { hideModal(); }); // MODIFIED
             }
         });
 
@@ -1614,9 +1645,10 @@
                         }
                     });
                     handleLeaveRoomCleanUp();
+                    hideModal(); // Hide modal after successful leave
                 } catch (error) {
                     console.error("Error leaving room:", error);
-                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => {});
+                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => { hideModal(); }); // MODIFIED
                 }
             }, true); // Show cancel button
         });
