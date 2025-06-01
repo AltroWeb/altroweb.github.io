@@ -1316,10 +1316,9 @@
 
             try {
                 await setDoc(roomRef, roomData);
-                // Set currentUserObject and add beforeunload listener
-                currentUserObject = user; // Store the user object with joinTimestamp
-                window.addEventListener('beforeunload', handlePageExit);
-                // Removed document.addEventListener('visibilitychange', handleVisibilityChange);
+                // currentUserObject will be set reliably in setupRoomListeners
+                // window.addEventListener('beforeunload', handlePageExit); // REMOVED
+                // document.addEventListener('visibilitychange', handleVisibilityChange); // REMOVED
 
                 // Add join status message
                 await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${newRoomCode}/messages`), {
@@ -1404,9 +1403,9 @@
                 });
                 
                 // After successful transaction, find the user object with the correct joinTimestamp
-                currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
-                window.addEventListener('beforeunload', handlePageExit);
-                // Removed document.addEventListener('visibilitychange', handleVisibilityChange);
+                // currentUserObject will be set reliably in setupRoomListeners
+                // window.addEventListener('beforeunload', handlePageExit); // REMOVED
+                // document.addEventListener('visibilitychange', handleVisibilityChange); // REMOVED
 
                 // Only send join message if the user was not already in the room (i.e., actually joined, not just updated timestamp)
                 if (!wasUserAlreadyInRoom) {
@@ -1616,6 +1615,8 @@
                 clearInterval(inactivityTimer);
                 inactivityTimer = null;
             }
+            // Ensure beforeunload listener is removed before re-adding
+            window.removeEventListener('beforeunload', handlePageExit); // ADDED: Remove previous listener
 
             const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
             const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
@@ -1628,9 +1629,13 @@
                     const roomData = roomDoc.data();
                     currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity };
                     // Ensure currentUserObject is also set here, in case it's not fully propagated from transaction yet
-                    currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
+                    currentUserObject = currentRoom.users.find(u => u.userId === currentUserId); // currentUserObject now has Firestore Timestamp
                     renderParticipants(currentRoom.users);
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
+
+                    // ADD THE BEFOREUNLOAD LISTENER HERE, AFTER currentUserObject IS RELIABLY SET
+                    window.addEventListener('beforeunload', handlePageExit); // ADDED: Attach listener here
+
                 } else {
                     // Room no longer exists, handle immediately
                     showModal("Room Ended", "The room you were in has ended.", () => {
@@ -1808,7 +1813,6 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
-            // Removed document.removeEventListener('visibilitychange', handleVisibilityChange);
             currentUserObject = null; // Clear the user object
 
             currentRoom = null;
@@ -1841,8 +1845,6 @@
                 }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
             }
         };
-
-        // Removed handleVisibilityChange function as it's no longer needed for this specific bug fix.
 
 
         // Dark Mode Toggle Logic
