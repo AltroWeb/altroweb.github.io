@@ -1319,7 +1319,7 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
-                document.addEventListener('visibilitychange', handleVisibilityChange); // Add visibility change listener
+                // Removed document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 // Add join status message
                 await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${newRoomCode}/messages`), {
@@ -1406,7 +1406,7 @@
                 // After successful transaction, find the user object with the correct joinTimestamp
                 currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                 window.addEventListener('beforeunload', handlePageExit);
-                document.addEventListener('visibilitychange', handleVisibilityChange);
+                // Removed document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 // Only send join message if the user was not already in the room (i.e., actually joined, not just updated timestamp)
                 if (!wasUserAlreadyInRoom) {
@@ -1808,8 +1808,7 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
-            // Remove visibilitychange listener
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // Removed document.removeEventListener('visibilitychange', handleVisibilityChange);
             currentUserObject = null; // Clear the user object
 
             currentRoom = null;
@@ -1843,13 +1842,7 @@
             }
         };
 
-        // Function to handle visibility change (tab hidden/closed)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                // Tab is hidden or closing, attempt to clean up
-                handlePageExit();
-            }
-        };
+        // Removed handleVisibilityChange function as it's no longer needed for this specific bug fix.
 
 
         // Dark Mode Toggle Logic
