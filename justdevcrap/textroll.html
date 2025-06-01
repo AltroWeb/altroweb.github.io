@@ -1177,11 +1177,25 @@
         // Render messages
         const renderMessages = (messages) => {
             messagesContainer.innerHTML = ''; // Clear existing messages
-            if (messages.length === 0) {
+            
+            // Find the current user's join timestamp
+            const currentUserJoinTimestamp = currentRoom?.users?.find(u => u.userId === currentUserId)?.joinTimestamp?.toDate().getTime();
+
+            const filteredMessages = messages.filter(msg => {
+                // If currentUserJoinTimestamp is not available, show all messages (fallback)
+                // or if message timestamp is missing, include it.
+                if (!currentUserJoinTimestamp || !msg.timestamp) {
+                    return true; 
+                }
+                const messageTime = msg.timestamp.toDate().getTime();
+                return messageTime >= currentUserJoinTimestamp;
+            });
+
+            if (filteredMessages.length === 0) {
                 noMessagesYet.classList.remove('hidden');
             } else {
                 noMessagesYet.classList.add('hidden');
-                messages.forEach(msg => {
+                filteredMessages.forEach(msg => {
                     const messageDiv = document.createElement('div');
                     messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
 
@@ -1253,7 +1267,8 @@
             }
 
             const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
-            const user = { userId: currentUserId, username: username };
+            // Include joinTimestamp when creating the user object
+            const user = { userId: currentUserId, username: username, joinTimestamp: serverTimestamp() };
             const roomData = {
                 code: newRoomCode,
                 users: [user],
@@ -1269,7 +1284,7 @@
             try {
                 await setDoc(roomRef, roomData);
                 // Set currentUserObject and add beforeunload listener
-                currentUserObject = user;
+                currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
@@ -1302,38 +1317,49 @@
                 createPasswordInput.value = '';
                 setupRoomListeners(room.code);
                 updateUI();
-                // hideModal(); // This is handled by performJoinRoomTransaction or the error callbacks
             }
         });
 
         // Helper function to perform the actual join transaction
-        const performJoinRoomTransaction = async (roomRef, roomCode, username, currentUsers, roomMaxParticipants) => {
+        const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants) => {
             try {
                 await runTransaction(db, async (transaction) => {
                     const roomDoc = await transaction.get(roomRef);
                     const roomData = roomDoc.data();
-                    const usersAfterRecheck = roomData.users || [];
-                    const maxAllowedUsers = roomData.maxParticipants || roomMaxParticipants || 4; // Use room's maxParticipants or default
+                    let usersInRoom = roomData.users || [];
+                    const maxAllowedUsers = roomData.maxParticipants || roomMaxParticipants || 4;
 
-                    if (usersAfterRecheck.length >= maxAllowedUsers) {
-                        return Promise.reject(new Error("Room full (re-check)"));
-                    }
-                    if (usersAfterRecheck.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-                        return Promise.reject(new Error("Username taken (re-check)"));
+                    // Check if user is already in the room (e.g., rejoining or disconnected)
+                    let existingUserIndex = usersInRoom.findIndex(u => u.userId === currentUserId);
+
+                    if (existingUserIndex !== -1) {
+                        // User is already in the room, update their joinTimestamp and username
+                        usersInRoom[existingUserIndex].joinTimestamp = serverTimestamp();
+                        usersInRoom[existingUserIndex].username = username; // Update username in case it changed
+                    } else {
+                        // New user joining
+                        if (usersInRoom.length >= maxAllowedUsers) {
+                            return Promise.reject(new Error("Room full (re-check)"));
+                        }
+                        if (usersInRoom.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                            return Promise.reject(new Error("Username taken (re-check)"));
+                        }
+                        const newUser = { userId: currentUserId, username: username, joinTimestamp: serverTimestamp() };
+                        usersInRoom.push(newUser);
                     }
 
-                    const newUser = { userId: currentUserId, username: username };
                     transaction.update(roomRef, {
-                        users: arrayUnion(newUser),
+                        users: usersInRoom, // Update the entire array
                         lastActivity: serverTimestamp() // Update last activity on join
                     });
 
-                    currentRoom = { code: roomCode, users: [...usersAfterRecheck, newUser], maxParticipants: maxAllowedUsers };
+                    // Update currentRoom state based on the transaction result
+                    currentRoom = { code: roomCode, users: usersInRoom, maxParticipants: maxAllowedUsers };
                 });
-                // Set currentUserObject and add beforeunload listener
-                currentUserObject = { userId: currentUserId, username: username };
+                
+                // After successful transaction, find the user object with the correct joinTimestamp
+                currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                 window.addEventListener('beforeunload', handlePageExit);
-                // Add visibilitychange listener when user successfully joins a room
                 document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 setupRoomListeners(roomCode);
@@ -1376,13 +1402,17 @@
                 const currentUsers = roomData.users || [];
                 const maxAllowedUsers = roomData.maxParticipants || 4; // Use room's maxParticipants or default
 
-                if (currentUsers.length >= maxAllowedUsers) {
-                    showModal("Room Full", `This room has reached its maximum capacity (${maxAllowedUsers} users).`, () => { hideModal(); }); // MODIFIED
+                // Check if username is already taken by another active user (excluding self if rejoining)
+                const isUsernameTaken = currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
+                if (isUsernameTaken) {
+                    showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => { hideModal(); });
                     return;
                 }
 
-                if (currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-                    showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => { hideModal(); }); // MODIFIED
+                // Check if room is full, only if the current user is NOT already in the room
+                const isCurrentUserAlreadyInRoom = currentUsers.some(u => u.userId === currentUserId);
+                if (!isCurrentUserAlreadyInRoom && currentUsers.length >= maxAllowedUsers) {
+                    showModal("Room Full", `This room has reached its maximum capacity (${maxAllowedUsers} users).`, () => { hideModal(); });
                     return;
                 }
 
@@ -1396,7 +1426,7 @@
                                 const enteredPassword = modalPasswordInput.value.trim();
                                 if (enteredPassword === roomData.password) {
                                     modalPasswordError.classList.add('hidden'); // Clear error if correct
-                                    await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                                    await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers);
                                     // hideModal() is called by performJoinRoomTransaction on success
                                 } else {
                                     modalPasswordError.textContent = "Incorrect password. Please try again.";
@@ -1407,14 +1437,14 @@
                             },
                             true, // showCancel
                             () => { // onCancelCallback
-                                // User cancelled, hideModal will be called by showModal's default cancel logic.
+                                // User cancelled the warning, hideModal will be called by showModal's default cancel logic.
                             },
                             true // showPasswordInput
                         );
                     };
                     promptForPassword(); // Initial call to prompt for password
                 } else {
-                    await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                    await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers);
                 }
 
             } catch (error) {
@@ -1465,7 +1495,11 @@
                     const maxAllowedUsers = roomData.maxParticipants || 4; // Default to 4 if not set
                     // Client-side filtering for rooms that are not full and have no password
                     if (roomData.users && roomData.users.length > 0 && roomData.users.length < maxAllowedUsers && !roomData.password) {
-                        availableRooms.push(roomData);
+                        // Also check if the username is already taken by another active user in this room
+                        const isUsernameTaken = roomData.users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
+                        if (!isUsernameTaken) {
+                            availableRooms.push(roomData);
+                        }
                     }
                 });
 
@@ -1629,10 +1663,11 @@
                             const currentUsers = roomData.users || [];
 
                             // Find the exact user object to remove based on userId
-                            const userObjectInFirestore = currentUsers.find(u => u.userId === currentUserId);
+                            // Use currentUserObject which holds the exact object with joinTimestamp
+                            const userObjectToRemove = currentUsers.find(u => u.userId === currentUserId && u.username === currentUserObject.username);
 
-                            if (userObjectInFirestore) { // Ensure the user is actually found in the list
-                                const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
+                            if (userObjectToRemove) { // Ensure the user is actually found in the list
+                                const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId || u.username !== currentUserObject.username);
 
                                 if (updatedUsers.length === 0) {
                                     // If no users left, delete the room
@@ -1640,7 +1675,7 @@
                                 } else {
                                     // Otherwise, just update the user list and lastActivity
                                     transaction.update(roomRef, {
-                                        users: arrayRemove(userObjectInFirestore),
+                                        users: arrayRemove(userObjectToRemove),
                                         lastActivity: serverTimestamp() // Update last activity on leave
                                     });
                                 }
@@ -1688,7 +1723,7 @@
                 // This is a best-effort attempt as the browser might terminate before the write completes.
                 // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
                 updateDoc(roomRef, {
-                    users: arrayRemove(currentUserObject),
+                    users: arrayRemove(currentUserObject), // Use the stored exact object
                     lastActivity: serverTimestamp() // Update last activity on exit
                 }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
             }
