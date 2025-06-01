@@ -281,8 +281,11 @@
         .dark-mode-toggle-container {
             position: absolute;
             top: 1rem;
-            right: 1rem;
+            right: 1rem; /* Default for home screen */
             z-index: 10; /* Ensure it's above other elements in the card */
+            display: flex; /* To center emoji */
+            align-items: center;
+            justify-content: center;
         }
         #dark-mode-toggle, #dark-mode-toggle-chat {
             background-color: var(--card-bg);
@@ -294,15 +297,17 @@
             cursor: pointer;
             box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
             transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
-            display: flex; /* To center emoji */
-            align-items: center;
-            justify-content: center;
         }
         #dark-mode-toggle:hover, #dark-mode-toggle-chat:hover {
             transform: scale(1.1);
         }
         #dark-mode-toggle:active, #dark-mode-toggle-chat:active {
             transform: scale(0.95);
+        }
+
+        /* Specific adjustment for the toggle button within the chat room screen */
+        #chat-room-screen .dark-mode-toggle-container {
+            right: 5rem; /* Move it left to make space for the Leave Room button */
         }
 
         /* Text Icon specific styles */
@@ -894,7 +899,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-             // Your web app's Firebase configuration
+              // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
     apiKey: "AIzaSyA8ErpL72u6bTzPuOx51l4Mb51NDCDBDBY",
@@ -1352,22 +1357,28 @@
 
             // Listen for room data changes (users, capacity)
             unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
+                const previousRoomState = currentRoom; // Store previous state for comparison
+
                 if (docSnap.exists()) {
                     const roomData = docSnap.data();
                     currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4 }; // Update maxParticipants
                     renderParticipants(currentRoom.users);
 
-                    // Check if current user is still in the room
+                    // Check if current user was in the room and is now removed
+                    // This condition prevents false positives right after joining
+                    const userWasInRoom = previousRoomState && previousRoomState.users.some(u => u.userId === currentUserId);
                     const userStillInRoom = roomData.users.some(u => u.userId === currentUserId);
-                    if (!userStillInRoom) {
-                        showModal("Room Left", "You have been removed from the room or the room no longer exists.", () => {
-                            handleLeaveRoomCleanUp(); // Clean up without Firestore operation
+
+                    if (userWasInRoom && !userStillInRoom) {
+                        // This means the user was explicitly removed by another action or the room was reset
+                        showModal("Room Left", "You have been removed from the room.", () => {
+                            handleLeaveRoomCleanUp();
                         });
                     }
                 } else {
                     // Room no longer exists
                     showModal("Room Ended", "The room you were in has ended.", () => {
-                        handleLeaveRoomCleanUp(); // Clean up without Firestore operation
+                        handleLeaveRoomCleanUp();
                     });
                 }
             }, (error) => {
@@ -1418,7 +1429,6 @@
                 if (!currentRoom || !currentUserId) return;
 
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                const userToRemove = { userId: currentUserId, username: (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim()) };
 
                 try {
                     await runTransaction(db, async (transaction) => {
@@ -1427,17 +1437,24 @@
                             const roomData = roomDoc.data();
                             const currentUsers = roomData.users || [];
 
-                            // Filter out the user to remove
-                            const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
+                            // Find the exact user object to remove based on userId
+                            const userObjectInFirestore = currentUsers.find(u => u.userId === currentUserId);
 
-                            if (updatedUsers.length === 0) {
-                                // If no users left, delete the room
-                                transaction.delete(roomRef);
+                            if (userObjectInFirestore) { // Ensure the user is actually found
+                                const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
+
+                                if (updatedUsers.length === 0) {
+                                    // If no users left, delete the room
+                                    transaction.delete(roomRef);
+                                } else {
+                                    // Otherwise, just update the user list using arrayRemove with the found object
+                                    transaction.update(roomRef, {
+                                        users: arrayRemove(userObjectInFirestore)
+                                    });
+                                }
                             } else {
-                                // Otherwise, just update the user list
-                                transaction.update(roomRef, {
-                                    users: arrayRemove(userToRemove) // Use arrayRemove to remove the specific user object
-                                });
+                                // User not found in room, maybe they already left or never fully joined
+                                console.warn("Attempted to leave room, but user not found in participants list in Firestore.");
                             }
                         }
                     });
