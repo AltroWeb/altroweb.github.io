@@ -1830,6 +1830,7 @@
         // For truly robust presence management, a server-side solution (e.g., Cloud Functions
         // monitoring 'lastActivity' timestamps) is recommended.
         const handlePageExit = () => {
+            console.log("handlePageExit triggered. Attempting client-side cleanup (best effort)."); // Added console log
             if (currentRoom && currentUserId) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
                 
