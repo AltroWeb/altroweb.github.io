@@ -4,12 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textroll Chat App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* General Body and Container Styles */
         body {
             font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #8b5cf6, #4f46e5); /* from-purple-500 to-indigo-600 */
+            color: #374151; /* text-gray-800 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem; /* p-4 */
+            margin: 0;
         }
+
         /* Custom scrollbar for chat messages */
         .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
@@ -40,114 +50,467 @@
         .animate-scaleIn {
             animation: scaleIn 0.3s ease-out forwards;
         }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            inset: 0; /* top:0, right:0, bottom:0, left:0 */
+            background: linear-gradient(to bottom right, #8b5cf6, #4f46e5);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        #loading-screen.hidden {
+            display: none;
+        }
+
+        /* Modal Styles */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(107, 114, 128, 0.5); /* bg-gray-600 bg-opacity-50 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 1rem;
+        }
+        #modal-overlay.hidden {
+            display: none;
+        }
+        #modal-content {
+            background-color: #fff;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
+            padding: 1.5rem; /* p-6 */
+            max-width: 24rem; /* max-w-sm */
+            width: 100%;
+            transform: scale(0.95); /* scale-95 */
+            opacity: 0;
+            transition: all 0.3s ease-in-out; /* transition-all duration-300 */
+        }
+        #modal-content.show { /* For animation trigger */
+            transform: scale(1);
+            opacity: 1;
+        }
+        #modal-title {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* text-gray-800 */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        #modal-message {
+            color: #4b5563; /* text-gray-600 */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+        #modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem; /* space-x-3 */
+        }
+        #modal-cancel-btn {
+            padding: 0.625rem 1.25rem; /* px-5 py-2 */
+            border-radius: 0.5rem; /* rounded-lg */
+            color: #374151; /* text-gray-700 */
+            background-color: #e5e7eb; /* bg-gray-200 */
+            transition: background-color 0.2s ease-in-out; /* transition duration-200 ease-in-out */
+        }
+        #modal-cancel-btn:hover {
+            background-color: #d1d5db; /* hover:bg-gray-300 */
+        }
+        #modal-cancel-btn.hidden {
+            display: none;
+        }
+        #modal-ok-btn {
+            padding: 0.625rem 1.25rem; /* px-5 py-2 */
+            border-radius: 0.5rem; /* rounded-lg */
+            background-color: #2563eb; /* bg-blue-600 */
+            color: #fff; /* text-white */
+            transition: background-color 0.2s ease-in-out;
+        }
+        #modal-ok-btn:hover {
+            background-color: #1d4ed8; /* hover:bg-blue-700 */
+        }
+        /* Focus styles for buttons */
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 */
+        }
+        #modal-cancel-btn:focus {
+            box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.75); /* focus:ring-gray-400 */
+        }
+        #leave-room-btn:focus {
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.75); /* focus:ring-red-400 */
+        }
+        #create-room-btn:focus, #send-message-btn:focus {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.75); /* focus:ring-indigo-500 */
+        }
+        #join-room-btn:focus {
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.75); /* focus:ring-purple-500 */
+        }
+
+
+        /* Home Screen */
+        #home-screen {
+            background-color: #fff;
+            padding: 2rem; /* p-8 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            width: 100%;
+            max-width: 28rem; /* max-w-md */
+            text-align: center;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.5s ease-in-out; /* transition-all duration-500 */
+        }
+        #home-screen.hidden {
+            display: none;
+        }
+        #home-screen h1 {
+            font-size: 3rem; /* text-5xl */
+            font-weight: 800; /* font-extrabold */
+            color: #4338ca; /* text-indigo-700 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            letter-spacing: -0.025em; /* tracking-tight */
+        }
+        #home-screen p {
+            color: #4b5563; /* text-gray-600 */
+            margin-bottom: 2rem; /* mb-8 */
+            font-size: 1.125rem; /* text-lg */
+        }
+        #home-screen .input-group {
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+        #home-screen .input-group label {
+            display: block;
+            text-align: left;
+            color: #374151; /* text-gray-700 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        #home-screen input[type="text"] {
+            width: 100%;
+            padding: 0.75rem; /* p-3 */
+            border: 1px solid #d1d5db; /* border border-gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            transition: border-color 0.2s, box-shadow 0.2s; /* transition duration-200 */
+        }
+        #home-screen input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); /* focus:ring-2 focus:ring-indigo-500 */
+            border-color: transparent; /* focus:border-transparent */
+        }
+        #home-screen .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* space-y-4 */
+        }
+        #home-screen button {
+            width: 100%;
+            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            color: #fff;
+            font-weight: 600; /* font-semibold */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition duration-300 ease-in-out */
+        }
+        #home-screen button:hover {
+            transform: scale(1.05); /* hover:scale-105 */
+        }
+        #create-room-btn {
+            background-color: #4f46e5; /* bg-indigo-600 */
+        }
+        #create-room-btn:hover {
+            background-color: #4338ca; /* hover:bg-indigo-700 */
+        }
+        #join-room-btn {
+            background-color: #9333ea; /* bg-purple-600 */
+        }
+        #join-room-btn:hover {
+            background-color: #7e22ce; /* hover:bg-purple-700 */
+        }
+        #user-id-display {
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* text-gray-500 */
+            margin-top: 1.5rem; /* mt-6 */
+        }
+
+        /* Chat Room Screen */
+        #chat-room-screen {
+            background-color: #fff;
+            padding: 1.5rem; /* p-6 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            width: 100%;
+            max-width: 42rem; /* max-w-2xl */
+            display: flex;
+            flex-direction: column;
+            height: 85vh; /* h-[85vh] */
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.5s ease-in-out;
+        }
+        #chat-room-screen.hidden {
+            display: none;
+        }
+        #chat-room-screen .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem; /* mb-4 */
+            padding-bottom: 1rem; /* pb-4 */
+            border-bottom: 1px solid #e5e7eb; /* border-b border-gray-200 */
+        }
+        #chat-room-screen h2 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #4338ca; /* text-indigo-700 */
+        }
+        #current-room-code {
+            color: #9333ea; /* text-purple-600 */
+        }
+        #leave-room-btn {
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            background-color: #ef4444; /* bg-red-500 */
+            color: #fff;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            transition: background-color 0.2s ease-in-out; /* transition duration-200 ease-in-out */
+        }
+        #leave-room-btn:hover {
+            background-color: #dc2626; /* hover:bg-red-600 */
+        }
+
+        #chat-room-screen .participants-section {
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        #chat-room-screen .participants-section h3 {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #374151; /* text-gray-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        #participants-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem; /* gap-2 */
+            font-size: 0.875rem; /* text-sm */
+            color: #4b5563; /* text-gray-600 */
+        }
+        #participants-list span {
+            padding: 0.25rem 0.75rem; /* px-3 py-1 */
+            border-radius: 9999px; /* rounded-full */
+        }
+        #participants-list span.bg-indigo-100 {
+            background-color: #e0e7ff; /* bg-indigo-100 */
+            color: #4338ca; /* text-indigo-700 */
+            font-weight: 500; /* font-medium */
+        }
+        #participants-list span.bg-gray-100 {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            color: #4b5563; /* text-gray-600 */
+        }
+
+        #messages-container {
+            flex-grow: 1; /* flex-grow */
+            overflow-y: auto; /* overflow-y-auto */
+            padding: 1rem; /* p-4 */
+            background-color: #f9fafb; /* bg-gray-50 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 1rem; /* mb-4 */
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); /* shadow-inner */
+        }
+        #no-messages-yet {
+            text-align: center;
+            color: #6b7280; /* text-gray-500 */
+            font-style: italic;
+            margin-top: 1rem; /* mt-4 */
+        }
+        #no-messages-yet.hidden {
+            display: none;
+        }
+
+        .message-item {
+            display: flex;
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+        .message-item.justify-end {
+            justify-content: flex-end;
+        }
+        .message-item.justify-start {
+            justify-content: flex-start;
+        }
+        .message-content {
+            max-width: 70%; /* max-w-[70%] */
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+        }
+        .message-item.justify-end .message-content {
+            background-color: #6366f1; /* bg-indigo-500 */
+            color: #fff;
+            border-bottom-right-radius: 0; /* rounded-br-none */
+        }
+        .message-item.justify-start .message-content {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            color: #1f2937; /* text-gray-800 */
+            border-bottom-left-radius: 0; /* rounded-bl-none */
+        }
+        .message-content .sender-info {
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 0.25rem; /* mb-1 */
+            opacity: 0.8; /* opacity-80 */
+        }
+        .message-content p {
+            font-size: 0.875rem; /* text-sm */
+            word-break: break-word; /* break-words */
+        }
+        .message-content .timestamp {
+            text-align: right;
+            font-size: 0.75rem; /* text-xs */
+            opacity: 0.6; /* opacity-60 */
+            margin-top: 0.25rem; /* mt-1 */
+        }
+
+        #message-form {
+            display: flex;
+            gap: 0.75rem; /* gap-3 */
+        }
+        #new-message-input {
+            flex-grow: 1; /* flex-grow */
+            padding: 0.75rem; /* p-3 */
+            border: 1px solid #d1d5db; /* border border-gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #new-message-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); /* focus:ring-2 focus:ring-indigo-500 */
+            border-color: transparent; /* focus:border-transparent */
+        }
+        #new-message-input:disabled {
+            background-color: #f3f4f6; /* gray-100 */
+            cursor: not-allowed;
+        }
+        #send-message-btn {
+            padding: 0.75rem 1.5rem; /* px-6 py-3 */
+            background-color: #4f46e5; /* bg-indigo-600 */
+            color: #fff;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            transition: background-color 0.2s ease-in-out;
+        }
+        #send-message-btn:hover {
+            background-color: #4338ca; /* hover:bg-indigo-700 */
+        }
+        #send-message-btn:disabled {
+            background-color: #9ca3af; /* gray-400 */
+            cursor: not-allowed;
+            transform: none; /* remove hover effect */
+            box-shadow: none;
+        }
+
+        /* Responsive Adjustments (md breakpoint equivalent ~768px) */
+        @media (min-width: 768px) {
+            /* No specific changes needed for this layout as it's already fluid and max-width constrained */
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-purple-500 to-indigo-600 font-sans text-gray-800 flex flex-col items-center justify-center p-4">
+<body class="min-h-screen">
 
-    <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center z-50">
+    <div id="loading-screen">
         <div class="text-2xl font-bold">Loading Textroll...</div>
     </div>
 
-    <div id="modal-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
-        <div id="modal-content" class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full transform transition-all duration-300 scale-95 opacity-0">
-            <h3 id="modal-title" class="text-xl font-semibold text-gray-800 mb-4"></h3>
-            <p id="modal-message" class="text-gray-600 mb-6"></p>
-            <div class="flex justify-end space-x-3">
-                <button id="modal-cancel-btn" class="px-5 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 hidden">
+    <div id="modal-overlay" class="hidden">
+        <div id="modal-content">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <div id="modal-buttons">
+                <button id="modal-cancel-btn" class="hidden">
                     Cancel
                 </button>
-                <button id="modal-ok-btn" class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                <button id="modal-ok-btn">
                     OK
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="home-screen" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center transform transition-all duration-500 scale-95 opacity-0 animate-scaleIn hidden">
-        <h1 class="text-5xl font-extrabold text-indigo-700 mb-6 tracking-tight">
-            Textroll
-        </h1>
-        <p class="text-gray-600 mb-8 text-lg">
+    <div id="home-screen" class="hidden">
+        <h1>Textroll</h1>
+        <p>
             Connect and chat anonymously with friends or strangers!
         </p>
 
-        <div class="mb-6">
-            <label for="username-input" class="block text-left text-gray-700 text-sm font-medium mb-2">
+        <div class="input-group">
+            <label for="username-input">
                 Enter your username:
             </label>
             <input
                 type="text"
                 id="username-input"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
                 placeholder="e.g., ChatMaster"
                 maxlength="15"
             />
         </div>
 
-        <div class="mb-8">
-            <label for="room-code-input" class="block text-left text-gray-700 text-sm font-medium mb-2">
+        <div class="input-group">
+            <label for="room-code-input">
                 Or enter a room code to join:
             </label>
             <input
                 type="text"
                 id="room-code-input"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 uppercase"
                 placeholder="e.g., ABCD"
                 maxlength="4"
             />
         </div>
 
-        <div class="flex flex-col space-y-4">
-            <button
-                id="create-room-btn"
-                class="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
-            >
+        <div class="button-group">
+            <button id="create-room-btn">
                 Create New Room
             </button>
-            <button
-                id="join-room-btn"
-                class="w-full py-3 px-6 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75"
-            >
+            <button id="join-room-btn">
                 Join Room
             </button>
         </div>
-        <p class="text-xs text-gray-500 mt-6" id="user-id-display"></p>
+        <p id="user-id-display"></p>
     </div>
 
-    <div id="chat-room-screen" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col h-[85vh] transform transition-all duration-500 scale-95 opacity-0 animate-scaleIn hidden">
-        <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
-            <h2 class="text-3xl font-bold text-indigo-700">
-                Room: <span id="current-room-code" class="text-purple-600"></span>
+    <div id="chat-room-screen" class="hidden">
+        <div class="header">
+            <h2>
+                Room: <span id="current-room-code"></span>
             </h2>
-            <button
-                id="leave-room-btn"
-                class="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
-            >
+            <button id="leave-room-btn">
                 Leave Room
             </button>
         </div>
 
-        <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Participants (<span id="participants-count">0</span>/4):</h3>
-            <div id="participants-list" class="flex flex-wrap gap-2 text-sm text-gray-600">
+        <div class="participants-section">
+            <h3>Participants (<span id="participants-count">0</span>/4):</h3>
+            <div id="participants-list">
                 </div>
         </div>
 
-        <div id="messages-container" class="flex-grow overflow-y-auto p-4 bg-gray-50 rounded-lg mb-4 shadow-inner custom-scrollbar">
-            <p id="no-messages-yet" class="text-center text-gray-500 italic mt-4 hidden">No messages yet. Start the conversation!</p>
+        <div id="messages-container" class="custom-scrollbar">
+            <p id="no-messages-yet" class="hidden">No messages yet. Start the conversation!</p>
             <div id="messages-end-ref"></div> </div>
 
-        <form id="message-form" class="flex gap-3">
+        <form id="message-form">
             <input
                 type="text"
                 id="new-message-input"
-                class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
                 placeholder="Type your message..."
             />
             <button
                 type="submit"
                 id="send-message-btn"
-                class="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
             >
                 Send
             </button>
@@ -156,13 +519,24 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for Firebase config and app ID, provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-textroll-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+       // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyA8ErpL72u6bTzPuOx51l4Mb51NDCDBDBY",
+    authDomain: "textroll-79302.firebaseapp.com",
+    projectId: "textroll-79302",
+    storageBucket: "textroll-79302.firebasestorage.app",
+    messagingSenderId: "928701458132",
+    appId: "1:928701458132:web:5eec69352bd35998023d41",
+    measurementId: "G-DP3QEKB09S"
+  };
+
+
+        // Use your Firebase projectId for the Firestore path. This is crucial.
+        const textrollAppId = firebaseConfig.projectId;
 
         // Initialize Firebase App
         const app = initializeApp(firebaseConfig);
@@ -196,6 +570,8 @@
         const modalMessage = document.getElementById('modal-message');
         const modalOkBtn = document.getElementById('modal-ok-btn');
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalButtons = document.getElementById('modal-buttons');
+
 
         // Application State
         let currentUserId = null;
@@ -232,12 +608,12 @@
             modalOverlay.classList.remove('hidden');
             // Trigger animation
             setTimeout(() => {
-                modalContent.classList.remove('opacity-0', 'scale-95');
+                modalContent.classList.add('show'); // Add 'show' class to trigger CSS animation
             }, 10);
         };
 
         const hideModal = () => {
-            modalContent.classList.add('opacity-0', 'scale-95');
+            modalContent.classList.remove('show'); // Remove 'show' class to reverse CSS animation
             setTimeout(() => {
                 modalOverlay.classList.add('hidden');
             }, 300); // Match animation duration
@@ -251,6 +627,7 @@
                 homeScreen.classList.add('hidden');
                 chatRoomScreen.classList.remove('hidden');
                 chatRoomScreen.classList.add('animate-scaleIn'); // Apply animation
+                homeScreen.classList.remove('animate-scaleIn'); // Ensure home screen animation is removed
                 currentRoomCodeDisplay.textContent = currentRoom.code;
                 renderParticipants(currentRoom.users);
                 // Enable message input and send button if current user is in the room
@@ -261,6 +638,7 @@
                 homeScreen.classList.remove('hidden');
                 homeScreen.classList.add('animate-scaleIn'); // Apply animation
                 chatRoomScreen.classList.add('hidden');
+                chatRoomScreen.classList.remove('animate-scaleIn'); // Ensure chat screen animation is removed
             }
         };
 
@@ -270,7 +648,7 @@
             participantsCount.textContent = users.length;
             users.forEach(user => {
                 const span = document.createElement('span');
-                span.className = `px-3 py-1 rounded-full ${user.userId === currentUserId ? 'bg-indigo-100 text-indigo-700 font-medium' : 'bg-gray-100 text-gray-600'}`;
+                span.className = `${user.userId === currentUserId ? 'bg-indigo-100 text-indigo-700 font-medium' : 'bg-gray-100 text-gray-600'}`;
                 span.textContent = `${user.username} ${user.userId === currentUserId ? '(You)' : ''}`;
                 participantsList.appendChild(span);
             });
@@ -285,25 +663,20 @@
                 noMessagesYet.classList.add('hidden');
                 messages.forEach(msg => {
                     const messageDiv = document.createElement('div');
-                    messageDiv.className = `flex mb-3 ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
+                    messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
 
                     const contentDiv = document.createElement('div');
-                    contentDiv.className = `max-w-[70%] p-3 rounded-xl shadow-sm ${
-                        msg.senderId === currentUserId
-                            ? 'bg-indigo-500 text-white rounded-br-none'
-                            : 'bg-gray-200 text-gray-800 rounded-bl-none'
-                    }`;
+                    contentDiv.className = "message-content";
 
                     const senderSpan = document.createElement('div');
-                    senderSpan.className = "text-xs font-semibold mb-1 opacity-80";
+                    senderSpan.className = "sender-info";
                     senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
 
                     const textP = document.createElement('p');
-                    textP.className = "text-sm break-words";
                     textP.textContent = msg.text;
 
                     const timestampDiv = document.createElement('div');
-                    timestampDiv.className = "text-right text-xs opacity-60 mt-1";
+                    timestampDiv.className = "timestamp";
                     // Ensure timestamp is a Date object before calling toLocaleTimeString
                     const date = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date();
                     timestampDiv.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -326,11 +699,8 @@
                 userIdDisplay.textContent = `Your User ID: ${currentUserId}`;
             } else {
                 try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    // No initialAuthToken for self-hosted apps, always sign in anonymously
+                    await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Error signing in:", error);
                     showModal("Authentication Error", "Could not sign in. Please try again.", () => {});
@@ -354,7 +724,7 @@
 
             // Ensure room code is unique
             while (roomExists && attempts < maxAttempts) {
-                const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, newRoomCode);
+                const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
                 const docSnap = await getDoc(roomRef);
                 if (!docSnap.exists()) {
                     roomExists = false;
@@ -369,7 +739,7 @@
                 return;
             }
 
-            const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, newRoomCode);
+            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
             const user = { userId: currentUserId, username: username };
 
             try {
@@ -402,7 +772,7 @@
                 return;
             }
 
-            const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, roomCode);
+            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
 
             try {
                 await runTransaction(db, async (transaction) => {
@@ -449,8 +819,8 @@
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
 
-            const roomDocRef = doc(db, `artifacts/${appId}/public/data/rooms`, roomCode);
-            const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/rooms/${roomCode}/messages`);
+            const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
+            const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
 
             // Listen for room data changes (users, capacity)
             unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
@@ -493,7 +863,7 @@
             const newMessageText = newMessageInput.value.trim();
             if (!newMessageText || !currentRoom || !currentUserId) return;
 
-            const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/rooms/${currentRoom.code}/messages`);
+            const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
             try {
                 await addDoc(messagesCollectionRef, {
                     senderId: currentUserId,
@@ -513,7 +883,7 @@
             showModal("Leave Room", "Are you sure you want to leave this room?", async () => {
                 if (!currentRoom || !currentUserId) return;
 
-                const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, currentRoom.code);
+                const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
                 const userToRemove = { userId: currentUserId, username: usernameInput.value.trim() };
 
                 try {
@@ -532,7 +902,7 @@
                             } else {
                                 // Otherwise, just update the user list
                                 transaction.update(roomRef, {
-                                    users: updatedUsers
+                                    users: arrayRemove(userToRemove) // Use arrayRemove to remove the specific user object
                                 });
                             }
                         }
