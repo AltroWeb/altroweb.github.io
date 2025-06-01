@@ -589,6 +589,26 @@
             margin-top: 0.25rem;
         }
 
+        /* NEW: Styles for status messages (join/leave) */
+        .message-item.status-message {
+            justify-content: center; /* Center the status messages */
+            margin-bottom: 0.5rem; /* Slightly less margin for status messages */
+        }
+        .message-item.status-message .message-content {
+            background-color: transparent; /* No background for status */
+            color: var(--text-color-secondary); /* Lighter text color */
+            font-style: italic;
+            text-align: center;
+            max-width: 90%; /* Allow wider for status messages */
+            padding: 0.25rem 0.75rem; /* Smaller padding */
+            box-shadow: none; /* No shadow */
+            border-radius: 0.5rem; /* Still rounded corners */
+        }
+        .message-item.status-message .sender-info,
+        .message-item.status-message .timestamp {
+            display: none; /* Hide sender and timestamp for status messages */
+        }
+
         #message-form {
             display: flex;
             gap: 0.75rem;
@@ -1202,27 +1222,35 @@
                 noMessagesYet.classList.add('hidden');
                 filteredMessages.forEach(msg => {
                     const messageDiv = document.createElement('div');
-                    messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
-
                     const contentDiv = document.createElement('div');
-                    contentDiv.className = "message-content";
 
-                    const senderSpan = document.createElement('div');
-                    senderSpan.className = "sender-info";
-                    senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
+                    if (msg.type === 'status') { // Handle status messages (join/leave)
+                        messageDiv.className = `message-item status-message`;
+                        contentDiv.className = "message-content";
+                        const textP = document.createElement('p');
+                        textP.textContent = msg.text;
+                        contentDiv.appendChild(textP);
+                    } else { // Regular text message
+                        messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
+                        contentDiv.className = "message-content";
 
-                    const textP = document.createElement('p');
-                    textP.textContent = msg.text;
+                        const senderSpan = document.createElement('div');
+                        senderSpan.className = "sender-info";
+                        senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
 
-                    const timestampDiv = document.createElement('div');
-                    timestampDiv.className = "timestamp";
-                    // Ensure timestamp is not null/undefined before attempting to convert and format
-                    const date = msg.timestamp ? (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate()) : null;
-                    timestampDiv.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; // Display empty string if date is null
+                        const textP = document.createElement('p');
+                        textP.textContent = msg.text;
 
-                    contentDiv.appendChild(senderSpan);
-                    contentDiv.appendChild(textP); // Always append text for now
-                    contentDiv.appendChild(timestampDiv);
+                        const timestampDiv = document.createElement('div');
+                        timestampDiv.className = "timestamp";
+                        // Ensure timestamp is not null/undefined before attempting to convert and format
+                        const date = msg.timestamp ? (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate()) : null;
+                        timestampDiv.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; // Display empty string if date is null
+
+                        contentDiv.appendChild(senderSpan);
+                        contentDiv.appendChild(textP); // Always append text for now
+                        contentDiv.appendChild(timestampDiv);
+                    }
                     messageDiv.appendChild(contentDiv);
                     messagesContainer.appendChild(messageDiv);
                 });
@@ -1291,6 +1319,17 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
+                document.addEventListener('visibilitychange', handleVisibilityChange); // Add visibility change listener
+
+                // Add join status message
+                await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${newRoomCode}/messages`), {
+                    senderId: currentUserId,
+                    senderUsername: username,
+                    type: 'status', // New message type
+                    text: `${username} has joined the room.`,
+                    timestamp: serverTimestamp(),
+                });
+
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
@@ -1327,6 +1366,7 @@
 
         // Helper function to perform the actual join transaction
         const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants) => {
+            let wasUserAlreadyInRoom = false; // Flag to check if user was already in the room before transaction
             try {
                 await runTransaction(db, async (transaction) => {
                     const roomDoc = await transaction.get(roomRef);
@@ -1338,6 +1378,7 @@
                     let existingUserIndex = usersInRoom.findIndex(u => u.userId === currentUserId);
 
                     if (existingUserIndex !== -1) {
+                        wasUserAlreadyInRoom = true; // User was already in the room
                         // User is already in the room, update their joinTimestamp and username
                         usersInRoom[existingUserIndex].joinTimestamp = new Date(); // Use Date object
                         usersInRoom[existingUserIndex].username = username; // Update username in case it changed
@@ -1366,6 +1407,17 @@
                 currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                 window.addEventListener('beforeunload', handlePageExit);
                 document.addEventListener('visibilitychange', handleVisibilityChange);
+
+                // Only send join message if the user was not already in the room (i.e., actually joined, not just updated timestamp)
+                if (!wasUserAlreadyInRoom) {
+                    await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`), {
+                        senderId: currentUserId,
+                        senderUsername: username,
+                        type: 'status',
+                        text: `${username} has joined the room.`,
+                        timestamp: serverTimestamp(),
+                    });
+                }
 
                 await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
                 updateUI();
@@ -1699,6 +1751,15 @@
                 const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
 
                 try {
+                    // Send a "leave" status message when user explicitly leaves
+                    await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`), {
+                        senderId: currentUserId,
+                        senderUsername: currentUsername, // Use the username determined at the start of the event
+                        type: 'status',
+                        text: `${currentUsername} has left the room.`,
+                        timestamp: serverTimestamp(),
+                    });
+
                     await runTransaction(db, async (transaction) => {
                         const roomDoc = await transaction.get(roomRef);
                         if (roomDoc.exists()) {
@@ -1763,6 +1824,15 @@
         const handlePageExit = () => {
             if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                // Send a "leave" status message on page exit (best effort)
+                addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`), {
+                    senderId: currentUserId,
+                    senderUsername: currentUserObject.username, // Use the stored username
+                    type: 'status',
+                    text: `${currentUserObject.username} has left the room.`,
+                    timestamp: serverTimestamp(),
+                }).catch(e => console.warn("Failed to send leave message on exit (best-effort):", e));
+
                 // Directly attempt to remove the user object.
                 // This is a best-effort attempt as the browser might terminate before the write completes.
                 // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
