@@ -1384,7 +1384,7 @@
                         if (usersInRoom.length >= maxAllowedUsers) {
                             return Promise.reject(new Error("Room full (re-check)"));
                         }
-                        if (usersInRoom.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                        if (usersInRoom.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId)) {
                             return Promise.reject(new Error("Username taken (re-check)"));
                         }
                         const newUser = { userId: currentUserId, username: username, joinTimestamp: new Date() }; // Use Date object
@@ -1823,6 +1823,12 @@
         };
 
         // Function to handle page exit (browser close, tab close, navigation away)
+        // IMPORTANT: The `beforeunload` event is a synchronous event.
+        // Asynchronous operations (like Firestore updates) initiated here are not guaranteed
+        // to complete before the page unloads, especially on hard exits (browser/tab close).
+        // This function represents a "best effort" to clean up user presence.
+        // For truly robust presence management, a server-side solution (e.g., Cloud Functions
+        // monitoring 'lastActivity' timestamps) is recommended.
         const handlePageExit = () => {
             if (currentRoom && currentUserId) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
