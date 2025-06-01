@@ -609,6 +609,22 @@
             display: none; /* Hide sender and timestamp for status messages */
         }
 
+        /* NEW: Styling for typing status */
+        #typing-status {
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem; /* Space between typing status and message input */
+            text-align: center;
+            height: 1.25rem; /* Reserve space to prevent layout shift */
+            opacity: 0; /* Start hidden */
+            transition: opacity 0.3s ease-in-out;
+        }
+        #typing-status.show {
+            opacity: 1; /* Show when active */
+        }
+
+
         #message-form {
             display: flex;
             gap: 0.75rem;
@@ -963,6 +979,8 @@
             <p id="no-messages-yet" class="hidden">No messages yet. Start the conversation!</p>
             <div id="messages-end-ref"></div> </div>
 
+        <div id="typing-status" class="hidden"></div>
+
         <form id="message-form">
             <input
                 type="text"
@@ -1045,6 +1063,7 @@
         const sendMessageBtn = document.getElementById('send-message-btn');
         const messageForm = document.getElementById('message-form');
         const leaveRoomBtn = document.getElementById('leave-room-btn');
+        const typingStatusDisplay = document.getElementById('typing-status'); // NEW: Typing status display element
 
         // Main Modal Elements
         const modalOverlay = document.getElementById('modal-overlay');
@@ -1078,12 +1097,19 @@
         let currentRoom = null;
         let unsubscribeRoomListener = null;
         let unsubscribeMessagesListener = null;
+        let unsubscribeTypingStatusListener = null; // NEW: Listener for typing status
         let currentMode = 'default'; // 'default' or 'random'
         let inactivityTimer = null; // Timer for room inactivity
         const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes in milliseconds
 
         // Global variable to store the user object for quick access on exit
         let currentUserObject = null;
+
+        // NEW: Typing status variables
+        let isTyping = false;
+        let typingTimeout = null;
+        const TYPING_INDICATOR_TIMEOUT_MS = 3000; // 3 seconds after last keypress to clear typing status
+        const TYPING_UPDATE_INTERVAL_MS = 1000; // Update Firestore every 1 second while typing
 
         // Utility function to generate a random room code (6 characters)
         const generateRoomCode = () => {
@@ -1606,11 +1632,33 @@
             }
         };
 
+        // NEW: Function to update typing status in Firestore
+        const updateTypingStatus = async (isTypingStatus) => {
+            if (!currentRoom || !currentUserId) return;
+
+            const typingStatusDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/typingStatus`, currentUserId);
+            const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
+
+            try {
+                if (isTypingStatus) {
+                    await setDoc(typingStatusDocRef, {
+                        username: currentUsername,
+                        timestamp: serverTimestamp()
+                    });
+                } else {
+                    await deleteDoc(typingStatusDocRef);
+                }
+            } catch (error) {
+                console.error("Error updating typing status:", error);
+            }
+        };
+
         // Setup real-time listeners for room data and messages
         const setupRoomListeners = async (roomCode) => { // MODIFIED: Made async
             // Unsubscribe previous listeners if any
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+            if (unsubscribeTypingStatusListener) unsubscribeTypingStatusListener(); // NEW: Unsubscribe typing status listener
             // Clear any existing inactivity timer
             if (inactivityTimer) {
                 clearInterval(inactivityTimer);
@@ -1619,6 +1667,7 @@
 
             const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
             const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
+            const typingStatusCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/typingStatus`); // NEW: Typing status collection ref
 
             // --- Step 1: Ensure currentRoom is populated first ---
             // Fetch room data once to ensure currentRoom is immediately available
@@ -1704,6 +1753,29 @@
                 console.error("Error listening to messages:", error);
                 showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => { hideModal(); });
             });
+
+            // NEW: Listen for typing status changes
+            unsubscribeTypingStatusListener = onSnapshot(typingStatusCollectionRef, (snapshot) => {
+                const typingUsers = [];
+                const currentTime = Date.now();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Filter out the current user and users whose typing status is too old
+                    if (doc.id !== currentUserId && data.timestamp && (currentTime - data.timestamp.toDate().getTime() < TYPING_INDICATOR_TIMEOUT_MS)) {
+                        typingUsers.push(data.username);
+                    }
+                });
+
+                if (typingUsers.length > 0) {
+                    typingStatusDisplay.textContent = `${typingUsers.join(', ')} ${typingUsers.length > 1 ? 'are' : 'is'} typing...`;
+                    typingStatusDisplay.classList.add('show');
+                } else {
+                    typingStatusDisplay.textContent = '';
+                    typingStatusDisplay.classList.remove('show');
+                }
+            }, (error) => {
+                console.error("Error listening to typing status:", error);
+            });
         };
 
 
@@ -1735,10 +1807,33 @@
                 });
 
                 newMessageInput.value = ''; // Clear input
+                // NEW: Clear typing status after sending a message
+                isTyping = false;
+                clearTimeout(typingTimeout);
+                updateTypingStatus(false);
+
             } catch (error) {
                 console.error("Error sending message:", error);
                 showModal("Message Failed", "Failed to send message. Please try again.", () => { hideModal(); }); // MODIFIED
             }
+        });
+
+        // NEW: Event listener for typing input
+        newMessageInput.addEventListener('input', () => {
+            const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
+            if (!currentUsername) return; // Don't send typing status if no username
+
+            if (!isTyping) {
+                isTyping = true;
+                updateTypingStatus(true); // Send typing status immediately when starting
+            }
+
+            // Clear any existing timeout and set a new one
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+                updateTypingStatus(false); // Send not typing status after inactivity
+            }, TYPING_INDICATOR_TIMEOUT_MS);
         });
 
         // Handle leaving the room
@@ -1802,6 +1897,7 @@
         const handleLeaveRoomCleanUp = () => {
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+            if (unsubscribeTypingStatusListener) unsubscribeTypingStatusListener(); // NEW: Unsubscribe typing status listener
             if (inactivityTimer) {
                 clearInterval(inactivityTimer);
                 inactivityTimer = null;
@@ -1811,6 +1907,13 @@
             // Remove visibilitychange listener
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             currentUserObject = null; // Clear the user object
+
+            // NEW: Ensure typing status is cleared on cleanup
+            isTyping = false;
+            clearTimeout(typingTimeout);
+            updateTypingStatus(false); // Attempt to delete typing status from Firestore
+            typingStatusDisplay.textContent = ''; // Clear display
+            typingStatusDisplay.classList.remove('show');
 
             currentRoom = null;
             roomCodeInput.value = '';
@@ -1840,6 +1943,10 @@
                     users: arrayRemove(currentUserObject), // Use the stored exact object
                     lastActivity: serverTimestamp() // Update last activity on exit
                 }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+
+                // NEW: Also attempt to delete typing status on page exit
+                const typingStatusDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/typingStatus`, currentUserId);
+                deleteDoc(typingStatusDocRef).catch(e => console.warn("Failed to delete typing status on exit (best-effort):", e));
             }
         };
 
