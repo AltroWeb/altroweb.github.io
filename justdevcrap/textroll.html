@@ -321,7 +321,7 @@
         }
         /* Specific adjustment for the toggle button within the home screen */
         #home-screen .dark-mode-toggle-container {
-            margin-top: 2rem;
+           margin-top: 2rem;
         }
         #dark-mode-toggle, #dark-mode-toggle-chat {
             background-color: var(--card-bg);
@@ -822,8 +822,6 @@
         <p>
             Connect and chat anonymously with friends or strangers!
         </p>
-
-
 <div class="dark-mode-toggle-container">
             <button id="dark-mode-toggle">
                 <span class="icon-moon-text">🌙</span>
@@ -1335,6 +1333,8 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = { userId: currentUserId, username: username };
                 window.addEventListener('beforeunload', handlePageExit);
+                // Add visibilitychange listener when user successfully joins a room
+                document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 setupRoomListeners(roomCode);
                 updateUI();
@@ -1668,6 +1668,8 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
+            // Remove visibilitychange listener
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             currentUserObject = null; // Clear the user object
 
             currentRoom = null;
@@ -1679,36 +1681,24 @@
         };
 
         // Function to handle page exit (browser close, tab close, navigation away)
-        const handlePageExit = () => { // Made synchronous as beforeunload doesn't wait for async
+        const handlePageExit = () => {
             if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                // This is a best-effort attempt as browser might terminate before write completes.
+                // Directly attempt to remove the user object.
+                // This is a best-effort attempt as the browser might terminate before the write completes.
                 // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
-                try {
-                    getDoc(roomRef).then(roomDoc => {
-                        if (roomDoc.exists()) {
-                            const roomData = roomDoc.data();
-                            const currentUsersInFirestore = roomData.users || [];
-                            const userToReallyRemove = currentUsersInFirestore.find(u => u.userId === currentUserId);
+                updateDoc(roomRef, {
+                    users: arrayRemove(currentUserObject),
+                    lastActivity: serverTimestamp() // Update last activity on exit
+                }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+            }
+        };
 
-                            if (userToReallyRemove) {
-                                const updatedUsers = currentUsersInFirestore.filter(u => u.userId !== currentUserId);
-                                if (updatedUsers.length === 0) {
-                                    // If no users left, delete the room
-                                    deleteDoc(roomRef).catch(e => console.warn("Failed to delete room on exit (best-effort):", e));
-                                } else {
-                                    // Otherwise, just update the user list and lastActivity
-                                    updateDoc(roomRef, {
-                                        users: arrayRemove(userToReallyRemove),
-                                        lastActivity: serverTimestamp()
-                                    }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
-                                }
-                            }
-                        }
-                    }).catch(e => console.warn("Error attempting to remove user on page exit (getDoc):", e));
-                } catch (e) {
-                    console.warn("Error attempting to remove user on page exit (outer catch):", e);
-                }
+        // Function to handle visibility change (tab hidden/closed)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                // Tab is hidden or closing, attempt to clean up
+                handlePageExit();
             }
         };
 
