@@ -159,7 +159,7 @@
         }
 
         /* Modal Styles */
-        #modal-overlay {
+        #modal-overlay, #privacy-policy-modal-overlay {
             position: fixed;
             inset: 0;
             background-color: rgba(107, 114, 128, 0.5);
@@ -169,10 +169,10 @@
             z-index: 50;
             padding: 1rem;
         }
-        #modal-overlay.hidden {
+        #modal-overlay.hidden, #privacy-policy-modal-overlay.hidden {
             display: none;
         }
-        #modal-content {
+        #modal-content, #privacy-policy-modal-content {
             background-color: var(--card-bg);
             border-radius: 0.5rem;
             box-shadow: 0 20px 25px -5px var(--modal-shadow-color), 0 10px 10px -5px var(--modal-shadow-color-dark);
@@ -184,19 +184,33 @@
             transition: all 0.3s ease-in-out;
             color: var(--text-color-primary);
         }
-        #modal-content.show {
+        #privacy-policy-modal-content {
+            max-width: 36rem; /* Wider for policy text */
+            max-height: 80vh; /* Limit height to enable scrolling */
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack children vertically */
+        }
+        #modal-content.show, #privacy-policy-modal-content.show {
             transform: scale(1);
             opacity: 1;
         }
-        #modal-title {
+        #modal-title, #privacy-policy-title {
             font-size: 1.25rem;
             font-weight: 600;
             color: var(--text-color-primary);
             margin-bottom: 1rem;
+            flex-shrink: 0; /* Prevent title from shrinking */
         }
         #modal-message {
             color: var(--text-color-secondary);
             margin-bottom: 1.5rem;
+        }
+        #privacy-policy-text {
+            color: var(--text-color-secondary);
+            margin-bottom: 1.5rem;
+            flex-grow: 1; /* Allow content to grow and take available space */
+            overflow-y: auto; /* Enable vertical scrolling for content */
+            padding-right: 0.5rem; /* Add some padding for scrollbar */
         }
         #modal-password-input-group {
             margin-bottom: 1.5rem;
@@ -226,12 +240,14 @@
         #modal-password-input-group.hidden {
             display: none;
         }
-        #modal-buttons {
+        #modal-buttons, #privacy-policy-buttons {
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
+            flex-shrink: 0; /* Prevent buttons from shrinking */
+            padding-top: 0.5rem; /* Space between content and buttons */
         }
-        #modal-cancel-btn {
+        #modal-cancel-btn, #privacy-policy-close-btn {
             padding: 0.625rem 1.25rem;
             border-radius: 0.5rem;
             color: var(--text-color-primary);
@@ -239,10 +255,10 @@
             transition: background-color 0.2s ease-in-out;
             box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
         }
-        #modal-cancel-btn:hover {
+        #modal-cancel-btn:hover, #privacy-policy-close-btn:hover {
             background-color: #d1d5db;
         }
-        .dark-mode #modal-cancel-btn:hover {
+        .dark-mode #modal-cancel-btn:hover, .dark-mode #privacy-policy-close-btn:hover {
             background-color: #6b7280;
         }
         #modal-cancel-btn.hidden {
@@ -259,12 +275,25 @@
         #modal-ok-btn:hover {
             background-color: var(--button-hover-blue);
         }
+        /* Password error message */
+        #modal-password-error {
+            color: #ef4444; /* red-500 */
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            text-align: left;
+            display: block; /* Ensure it takes its own line */
+        }
+        #modal-password-error.hidden {
+            display: none;
+        }
+
+
         /* Focus styles for buttons */
         button:focus {
             outline: none;
             box-shadow: 0 0 0 2px var(--focus-ring-blue);
         }
-        #modal-cancel-btn:focus {
+        #modal-cancel-btn:focus, #privacy-policy-close-btn:focus {
             box-shadow: 0 0 0 2px var(--focus-ring-gray);
         }
         #leave-room-btn:focus {
@@ -273,7 +302,7 @@
         #create-room-btn:focus, #send-message-btn:focus {
             box-shadow: 0 0 0 2px var(--focus-ring-indigo);
         }
-        #join-room-btn:focus {
+        #join-room-btn:focus, #join-random-room-btn:focus {
             box-shadow: 0 0 0 2px var(--focus-ring-purple);
         }
 
@@ -603,8 +632,20 @@
             text-align: center;
             padding-bottom: 1rem; /* Ensure it's not right at the bottom edge */
         }
+        #app-footnote a {
+            color: inherit; /* Inherit color from parent */
+            text-decoration: underline;
+            margin-left: 0.5rem;
+            cursor: pointer;
+        }
+        #app-footnote a:hover {
+            color: rgba(255, 255, 255, 0.9);
+        }
         .dark-mode #app-footnote {
             color: rgba(255, 255, 255, 0.5); /* Slightly darker for dark mode */
+        }
+        .dark-mode #app-footnote a:hover {
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* Mode Selection Styles */
@@ -738,7 +779,7 @@
             <div class="input-group hidden" id="modal-password-input-group">
                 <label for="modal-password-input">Enter password:</label>
                 <input type="password" id="modal-password-input" placeholder="Room password" />
-            </div>
+                <span id="modal-password-error" class="hidden"></span> </div>
             <div id="modal-buttons">
                 <button id="modal-cancel-btn" class="hidden">
                     Cancel
@@ -749,6 +790,27 @@
             </div>
         </div>
     </div>
+
+    <div id="privacy-policy-modal-overlay" class="hidden">
+        <div id="privacy-policy-modal-content">
+            <h3 id="privacy-policy-title">Privacy Policy for Textroll Chat App</h3>
+            <div id="privacy-policy-text">
+                <p><strong>1. Data Collection:</strong> We collect your chosen username and a unique user ID generated by Firebase Authentication for the purpose of identifying you within chat rooms. Room codes and messages sent within rooms are stored temporarily on our Firebase Firestore database to facilitate real-time communication. We do NOT collect any personally identifiable information beyond your chosen username and the Firebase-generated user ID.</p>
+                <p><strong>2. Data Usage:</strong> Your username and user ID are used solely to display your identity in chat rooms and manage your participation. Room data (including messages) is used to enable chat functionality. We do not use your data for advertising, tracking, or any other commercial purposes.</p>
+                <p><strong>3. Data Storage and Deletion:</strong> Chat rooms and their messages are designed to be temporary. Rooms are automatically deleted if they become empty (no participants) or if there is no activity (no messages sent or users joining/leaving) for 15 minutes. This means your chat data is not permanently stored. We do not maintain backups of individual chat sessions.</p>
+                <p><strong>4. Security:</strong> We use Firebase Firestore, which provides robust security features. However, please remember that random and unmoderated chat rooms inherently carry risks. Do NOT share sensitive personal information (e.g., real name, address, phone number, financial details) in Textroll chat rooms.</p>
+                <p><strong>5. Third-Party Services:</strong> This app uses Firebase (Google) for backend services (authentication, database). Their privacy policies apply to the data they handle. We do not integrate with any other third-party analytics or advertising services.</p>
+                <p><strong>6. Changes to this Policy:</strong> We may update this privacy policy from time to time. Any changes will be reflected directly within the app. Your continued use of the app after such changes constitutes your acceptance of the new policy.</p>
+                <p><strong>7. Contact:</strong> For any privacy-related questions, please contact us through the platform where you accessed this application.</p>
+            </div>
+            <div id="privacy-policy-buttons">
+                <button id="privacy-policy-close-btn">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <div id="home-screen" class="hidden">
         <div class="dark-mode-toggle-container">
@@ -866,7 +928,7 @@
         </div>
 
         <div class="participants-section">
-            <h3>Participants (<span id="participants-count">0</span>/4):</h3>
+            <h3>Participants (<span id="participants-count">0</span>/<span id="max-participants-display">4</span>):</h3>
             <div id="participants-list">
                 </div>
         </div>
@@ -892,6 +954,7 @@
 
     <div id="app-footnote">
         Textroll App &copy; 2025
+        <a id="privacy-policy-link">Privacy Policy</a>
     </div>
 
     <script type="module">
@@ -935,7 +998,7 @@
         const usernameInput = document.getElementById('username-input');
         const createPasswordInputGroup = document.getElementById('create-password-input-group');
         const createPasswordInput = document.getElementById('create-password-input');
-        const maxParticipantsInput = document.getElementById('max-participants-input'); // New element
+        const maxParticipantsInput = document.getElementById('max-participants-input');
         const roomCodeInput = document.getElementById('room-code-input');
         const createRoomBtn = document.getElementById('create-room-btn');
         const joinRoomBtn = document.getElementById('join-room-btn');
@@ -944,10 +1007,11 @@
         const randomUsernameInput = document.getElementById('random-username-input');
         const joinRandomRoomBtn = document.getElementById('join-random-room-btn');
 
-
+        // Chat Room Elements
         const userIdDisplay = document.getElementById('user-id-display');
         const currentRoomCodeDisplay = document.getElementById('current-room-code');
         const participantsCount = document.getElementById('participants-count');
+        const maxParticipantsDisplay = document.getElementById('max-participants-display'); // New element
         const participantsList = document.getElementById('participants-list');
         const messagesContainer = document.getElementById('messages-container');
         const noMessagesYet = document.getElementById('no-messages-yet');
@@ -957,15 +1021,22 @@
         const messageForm = document.getElementById('message-form');
         const leaveRoomBtn = document.getElementById('leave-room-btn');
 
-        // Modal Elements
+        // Main Modal Elements
         const modalOverlay = document.getElementById('modal-overlay');
         const modalContent = document.getElementById('modal-content');
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
         const modalPasswordInputGroup = document.getElementById('modal-password-input-group');
         const modalPasswordInput = document.getElementById('modal-password-input');
+        const modalPasswordError = document.getElementById('modal-password-error'); // New element for password error
         const modalOkBtn = document.getElementById('modal-ok-btn');
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        // Privacy Policy Modal Elements
+        const privacyPolicyLink = document.getElementById('privacy-policy-link');
+        const privacyPolicyModalOverlay = document.getElementById('privacy-policy-modal-overlay');
+        const privacyPolicyModalContent = document.getElementById('privacy-policy-modal-content');
+        const privacyPolicyCloseBtn = document.getElementById('privacy-policy-close-btn');
 
         // Dark Mode Elements
         const darkModeToggleHome = document.getElementById('dark-mode-toggle');
@@ -1003,6 +1074,7 @@
             modalCancelBtn.classList.toggle('hidden', !showCancel);
             modalPasswordInputGroup.classList.toggle('hidden', !showPasswordInput);
             modalPasswordInput.value = ''; // Clear password input on modal open
+            modalPasswordError.classList.add('hidden'); // Hide password error on new modal open
 
             modalOkBtn.onclick = () => {
                 onConfirmCallback();
@@ -1027,6 +1099,22 @@
             }, 300); // Match animation duration
         };
 
+        // Function to show privacy policy modal
+        const showPrivacyPolicyModal = () => {
+            privacyPolicyModalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                privacyPolicyModalContent.classList.add('show');
+            }, 10);
+        };
+
+        // Function to hide privacy policy modal
+        const hidePrivacyPolicyModal = () => {
+            privacyPolicyModalContent.classList.remove('show');
+            setTimeout(() => {
+                privacyPolicyModalOverlay.classList.add('hidden');
+            }, 300);
+        };
+
         // Function to update UI based on current room state
         const updateUI = () => {
             loadingScreen.classList.add('hidden'); // Hide loading screen once auth is ready
@@ -1038,6 +1126,8 @@
                 homeScreen.classList.remove('animate-scaleIn'); // Ensure home screen animation is removed
                 currentRoomCodeDisplay.textContent = currentRoom.code;
                 renderParticipants(currentRoom.users);
+                // Set max participants display
+                maxParticipantsDisplay.textContent = currentRoom.maxParticipants || 4; // Default to 4 if not set
                 // Enable message input and send button if current user is in the room
                 const isCurrentUserInRoom = currentRoom.users.some(u => u.userId === currentUserId);
                 newMessageInput.disabled = !isCurrentUserInRoom;
@@ -1055,6 +1145,7 @@
         const renderParticipants = (users) => {
             participantsList.innerHTML = ''; // Clear previous participants
             participantsCount.textContent = users.length;
+            // maxParticipantsDisplay is updated in updateUI based on currentRoom.maxParticipants
             users.forEach(user => {
                 const span = document.createElement('span');
                 span.className = `${user.userId === currentUserId ? 'bg-indigo-100' : 'bg-gray-100'}`;
@@ -1266,19 +1357,35 @@
 
                 // Handle password protected rooms
                 if (roomData.password) {
-                    const promptForPassword = () => {
-                        showModal("Enter Password", "This room is password protected. Please enter the password.", async () => {
-                            const enteredPassword = modalPasswordInput.value.trim();
-                            if (enteredPassword === roomData.password) {
-                                await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
-                            } else {
-                                showModal("Incorrect Password", "The password you entered is incorrect. Please try again.", () => {
-                                    promptForPassword(); // Re-prompt for password on OK after incorrect entry
-                                }, true, () => {}); // Allow cancel to just close the modal
-                            }
-                        }, true, () => {}, true); // showCancel=true, showPasswordInput=true
+                    // Custom modal for password entry
+                    modalTitle.textContent = "Enter Password";
+                    modalMessage.textContent = "This room is password protected. Please enter the password.";
+                    modalCancelBtn.classList.remove('hidden');
+                    modalPasswordInputGroup.classList.remove('hidden');
+                    modalPasswordInput.value = '';
+                    modalPasswordError.classList.add('hidden'); // Hide previous error
+
+                    modalOkBtn.onclick = async () => {
+                        const enteredPassword = modalPasswordInput.value.trim();
+                        if (enteredPassword === roomData.password) {
+                            modalPasswordError.classList.add('hidden'); // Clear error if correct
+                            hideModal();
+                            await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                        } else {
+                            modalPasswordError.textContent = "Incorrect password. Please try again.";
+                            modalPasswordError.classList.remove('hidden');
+                            modalPasswordInput.value = ''; // Clear input for re-entry
+                        }
                     };
-                    promptForPassword(); // Initial call to prompt for password
+                    modalCancelBtn.onclick = () => {
+                        hideModal();
+                    };
+
+                    modalOverlay.classList.remove('hidden');
+                    setTimeout(() => {
+                        modalContent.classList.add('show');
+                    }, 10);
+
                 } else {
                     await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
                 }
@@ -1371,6 +1478,7 @@
                     const roomData = docSnap.data();
                     currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity }; // Update maxParticipants and lastActivity
                     renderParticipants(currentRoom.users);
+                    maxParticipantsDisplay.textContent = currentRoom.maxParticipants; // Update display
 
                     // Reset inactivity timer on any room data update
                     if (inactivityTimer) {
@@ -1477,6 +1585,7 @@
                 if (!currentRoom || !currentUserId) return;
 
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                // Determine the current username based on the active mode
                 const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
 
                 try {
@@ -1596,6 +1705,10 @@
                 createPasswordInput.value = ''; // Clear password if username is cleared
             }
         });
+
+        // Event listeners for Privacy Policy Modal
+        privacyPolicyLink.addEventListener('click', showPrivacyPolicyModal);
+        privacyPolicyCloseBtn.addEventListener('click', hidePrivacyPolicyModal);
 
         // Initial UI update after script loads and before auth completes
         document.addEventListener('DOMContentLoaded', () => {
