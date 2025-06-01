@@ -6,18 +6,110 @@
     <title>Textroll Chat App</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* General Body and Container Styles */
+        /* CSS Variables for Theming */
+        :root {
+            /* Light Mode Colors */
+            --bg-gradient-start: #8b5cf6; /* purple-500 */
+            --bg-gradient-end: #4f46e5;   /* indigo-600 */
+            --text-color-primary: #374151; /* gray-800 */
+            --text-color-secondary: #4b5563; /* gray-600 */
+            --card-bg: #fff;
+            --header-text: #4338ca; /* indigo-700 */
+            --room-code-text: #9333ea; /* purple-600 */
+            --border-color: #e5e7eb; /* gray-200 */
+            --input-border: #d1d5db; /* gray-300 */
+            --input-bg-disabled: #f3f4f6; /* gray-100 */
+            --button-bg-indigo: #4f46e5; /* indigo-600 */
+            --button-hover-indigo: #4338ca; /* indigo-700 */
+            --button-bg-purple: #9333ea; /* purple-600 */
+            --button-hover-purple: #7e22ce; /* purple-700 */
+            --button-bg-red: #ef4444; /* red-500 */
+            --button-hover-red: #dc2626; /* red-600 */
+            --button-bg-blue: #2563eb; /* blue-600 */
+            --button-hover-blue: #1d4ed8; /* blue-700 */
+            --button-disabled-bg: #9ca3af; /* gray-400 */
+            --participant-bg-you: #e0e7ff; /* indigo-100 */
+            --participant-text-you: #4338ca; /* indigo-700 */
+            --participant-bg-other: #f3f4f6; /* gray-100 */
+            --message-bg-you: #6366f1; /* indigo-500 */
+            --message-bg-other: #e5e7eb; /* gray-200 */
+            --message-text-you: #fff;
+            --message-text-other: #1f2937; /* gray-800 */
+            --message-timestamp-opacity: 0.6;
+            --chat-bg: #f9fafb; /* gray-50 */
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --shadow-color-dark: rgba(0, 0, 0, 0.04);
+            --modal-shadow-color: rgba(0, 0, 0, 0.25);
+            --modal-shadow-color-dark: rgba(0, 0, 0, 0.06);
+            --focus-ring-indigo: rgba(99, 102, 241, 0.5);
+            --focus-ring-purple: rgba(168, 85, 247, 0.75);
+            --focus-ring-red: rgba(239, 68, 68, 0.75);
+            --focus-ring-blue: rgba(59, 130, 246, 0.5);
+            --focus-ring-gray: rgba(156, 163, 175, 0.75);
+            --button-shadow-offset: 0 4px 6px -1px;
+            --button-shadow-blur: 0 2px 4px -1px;
+        }
+
+        /* Dark Mode Colors */
+        .dark-mode {
+            --bg-gradient-start: #1f2937; /* dark gray */
+            --bg-gradient-end: #0f172a;   /* darker blue-gray */
+            --text-color-primary: #e5e7eb; /* gray-200 */
+            --text-color-secondary: #d1d5db; /* gray-300 */
+            --card-bg: #374151; /* gray-700 */
+            --header-text: #a78bfa; /* purple-400 */
+            --room-code-text: #c084fc; /* purple-500 */
+            --border-color: #4b5563; /* gray-600 */
+            --input-border: #6b7280; /* gray-500 */
+            --input-bg-disabled: #4b5563; /* gray-600 */
+            --button-bg-indigo: #6366f1; /* indigo-500 */
+            --button-hover-indigo: #4f46e5; /* indigo-600 */
+            --button-bg-purple: #a855f7; /* purple-500 */
+            --button-hover-purple: #9333ea; /* purple-600 */
+            --button-bg-red: #ef4444; /* red-500 */
+            --button-hover-red: #dc2626; /* red-600 */
+            --button-bg-blue: #3b82f6; /* blue-500 */
+            --button-hover-blue: #2563eb; /* blue-600 */
+            --button-disabled-bg: #4b5563; /* gray-600 */
+            --participant-bg-you: #4f46e5; /* indigo-600 */
+            --participant-text-you: #e0e7ff; /* indigo-100 */
+            --participant-bg-other: #4b5563; /* gray-600 */
+            --message-bg-you: #4f46e5; /* indigo-600 */
+            --message-bg-other: #4b5563; /* gray-600 */
+            --message-text-you: #e5e7eb;
+            --message-text-other: #e5e7eb;
+            --message-timestamp-opacity: 0.7;
+            --chat-bg: #374151; /* gray-700 */
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --shadow-color-dark: rgba(0, 0, 0, 0.2);
+            --modal-shadow-color: rgba(0, 0, 0, 0.4);
+            --modal-shadow-color-dark: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Universal Font and Base Styles */
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background: linear-gradient(to bottom right, #8b5cf6, #4f46e5); /* from-purple-500 to-indigo-600 */
-            color: #374151; /* text-gray-800 */
+            background: linear-gradient(to bottom right, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-color-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 1rem; /* p-4 */
+            padding: 1rem;
             margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth dark mode transition */
+        }
+
+        /* All elements inherit font, remove default button borders */
+        * {
+            font-family: inherit;
+            box-sizing: border-box; /* Ensure consistent box model */
+        }
+        button {
+            border: none; /* Remove default button borders */
+            outline: none; /* Remove default focus outline */
+            cursor: pointer;
         }
 
         /* Custom scrollbar for chat messages */
@@ -25,7 +117,7 @@
             width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: var(--input-bg-disabled);
             border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -54,8 +146,8 @@
         /* Loading Screen */
         #loading-screen {
             position: fixed;
-            inset: 0; /* top:0, right:0, bottom:0, left:0 */
-            background: linear-gradient(to bottom right, #8b5cf6, #4f46e5);
+            inset: 0;
+            background: linear-gradient(to bottom right, var(--bg-gradient-start), var(--bg-gradient-end));
             color: #fff;
             display: flex;
             align-items: center;
@@ -70,7 +162,7 @@
         #modal-overlay {
             position: fixed;
             inset: 0;
-            background-color: rgba(107, 114, 128, 0.5); /* bg-gray-600 bg-opacity-50 */
+            background-color: rgba(107, 114, 128, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -81,177 +173,256 @@
             display: none;
         }
         #modal-content {
-            background-color: #fff;
-            border-radius: 0.5rem; /* rounded-lg */
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
-            padding: 1.5rem; /* p-6 */
-            max-width: 24rem; /* max-w-sm */
+            background-color: var(--card-bg);
+            border-radius: 0.5rem;
+            box-shadow: 0 20px 25px -5px var(--modal-shadow-color), 0 10px 10px -5px var(--modal-shadow-color-dark);
+            padding: 1.5rem;
+            max-width: 24rem;
             width: 100%;
-            transform: scale(0.95); /* scale-95 */
+            transform: scale(0.95);
             opacity: 0;
-            transition: all 0.3s ease-in-out; /* transition-all duration-300 */
+            transition: all 0.3s ease-in-out;
+            color: var(--text-color-primary);
         }
-        #modal-content.show { /* For animation trigger */
+        #modal-content.show {
             transform: scale(1);
             opacity: 1;
         }
         #modal-title {
-            font-size: 1.25rem; /* text-xl */
-            font-weight: 600; /* font-semibold */
-            color: #1f2937; /* text-gray-800 */
-            margin-bottom: 1rem; /* mb-4 */
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color-primary);
+            margin-bottom: 1rem;
         }
         #modal-message {
-            color: #4b5563; /* text-gray-600 */
-            margin-bottom: 1.5rem; /* mb-6 */
+            color: var(--text-color-secondary);
+            margin-bottom: 1.5rem;
+        }
+        #modal-password-input-group {
+            margin-bottom: 1.5rem;
+        }
+        #modal-password-input-group label {
+            display: block;
+            text-align: left;
+            color: var(--text-color-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        #modal-password-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--input-border);
+            border-radius: 0.5rem;
+            background-color: var(--card-bg);
+            color: var(--text-color-primary);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
+        }
+        #modal-password-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--focus-ring-indigo);
+            border-color: transparent;
+        }
+        #modal-password-input-group.hidden {
+            display: none;
         }
         #modal-buttons {
             display: flex;
             justify-content: flex-end;
-            gap: 0.75rem; /* space-x-3 */
+            gap: 0.75rem;
         }
         #modal-cancel-btn {
-            padding: 0.625rem 1.25rem; /* px-5 py-2 */
-            border-radius: 0.5rem; /* rounded-lg */
-            color: #374151; /* text-gray-700 */
-            background-color: #e5e7eb; /* bg-gray-200 */
-            transition: background-color 0.2s ease-in-out; /* transition duration-200 ease-in-out */
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            color: var(--text-color-primary);
+            background-color: var(--border-color);
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
         }
         #modal-cancel-btn:hover {
-            background-color: #d1d5db; /* hover:bg-gray-300 */
+            background-color: #d1d5db;
+        }
+        .dark-mode #modal-cancel-btn:hover {
+            background-color: #6b7280;
         }
         #modal-cancel-btn.hidden {
             display: none;
         }
         #modal-ok-btn {
-            padding: 0.625rem 1.25rem; /* px-5 py-2 */
-            border-radius: 0.5rem; /* rounded-lg */
-            background-color: #2563eb; /* bg-blue-600 */
-            color: #fff; /* text-white */
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            background-color: var(--button-bg-blue);
+            color: #fff;
             transition: background-color 0.2s ease-in-out;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
         }
         #modal-ok-btn:hover {
-            background-color: #1d4ed8; /* hover:bg-blue-700 */
+            background-color: var(--button-hover-blue);
         }
         /* Focus styles for buttons */
         button:focus {
             outline: none;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 */
+            box-shadow: 0 0 0 2px var(--focus-ring-blue);
         }
         #modal-cancel-btn:focus {
-            box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.75); /* focus:ring-gray-400 */
+            box-shadow: 0 0 0 2px var(--focus-ring-gray);
         }
         #leave-room-btn:focus {
-            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.75); /* focus:ring-red-400 */
+            box-shadow: 0 0 0 2px var(--focus-ring-red);
         }
         #create-room-btn:focus, #send-message-btn:focus {
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.75); /* focus:ring-indigo-500 */
+            box-shadow: 0 0 0 2px var(--focus-ring-indigo);
         }
         #join-room-btn:focus {
-            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.75); /* focus:ring-purple-500 */
+            box-shadow: 0 0 0 2px var(--focus-ring-purple);
         }
+
+        /* Dark Mode Toggle Button */
+        .dark-mode-toggle-container {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10; /* Ensure it's above other elements in the card */
+        }
+        #dark-mode-toggle, #dark-mode-toggle-chat {
+            background-color: var(--card-bg);
+            color: var(--text-color-primary); /* Icon color */
+            border: none;
+            border-radius: 9999px;
+            padding: 0.75rem;
+            font-size: 1.25rem; /* Controls emoji size */
+            cursor: pointer;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            display: flex; /* To center emoji */
+            align-items: center;
+            justify-content: center;
+        }
+        #dark-mode-toggle:hover, #dark-mode-toggle-chat:hover {
+            transform: scale(1.1);
+        }
+        #dark-mode-toggle:active, #dark-mode-toggle-chat:active {
+            transform: scale(0.95);
+        }
+
+        /* Text Icon specific styles */
+        .icon-moon-text { display: block; }
+        .icon-sun-text { display: none; }
+        .dark-mode .icon-moon-text { display: none; }
+        .dark-mode .icon-sun-text { display: block; }
 
 
         /* Home Screen */
         #home-screen {
-            background-color: #fff;
-            padding: 2rem; /* p-8 */
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px var(--modal-shadow-color);
             width: 100%;
-            max-width: 28rem; /* max-w-md */
+            max-width: 28rem;
             text-align: center;
             transform: scale(0.95);
             opacity: 0;
-            transition: all 0.5s ease-in-out; /* transition-all duration-500 */
+            transition: all 0.5s ease-in-out;
+            position: relative; /* For dark mode toggle positioning */
         }
         #home-screen.hidden {
             display: none;
         }
         #home-screen h1 {
-            font-size: 3rem; /* text-5xl */
-            font-weight: 800; /* font-extrabold */
-            color: #4338ca; /* text-indigo-700 */
-            margin-bottom: 1.5rem; /* mb-6 */
-            letter-spacing: -0.025em; /* tracking-tight */
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--header-text);
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.025em;
         }
         #home-screen p {
-            color: #4b5563; /* text-gray-600 */
-            margin-bottom: 2rem; /* mb-8 */
-            font-size: 1.125rem; /* text-lg */
+            color: var(--text-color-secondary);
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
         }
         #home-screen .input-group {
-            margin-bottom: 1.5rem; /* mb-6 */
+            margin-bottom: 1.5rem;
         }
         #home-screen .input-group label {
             display: block;
             text-align: left;
-            color: #374151; /* text-gray-700 */
-            font-size: 0.875rem; /* text-sm */
-            font-weight: 500; /* font-medium */
-            margin-bottom: 0.5rem; /* mb-2 */
+            color: var(--text-color-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
         }
-        #home-screen input[type="text"] {
+        #home-screen input[type="text"],
+        #home-screen input[type="number"], /* Added for max participants */
+        #home-screen input[type="password"] {
             width: 100%;
-            padding: 0.75rem; /* p-3 */
-            border: 1px solid #d1d5db; /* border border-gray-300 */
-            border-radius: 0.5rem; /* rounded-lg */
-            transition: border-color 0.2s, box-shadow 0.2s; /* transition duration-200 */
+            padding: 0.75rem;
+            border: 1px solid var(--input-border);
+            border-radius: 0.5rem;
+            background-color: var(--card-bg);
+            color: var(--text-color-primary);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
         }
-        #home-screen input[type="text"]:focus {
+        #home-screen input[type="text"]:focus,
+        #home-screen input[type="number"]:focus,
+        #home-screen input[type="password"]:focus {
             outline: none;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); /* focus:ring-2 focus:ring-indigo-500 */
-            border-color: transparent; /* focus:border-transparent */
+            box-shadow: 0 0 0 2px var(--focus-ring-indigo);
+            border-color: transparent;
+        }
+        #home-screen #create-password-input-group.hidden {
+            display: none;
         }
         #home-screen .button-group {
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* space-y-4 */
+            gap: 1rem;
         }
         #home-screen button {
             width: 100%;
-            padding: 0.75rem 1.5rem; /* py-3 px-6 */
+            padding: 0.75rem 1.5rem;
             color: #fff;
-            font-weight: 600; /* font-semibold */
-            border-radius: 0.5rem; /* rounded-lg */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
-            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition duration-300 ease-in-out */
+            font-weight: 600;
+            border-radius: 0.5rem;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
         }
         #home-screen button:hover {
-            transform: scale(1.05); /* hover:scale-105 */
+            transform: scale(1.05);
         }
         #create-room-btn {
-            background-color: #4f46e5; /* bg-indigo-600 */
+            background-color: var(--button-bg-indigo);
         }
         #create-room-btn:hover {
-            background-color: #4338ca; /* hover:bg-indigo-700 */
+            background-color: var(--button-hover-indigo);
         }
-        #join-room-btn {
-            background-color: #9333ea; /* bg-purple-600 */
+        #join-room-btn, #join-random-room-btn { /* Apply purple to both join buttons */
+            background-color: var(--button-bg-purple);
         }
-        #join-room-btn:hover {
-            background-color: #7e22ce; /* hover:bg-purple-700 */
+        #join-room-btn:hover, #join-random-room-btn:hover {
+            background-color: var(--button-hover-purple);
         }
         #user-id-display {
-            font-size: 0.75rem; /* text-xs */
-            color: #6b7280; /* text-gray-500 */
-            margin-top: 1.5rem; /* mt-6 */
+            font-size: 0.75rem;
+            color: var(--text-color-secondary);
+            margin-top: 1.5rem;
         }
 
         /* Chat Room Screen */
         #chat-room-screen {
-            background-color: #fff;
-            padding: 1.5rem; /* p-6 */
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px var(--modal-shadow-color);
             width: 100%;
-            max-width: 42rem; /* max-w-2xl */
+            max-width: 42rem;
             display: flex;
             flex-direction: column;
-            height: 85vh; /* h-[85vh] */
+            height: 85vh;
             transform: scale(0.95);
             opacity: 0;
             transition: all 0.5s ease-in-out;
+            position: relative; /* For dark mode toggle positioning */
         }
         #chat-room-screen.hidden {
             display: none;
@@ -260,74 +431,75 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem; /* mb-4 */
-            padding-bottom: 1rem; /* pb-4 */
-            border-bottom: 1px solid #e5e7eb; /* border-b border-gray-200 */
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
         }
         #chat-room-screen h2 {
-            font-size: 1.875rem; /* text-3xl */
-            font-weight: 700; /* font-bold */
-            color: #4338ca; /* text-indigo-700 */
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--header-text);
         }
         #current-room-code {
-            color: #9333ea; /* text-purple-600 */
+            color: var(--room-code-text);
         }
         #leave-room-btn {
-            padding: 0.5rem 1rem; /* px-4 py-2 */
-            background-color: #ef4444; /* bg-red-500 */
+            padding: 0.5rem 1rem;
+            background-color: var(--button-bg-red);
             color: #fff;
-            border-radius: 0.5rem; /* rounded-lg */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
-            transition: background-color 0.2s ease-in-out; /* transition duration-200 ease-in-out */
+            border-radius: 0.5rem;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
+            transition: background-color 0.2s ease-in-out;
         }
         #leave-room-btn:hover {
-            background-color: #dc2626; /* hover:bg-red-600 */
+            background-color: var(--button-hover-red);
         }
 
         #chat-room-screen .participants-section {
-            margin-bottom: 1rem; /* mb-4 */
+            margin-bottom: 1rem;
         }
         #chat-room-screen .participants-section h3 {
-            font-size: 1.125rem; /* text-lg */
-            font-weight: 600; /* font-semibold */
-            color: #374151; /* text-gray-700 */
-            margin-bottom: 0.5rem; /* mb-2 */
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-color-primary);
+            margin-bottom: 0.5rem;
         }
         #participants-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem; /* gap-2 */
-            font-size: 0.875rem; /* text-sm */
-            color: #4b5563; /* text-gray-600 */
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-color-secondary);
         }
         #participants-list span {
-            padding: 0.25rem 0.75rem; /* px-3 py-1 */
-            border-radius: 9999px; /* rounded-full */
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
         }
         #participants-list span.bg-indigo-100 {
-            background-color: #e0e7ff; /* bg-indigo-100 */
-            color: #4338ca; /* text-indigo-700 */
-            font-weight: 500; /* font-medium */
+            background-color: var(--participant-bg-you);
+            color: var(--participant-text-you);
+            font-weight: 500;
         }
         #participants-list span.bg-gray-100 {
-            background-color: #f3f4f6; /* bg-gray-100 */
-            color: #4b5563; /* text-gray-600 */
+            background-color: var(--participant-bg-other);
+            color: var(--text-color-primary);
         }
 
         #messages-container {
-            flex-grow: 1; /* flex-grow */
-            overflow-y: auto; /* overflow-y-auto */
-            padding: 1rem; /* p-4 */
-            background-color: #f9fafb; /* bg-gray-50 */
-            border-radius: 0.5rem; /* rounded-lg */
-            margin-bottom: 1rem; /* mb-4 */
-            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); /* shadow-inner */
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: var(--chat-bg);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            transition: background-color 0.3s ease;
         }
         #no-messages-yet {
             text-align: center;
-            color: #6b7280; /* text-gray-500 */
+            color: var(--text-color-secondary);
             font-style: italic;
-            margin-top: 1rem; /* mt-4 */
+            margin-top: 1rem;
         }
         #no-messages-yet.hidden {
             display: none;
@@ -335,7 +507,7 @@
 
         .message-item {
             display: flex;
-            margin-bottom: 0.75rem; /* mb-3 */
+            margin-bottom: 0.75rem;
         }
         .message-item.justify-end {
             justify-content: flex-end;
@@ -344,79 +516,207 @@
             justify-content: flex-start;
         }
         .message-content {
-            max-width: 70%; /* max-w-[70%] */
-            padding: 0.75rem; /* p-3 */
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            max-width: 70%;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         .message-item.justify-end .message-content {
-            background-color: #6366f1; /* bg-indigo-500 */
-            color: #fff;
-            border-bottom-right-radius: 0; /* rounded-br-none */
+            background-color: var(--message-bg-you);
+            color: var(--message-text-you);
+            border-bottom-right-radius: 0;
         }
         .message-item.justify-start .message-content {
-            background-color: #e5e7eb; /* bg-gray-200 */
-            color: #1f2937; /* text-gray-800 */
-            border-bottom-left-radius: 0; /* rounded-bl-none */
+            background-color: var(--message-bg-other);
+            color: var(--message-text-other);
+            border-bottom-left-radius: 0;
         }
         .message-content .sender-info {
-            font-size: 0.75rem; /* text-xs */
-            font-weight: 600; /* font-semibold */
-            margin-bottom: 0.25rem; /* mb-1 */
-            opacity: 0.8; /* opacity-80 */
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            opacity: 0.8;
         }
         .message-content p {
-            font-size: 0.875rem; /* text-sm */
-            word-break: break-word; /* break-words */
+            font-size: 0.875rem;
+            word-break: break-word;
         }
         .message-content .timestamp {
             text-align: right;
-            font-size: 0.75rem; /* text-xs */
-            opacity: 0.6; /* opacity-60 */
-            margin-top: 0.25rem; /* mt-1 */
+            font-size: 0.75rem;
+            opacity: var(--message-timestamp-opacity);
+            margin-top: 0.25rem;
         }
 
         #message-form {
             display: flex;
-            gap: 0.75rem; /* gap-3 */
+            gap: 0.75rem;
+            align-items: center;
         }
         #new-message-input {
-            flex-grow: 1; /* flex-grow */
-            padding: 0.75rem; /* p-3 */
-            border: 1px solid #d1d5db; /* border border-gray-300 */
-            border-radius: 0.5rem; /* rounded-lg */
-            transition: border-color 0.2s, box-shadow 0.2s;
+            flex-grow: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--input-border);
+            border-radius: 0.5rem;
+            background-color: var(--card-bg);
+            color: var(--text-color-primary);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
         }
         #new-message-input:focus {
             outline: none;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); /* focus:ring-2 focus:ring-indigo-500 */
-            border-color: transparent; /* focus:border-transparent */
+            box-shadow: 0 0 0 2px var(--focus-ring-indigo);
+            border-color: transparent;
         }
         #new-message-input:disabled {
-            background-color: #f3f4f6; /* gray-100 */
+            background-color: var(--input-bg-disabled);
             cursor: not-allowed;
+            color: var(--text-color-secondary);
         }
         #send-message-btn {
-            padding: 0.75rem 1.5rem; /* px-6 py-3 */
-            background-color: #4f46e5; /* bg-indigo-600 */
+            padding: 0.75rem 1.5rem;
+            background-color: var(--button-bg-indigo);
             color: #fff;
-            border-radius: 0.5rem; /* rounded-lg */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            border-radius: 0.5rem;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
             transition: background-color 0.2s ease-in-out;
         }
         #send-message-btn:hover {
-            background-color: #4338ca; /* hover:bg-indigo-700 */
+            background-color: var(--button-hover-indigo);
         }
         #send-message-btn:disabled {
-            background-color: #9ca3af; /* gray-400 */
+            background-color: var(--button-disabled-bg);
             cursor: not-allowed;
-            transform: none; /* remove hover effect */
+            transform: none;
             box-shadow: none;
         }
 
-        /* Responsive Adjustments (md breakpoint equivalent ~768px) */
-        @media (min-width: 768px) {
-            /* No specific changes needed for this layout as it's already fluid and max-width constrained */
+        /* Footnote */
+        #app-footnote {
+            margin-top: 2rem; /* Spacing from the main content */
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7); /* Light white for contrast on gradient background */
+            text-align: center;
+            padding-bottom: 1rem; /* Ensure it's not right at the bottom edge */
+        }
+        .dark-mode #app-footnote {
+            color: rgba(255, 255, 255, 0.5); /* Slightly darker for dark mode */
+        }
+
+        /* Mode Selection Styles */
+        #mode-selection {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            width: 100%; /* Ensure it takes full width of parent */
+        }
+        #mode-selection button {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border-radius: 0.5rem;
+            background-color: var(--card-bg); /* Default background */
+            color: var(--text-color-primary); /* Default text color */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
+        }
+        #mode-selection button.active {
+            background-color: var(--button-bg-purple); /* Changed to purple */
+            color: #fff;
+            box-shadow: var(--button-shadow-offset) var(--button-bg-purple), var(--button-shadow-blur) var(--button-bg-purple); /* Changed to purple */
+        }
+        #mode-selection button:hover:not(.active) {
+            background-color: var(--border-color); /* Lighter hover for non-active */
+        }
+        .dark-mode #mode-selection button:hover:not(.active) {
+            background-color: var(--border-color); /* Darker hover for non-active */
+        }
+
+        /* Mode Containers */
+        #default-mode-container,
+        #random-mode-container {
+            width: 100%;
+            display: flex; /* Use flex for internal layout */
+            flex-direction: column;
+            gap: 1.5rem; /* Consistent spacing between input groups */
+        }
+        #default-mode-container.hidden,
+        #random-mode-container.hidden {
+            display: none;
+        }
+
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            #home-screen, #chat-room-screen {
+                padding: 1.5rem;
+                max-width: 100%;
+                border-radius: 0.5rem;
+            }
+            #home-screen h1 {
+                font-size: 2.5rem;
+                margin-bottom: 1rem;
+            }
+            #home-screen p {
+                font-size: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            #home-screen .input-group {
+                margin-bottom: 1rem;
+            }
+            #home-screen .button-group {
+                gap: 0.75rem;
+            }
+            #chat-room-screen h2 {
+                font-size: 1.5rem;
+            }
+            #leave-room-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.875rem;
+            }
+            #chat-room-screen .participants-section h3 {
+                font-size: 1rem;
+            }
+            #participants-list span {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.6rem;
+            }
+            .message-content {
+                max-width: 85%;
+                padding: 0.6rem;
+            }
+            .message-content .sender-info, .message-content p, .message-content .timestamp {
+                font-size: 0.8rem;
+            }
+            #message-form {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            #new-message-input, #send-message-btn {
+                width: 100%;
+                padding: 0.6rem;
+            }
+            #send-message-btn {
+                padding: 0.6rem 1rem;
+            }
+            .dark-mode-toggle-container {
+                top: 0.5rem;
+                right: 0.5rem;
+            }
+            #dark-mode-toggle, #dark-mode-toggle-chat {
+                padding: 0.6rem;
+                font-size: 1rem;
+            }
+            #mode-selection {
+                flex-direction: column;
+            }
+            #default-mode-container,
+            #random-mode-container {
+                gap: 1rem; /* Smaller gap on mobile */
+            }
         }
     </style>
 </head>
@@ -430,6 +730,10 @@
         <div id="modal-content">
             <h3 id="modal-title"></h3>
             <p id="modal-message"></p>
+            <div class="input-group hidden" id="modal-password-input-group">
+                <label for="modal-password-input">Enter password:</label>
+                <input type="password" id="modal-password-input" placeholder="Room password" />
+            </div>
             <div id="modal-buttons">
                 <button id="modal-cancel-btn" class="hidden">
                     Cancel
@@ -442,47 +746,111 @@
     </div>
 
     <div id="home-screen" class="hidden">
+        <div class="dark-mode-toggle-container">
+            <button id="dark-mode-toggle">
+                <span class="icon-moon-text">🌙</span>
+                <span class="icon-sun-text">☀️</span>
+            </button>
+        </div>
         <h1>Textroll</h1>
         <p>
             Connect and chat anonymously with friends or strangers!
         </p>
 
-        <div class="input-group">
-            <label for="username-input">
-                Enter your username:
-            </label>
-            <input
-                type="text"
-                id="username-input"
-                placeholder="e.g., ChatMaster"
-                maxlength="15"
-            />
+        <div id="mode-selection">
+            <button id="default-mode-btn" class="active">Default Mode</button>
+            <button id="random-mode-btn">Random Mode</button>
         </div>
 
-        <div class="input-group">
-            <label for="room-code-input">
-                Or enter a room code to join:
-            </label>
-            <input
-                type="text"
-                id="room-code-input"
-                placeholder="e.g., ABCD"
-                maxlength="4"
-            />
+        <div id="default-mode-container">
+            <div class="input-group">
+                <label for="username-input">
+                    Enter your username:
+                </label>
+                <input
+                    type="text"
+                    id="username-input"
+                    placeholder="e.g., ChatMaster"
+                    maxlength="15"
+                />
+            </div>
+
+            <div class="input-group" id="create-password-input-group" style="display: none;">
+                <label for="create-password-input">
+                    Set a room password (optional):
+                </label>
+                <input
+                    type="password"
+                    id="create-password-input"
+                    placeholder="Leave blank for no password"
+                    maxlength="20"
+                />
+            </div>
+
+            <div class="input-group">
+                <label for="max-participants-input">
+                    Max Participants (2-10):
+                </label>
+                <input
+                    type="number"
+                    id="max-participants-input"
+                    value="4"
+                    min="2"
+                    max="10"
+                />
+            </div>
+
+            <div class="input-group">
+                <label for="room-code-input">
+                    Or enter a room code to join:
+                </label>
+                <input
+                    type="text"
+                    id="room-code-input"
+                    placeholder="e.g., ABCDEF"
+                    maxlength="6"
+                />
+            </div>
+
+            <div class="button-group">
+                <button id="create-room-btn">
+                    Create New Room
+                </button>
+                <button id="join-room-btn">
+                    Join Room
+                </button>
+            </div>
         </div>
 
-        <div class="button-group">
-            <button id="create-room-btn">
-                Create New Room
-            </button>
-            <button id="join-room-btn">
-                Join Room
-            </button>
+        <div id="random-mode-container" class="hidden">
+            <div class="input-group">
+                <label for="random-username-input">
+                    Enter your username:
+                </label>
+                <input
+                    type="text"
+                    id="random-username-input"
+                    placeholder="e.g., AnonymousChatter"
+                    maxlength="15"
+                />
+            </div>
+            <div class="button-group">
+                <button id="join-random-room-btn">
+                    Join Random Room
+                </button>
+            </div>
         </div>
+
         <p id="user-id-display"></p>
     </div>
 
     <div id="chat-room-screen" class="hidden">
+        <div class="dark-mode-toggle-container">
+            <button id="dark-mode-toggle-chat">
+                <span class="icon-moon-text">🌙</span>
+                <span class="icon-sun-text">☀️</span>
+            </button>
+        </div>
         <div class="header">
             <h2>
                 Room: <span id="current-room-code"></span>
@@ -517,12 +885,16 @@
         </form>
     </div>
 
+    <div id="app-footnote">
+        Textroll App &copy; 2025
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-       // Your web app's Firebase configuration
+             // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
     apiKey: "AIzaSyA8ErpL72u6bTzPuOx51l4Mb51NDCDBDBY",
@@ -533,7 +905,6 @@
     appId: "1:928701458132:web:5eec69352bd35998023d41",
     measurementId: "G-DP3QEKB09S"
   };
-
 
         // Use your Firebase projectId for the Firestore path. This is crucial.
         const textrollAppId = firebaseConfig.projectId;
@@ -547,10 +918,28 @@
         const loadingScreen = document.getElementById('loading-screen');
         const homeScreen = document.getElementById('home-screen');
         const chatRoomScreen = document.getElementById('chat-room-screen');
+
+        // Mode Selection Elements
+        const modeSelection = document.getElementById('mode-selection');
+        const defaultModeBtn = document.getElementById('default-mode-btn');
+        const randomModeBtn = document.getElementById('random-mode-btn');
+        const defaultModeContainer = document.getElementById('default-mode-container');
+        const randomModeContainer = document.getElementById('random-mode-container');
+
+        // Default Mode Inputs
         const usernameInput = document.getElementById('username-input');
+        const createPasswordInputGroup = document.getElementById('create-password-input-group');
+        const createPasswordInput = document.getElementById('create-password-input');
+        const maxParticipantsInput = document.getElementById('max-participants-input'); // New element
         const roomCodeInput = document.getElementById('room-code-input');
         const createRoomBtn = document.getElementById('create-room-btn');
         const joinRoomBtn = document.getElementById('join-room-btn');
+
+        // Random Mode Inputs
+        const randomUsernameInput = document.getElementById('random-username-input');
+        const joinRandomRoomBtn = document.getElementById('join-random-room-btn');
+
+
         const userIdDisplay = document.getElementById('user-id-display');
         const currentRoomCodeDisplay = document.getElementById('current-room-code');
         const participantsCount = document.getElementById('participants-count');
@@ -568,9 +957,18 @@
         const modalContent = document.getElementById('modal-content');
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
+        const modalPasswordInputGroup = document.getElementById('modal-password-input-group');
+        const modalPasswordInput = document.getElementById('modal-password-input');
         const modalOkBtn = document.getElementById('modal-ok-btn');
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
-        const modalButtons = document.getElementById('modal-buttons');
+
+        // Dark Mode Elements
+        const darkModeToggleHome = document.getElementById('dark-mode-toggle');
+        const darkModeToggleChat = document.getElementById('dark-mode-toggle-chat');
+        const iconMoonHome = darkModeToggleHome.querySelector('.icon-moon-text');
+        const iconSunHome = darkModeToggleHome.querySelector('.icon-sun-text');
+        const iconMoonChat = darkModeToggleChat.querySelector('.icon-moon-text');
+        const iconSunChat = darkModeToggleChat.querySelector('.icon-sun-text');
 
 
         // Application State
@@ -578,23 +976,26 @@
         let currentRoom = null;
         let unsubscribeRoomListener = null;
         let unsubscribeMessagesListener = null;
+        let currentMode = 'default'; // 'default' or 'random'
 
-        // Utility function to generate a random room code
+        // Utility function to generate a random room code (6 characters)
         const generateRoomCode = () => {
             let result = '';
             const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             const charactersLength = characters.length;
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 6; i++) { // Increased length to 6
                 result += characters.charAt(Math.floor(Math.random() * charactersLength));
             }
             return result;
         };
 
         // Function to show custom modal messages
-        const showModal = (title, message, onConfirmCallback, showCancel = false, onCancelCallback = () => hideModal()) => {
+        const showModal = (title, message, onConfirmCallback, showCancel = false, onCancelCallback = () => hideModal(), showPasswordInput = false) => {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
             modalCancelBtn.classList.toggle('hidden', !showCancel);
+            modalPasswordInputGroup.classList.toggle('hidden', !showPasswordInput);
+            modalPasswordInput.value = ''; // Clear password input on modal open
 
             modalOkBtn.onclick = () => {
                 onConfirmCallback();
@@ -639,6 +1040,7 @@
                 homeScreen.classList.add('animate-scaleIn'); // Apply animation
                 chatRoomScreen.classList.add('hidden');
                 chatRoomScreen.classList.remove('animate-scaleIn'); // Ensure chat screen animation is removed
+                updateModeUI(currentMode); // Ensure mode UI is correct when returning to home
             }
         };
 
@@ -648,7 +1050,7 @@
             participantsCount.textContent = users.length;
             users.forEach(user => {
                 const span = document.createElement('span');
-                span.className = `${user.userId === currentUserId ? 'bg-indigo-100 text-indigo-700 font-medium' : 'bg-gray-100 text-gray-600'}`;
+                span.className = `${user.userId === currentUserId ? 'bg-indigo-100' : 'bg-gray-100'}`;
                 span.textContent = `${user.username} ${user.userId === currentUserId ? '(You)' : ''}`;
                 participantsList.appendChild(span);
             });
@@ -682,7 +1084,7 @@
                     timestampDiv.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                     contentDiv.appendChild(senderSpan);
-                    contentDiv.appendChild(textP);
+                    contentDiv.appendChild(textP); // Always append text for now
                     contentDiv.appendChild(timestampDiv);
                     messageDiv.appendChild(contentDiv);
                     messagesContainer.appendChild(messageDiv);
@@ -699,7 +1101,7 @@
                 userIdDisplay.textContent = `Your User ID: ${currentUserId}`;
             } else {
                 try {
-                    // No initialAuthToken for self-hosted apps, always sign in anonymously
+                    // For self-hosted apps, always sign in anonymously
                     await signInAnonymously(auth);
                 } catch (error) {
                     console.error("Error signing in:", error);
@@ -709,20 +1111,13 @@
             updateUI(); // Show UI after authentication
         });
 
-        // Handle creating a new room
-        createRoomBtn.addEventListener('click', async () => {
-            const username = usernameInput.value.trim();
-            if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => {});
-                return;
-            }
-
+        // Function to create a room (can be called by create button or random join)
+        const createRoom = async (username, password = null, maxParticipants = 4) => {
             let newRoomCode = generateRoomCode();
             let roomExists = true;
             let attempts = 0;
             const maxAttempts = 10;
 
-            // Ensure room code is unique
             while (roomExists && attempts < maxAttempts) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
                 const docSnap = await getDoc(roomRef);
@@ -736,29 +1131,93 @@
 
             if (roomExists) {
                 showModal("Error", "Could not generate a unique room code. Please try again.", () => {});
-                return;
+                return null;
             }
 
             const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
             const user = { userId: currentUserId, username: username };
+            const roomData = {
+                code: newRoomCode,
+                users: [user],
+                createdAt: serverTimestamp(),
+                maxParticipants: maxParticipants, // Store max participants
+            };
+
+            if (password) {
+                roomData.password = password;
+            }
 
             try {
-                await setDoc(roomRef, {
-                    code: newRoomCode,
-                    users: [user],
-                    createdAt: serverTimestamp(),
-                });
-                currentRoom = { code: newRoomCode, users: [user] };
-                roomCodeInput.value = newRoomCode; // Set the room code in the input for display
-                setupRoomListeners(newRoomCode);
-                updateUI();
+                await setDoc(roomRef, roomData);
+                return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
                 showModal("Creation Failed", "Failed to create room. Please try again.", () => {});
+                return null;
+            }
+        };
+
+        // Event listener for Create Room button (Default Mode)
+        createRoomBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const password = createPasswordInput.value.trim();
+            const maxParticipants = parseInt(maxParticipantsInput.value, 10);
+
+            if (!username) {
+                showModal("Invalid Username", "Please enter a username.", () => {});
+                return;
+            }
+
+            if (isNaN(maxParticipants) || maxParticipants < 2 || maxParticipants > 10) {
+                showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => {});
+                return;
+            }
+
+            const room = await createRoom(username, password, maxParticipants);
+            if (room) {
+                currentRoom = room;
+                roomCodeInput.value = room.code;
+                createPasswordInput.value = '';
+                setupRoomListeners(room.code);
+                updateUI();
             }
         });
 
-        // Handle joining an existing room
+        // Helper function to perform the actual join transaction
+        const performJoinRoomTransaction = async (roomRef, roomCode, username, currentUsers, roomMaxParticipants) => {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const roomDoc = await transaction.get(roomRef);
+                    const roomData = roomDoc.data();
+                    const usersAfterRecheck = roomData.users || [];
+                    const maxAllowedUsers = roomData.maxParticipants || roomMaxParticipants || 4; // Use room's maxParticipants or default
+
+                    if (usersAfterRecheck.length >= maxAllowedUsers) {
+                        return Promise.reject(new Error("Room full (re-check)"));
+                    }
+                    if (usersAfterRecheck.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                        return Promise.reject(new Error("Username taken (re-check)"));
+                    }
+
+                    const newUser = { userId: currentUserId, username: username };
+                    transaction.update(roomRef, {
+                        users: arrayUnion(newUser)
+                    });
+
+                    currentRoom = { code: roomCode, users: [...usersAfterRecheck, newUser], maxParticipants: maxAllowedUsers };
+                });
+                setupRoomListeners(roomCode);
+                updateUI();
+            } catch (error) {
+                console.error("Error joining room (transaction):", error);
+                let errorMessage = "Failed to join room. Please try again.";
+                if (error.message.includes("Room full")) errorMessage = "Room is now full. Please try another room.";
+                if (error.message.includes("Username taken")) errorMessage = "Username was taken. Please choose another.";
+                showModal("Join Failed", errorMessage, () => {});
+            }
+        };
+
+        // Event listener for Join Room button (Default Mode)
         joinRoomBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const roomCode = roomCodeInput.value.trim().toUpperCase();
@@ -775,43 +1234,112 @@
             const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
 
             try {
-                await runTransaction(db, async (transaction) => {
-                    const roomDoc = await transaction.get(roomRef);
+                const roomDoc = await getDoc(roomRef);
 
-                    if (!roomDoc.exists()) {
-                        showModal("Room Not Found", "The room code you entered does not exist.", () => {});
-                        return Promise.reject(new Error("Room not found"));
-                    }
-
-                    const roomData = roomDoc.data();
-                    const currentUsers = roomData.users || [];
-
-                    if (currentUsers.length >= 4) {
-                        showModal("Room Full", "This room has reached its maximum capacity (4 users).", () => {});
-                        return Promise.reject(new Error("Room full"));
-                    }
-
-                    if (currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
-                        showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => {});
-                        return Promise.reject(new Error("Username taken"));
-                    }
-
-                    const newUser = { userId: currentUserId, username: username };
-                    transaction.update(roomRef, {
-                        users: arrayUnion(newUser)
-                    });
-
-                    currentRoom = { code: roomCode, users: [...currentUsers, newUser] };
-                });
-                setupRoomListeners(roomCode);
-                updateUI();
-            } catch (error) {
-                console.error("Error joining room:", error);
-                if (!error.message.includes("Room not found") && !error.message.includes("Room full") && !error.message.includes("Username taken")) {
-                    showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => {});
+                if (!roomDoc.exists()) {
+                    showModal("Room Not Found", "The room code you entered does not exist.", () => {});
+                    return;
                 }
+
+                const roomData = roomDoc.data();
+                const currentUsers = roomData.users || [];
+                const maxAllowedUsers = roomData.maxParticipants || 4; // Use room's maxParticipants or default
+
+                if (currentUsers.length >= maxAllowedUsers) {
+                    showModal("Room Full", `This room has reached its maximum capacity (${maxAllowedUsers} users).`, () => {});
+                    return;
+                }
+
+                if (currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                    showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => {});
+                    return;
+                }
+
+                // Handle password protected rooms
+                if (roomData.password) {
+                    const promptForPassword = () => {
+                        showModal("Enter Password", "This room is password protected. Please enter the password.", async () => {
+                            const enteredPassword = modalPasswordInput.value.trim();
+                            if (enteredPassword === roomData.password) {
+                                await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                            } else {
+                                showModal("Incorrect Password", "The password you entered is incorrect. Please try again.", () => {
+                                    promptForPassword(); // Re-prompt for password on OK after incorrect entry
+                                }, true, () => {}); // Allow cancel to just close the modal
+                            }
+                        }, true, () => {}, true); // showCancel=true, showPasswordInput=true
+                    };
+                    promptForPassword(); // Initial call to prompt for password
+                } else {
+                    await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                }
+
+            } catch (error) {
+                console.error("Error joining room (initial check):", error);
+                showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => {});
             }
         });
+
+        // Event listener for Join Random Room button (Random Mode)
+        joinRandomRoomBtn.addEventListener('click', async () => {
+            const username = randomUsernameInput.value.trim();
+            if (!username) {
+                showModal("Invalid Username", "Please enter a username.", () => {});
+                return;
+            }
+
+            // Check if random mode warning has been shown
+            const randomWarningShown = localStorage.getItem('randomWarningShown');
+            if (!randomWarningShown) {
+                showModal("Anonymous Chat Warning", "You are about to join a random, unmoderated, and temporary chat room. Do not share personal information.", async () => {
+                    localStorage.setItem('randomWarningShown', 'true'); // Mark as shown
+                    await findRandomRoom(username); // Changed from findOrCreateRandomRoom
+                }, true, () => {
+                    // User cancelled the warning, do nothing
+                });
+            } else {
+                await findRandomRoom(username); // Changed from findOrCreateRandomRoom
+            }
+        });
+
+        const findRandomRoom = async (username) => {
+            const roomsCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms`);
+            try {
+                // Query for rooms that are not full, have at least one member, and no password
+                const q = query(
+                    roomsCollectionRef,
+                    where('users', '!=', []), // Ensures 'users' array is not empty
+                );
+                const querySnapshot = await getDocs(q);
+                let availableRooms = [];
+
+                querySnapshot.forEach(docSnap => {
+                    const roomData = docSnap.data();
+                    const maxAllowedUsers = roomData.maxParticipants || 4; // Default to 4 if not set
+                    // Client-side filtering for rooms that are not full and have no password
+                    if (roomData.users && roomData.users.length > 0 && roomData.users.length < maxAllowedUsers && !roomData.password) {
+                        availableRooms.push(roomData);
+                    }
+                });
+
+                if (availableRooms.length > 0) {
+                    // Pick a random available room
+                    const randomIndex = Math.floor(Math.random() * availableRooms.length);
+                    const roomToJoin = availableRooms[randomIndex];
+                    const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomToJoin.code);
+
+                    // Attempt to join the selected room
+                    await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.users, roomToJoin.maxParticipants);
+                } else {
+                    // No suitable random room found, do NOT create a new one
+                    showModal("No Random Rooms Available", "Sorry, no random rooms are currently available. Please try again later or create a new room in Default Mode.", () => {});
+                }
+            } catch (error) {
+                console.error("Error finding random room:", error);
+                showModal("Error", "Failed to find a random room. Please try again.", () => {});
+            }
+        };
+
 
         // Setup real-time listeners for room data and messages
         const setupRoomListeners = (roomCode) => {
@@ -826,7 +1354,7 @@
             unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const roomData = docSnap.data();
-                    currentRoom = { ...currentRoom, users: roomData.users || [] };
+                    currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4 }; // Update maxParticipants
                     renderParticipants(currentRoom.users);
 
                     // Check if current user is still in the room
@@ -861,13 +1389,19 @@
         messageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const newMessageText = newMessageInput.value.trim();
-            if (!newMessageText || !currentRoom || !currentUserId) return;
+
+            if (!newMessageText) {
+                return;
+            }
+            if (!currentRoom || !currentUserId) return;
 
             const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
+
             try {
                 await addDoc(messagesCollectionRef, {
                     senderId: currentUserId,
-                    senderUsername: usernameInput.value.trim(),
+                    senderUsername: (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim()),
+                    type: 'text', // Explicitly set type to text
                     text: newMessageText,
                     timestamp: serverTimestamp(),
                 });
@@ -884,7 +1418,7 @@
                 if (!currentRoom || !currentUserId) return;
 
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                const userToRemove = { userId: currentUserId, username: usernameInput.value.trim() };
+                const userToRemove = { userId: currentUserId, username: (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim()) };
 
                 try {
                     await runTransaction(db, async (transaction) => {
@@ -927,14 +1461,83 @@
             updateUI();
         };
 
+        // Dark Mode Toggle Logic
+        const applyDarkMode = (isDarkMode) => {
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            iconMoonHome.classList.toggle('hidden', isDarkMode);
+            iconSunHome.classList.toggle('hidden', !isDarkMode);
+            iconMoonChat.classList.toggle('hidden', isDarkMode);
+            iconSunChat.classList.toggle('hidden', !isDarkMode);
+        };
+
+        darkModeToggleHome.addEventListener('click', () => {
+            const isDarkMode = !document.body.classList.contains('dark-mode');
+            applyDarkMode(isDarkMode);
+            localStorage.setItem('darkMode', isDarkMode);
+        });
+
+        darkModeToggleChat.addEventListener('click', () => {
+            const isDarkMode = !document.body.classList.contains('dark-mode');
+            applyDarkMode(isDarkMode);
+            localStorage.setItem('darkMode', isDarkMode);
+        });
+
+        // Apply dark mode on load if previously enabled
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === 'true') {
+            applyDarkMode(true);
+        } else {
+            applyDarkMode(false);
+        }
+
+        // Mode Switching Logic
+        const updateModeUI = (mode) => {
+            currentMode = mode;
+            if (mode === 'default') {
+                defaultModeBtn.classList.add('active');
+                randomModeBtn.classList.remove('active');
+                defaultModeContainer.classList.remove('hidden');
+                randomModeContainer.classList.add('hidden');
+                // Clear random mode input when switching away
+                randomUsernameInput.value = '';
+            } else { // random mode
+                randomModeBtn.classList.add('active');
+                defaultModeBtn.classList.remove('active');
+                randomModeContainer.classList.remove('hidden');
+                defaultModeContainer.classList.add('hidden');
+                // Clear default mode inputs when switching away
+                usernameInput.value = '';
+                createPasswordInput.value = '';
+                roomCodeInput.value = '';
+                createPasswordInputGroup.style.display = 'none'; // Hide password input
+                maxParticipantsInput.value = '4'; // Reset max participants to default
+            }
+        };
+
+        defaultModeBtn.addEventListener('click', () => updateModeUI('default'));
+        randomModeBtn.addEventListener('click', () => updateModeUI('random'));
+
+        // Show/hide password input for create room based on default username input
+        usernameInput.addEventListener('input', () => {
+            if (usernameInput.value.trim() !== '') {
+                createPasswordInputGroup.style.display = 'block';
+            } else {
+                createPasswordInputGroup.style.display = 'none';
+                createPasswordInput.value = ''; // Clear password if username is cleared
+            }
+        });
+
         // Initial UI update after script loads and before auth completes
-        // This ensures the loading screen is visible until auth is ready.
-        // The onAuthStateChanged listener will call updateUI() once auth is done.
         document.addEventListener('DOMContentLoaded', () => {
-            // Initially hide all main screens and show loading
             homeScreen.classList.add('hidden');
             chatRoomScreen.classList.add('hidden');
             loadingScreen.classList.remove('hidden');
+            // Set initial mode to default and update UI
+            updateModeUI('default');
+            // Trigger initial check for username input to show password field if pre-filled
+            if (usernameInput.value.trim() !== '') {
+                createPasswordInputGroup.style.display = 'block';
+            }
         });
 
     </script>
