@@ -189,6 +189,7 @@
             max-height: 80vh; /* Limit height to enable scrolling */
             display: flex; /* Use flexbox for layout */
             flex-direction: column; /* Stack children vertically */
+            border-radius: 0.75rem; /* Rounded corners for the policy modal */
         }
         #modal-content.show, #privacy-policy-modal-content.show {
             transform: scale(1);
@@ -211,34 +212,6 @@
             flex-grow: 1; /* Allow content to grow and take available space */
             overflow-y: auto; /* Enable vertical scrolling for content */
             padding-right: 0.5rem; /* Add some padding for scrollbar */
-        }
-        #modal-password-input-group {
-            margin-bottom: 1.5rem;
-        }
-        #modal-password-input-group label {
-            display: block;
-            text-align: left;
-            color: var(--text-color-primary);
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-        #modal-password-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--input-border);
-            border-radius: 0.5rem;
-            background-color: var(--card-bg);
-            color: var(--text-color-primary);
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
-        }
-        #modal-password-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px var(--focus-ring-indigo);
-            border-color: transparent;
-        }
-        #modal-password-input-group.hidden {
-            display: none;
         }
         #modal-buttons, #privacy-policy-buttons {
             display: flex;
@@ -287,6 +260,11 @@
             display: none;
         }
 
+        /* IMPORTANT: Force hidden elements to be display: none */
+        .hidden {
+            display: none !important;
+        }
+
 
         /* Focus styles for buttons */
         button:focus {
@@ -294,7 +272,7 @@
             box-shadow: 0 0 0 2px var(--focus-ring-blue);
         }
         #modal-cancel-btn:focus, #privacy-policy-close-btn:focus {
-            box-shadow: 0 0 0 2px var(--focus-ring-gray);
+            box_shadow: 0 0 0 2px var(--focus-ring-gray);
         }
         #leave-room-btn:focus {
             box-shadow: 0 0 0 2px var(--focus-ring-red);
@@ -962,7 +940,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-              // Your web app's Firebase configuration
+             // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
     apiKey: "AIzaSyA8ErpL72u6bTzPuOx51l4Mb51NDCDBDBY",
@@ -973,6 +951,7 @@
     appId: "1:928701458132:web:5eec69352bd35998023d41",
     measurementId: "G-DP3QEKB09S"
   };
+
 
         // Use your Firebase projectId for the Firestore path. This is crucial.
         const textrollAppId = firebaseConfig.projectId;
@@ -1056,6 +1035,9 @@
         let inactivityTimer = null; // Timer for room inactivity
         const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes in milliseconds
 
+        // Global variable to store the user object for quick access on exit
+        let currentUserObject = null;
+
         // Utility function to generate a random room code (6 characters)
         const generateRoomCode = () => {
             let result = '';
@@ -1072,9 +1054,17 @@
             modalTitle.textContent = title;
             modalMessage.textContent = message;
             modalCancelBtn.classList.toggle('hidden', !showCancel);
-            modalPasswordInputGroup.classList.toggle('hidden', !showPasswordInput);
+
+            // Ensure password input group and error are hidden by default for any new modal display
+            modalPasswordInputGroup.classList.add('hidden');
+            modalPasswordError.classList.add('hidden');
+
+            if (showPasswordInput) {
+                modalPasswordInputGroup.classList.remove('hidden');
+            }
+
             modalPasswordInput.value = ''; // Clear password input on modal open
-            modalPasswordError.classList.add('hidden'); // Hide password error on new modal open
+            // modalPasswordError.classList.add('hidden'); // Already handled above
 
             modalOkBtn.onclick = () => {
                 onConfirmCallback();
@@ -1096,6 +1086,9 @@
             modalContent.classList.remove('show'); // Remove 'show' class to reverse CSS animation
             setTimeout(() => {
                 modalOverlay.classList.add('hidden');
+                // Explicitly hide password input group and error when modal is hidden
+                modalPasswordInputGroup.classList.add('hidden');
+                modalPasswordError.classList.add('hidden');
             }, 300); // Match animation duration
         };
 
@@ -1248,6 +1241,9 @@
 
             try {
                 await setDoc(roomRef, roomData);
+                // Set currentUserObject and add beforeunload listener
+                currentUserObject = user;
+                window.addEventListener('beforeunload', handlePageExit);
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
@@ -1306,6 +1302,10 @@
 
                     currentRoom = { code: roomCode, users: [...usersAfterRecheck, newUser], maxParticipants: maxAllowedUsers };
                 });
+                // Set currentUserObject and add beforeunload listener
+                currentUserObject = { userId: currentUserId, username: username };
+                window.addEventListener('beforeunload', handlePageExit);
+
                 setupRoomListeners(roomCode);
                 updateUI();
             } catch (error) {
@@ -1357,35 +1357,32 @@
 
                 // Handle password protected rooms
                 if (roomData.password) {
-                    // Custom modal for password entry
-                    modalTitle.textContent = "Enter Password";
-                    modalMessage.textContent = "This room is password protected. Please enter the password.";
-                    modalCancelBtn.classList.remove('hidden');
-                    modalPasswordInputGroup.classList.remove('hidden');
-                    modalPasswordInput.value = '';
-                    modalPasswordError.classList.add('hidden'); // Hide previous error
-
-                    modalOkBtn.onclick = async () => {
-                        const enteredPassword = modalPasswordInput.value.trim();
-                        if (enteredPassword === roomData.password) {
-                            modalPasswordError.classList.add('hidden'); // Clear error if correct
-                            hideModal();
-                            await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
-                        } else {
-                            modalPasswordError.textContent = "Incorrect password. Please try again.";
-                            modalPasswordError.classList.remove('hidden');
-                            modalPasswordInput.value = ''; // Clear input for re-entry
-                        }
+                    const promptForPassword = () => {
+                        showModal(
+                            "Enter Password",
+                            "This room is password protected. Please enter the password.",
+                            async () => {
+                                const enteredPassword = modalPasswordInput.value.trim();
+                                if (enteredPassword === roomData.password) {
+                                    modalPasswordError.classList.add('hidden'); // Clear error if correct
+                                    // hideModal() is called by showModal's internal logic after onConfirmCallback
+                                    await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
+                                } else {
+                                    modalPasswordError.textContent = "Incorrect password. Please try again.";
+                                    modalPasswordError.classList.remove('hidden');
+                                    modalPasswordInput.value = ''; // Clear input for re-entry
+                                    // Re-show the modal to allow re-entry
+                                    promptForPassword(); // Call itself to re-open the modal with error
+                                }
+                            },
+                            true, // showCancel
+                            () => { // onCancelCallback
+                                // User cancelled, do nothing specific here, hideModal will be called.
+                            },
+                            true // showPasswordInput
+                        );
                     };
-                    modalCancelBtn.onclick = () => {
-                        hideModal();
-                    };
-
-                    modalOverlay.classList.remove('hidden');
-                    setTimeout(() => {
-                        modalContent.classList.add('show');
-                    }, 10);
-
+                    promptForPassword(); // Initial call to prompt for password
                 } else {
                     await performJoinRoomTransaction(roomRef, roomCode, username, currentUsers, maxAllowedUsers);
                 }
@@ -1632,6 +1629,10 @@
                 clearInterval(inactivityTimer);
                 inactivityTimer = null;
             }
+            // Remove beforeunload listener
+            window.removeEventListener('beforeunload', handlePageExit);
+            currentUserObject = null; // Clear the user object
+
             currentRoom = null;
             roomCodeInput.value = '';
             newMessageInput.value = '';
@@ -1639,6 +1640,41 @@
             noMessagesYet.classList.remove('hidden'); // Show "No messages yet"
             updateUI();
         };
+
+        // Function to handle page exit (browser close, tab close, navigation away)
+        const handlePageExit = async () => {
+            if (currentRoom && currentUserId && currentUserObject) {
+                const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                // This is a best-effort attempt as browser might terminate before write completes.
+                // No await here as beforeunload is synchronous.
+                try {
+                    // Fetch the latest room data to ensure we're removing the correct user object
+                    const roomDoc = await getDoc(roomRef);
+                    if (roomDoc.exists()) {
+                        const roomData = roomDoc.data();
+                        const currentUsersInFirestore = roomData.users || [];
+                        const userToReallyRemove = currentUsersInFirestore.find(u => u.userId === currentUserId);
+
+                        if (userToReallyRemove) {
+                            const updatedUsers = currentUsersInFirestore.filter(u => u.userId !== currentUserId);
+                            if (updatedUsers.length === 0) {
+                                // If no users left, delete the room
+                                deleteDoc(roomRef).catch(e => console.warn("Failed to delete room on exit (best-effort):", e));
+                            } else {
+                                // Otherwise, just update the user list and lastActivity
+                                updateDoc(roomRef, {
+                                    users: arrayRemove(userToReallyRemove),
+                                    lastActivity: serverTimestamp()
+                                }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Error attempting to remove user on page exit:", e);
+                }
+            }
+        };
+
 
         // Dark Mode Toggle Logic
         const applyDarkMode = (isDarkMode) => {
