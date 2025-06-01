@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Textroll Chat App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for chat messages */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Animations */
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .animate-scaleIn {
+            animation: scaleIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-500 to-indigo-600 font-sans text-gray-800 flex flex-col items-center justify-center p-4">
+
+    <div id="loading-screen" class="fixed inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center z-50">
+        <div class="text-2xl font-bold">Loading Textroll...</div>
+    </div>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full transform transition-all duration-300 scale-95 opacity-0">
+            <h3 id="modal-title" class="text-xl font-semibold text-gray-800 mb-4"></h3>
+            <p id="modal-message" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-end space-x-3">
+                <button id="modal-cancel-btn" class="px-5 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 hidden">
+                    Cancel
+                </button>
+                <button id="modal-ok-btn" class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="home-screen" class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center transform transition-all duration-500 scale-95 opacity-0 animate-scaleIn hidden">
+        <h1 class="text-5xl font-extrabold text-indigo-700 mb-6 tracking-tight">
+            Textroll
+        </h1>
+        <p class="text-gray-600 mb-8 text-lg">
+            Connect and chat anonymously with friends or strangers!
+        </p>
+
+        <div class="mb-6">
+            <label for="username-input" class="block text-left text-gray-700 text-sm font-medium mb-2">
+                Enter your username:
+            </label>
+            <input
+                type="text"
+                id="username-input"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                placeholder="e.g., ChatMaster"
+                maxlength="15"
+            />
+        </div>
+
+        <div class="mb-8">
+            <label for="room-code-input" class="block text-left text-gray-700 text-sm font-medium mb-2">
+                Or enter a room code to join:
+            </label>
+            <input
+                type="text"
+                id="room-code-input"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 uppercase"
+                placeholder="e.g., ABCD"
+                maxlength="4"
+            />
+        </div>
+
+        <div class="flex flex-col space-y-4">
+            <button
+                id="create-room-btn"
+                class="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
+            >
+                Create New Room
+            </button>
+            <button
+                id="join-room-btn"
+                class="w-full py-3 px-6 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75"
+            >
+                Join Room
+            </button>
+        </div>
+        <p class="text-xs text-gray-500 mt-6" id="user-id-display"></p>
+    </div>
+
+    <div id="chat-room-screen" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col h-[85vh] transform transition-all duration-500 scale-95 opacity-0 animate-scaleIn hidden">
+        <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+            <h2 class="text-3xl font-bold text-indigo-700">
+                Room: <span id="current-room-code" class="text-purple-600"></span>
+            </h2>
+            <button
+                id="leave-room-btn"
+                class="px-4 py-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
+            >
+                Leave Room
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Participants (<span id="participants-count">0</span>/4):</h3>
+            <div id="participants-list" class="flex flex-wrap gap-2 text-sm text-gray-600">
+                </div>
+        </div>
+
+        <div id="messages-container" class="flex-grow overflow-y-auto p-4 bg-gray-50 rounded-lg mb-4 shadow-inner custom-scrollbar">
+            <p id="no-messages-yet" class="text-center text-gray-500 italic mt-4 hidden">No messages yet. Start the conversation!</p>
+            <div id="messages-end-ref"></div> </div>
+
+        <form id="message-form" class="flex gap-3">
+            <input
+                type="text"
+                id="new-message-input"
+                class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                placeholder="Type your message..."
+            />
+            <button
+                type="submit"
+                id="send-message-btn"
+                class="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75"
+            >
+                Send
+            </button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase config and app ID, provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-textroll-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase App
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const homeScreen = document.getElementById('home-screen');
+        const chatRoomScreen = document.getElementById('chat-room-screen');
+        const usernameInput = document.getElementById('username-input');
+        const roomCodeInput = document.getElementById('room-code-input');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const currentRoomCodeDisplay = document.getElementById('current-room-code');
+        const participantsCount = document.getElementById('participants-count');
+        const participantsList = document.getElementById('participants-list');
+        const messagesContainer = document.getElementById('messages-container');
+        const noMessagesYet = document.getElementById('no-messages-yet');
+        const messagesEndRef = document.getElementById('messages-end-ref');
+        const newMessageInput = document.getElementById('new-message-input');
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        const messageForm = document.getElementById('message-form');
+        const leaveRoomBtn = document.getElementById('leave-room-btn');
+
+        // Modal Elements
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalOkBtn = document.getElementById('modal-ok-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        // Application State
+        let currentUserId = null;
+        let currentRoom = null;
+        let unsubscribeRoomListener = null;
+        let unsubscribeMessagesListener = null;
+
+        // Utility function to generate a random room code
+        const generateRoomCode = () => {
+            let result = '';
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const charactersLength = characters.length;
+            for (let i = 0; i < 4; i++) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        };
+
+        // Function to show custom modal messages
+        const showModal = (title, message, onConfirmCallback, showCancel = false, onCancelCallback = () => hideModal()) => {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalCancelBtn.classList.toggle('hidden', !showCancel);
+
+            modalOkBtn.onclick = () => {
+                onConfirmCallback();
+                hideModal();
+            };
+            modalCancelBtn.onclick = () => {
+                onCancelCallback();
+                hideModal();
+            };
+
+            modalOverlay.classList.remove('hidden');
+            // Trigger animation
+            setTimeout(() => {
+                modalContent.classList.remove('opacity-0', 'scale-95');
+            }, 10);
+        };
+
+        const hideModal = () => {
+            modalContent.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+            }, 300); // Match animation duration
+        };
+
+        // Function to update UI based on current room state
+        const updateUI = () => {
+            loadingScreen.classList.add('hidden'); // Hide loading screen once auth is ready
+
+            if (currentRoom) {
+                homeScreen.classList.add('hidden');
+                chatRoomScreen.classList.remove('hidden');
+                chatRoomScreen.classList.add('animate-scaleIn'); // Apply animation
+                currentRoomCodeDisplay.textContent = currentRoom.code;
+                renderParticipants(currentRoom.users);
+                // Enable message input and send button if current user is in the room
+                const isCurrentUserInRoom = currentRoom.users.some(u => u.userId === currentUserId);
+                newMessageInput.disabled = !isCurrentUserInRoom;
+                sendMessageBtn.disabled = !isCurrentUserInRoom;
+            } else {
+                homeScreen.classList.remove('hidden');
+                homeScreen.classList.add('animate-scaleIn'); // Apply animation
+                chatRoomScreen.classList.add('hidden');
+            }
+        };
+
+        // Render participants list
+        const renderParticipants = (users) => {
+            participantsList.innerHTML = ''; // Clear previous participants
+            participantsCount.textContent = users.length;
+            users.forEach(user => {
+                const span = document.createElement('span');
+                span.className = `px-3 py-1 rounded-full ${user.userId === currentUserId ? 'bg-indigo-100 text-indigo-700 font-medium' : 'bg-gray-100 text-gray-600'}`;
+                span.textContent = `${user.username} ${user.userId === currentUserId ? '(You)' : ''}`;
+                participantsList.appendChild(span);
+            });
+        };
+
+        // Render messages
+        const renderMessages = (messages) => {
+            messagesContainer.innerHTML = ''; // Clear existing messages
+            if (messages.length === 0) {
+                noMessagesYet.classList.remove('hidden');
+            } else {
+                noMessagesYet.classList.add('hidden');
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `flex mb-3 ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = `max-w-[70%] p-3 rounded-xl shadow-sm ${
+                        msg.senderId === currentUserId
+                            ? 'bg-indigo-500 text-white rounded-br-none'
+                            : 'bg-gray-200 text-gray-800 rounded-bl-none'
+                    }`;
+
+                    const senderSpan = document.createElement('div');
+                    senderSpan.className = "text-xs font-semibold mb-1 opacity-80";
+                    senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
+
+                    const textP = document.createElement('p');
+                    textP.className = "text-sm break-words";
+                    textP.textContent = msg.text;
+
+                    const timestampDiv = document.createElement('div');
+                    timestampDiv.className = "text-right text-xs opacity-60 mt-1";
+                    // Ensure timestamp is a Date object before calling toLocaleTimeString
+                    const date = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date();
+                    timestampDiv.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    contentDiv.appendChild(senderSpan);
+                    contentDiv.appendChild(textP);
+                    contentDiv.appendChild(timestampDiv);
+                    messageDiv.appendChild(contentDiv);
+                    messagesContainer.appendChild(messageDiv);
+                });
+            }
+            messagesContainer.appendChild(messagesEndRef); // Ensure scroll target is always at the end
+            messagesEndRef.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // Firebase Authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                userIdDisplay.textContent = `Your User ID: ${currentUserId}`;
+            } else {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Error signing in:", error);
+                    showModal("Authentication Error", "Could not sign in. Please try again.", () => {});
+                }
+            }
+            updateUI(); // Show UI after authentication
+        });
+
+        // Handle creating a new room
+        createRoomBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showModal("Invalid Username", "Please enter a username.", () => {});
+                return;
+            }
+
+            let newRoomCode = generateRoomCode();
+            let roomExists = true;
+            let attempts = 0;
+            const maxAttempts = 10;
+
+            // Ensure room code is unique
+            while (roomExists && attempts < maxAttempts) {
+                const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, newRoomCode);
+                const docSnap = await getDoc(roomRef);
+                if (!docSnap.exists()) {
+                    roomExists = false;
+                } else {
+                    newRoomCode = generateRoomCode();
+                    attempts++;
+                }
+            }
+
+            if (roomExists) {
+                showModal("Error", "Could not generate a unique room code. Please try again.", () => {});
+                return;
+            }
+
+            const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, newRoomCode);
+            const user = { userId: currentUserId, username: username };
+
+            try {
+                await setDoc(roomRef, {
+                    code: newRoomCode,
+                    users: [user],
+                    createdAt: serverTimestamp(),
+                });
+                currentRoom = { code: newRoomCode, users: [user] };
+                roomCodeInput.value = newRoomCode; // Set the room code in the input for display
+                setupRoomListeners(newRoomCode);
+                updateUI();
+            } catch (error) {
+                console.error("Error creating room:", error);
+                showModal("Creation Failed", "Failed to create room. Please try again.", () => {});
+            }
+        });
+
+        // Handle joining an existing room
+        joinRoomBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const roomCode = roomCodeInput.value.trim().toUpperCase();
+
+            if (!username) {
+                showModal("Invalid Username", "Please enter a username.", () => {});
+                return;
+            }
+            if (!roomCode) {
+                showModal("Invalid Room Code", "Please enter a room code.", () => {});
+                return;
+            }
+
+            const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, roomCode);
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const roomDoc = await transaction.get(roomRef);
+
+                    if (!roomDoc.exists()) {
+                        showModal("Room Not Found", "The room code you entered does not exist.", () => {});
+                        return Promise.reject(new Error("Room not found"));
+                    }
+
+                    const roomData = roomDoc.data();
+                    const currentUsers = roomData.users || [];
+
+                    if (currentUsers.length >= 4) {
+                        showModal("Room Full", "This room has reached its maximum capacity (4 users).", () => {});
+                        return Promise.reject(new Error("Room full"));
+                    }
+
+                    if (currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                        showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => {});
+                        return Promise.reject(new Error("Username taken"));
+                    }
+
+                    const newUser = { userId: currentUserId, username: username };
+                    transaction.update(roomRef, {
+                        users: arrayUnion(newUser)
+                    });
+
+                    currentRoom = { code: roomCode, users: [...currentUsers, newUser] };
+                });
+                setupRoomListeners(roomCode);
+                updateUI();
+            } catch (error) {
+                console.error("Error joining room:", error);
+                if (!error.message.includes("Room not found") && !error.message.includes("Room full") && !error.message.includes("Username taken")) {
+                    showModal("Join Failed", "Failed to join room. Please check the code and try again.", () => {});
+                }
+            }
+        });
+
+        // Setup real-time listeners for room data and messages
+        const setupRoomListeners = (roomCode) => {
+            // Unsubscribe previous listeners if any
+            if (unsubscribeRoomListener) unsubscribeRoomListener();
+            if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+
+            const roomDocRef = doc(db, `artifacts/${appId}/public/data/rooms`, roomCode);
+            const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/rooms/${roomCode}/messages`);
+
+            // Listen for room data changes (users, capacity)
+            unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const roomData = docSnap.data();
+                    currentRoom = { ...currentRoom, users: roomData.users || [] };
+                    renderParticipants(currentRoom.users);
+
+                    // Check if current user is still in the room
+                    const userStillInRoom = roomData.users.some(u => u.userId === currentUserId);
+                    if (!userStillInRoom) {
+                        showModal("Room Left", "You have been removed from the room or the room no longer exists.", () => {
+                            handleLeaveRoomCleanUp(); // Clean up without Firestore operation
+                        });
+                    }
+                } else {
+                    // Room no longer exists
+                    showModal("Room Ended", "The room you were in has ended.", () => {
+                        handleLeaveRoomCleanUp(); // Clean up without Firestore operation
+                    });
+                }
+            }, (error) => {
+                console.error("Error listening to room:", error);
+                showModal("Connection Error", "Failed to get room updates. Please check your internet connection.", () => {});
+            });
+
+            // Listen for messages
+            unsubscribeMessagesListener = onSnapshot(query(messagesCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
+                const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderMessages(newMessages);
+            }, (error) => {
+                console.error("Error listening to messages:", error);
+                showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => {});
+            });
+        };
+
+        // Handle sending a message
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newMessageText = newMessageInput.value.trim();
+            if (!newMessageText || !currentRoom || !currentUserId) return;
+
+            const messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/rooms/${currentRoom.code}/messages`);
+            try {
+                await addDoc(messagesCollectionRef, {
+                    senderId: currentUserId,
+                    senderUsername: usernameInput.value.trim(),
+                    text: newMessageText,
+                    timestamp: serverTimestamp(),
+                });
+                newMessageInput.value = ''; // Clear input
+            } catch (error) {
+                console.error("Error sending message:", error);
+                showModal("Message Failed", "Failed to send message. Please try again.", () => {});
+            }
+        });
+
+        // Handle leaving the room
+        leaveRoomBtn.addEventListener('click', () => {
+            showModal("Leave Room", "Are you sure you want to leave this room?", async () => {
+                if (!currentRoom || !currentUserId) return;
+
+                const roomRef = doc(db, `artifacts/${appId}/public/data/rooms`, currentRoom.code);
+                const userToRemove = { userId: currentUserId, username: usernameInput.value.trim() };
+
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const roomDoc = await transaction.get(roomRef);
+                        if (roomDoc.exists()) {
+                            const roomData = roomDoc.data();
+                            const currentUsers = roomData.users || [];
+
+                            // Filter out the user to remove
+                            const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
+
+                            if (updatedUsers.length === 0) {
+                                // If no users left, delete the room
+                                transaction.delete(roomRef);
+                            } else {
+                                // Otherwise, just update the user list
+                                transaction.update(roomRef, {
+                                    users: updatedUsers
+                                });
+                            }
+                        }
+                    });
+                    handleLeaveRoomCleanUp();
+                } catch (error) {
+                    console.error("Error leaving room:", error);
+                    showModal("Leave Room Failed", "Could not leave the room. Please try again.", () => {});
+                }
+            }, true); // Show cancel button
+        });
+
+        // Clean up function when leaving a room (local state and listeners)
+        const handleLeaveRoomCleanUp = () => {
+            if (unsubscribeRoomListener) unsubscribeRoomListener();
+            if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+            currentRoom = null;
+            roomCodeInput.value = '';
+            newMessageInput.value = '';
+            messagesContainer.innerHTML = ''; // Clear messages display
+            noMessagesYet.classList.remove('hidden'); // Show "No messages yet"
+            updateUI();
+        };
+
+        // Initial UI update after script loads and before auth completes
+        // This ensures the loading screen is visible until auth is ready.
+        // The onAuthStateChanged listener will call updateUI() once auth is done.
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initially hide all main screens and show loading
+            homeScreen.classList.add('hidden');
+            chatRoomScreen.classList.add('hidden');
+            loadingScreen.classList.remove('hidden');
+        });
+
+    </script>
+</body>
+</html>
