@@ -897,7 +897,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
               // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -982,6 +982,8 @@
         let unsubscribeRoomListener = null;
         let unsubscribeMessagesListener = null;
         let currentMode = 'default'; // 'default' or 'random'
+        let inactivityTimer = null; // Timer for room inactivity
+        const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes in milliseconds
 
         // Utility function to generate a random room code (6 characters)
         const generateRoomCode = () => {
@@ -1145,6 +1147,7 @@
                 code: newRoomCode,
                 users: [user],
                 createdAt: serverTimestamp(),
+                lastActivity: serverTimestamp(), // Initialize last activity
                 maxParticipants: maxParticipants, // Store max participants
             };
 
@@ -1206,7 +1209,8 @@
 
                     const newUser = { userId: currentUserId, username: username };
                     transaction.update(roomRef, {
-                        users: arrayUnion(newUser)
+                        users: arrayUnion(newUser),
+                        lastActivity: serverTimestamp() // Update last activity on join
                     });
 
                     currentRoom = { code: roomCode, users: [...usersAfterRecheck, newUser], maxParticipants: maxAllowedUsers };
@@ -1298,12 +1302,12 @@
             if (!randomWarningShown) {
                 showModal("Anonymous Chat Warning", "You are about to join a random, unmoderated, and temporary chat room. Do not share personal information.", async () => {
                     localStorage.setItem('randomWarningShown', 'true'); // Mark as shown
-                    await findRandomRoom(username); // Changed from findOrCreateRandomRoom
+                    await findRandomRoom(username);
                 }, true, () => {
                     // User cancelled the warning, do nothing
                 });
             } else {
-                await findRandomRoom(username); // Changed from findOrCreateRandomRoom
+                await findRandomRoom(username);
             }
         });
 
@@ -1351,32 +1355,34 @@
             // Unsubscribe previous listeners if any
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+            // Clear any existing inactivity timer
+            if (inactivityTimer) {
+                clearInterval(inactivityTimer);
+                inactivityTimer = null;
+            }
+
 
             const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
             const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
 
             // Listen for room data changes (users, capacity)
             unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
-                const previousRoomState = currentRoom; // Store previous state for comparison
-
                 if (docSnap.exists()) {
                     const roomData = docSnap.data();
-                    currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4 }; // Update maxParticipants
+                    currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity }; // Update maxParticipants and lastActivity
                     renderParticipants(currentRoom.users);
 
-                    // Check if current user was in the room and is now removed
-                    // This condition prevents false positives right after joining
-                    const userWasInRoom = previousRoomState && previousRoomState.users.some(u => u.userId === currentUserId);
-                    const userStillInRoom = roomData.users.some(u => u.userId === currentUserId);
-
-                    if (userWasInRoom && !userStillInRoom) {
-                        // This means the user was explicitly removed by another action or the room was reset
-                        showModal("Room Left", "You have been removed from the room.", () => {
-                            handleLeaveRoomCleanUp();
-                        });
+                    // Reset inactivity timer on any room data update
+                    if (inactivityTimer) {
+                        clearInterval(inactivityTimer);
                     }
+                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000); // Check every minute
+
+                    // Check for inactivity immediately on snapshot
+                    checkInactivity(roomDocRef);
+
                 } else {
-                    // Room no longer exists
+                    // Room no longer exists (deleted by another client or timeout)
                     showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
                     });
@@ -1390,11 +1396,46 @@
             unsubscribeMessagesListener = onSnapshot(query(messagesCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
                 const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderMessages(newMessages);
+                // Also update room's last activity when a message is received (implies activity)
+                if (currentRoom && currentRoom.code) {
+                    const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                    updateDoc(roomRef, {
+                        lastActivity: serverTimestamp()
+                    }).catch(e => console.error("Error updating last activity on message receive:", e));
+                }
             }, (error) => {
                 console.error("Error listening to messages:", error);
                 showModal("Connection Error", "Failed to get message updates. Please check your internet connection.", () => {});
             });
         };
+
+        // Function to check for room inactivity
+        const checkInactivity = async (roomDocRef) => {
+            if (!currentRoom || !currentRoom.lastActivity) return;
+
+            const lastActivityTime = currentRoom.lastActivity.toDate().getTime();
+            const currentTime = Date.now();
+
+            if (currentTime - lastActivityTime >= INACTIVITY_TIMEOUT_MS) {
+                // Room has timed out
+                if (inactivityTimer) {
+                    clearInterval(inactivityTimer);
+                    inactivityTimer = null;
+                }
+
+                showModal("Room Timed Out", "This room has been deleted due to inactivity.", async () => {
+                    handleLeaveRoomCleanUp();
+                    // Attempt to delete the room document. This is idempotent.
+                    try {
+                        await deleteDoc(roomDocRef);
+                        console.log(`Room ${currentRoom.code} deleted due to inactivity.`);
+                    } catch (e) {
+                        console.warn(`Could not delete timed out room ${currentRoom.code}, it might have already been deleted:`, e);
+                    }
+                });
+            }
+        };
+
 
         // Handle sending a message
         messageForm.addEventListener('submit', async (e) => {
@@ -1407,6 +1448,7 @@
             if (!currentRoom || !currentUserId) return;
 
             const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
+            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code); // Reference to the room document
 
             try {
                 await addDoc(messagesCollectionRef, {
@@ -1416,6 +1458,12 @@
                     text: newMessageText,
                     timestamp: serverTimestamp(),
                 });
+
+                // Update room's lastActivity after sending a message
+                await updateDoc(roomRef, {
+                    lastActivity: serverTimestamp()
+                });
+
                 newMessageInput.value = ''; // Clear input
             } catch (error) {
                 console.error("Error sending message:", error);
@@ -1429,6 +1477,7 @@
                 if (!currentRoom || !currentUserId) return;
 
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
 
                 try {
                     await runTransaction(db, async (transaction) => {
@@ -1440,21 +1489,21 @@
                             // Find the exact user object to remove based on userId
                             const userObjectInFirestore = currentUsers.find(u => u.userId === currentUserId);
 
-                            if (userObjectInFirestore) { // Ensure the user is actually found
+                            if (userObjectInFirestore) { // Ensure the user is actually found in the list
                                 const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
 
                                 if (updatedUsers.length === 0) {
                                     // If no users left, delete the room
                                     transaction.delete(roomRef);
                                 } else {
-                                    // Otherwise, just update the user list using arrayRemove with the found object
+                                    // Otherwise, just update the user list and lastActivity
                                     transaction.update(roomRef, {
-                                        users: arrayRemove(userObjectInFirestore)
+                                        users: arrayRemove(userObjectInFirestore),
+                                        lastActivity: serverTimestamp() // Update last activity on leave
                                     });
                                 }
                             } else {
-                                // User not found in room, maybe they already left or never fully joined
-                                console.warn("Attempted to leave room, but user not found in participants list in Firestore.");
+                                console.warn("Attempted to leave room, but user not found in participants list in Firestore. Proceeding with cleanup.");
                             }
                         }
                     });
@@ -1470,6 +1519,10 @@
         const handleLeaveRoomCleanUp = () => {
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
+            if (inactivityTimer) {
+                clearInterval(inactivityTimer);
+                inactivityTimer = null;
+            }
             currentRoom = null;
             roomCodeInput.value = '';
             newMessageInput.value = '';
