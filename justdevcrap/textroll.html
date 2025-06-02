@@ -1612,8 +1612,7 @@
             }
             // Ensure beforeunload listener is removed before re-adding
             window.removeEventListener('beforeunload', handlePageExit); // ADDED: Remove previous listener
-            // Ensure visibilitychange listener is removed before re-adding
-            document.removeEventListener('visibilitychange', handleVisibilityChange); // ADDED: Remove previous listener
+            // REMOVED: document.removeEventListener('visibilitychange', handleVisibilityChange);
 
 
             const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
@@ -1636,9 +1635,9 @@
                     renderParticipants(currentRoom.users);
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
 
-                    // ADD THE BEFOREUNLOAD AND VISIBILITYCHANGE LISTENERS HERE, AFTER currentUserObject IS RELIABLY SET
+                    // ADD THE BEFOREUNLOAD LISTENER HERE, AFTER currentUserObject IS RELIABLY SET
                     window.addEventListener('beforeunload', handlePageExit); // ADDED: Attach listener here
-                    document.addEventListener('visibilitychange', handleVisibilityChange); // ADDED: Attach listener here
+                    // REMOVED: document.addEventListener('visibilitychange', handleVisibilityChange);
 
                 } else {
                     // Room no longer exists, handle immediately
@@ -1816,8 +1815,7 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
-            // Remove visibilitychange listener
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // REMOVED: document.removeEventListener('visibilitychange', handleVisibilityChange);
             currentUserObject = null; // Clear the user object
 
             currentRoom = null;
@@ -1880,13 +1878,13 @@
             }
         };
 
-        // Function to handle visibility change (tab hidden/closed)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                // Tab is hidden or closing, attempt to clean up
-                handlePageExit();
-            }
-        };
+        // REMOVED: Function to handle visibility change (tab hidden/closed)
+        // const handleVisibilityChange = () => {
+        //     if (document.visibilityState === 'hidden') {
+        //         // Tab is hidden or closing, attempt to clean up
+        //         handlePageExit();
+        //     }
+        // };
 
 
         // Dark Mode Toggle Logic
