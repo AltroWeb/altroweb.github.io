@@ -1291,6 +1291,9 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
+                // Add event listeners for tab/browser close and pagehide
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                window.addEventListener('pagehide', handlePageExit);
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
@@ -1365,7 +1368,9 @@
                 // After successful transaction, find the user object with the correct joinTimestamp
                 currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                 window.addEventListener('beforeunload', handlePageExit);
-                // Removed: document.addEventListener('visibilitychange', handleVisibilityChange);
+                // Add event listeners for tab/browser close and pagehide
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                window.addEventListener('pagehide', handlePageExit);
 
                 await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
                 updateUI();
@@ -1747,7 +1752,9 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
-            // Removed: document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // Remove visibilitychange and pagehide listeners
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('pagehide', handlePageExit);
             currentUserObject = null; // Clear the user object
 
             currentRoom = null;
@@ -1772,13 +1779,13 @@
             }
         };
 
-        // Removed: Function to handle visibility change (tab hidden/closed)
-        // const handleVisibilityChange = () => {
-        //     if (document.visibilityState === 'hidden') {
-        //         // Tab is hidden or closing, attempt to clean up
-        //         handlePageExit();
-        //     }
-        // };
+        // Function to handle visibility change (tab hidden/closed)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                // Tab is hidden or closing, attempt to clean up
+                handlePageExit();
+            }
+        };
 
 
         // Dark Mode Toggle Logic
