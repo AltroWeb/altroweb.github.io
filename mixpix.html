@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MixPix's MixBox</title>
-    <link rel="icon" type="image/x-xicon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAByCAAAAACqttqhAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+gFCw40OLCUXV0AAAN4SURBVGje7ZlNSFRRFMdPH0wiucg+FirlZzaMWaYIMYFoheSu2rgNWkVr165b1iyF2hVJGQVKSUSLobKxckDGSXQ0R1HEkXAYaEBq4dTMPe+++855cy9t7tnMnP+57/zm3ffO/RoAa9asWbNmzZq1/2T7RDc8lFc0Drx4KNX77yivuhdV/YLB30qbkl81qr5qUGy9n9UnZ+TyRVYSHvLQoEwNHjGIDPTJ1OuVBpHQKhM7eDmYyKZOp9bQysvBRNbWOrX6JqNI6HFKId6jZCOvOqU+ZgouUvLcepgpuMjALawEDxtGwgAWbgdMI09goZmbgY0M9iK/xTjy+DHRb2FWpQ8kLpM27qP0gbykdLUgc2jGRx2JkPmcBuR6WvQDd0u9cJUYTa9rQG4lkSCMNjdQMLmlAQkJ5J8qdbo8GvtCVowgoam/+L2zDgVHKrTcJXp/qmuK3xsbxVhey10CzCC/ZEEXQqGPhHQU5DjyB6RfAQDgnSbkHPJLFiPnPJr6Rc4vIuFfZfaj0W5xhpCOgpxGg0Fx6XETBdKEt4c2xsaQ3/x3IXDeo6F/5HPk1xZuM3zUo6F/ZBSN1dUn9z5Po6rMRSnZaJMX7rDCMNvm0awc5GvkFzr2mkezcpDzeMzb+wiKan5eIzK2gIRhAAC82Uzq7NjUEhK6AZw7g3RKIxLwIUF9AzircoqWi4icRH5dF0BvDRJfaUVGM6JfFQIIob1mZlorEj4hvwOg3aNJuchR5F8BuOzRpFzkGqrMSgA82q0RUx0ktvuePCsKw3g2nqXMlZy7TOGa63bMld6LZh7S8XK0XkACbejhIMfQw3QsJx9rRyY21XHiaMdBwgd1+As5ER35TB1+agC5odw57lCrkoNMzKqic9Sq5CDXl1XR5awBJHxVxPLv6XkYyPs77rFfj4wgs4rKTNP7lXUI89Y9NMFIw0FOuocYj5KFXHR9mJurhpBJ1w1rIslIw0Fmv7n+GMbbwzvDi7v8m5aPc7KwkBGXm8lGjCFhgyVrQbqUH33i4iPfyGVOVXKRP6Rj3uqSQWRCesgSJy97fCBBWvKUwx7/SFll5j4bRUZ+OrXtJ0aRsOSUFpgpuMhxp0Q7evGPlGzOx7Qjxe1gJoPjq9uK5t4JYeUlfiUPiEWXetC+K8Zj4iZvYm4XZQisMLvBmjVr1qxZs2bNlP0BnuP7s/BXv9cAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDUtMTFUMTQ6NTI6NDcrMDA6MDAugOVxAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA1LTExVDE0OjUyOjQ3KzAwOjAwX91dzQAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNS0xMVQxNDo1Mjo1NiswMDowMGIVdzgAAAAASUVORK5CYII=">
+    <link rel="icon" type="image/x-xicon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHIAAAByCAAAAACqttqhAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAACYktHRAD/h4/MvwAAAAd0SU1FB+gFCw40OLCUXV0AAAN4SURBVGje7ZlNSFRRFMdPH0wiucg+FirlZzaMWaYIMYFoheSu2rgNWkVr165b1iyF2hVJGQVKSUSLobKxckDGSXQ0R1HEkXAYaEBq4dTMPe+++855cy9t7tnMnP+57/zm3ffO/RoAa9asWbNmzZq1/2T7RDc8lFc0Drx4KNX77yivuhdV/YLB30qbkl81qr5qUGy9n9UnZ+TyRVYSHvLQoEwNHjGIDPTJ1OuVBpHQKhM7eDmYyKZOp9bQysvBRNbWOrX6JqNI6HFKId6jZCOvOqU+ZgouUvLcepgpuMjALawEDxtGwgAWbgdMI09goZmbgY0M9iK/xTjy+DHRb2FWpQ8kLpM27qP0gbykdLUgc2jGRx2JkPmcBuR6WvQDd0u9cJUYTa9rQG4lkSCMNjdQMLmlAQkJ5J8qdbo8GvtCVowgoam/+L2zDgVHKrTcJXp/qmuK3xsbxVhey10CzCC/ZEEXQqGPhHQU5DjyB6RfAQDgnSbkHPJLFiPnPJr6Rc4vIuFfZfaj0W5xhpCOgpxGg0Fx6XETBdKEt4c2xsaQ3/x3IXDeo6F/5HPk1xZuM3zUo6F/ZBSN1dUn9z5Po6rMRSnZaJMX7rDCMNvm0awc5GvkFzr2mkezcpDzeMzb+wiKan5eIzK2gIRhAAC82Uzq7NjUEhK6AZw7g3RKIxLwIUF9AzircoqWi4icRH5dF0BvDRJfaUVGM6JfFQIIob1mZlorEj4hvwOg3aNJuchR5F8BuOzRpFzkGqrMSgA82q0RUx0ktvuePCsKw3g2nqXMlZy7TOGa63bMld6LZh7S8XK0XkACbejhIMfQw3QsJx9rRyY21XHiaMdBwgd1+As5ER35TB1+agC5odw57lCrkoNMzKqic9Sq5CDXl1XR5awBJHxVxPLv6XkYyPs77rFfj4wgs4rKTNP7lXUI89Y9NMFIw0FOuocYj5KFXHR9mJurhpBJ1w1rIslIw0Fmv7n+GMbbwzvDi7v8m5aPc7KwkBGXm8lGjCFhgyVrQbqUH33i4iPfyGVOVXKRP6Rj3uqSQWRCesgSJy97fCBBWvKUwx7/SFll5j4bRUZ+OrXtJ0aRsOSUFpgpuMhxp0Q7evGPlGzOx7Qjxe1gJoPjq9uK5t4JYeUlfiUPiEWXetC+K8Zj4iZvYm4XZQisMLvBmjVr1qxZs2bNlP0BnuP7s/BXv9cAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjQtMDUtMTFUMTQ6NTI6NDcrMDA6MDAugOVxAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI0LTA1LTExVDE0OjUyOjQ3KzAwOjAwX91dzQAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNC0wNS0xMVQxNDo1Mjo1NiswMDowMGIVdzgAAAAASUVORK5CYII=
+">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Honk&family=Radio+Canada+Big:ital,wght@0,400..700;1,400..700&family=Rowdies:wght@300;400;700&display=swap" rel="stylesheet">
@@ -1101,7 +1102,7 @@ toggleButton.addEventListener('click', () => {
                 lowpassFilterNode.Q.value = 1; // Default Q value
 
                 // Connect the core chain that always exists, but is controlled by gains/toggles
-                // These connections are persistent and do not need to be re-established in playTrack
+                // These connections are persistent and do not need to be re-establish in playTrack
                 bassFilterNode.connect(compressorNode);
                 compressorNode.connect(dryGainNode);
                 convolverNode.connect(wetGainNode);
@@ -1250,6 +1251,8 @@ toggleButton.addEventListener('click', () => {
             // Stop current playback if any
             if (currentSourceNode) {
                 try {
+                    // Disconnect onended handler to prevent accidental triggers during load/seek
+                    currentSourceNode.onended = null; 
                     currentSourceNode.stop();
                     currentSourceNode.disconnect();
                 } catch (e) {
@@ -1293,6 +1296,40 @@ toggleButton.addEventListener('click', () => {
         }
 
         /**
+         * Handles track completion (natural end or user stop).
+         * This function is called by the `onended` event of the AudioBufferSourceNode.
+         */
+        function handleTrackCompletion() {
+            // Check if the track truly ended naturally (not stopped by user pause/seek/next/prev)
+            // We check `isPlaying` because `pauseTrack()` sets `isPlaying` to false *before* `stop()` is called,
+            // so if `isPlaying` is true here, it means the track was playing when it ended.
+            // A small threshold is used for floating point inaccuracies.
+            const track = playlist[currentTrackIndex];
+            const currentPosition = currentPlaybackOffset + (audioCtx.currentTime - playbackStartTime) * currentSourceNode.playbackRate.value;
+            const threshold = 0.1; // seconds
+
+            if (isPlaying && currentPosition >= track.audioBuffer.duration - threshold) {
+                // This indicates a natural end
+                isPlaying = false;
+                updatePlayPauseButton();
+                cancelAnimationFrame(animationFrameId); // Stop updating seekbar
+                currentPlaybackOffset = 0; // Reset for next play/loop
+                currentSourceNode = null; // Clear the reference
+
+                if (isLooping) {
+                    playTrack(); // Loop the current track
+                } else {
+                    nextTrack(); // Go to the next track in the playlist
+                }
+            } else {
+                // This indicates it was stopped by user action (pause, seek, next/prev)
+                // No action needed here, as pauseTrack/loadTrack already handle state.
+                // The important part is that nextTrack/playTrack for looping are NOT called.
+            }
+        }
+
+
+        /**
          * Plays the current track using AudioBufferSourceNode.
          */
         function playTrack() {
@@ -1303,6 +1340,8 @@ toggleButton.addEventListener('click', () => {
             // Stop and disconnect existing source node completely before rebuilding connections
             if (currentSourceNode) {
                 try {
+                    // Disconnect onended handler for the old source node
+                    currentSourceNode.onended = null; 
                     currentSourceNode.stop();
                     currentSourceNode.disconnect();
                 } catch (e) {
@@ -1319,6 +1358,9 @@ toggleButton.addEventListener('click', () => {
 
             currentSourceNode = audioCtx.createBufferSource();
             currentSourceNode.buffer = track.audioBuffer;
+
+            // Attach the onended event listener for natural track completion
+            currentSourceNode.onended = handleTrackCompletion;
 
             // Apply current pitch and tempo settings directly to the source
             applyPitch(); // Sets currentSourceNode.detune.value
@@ -1362,7 +1404,7 @@ toggleButton.addEventListener('click', () => {
             // Ensure we don't start beyond the buffer's actual length
             if (startOffsetInBuffer >= currentSourceNode.buffer.duration) {
                 currentPlaybackOffset = 0;
-                nextTrack();
+                nextTrack(); // If seeking past end, just go to next track
                 return;
             }
 
@@ -1385,6 +1427,8 @@ toggleButton.addEventListener('click', () => {
         function pauseTrack() {
             if (currentSourceNode) {
                 try {
+                    // Disconnect onended handler to prevent it from firing when user pauses
+                    currentSourceNode.onended = null; 
                     currentSourceNode.stop();
                     currentSourceNode.disconnect();
                 } catch (e) {
@@ -1482,7 +1526,7 @@ toggleButton.addEventListener('click', () => {
                 return;
             }
 
-            const trackOriginalDuration = playlist[currentTrackIndex].duration; // Use original duration
+            const trackOriginalDuration = playlist[currentTrackIndex].duration; 
             
             // Calculate current position in ORIGINAL track time
             const elapsedRealTime = audioCtx.currentTime - playbackStartTime;
@@ -1503,29 +1547,30 @@ toggleButton.addEventListener('click', () => {
                 syncLyrics();
             }
 
-            // Check if current position in original time has exceeded original duration
+            // The natural end of the track is now handled by the `onended` event of `currentSourceNode`.
+            // The following block is removed as it's no longer needed here:
+            /*
             if (currentPositionInOriginalTime >= trackOriginalDuration) {
-                // This is the custom end condition, overriding the native onended if tempo changes duration
                 isPlaying = false;
                 updatePlayPauseButton();
-                cancelAnimationFrame(animationFrameId); // Stop updating seekbar
-                currentPlaybackOffset = 0; // Reset for next play/loop
-                // Stop the current source node explicitly to prevent it from playing further
+                cancelAnimationFrame(animationFrameId);
+                currentPlaybackOffset = 0;
                 try {
                     currentSourceNode.stop();
                     currentSourceNode.disconnect();
                 } catch (e) {
                     console.warn("Error stopping source node at end of track:", e);
                 }
-                currentSourceNode = null; // Clear the reference
+                currentSourceNode = null;
 
                 if (isLooping) {
-                    playTrack(); // Loop
+                    playTrack();
                 } else {
-                    nextTrack(); // Go to next track
+                    nextTrack();
                 }
-                return; // Stop further execution for this frame
+                return;
             }
+            */
 
             animationFrameId = requestAnimationFrame(updateSeekbar);
         }
