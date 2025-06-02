@@ -1291,6 +1291,7 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
+                document.addEventListener('visibilitychange', handleVisibilityChange); // Add visibility change listener
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
@@ -1775,10 +1776,9 @@
 
         // Function to handle visibility change (tab hidden/closed)
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                // Tab is hidden or closing, attempt to clean up
-                handlePageExit();
-            }
+            // Only perform cleanup if the user is actually leaving the page, not just switching tabs.
+            // The 'beforeunload' event listener handles actual page exits.
+            // No action needed here for simple tab hiding to avoid premature user removal.
         };
 
 
