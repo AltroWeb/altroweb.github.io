@@ -1291,8 +1291,7 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
-                // Add event listeners for tab/browser close and pagehide
-                document.addEventListener('visibilitychange', handleVisibilityChange);
+                // Add event listener for pagehide
                 window.addEventListener('pagehide', handlePageExit);
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
@@ -1368,8 +1367,7 @@
                 // After successful transaction, find the user object with the correct joinTimestamp
                 currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                 window.addEventListener('beforeunload', handlePageExit);
-                // Add event listeners for tab/browser close and pagehide
-                document.addEventListener('visibilitychange', handleVisibilityChange);
+                // Add event listener for pagehide
                 window.addEventListener('pagehide', handlePageExit);
 
                 await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
@@ -1752,8 +1750,7 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
-            // Remove visibilitychange and pagehide listeners
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // Remove pagehide listener
             window.removeEventListener('pagehide', handlePageExit);
             currentUserObject = null; // Clear the user object
 
@@ -1779,13 +1776,7 @@
             }
         };
 
-        // Function to handle visibility change (tab hidden/closed)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                // Tab is hidden or closing, attempt to clean up
-                handlePageExit();
-            }
-        };
+        // Removed handleVisibilityChange function as it was causing unintended user removal on tab switch.
 
 
         // Dark Mode Toggle Logic
