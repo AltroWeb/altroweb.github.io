@@ -1577,7 +1577,7 @@
             try {
                 const roomDoc = await getDoc(roomDocRef);
                 if (roomDoc.exists()) {
-                    const roomData = roomDoc.data();
+                    const roomData = roomDoc.data(); // Corrected from docSnap.data()
                     currentRoom = { ...currentRoom, users: roomData.users || [], maxParticipants: roomData.maxParticipants || 4, lastActivity: roomData.lastActivity };
                     // Ensure currentUserObject is also set here, in case it's not fully propagated from transaction yet
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
@@ -1765,15 +1765,35 @@
 
         // Function to handle page exit (browser close, tab close, navigation away)
         const handlePageExit = () => {
+            console.log("handlePageExit triggered.");
             if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                // Directly attempt to remove the user object.
-                // This is a best-effort attempt as the browser might terminate before the write completes.
-                // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
+                
+                // Attempt to remove the user directly using updateDoc (best effort)
+                console.log("Attempting Firestore arrayRemove on page exit...");
                 updateDoc(roomRef, {
                     users: arrayRemove(currentUserObject), // Use the stored exact object
                     lastActivity: serverTimestamp() // Update last activity on exit
-                }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+                }).catch(e => console.warn("Firestore arrayRemove failed on exit (best-effort):", e));
+
+                // Also use sendBeacon for more reliable cleanup
+                if (navigator.sendBeacon) {
+                    console.log("Attempting to send beacon on page exit...");
+                    const beaconData = {
+                        userId: currentUserId,
+                        roomCode: currentRoom.code,
+                        username: currentUserObject.username,
+                        // Convert Timestamp to ISO string for sendBeacon
+                        joinTimestamp: currentUserObject.joinTimestamp.toDate().toISOString() 
+                    };
+                    const blob = new Blob([JSON.stringify(beaconData)], { type: 'application/json' });
+                    // NOTE: Replace '/api/leaveRoom' with your actual server-side endpoint
+                    // This endpoint would receive the beaconData and perform the Firestore arrayRemove.
+                    const beaconSent = navigator.sendBeacon('/api/leaveRoom', blob); 
+                    console.log("Beacon sent:", beaconSent);
+                } else {
+                    console.warn("navigator.sendBeacon is not supported by this browser.");
+                }
             }
         };
 
