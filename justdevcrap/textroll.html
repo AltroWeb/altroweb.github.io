@@ -589,6 +589,22 @@
             margin-top: 0.25rem;
         }
 
+        /* New: Status Message Styling */
+        .status-message {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-color-secondary);
+            font-style: italic;
+            margin: 0.75rem 0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            background-color: var(--input-bg-disabled); /* A subtle background */
+        }
+        .dark-mode .status-message {
+            background-color: var(--border-color); /* Darker background for dark mode */
+        }
+
+
         #message-form {
             display: flex;
             gap: 0.75rem;
@@ -1201,30 +1217,38 @@
             } else {
                 noMessagesYet.classList.add('hidden');
                 filteredMessages.forEach(msg => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
+                    // Check if it's a status message
+                    if (msg.type === 'status') {
+                        const statusDiv = document.createElement('div');
+                        statusDiv.className = 'status-message';
+                        statusDiv.textContent = msg.text;
+                        messagesContainer.appendChild(statusDiv);
+                    } else {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
 
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = "message-content";
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = "message-content";
 
-                    const senderSpan = document.createElement('div');
-                    senderSpan.className = "sender-info";
-                    senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
+                        const senderSpan = document.createElement('div');
+                        senderSpan.className = "sender-info";
+                        senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
 
-                    const textP = document.createElement('p');
-                    textP.textContent = msg.text;
+                        const textP = document.createElement('p');
+                        textP.textContent = msg.text;
 
-                    const timestampDiv = document.createElement('div');
-                    timestampDiv.className = "timestamp";
-                    // Ensure timestamp is not null/undefined before attempting to convert and format
-                    const date = msg.timestamp ? (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate()) : null;
-                    timestampDiv.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; // Display empty string if date is null
+                        const timestampDiv = document.createElement('div');
+                        timestampDiv.className = "timestamp";
+                        // Ensure timestamp is not null/undefined before attempting to convert and format
+                        const date = msg.timestamp ? (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate()) : null;
+                        timestampDiv.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; // Display empty string if date is null
 
-                    contentDiv.appendChild(senderSpan);
-                    contentDiv.appendChild(textP); // Always append text for now
-                    contentDiv.appendChild(timestampDiv);
-                    messageDiv.appendChild(contentDiv);
-                    messagesContainer.appendChild(messageDiv);
+                        contentDiv.appendChild(senderSpan);
+                        contentDiv.appendChild(textP); // Always append text for now
+                        contentDiv.appendChild(timestampDiv);
+                        messageDiv.appendChild(contentDiv);
+                        messagesContainer.appendChild(messageDiv);
+                    }
                 });
             }
             messagesContainer.appendChild(messagesEndRef); // Ensure scroll target is always at the end
@@ -1291,6 +1315,17 @@
                 // Set currentUserObject and add beforeunload listener
                 currentUserObject = user; // Store the user object with joinTimestamp
                 window.addEventListener('beforeunload', handlePageExit);
+
+                // Add "joined" status message after room creation
+                const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${newRoomCode}/messages`);
+                await addDoc(messagesCollectionRef, {
+                    senderId: 'system', // Indicate it's a system message
+                    senderUsername: 'System',
+                    type: 'status',
+                    timestamp: serverTimestamp(),
+                    text: `${username} joined the room.`,
+                });
+
                 return { code: newRoomCode, users: [user], maxParticipants: maxParticipants };
             } catch (error) {
                 console.error("Error creating room:", error);
@@ -1328,6 +1363,7 @@
         // Helper function to perform the actual join transaction
         const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants) => {
             try {
+                let userJoined = false; // Flag to check if a new user joined or existing user re-joined
                 await runTransaction(db, async (transaction) => {
                     const roomDoc = await transaction.get(roomRef);
                     const roomData = roomDoc.data();
@@ -1351,6 +1387,7 @@
                         }
                         const newUser = { userId: currentUserId, username: username, joinTimestamp: new Date() }; // Use Date object
                         usersInRoom.push(newUser);
+                        userJoined = true; // Mark as a new join
                     }
 
                     transaction.update(roomRef, {
@@ -1366,6 +1403,18 @@
                 currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                 window.addEventListener('beforeunload', handlePageExit);
                 document.addEventListener('visibilitychange', handleVisibilityChange);
+
+                // Add "joined" status message if a new user truly joined
+                if (userJoined) {
+                    const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`);
+                    await addDoc(messagesCollectionRef, {
+                        senderId: 'system',
+                        senderUsername: 'System',
+                        type: 'status',
+                        timestamp: serverTimestamp(),
+                        text: `${username} joined the room.`,
+                    });
+                }
 
                 await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
                 updateUI();
@@ -1692,21 +1741,28 @@
         // Handle leaving the room
         leaveRoomBtn.addEventListener('click', () => {
             showModal("Leave Room", "Are you sure you want to leave this room?", async () => {
-                if (!currentRoom || !currentUserId) return;
+                if (!currentRoom || !currentUserId || !currentUserObject) return; // Ensure currentUserObject is available
 
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                // Determine the current username based on the active mode
-                const currentUsername = (currentMode === 'default' ? usernameInput.value.trim() : randomUsernameInput.value.trim());
-
+                
                 try {
+                    // Add "left" status message BEFORE updating the room document
+                    const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
+                    await addDoc(messagesCollectionRef, {
+                        senderId: 'system',
+                        senderUsername: 'System',
+                        type: 'status',
+                        timestamp: serverTimestamp(),
+                        text: `${currentUserObject.username} left the room.`,
+                    });
+
                     await runTransaction(db, async (transaction) => {
                         const roomDoc = await transaction.get(roomRef);
                         if (roomDoc.exists()) {
                             const roomData = roomDoc.data();
                             const currentUsers = roomData.users || [];
 
-                            // Find the exact user object to remove based on userId
-                            // Use currentUserObject which holds the exact object with joinTimestamp
+                            // Find the exact user object to remove based on userId and username
                             const userObjectToRemove = currentUsers.find(u => u.userId === currentUserId && u.username === currentUserObject.username);
 
                             if (userObjectToRemove) { // Ensure the user is actually found in the list
@@ -1718,7 +1774,7 @@
                                 } else {
                                     // Otherwise, just update the user list and lastActivity
                                     transaction.update(roomRef, {
-                                        users: arrayRemove(userObjectToRemove),
+                                        users: updatedUsers, // Use the filtered array
                                         lastActivity: serverTimestamp() // Update last activity on leave
                                     });
                                 }
@@ -1760,16 +1816,32 @@
         };
 
         // Function to handle page exit (browser close, tab close, navigation away)
-        const handlePageExit = () => {
+        const handlePageExit = async () => { // Made async
             if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                // Directly attempt to remove the user object.
-                // This is a best-effort attempt as the browser might terminate before the write completes.
-                // Do NOT use await here as beforeunload/unload events are synchronous and won't wait for promises.
-                updateDoc(roomRef, {
-                    users: arrayRemove(currentUserObject), // Use the stored exact object
-                    lastActivity: serverTimestamp() // Update last activity on exit
-                }).catch(e => console.warn("Failed to remove user on exit (best-effort):", e));
+                const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
+
+                try {
+                    // Add "left" status message BEFORE attempting to remove the user from the room
+                    await addDoc(messagesCollectionRef, {
+                        senderId: 'system',
+                        senderUsername: 'System',
+                        type: 'status',
+                        timestamp: serverTimestamp(),
+                        text: `${currentUserObject.username} left the room.`,
+                    });
+
+                    // Directly attempt to remove the user object.
+                    // This is a best-effort attempt as the browser might terminate before the write completes.
+                    // Do NOT use await here for the updateDoc if it causes issues with browser termination,
+                    // but for consistency with addDoc, we'll keep it async.
+                    await updateDoc(roomRef, {
+                        users: arrayRemove(currentUserObject), // Use the stored exact object
+                        lastActivity: serverTimestamp() // Update last activity on exit
+                    });
+                } catch (e) {
+                    console.warn("Failed to send leave message or remove user on exit (best-effort):", e);
+                }
             }
         };
 
