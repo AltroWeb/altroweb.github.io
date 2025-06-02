@@ -1300,32 +1300,6 @@
             }
         };
 
-        // Event listener for Create Room button (Default Mode)
-        createRoomBtn.addEventListener('click', async () => {
-            const username = usernameInput.value.trim();
-            const password = createPasswordInput.value.trim();
-            const maxParticipants = parseInt(maxParticipantsInput.value, 10);
-
-            if (!username) {
-                showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); // MODIFIED
-                return;
-            }
-
-            if (isNaN(maxParticipants) || maxParticipants < 2 || maxParticipants > 10) {
-                showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => { hideModal(); }); // MODIFIED
-                return;
-            }
-
-            const room = await createRoom(username, password, maxParticipants);
-            if (room) {
-                currentRoom = room;
-                roomCodeInput.value = room.code;
-                createPasswordInput.value = '';
-                await setupRoomListeners(room.code); // MODIFIED: AWAIT this call
-                updateUI();
-            }
-        });
-
         // Helper function to perform the actual join transaction
         const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants) => {
             try {
