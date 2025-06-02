@@ -1397,23 +1397,23 @@
                     });
 
                     // Update currentRoom state based on the transaction result
-                    currentRoom = { code: roomCode, users: usersInRoom, maxParticipants: maxAllowedUsers };
+                    // This is crucial for the local client's UI to reflect the new state immediately
+                    currentRoom = { code: roomCode, users: usersInRoom, maxParticipants: maxAllowedUsers, lastActivity: serverTimestamp() };
+                    // Set currentUserObject from the updated usersInRoom array
+                    currentUserObject = usersInRoom.find(u => u.userId === currentUserId);
+
                 });
                 
-                // currentUserObject will be set reliably in setupRoomListeners
-
-                // Only send join message if the user was not already in the room (i.e., actually joined, not just updated timestamp)
-                if (!wasUserAlreadyInRoom) {
-                    await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`), {
-                        senderId: currentUserId,
-                        senderUsername: username,
-                        type: 'status',
-                        text: `${username} has joined the room.`,
-                        timestamp: serverTimestamp(),
-                    });
-                }
-
-                await setupRoomListeners(roomCode); // MODIFIED: AWAIT this call
+                // Always send join message if the transaction was successful
+                await addDoc(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`), {
+                    senderId: currentUserId,
+                    senderUsername: username,
+                    type: 'status',
+                    text: `${username} has ${wasUserAlreadyInRoom ? 'rejoined' : 'joined'} the room.`, // Differentiate message
+                    timestamp: serverTimestamp(),
+                });
+                
+                // After transaction, update UI based on the new currentRoom state
                 updateUI();
                 hideModal(); // Hide modal on successful join
             } catch (error) {
@@ -1611,8 +1611,7 @@
                 inactivityTimer = null;
             }
             // Ensure beforeunload listener is removed before re-adding
-            window.removeEventListener('beforeunload', handlePageExit); // ADDED: Remove previous listener
-            // REMOVED: document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeunload', handlePageExit);
 
 
             const roomDocRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
@@ -1636,8 +1635,7 @@
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
 
                     // ADD THE BEFOREUNLOAD LISTENER HERE, AFTER currentUserObject IS RELIABLY SET
-                    window.addEventListener('beforeunload', handlePageExit); // ADDED: Attach listener here
-                    // REMOVED: document.addEventListener('visibilitychange', handleVisibilityChange);
+                    window.addEventListener('beforeunload', handlePageExit);
 
                 } else {
                     // Room no longer exists, handle immediately
@@ -1815,7 +1813,6 @@
             }
             // Remove beforeunload listener
             window.removeEventListener('beforeunload', handlePageExit);
-            // REMOVED: document.removeEventListener('visibilitychange', handleVisibilityChange);
             currentUserObject = null; // Clear the user object
 
             currentRoom = null;
@@ -1877,14 +1874,6 @@
                 }).catch(e => console.warn("Failed to remove user from room on exit (best-effort transaction):", e));
             }
         };
-
-        // REMOVED: Function to handle visibility change (tab hidden/closed)
-        // const handleVisibilityChange = () => {
-        //     if (document.visibilityState === 'hidden') {
-        //         // Tab is hidden or closing, attempt to clean up
-        //         handlePageExit();
-        //     }
-        // };
 
 
         // Dark Mode Toggle Logic
