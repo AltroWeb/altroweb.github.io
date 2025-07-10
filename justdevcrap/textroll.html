@@ -318,6 +318,7 @@
             display: flex; /* To center emoji */
             align-items: center;
             justify-content: center;
+            flex-shrink: 0; /* Explicitly prevent shrinking */
         }
         /* Specific adjustment for the toggle button within the home screen */
         #home-screen .dark-mode-toggle-container {
@@ -455,11 +456,12 @@
             max-width: 42rem;
             display: flex;
             flex-direction: column;
-            height: 85vh;
+            /* REVERTED: Fixed height for consistent scrolling */
+            height: 85vh; 
+            position: relative; /* Ensure it's relative as requested */
             transform: scale(0.95);
             opacity: 0;
             transition: all 0.5s ease-in-out;
-            position: relative; /* For dark mode toggle positioning */
         }
         #chat-room-screen.hidden {
             display: none;
@@ -471,30 +473,81 @@
             margin-bottom: 1rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
-            gap: 1rem; /* Add gap for spacing between header elements */
+            gap: 0.25rem; /* Adjusted gap for tighter fit */
+            flex-wrap: nowrap; /* Prevent wrapping/stacking on all screens */
         }
+        /* Room Code: To appear fully and scale dynamically */
         #chat-room-screen h2 {
-            font-size: 1.875rem;
+            font-size: clamp(1rem, 4vw, 1.875rem); /* Dynamically scales font size based on viewport width */
             font-weight: 700;
             color: var(--header-text);
-            /* Allow h2 to grow and take available space, pushing other elements */
-            flex-grow: 1;
+            flex-grow: 1; /* Allows it to grow and take available space */
+            flex-shrink: 1; /* Allow it to shrink if needed */
             text-align: center; /* Center the room code text */
+            min-width: 0; /* Allows h2 to shrink down to 0 if necessary */
+            /* REMOVED: overflow: hidden;, text-overflow: ellipsis;, white-space: nowrap; */
         }
         #current-room-code {
             color: var(--room-code-text);
         }
+        /* Leave and Permanent Buttons: Text should appear with "..." if too large */
         #leave-room-btn {
-            padding: 0.5rem 1rem;
+            padding: 0.4rem 0.8rem; /* Smaller padding for compact size */
+            font-size: 0.875rem; /* Smaller font size */
             background-color: var(--button-bg-red);
             color: #fff;
             border-radius: 0.5rem;
             box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
             transition: background-color 0.2s ease-in-out;
+            flex-shrink: 0; /* Prevent button from shrinking */
+            white-space: nowrap; /* Prevent text wrapping */
+            overflow: hidden; /* Hide overflow content */
+            text-overflow: ellipsis; /* Add ellipsis for overflow */
         }
         #leave-room-btn:hover {
             background-color: var(--button-hover-red);
         }
+
+        /* NEW: Styling for Permanent Mode Button */
+        #toggle-permanent-mode-btn {
+            padding: 0.4rem 0.8rem; /* Smaller padding */
+            font-size: 0.875rem; /* Smaller font size */
+            background-color: var(--button-bg-blue);
+            color: #fff;
+            border-radius: 0.5rem;
+            box-shadow: var(--button-shadow-offset) var(--shadow-color), var(--button-shadow-blur) var(--shadow-color-dark);
+            transition: background-color 0.2s ease-in-out;
+            flex-shrink: 0; /* Prevent button from shrinking */
+            white-space: nowrap; /* Prevent text wrapping */
+            overflow: hidden; /* Hide overflow content */
+            text-overflow: ellipsis; /* Add ellipsis for overflow */
+        }
+        #toggle-permanent-mode-btn:hover {
+            background-color: var(--button-hover-blue);
+        }
+        #toggle-permanent-mode-btn:disabled {
+            background-color: var(--button-disabled-bg);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* NEW: Styling for Permanent Room Indicator */
+        #permanent-room-indicator {
+            font-size: 0.55rem; /* Even smaller font */
+            font-weight: 600;
+            color: var(--room-code-text); /* Using room code text color for consistency */
+            background-color: var(--participant-bg-you); /* Light background for visibility */
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-left: 0.5rem;
+            white-space: nowrap; /* Prevent wrapping */
+            flex-shrink: 0; /* Prevent from shrinking */
+        }
+        .dark-mode #permanent-room-indicator {
+            background-color: var(--participant-bg-other);
+        }
+
 
         #chat-room-screen .participants-section {
             margin-bottom: 1rem;
@@ -724,13 +777,49 @@
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             body {
-                padding: 0.5rem;
+                padding: 0.5rem; /* Re-added padding for overall layout */
+                align-items: center; /* Re-centered content */
+                justify-content: center; /* Re-centered content */
             }
-            #home-screen, #chat-room-screen {
+            #home-screen {
+                margin-top: 0; /* Remove specific mobile margins if body is centered */
+                margin-bottom: 0;
+            }
+            #chat-room-screen {
                 padding: 1.5rem;
                 max-width: 100%;
-                border-radius: 0.5rem;
+                border-radius: 0.75rem; /* Restore border-radius */
+                /* Reverted to original height and positioning for mobile */
+                height: 85vh; /* Keep consistent height */
+                position: relative; /* Keep consistent positioning */
             }
+            #chat-room-screen .header {
+                /* REVERTED: Keep header items in a row, prevent stacking */
+                flex-direction: row; /* Ensure row direction */
+                align-items: center; /* Vertically align items */
+                flex-wrap: nowrap; /* Prevent wrapping/stacking */
+                gap: 0.25rem; /* Keep original gap */
+            }
+            #chat-room-screen .header .dark-mode-toggle-container {
+                /* REVERTED: Remove align-self, let flexbox handle it */
+                align-self: auto; 
+                margin-right: 0;
+            }
+            #chat-room-screen h2 {
+                /* REMOVED: font-size: 1.5rem; */
+                text-align: center; /* Keep room code centered */
+                min-width: unset; 
+            }
+            #leave-room-btn, #toggle-permanent-mode-btn {
+                /* REVERTED: Remove full width, let flex-shrink handle it */
+                width: auto; 
+                padding: 0.4rem 0.8rem; /* Keep smaller padding for touch targets */
+                font-size: 0.875rem;
+            }
+            #permanent-room-indicator {
+                align-self: center; /* Center the indicator if stacked */
+            }
+
             #home-screen h1 {
                 font-size: 2.5rem;
                 margin-bottom: 1rem;
@@ -745,13 +834,7 @@
             #home-screen .button-group {
                 gap: 0.75rem;
             }
-            #chat-room-screen h2 {
-                font-size: 1.5rem;
-            }
-            #leave-room-btn {
-                padding: 0.4rem 0.8rem;
-                font-size: 0.875rem;
-            }
+            
             #chat-room-screen .participants-section h3 {
                 font-size: 1rem;
             }
@@ -827,7 +910,7 @@
             <div id="privacy-policy-text">
                 <p><strong>1. Data Collection:</strong> We collect your chosen username and a unique user ID generated by Firebase Authentication for the purpose of identifying you within chat rooms. Room codes and messages sent within rooms are stored temporarily on our Firebase Firestore database to facilitate real-time communication. We do NOT collect any personally identifiable information beyond your chosen username and the Firebase-generated user ID.</p>
                 <p><strong>2. Data Usage:</strong> Your username and user ID are used solely to display your identity in chat rooms and manage your participation. Room data (including messages) is used to enable chat functionality. We do not use your data for advertising, tracking, or any other commercial purposes.</p>
-                <p><strong>3. Data Storage and Deletion:</strong> Chat rooms and their messages are designed to be temporary. Rooms are automatically deleted if they become empty (no participants) or if there is no activity (no messages sent or users joining/leaving) for 15 minutes. This means your chat data is not permanently stored. We do not maintain backups of individual chat sessions.</p>
+                <p><strong>3. Data Storage and Deletion:</strong> Chat rooms and their messages are designed to be temporary. Rooms are automatically deleted if they become empty (no participants) or if there is no activity (no messages sent or users joining/leaving) for 15 minutes. Permanent rooms, if enabled by the host and secured with a password, will persist even when empty, but will be deleted after 1 week of inactivity (no messages sent or users joining/leaving).</p>
                 <p><strong>4. Security:</strong> We use Firebase Firestore, which provides robust security features. However, please remember that random and unmoderated chat rooms inherently carry risks. Do NOT share sensitive personal information (e.g., real name, address, phone password, financial details) in Textroll chat rooms.</p>
                 <p><strong>5. Third-Party Services:</strong> This app uses Firebase (Google) for backend services (authentication, database). Their privacy policies apply to the data they handle. We do not integrate with any other third-party analytics or advertising services.</p>
                 <p><strong>6. Changes to this Policy:</strong> We may update this privacy policy from time to time. Any changes will be reflected directly within the app. Your continued use of the app after such changes constitutes your acceptance of the new policy.</p>
@@ -953,9 +1036,15 @@
             </div>
             <h2>
                 Room: <span id="current-room-code"></span>
+                <!-- NEW: Permanent Room Indicator -->
+                <span id="permanent-room-indicator" class="hidden">PUBLIC</span>
             </h2>
+            <!-- NEW: Toggle Permanent Mode Button -->
+            <button id="toggle-permanent-mode-btn" class="hidden">
+                Perma
+            </button>
             <button id="leave-room-btn">
-                Leave Room
+                Leave
             </button>
         </div>
 
@@ -1059,14 +1148,20 @@
         const iconMoonChat = darkModeToggleChat.querySelector('.icon-moon-text');
         const iconSunChat = darkModeToggleChat.querySelector('.icon-sun-text');
 
+        // NEW DOM Elements for permanent room feature
+        const permanentRoomIndicator = document.getElementById('permanent-room-indicator');
+        const togglePermanentModeBtn = document.getElementById('toggle-permanent-mode-btn');
+
+
         // Application State
         let currentUserId = null;
-        let currentRoom = null; // Will store { code, users, maxParticipants, password, hostId }
+        let currentRoom = null; // Will store { code, users, maxParticipants, password, hostId, isPermanent, permanentLastActivity }
         let unsubscribeRoomListener = null;
         let unsubscribeMessagesListener = null;
         let currentMode = 'default';
         let inactivityTimer = null;
-        const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;
+        const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+        const PERMANENT_INACTIVITY_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
         let currentUserObject = null; // Stores { userId, username, joinTimestamp }
 
         // Utility to generate room code
@@ -1126,6 +1221,7 @@
                 const isCurrentUserInRoom = currentRoom.users.some(u => u.userId === currentUserId);
                 newMessageInput.disabled = !isCurrentUserInRoom;
                 sendMessageBtn.disabled = !isCurrentUserInRoom;
+                updatePermanentModeUI(); // NEW: Update permanent mode UI
             } else {
                 homeScreen.classList.remove('hidden');
                 homeScreen.classList.add('animate-scaleIn');
@@ -1133,6 +1229,26 @@
                 chatRoomScreen.classList.remove('animate-scaleIn');
                 updateModeUI(currentMode);
             }
+        };
+
+        // NEW: Function to update the permanent mode button and indicator UI
+        const updatePermanentModeUI = () => {
+            if (!currentRoom) {
+                togglePermanentModeBtn.classList.add('hidden');
+                permanentRoomIndicator.classList.add('hidden');
+                return;
+            }
+            const isHost = currentUserId === currentRoom.hostId;
+            const isPermanent = currentRoom.isPermanent;
+            // const hasPassword = currentRoom.password; // Removed password check for permanent mode
+
+            togglePermanentModeBtn.classList.toggle('hidden', !isHost); // Only host sees the button
+            // Shortened text for the button
+            togglePermanentModeBtn.textContent = isPermanent ? 'Temp' : 'Perma';
+            // Always enable the button for the host, regardless of password
+            togglePermanentModeBtn.disabled = false; 
+
+            permanentRoomIndicator.classList.toggle('hidden', !isPermanent); // Show indicator if permanent
         };
 
         // Render participants with remove button for host
@@ -1184,10 +1300,11 @@
                             const userObjectInFirestore = usersInRoom.find(u => u.userId === userToRemove.userId);
 
                             if (userObjectInFirestore) {
-                                transaction.update(roomRef, {
-                                    users: arrayRemove(userObjectInFirestore), // Use the object from Firestore
-                                    lastActivity: serverTimestamp()
-                                });
+                                const updateFields = { users: arrayRemove(userObjectInFirestore), lastActivity: serverTimestamp() };
+                                if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                                    updateFields.permanentLastActivity = serverTimestamp();
+                                }
+                                transaction.update(roomRef, updateFields);
                             } else {
                                 console.warn(`User ${userToRemove.username} not found in Firestore for removal.`);
                             }
@@ -1265,8 +1382,15 @@
         // Create Room
         const createRoom = async (username, password = null, maxParticipants = 4) => {
             let newRoomCode = generateRoomCode();
-            // ... (room code generation logic remains the same)
-            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
+            // Check if room code already exists (unlikely but possible)
+            let roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
+            let roomDoc = await getDoc(roomRef);
+            while (roomDoc.exists()) {
+                newRoomCode = generateRoomCode();
+                roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
+                roomDoc = await getDoc(roomRef);
+            }
+
             const user = { userId: currentUserId, username: username, joinTimestamp: new Date() };
             const roomData = {
                 code: newRoomCode,
@@ -1275,6 +1399,8 @@
                 createdAt: serverTimestamp(),
                 lastActivity: serverTimestamp(),
                 maxParticipants: maxParticipants,
+                isPermanent: false, // NEW: Default to not permanent
+                permanentLastActivity: null // NEW: No permanent activity yet
             };
             if (password) roomData.password = password;
 
@@ -1282,8 +1408,8 @@
                 await setDoc(roomRef, roomData);
                 currentUserObject = user;
                 window.addEventListener('beforeunload', handlePageExit);
-                // Return the full room data including hostId
-                return { ...roomData, users: [user] }; // Ensure users array is fresh for currentRoom state
+                // Return the full room data including hostId, isPermanent, permanentLastActivity
+                return { ...roomData, users: [user], isPermanent: false, permanentLastActivity: null }; 
             } catch (error) {
                 console.error("Error creating room:", error);
                 showModal("Creation Failed", "Failed to create room. Please try again.", () => hideModal());
@@ -1305,7 +1431,7 @@
             }
             const room = await createRoom(username, password || null, maxParticipants);
             if (room) {
-                currentRoom = room; // currentRoom now includes hostId
+                currentRoom = room; // currentRoom now includes hostId, isPermanent, permanentLastActivity
                 roomCodeInput.value = room.code;
                 createPasswordInput.value = '';
                 await setupRoomListeners(room.code);
@@ -1314,7 +1440,7 @@
         });
 
         // Join Room Transaction
-        const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants, roomPassword = null, hostId = null) => {
+        const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants, roomPassword = null, hostId = null, isPermanent = false, permanentLastActivity = null) => {
             try {
                 await runTransaction(db, async (transaction) => {
                     const roomDoc = await transaction.get(roomRef);
@@ -1333,14 +1459,22 @@
                         const newUser = { userId: currentUserId, username: username, joinTimestamp: new Date() };
                         usersInRoom.push(newUser);
                     }
-                    transaction.update(roomRef, { users: usersInRoom, lastActivity: serverTimestamp() });
+                    
+                    const updateFields = { users: usersInRoom, lastActivity: serverTimestamp() };
+                    if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                        updateFields.permanentLastActivity = serverTimestamp();
+                    }
+                    transaction.update(roomRef, updateFields);
+
                     // Ensure currentRoom is set with all necessary fields including hostId from roomData
                     currentRoom = { 
                         code: roomCode, 
                         users: usersInRoom, 
                         maxParticipants: maxAllowedUsers, 
                         password: roomPassword,
-                        hostId: roomData.hostId || hostId // Prefer hostId from roomData, fallback if needed
+                        hostId: roomData.hostId || hostId, // Prefer hostId from roomData, fallback if needed
+                        isPermanent: roomData.isPermanent || isPermanent, // NEW
+                        permanentLastActivity: roomData.permanentLastActivity || permanentLastActivity // NEW
                     };
                 });
                 currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
@@ -1362,7 +1496,15 @@
         joinRoomBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const roomCode = roomCodeInput.value.trim().toUpperCase();
-            // ... (input validation)
+            if (!username) {
+                showModal("Invalid Username", "Please enter a username.", () => hideModal());
+                return;
+            }
+            if (!roomCode) {
+                showModal("Invalid Room Code", "Please enter a room code.", () => hideModal());
+                return;
+            }
+
             const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
             try {
                 const roomDoc = await getDoc(roomRef);
@@ -1373,15 +1515,27 @@
                 const roomData = roomDoc.data();
                 const currentUsers = roomData.users || [];
                 const maxAllowedUsers = roomData.maxParticipants || 4;
-                // ... (username taken, room full checks)
+                
+                // Check if username is taken (case-insensitive)
+                const isUsernameTaken = currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
+                if (isUsernameTaken) {
+                    showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => hideModal());
+                    return;
+                }
+
+                // Check if room is full
+                if (currentUsers.length >= maxAllowedUsers && !currentUsers.some(u => u.userId === currentUserId)) {
+                    showModal("Room Full", "This room is full.", () => hideModal());
+                    return;
+                }
+
                 if (roomData.password) {
-                    // ... (password prompt logic)
-                    // Make sure to pass roomData.hostId to performJoinRoomTransaction
                      showModal("Enter Password", "This room is password protected.", async () => {
                         const enteredPassword = modalPasswordInput.value.trim();
                         if (enteredPassword === roomData.password) {
                             modalPasswordError.classList.add('hidden');
-                            await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, roomData.password, roomData.hostId);
+                            // Pass all relevant roomData fields including isPermanent and permanentLastActivity
+                            await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, roomData.password, roomData.hostId, roomData.isPermanent, roomData.permanentLastActivity);
                         } else {
                             modalPasswordError.textContent = "Incorrect password.";
                             modalPasswordError.classList.remove('hidden');
@@ -1389,7 +1543,8 @@
                         }
                     }, true, () => {}, true);
                 } else {
-                    await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, null, roomData.hostId);
+                    // Pass all relevant roomData fields including isPermanent and permanentLastActivity
+                    await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, null, roomData.hostId, roomData.isPermanent, roomData.permanentLastActivity);
                 }
             } catch (error) {
                 console.error("Error joining room (initial check):", error);
@@ -1399,7 +1554,6 @@
 
         // Join Random Room
         joinRandomRoomBtn.addEventListener('click', async () => {
-            // ... (username validation and warning modal logic)
             const username = randomUsernameInput.value.trim();
             if (!username) {
                 showModal("Invalid Username", "Please enter a username.", () => { hideModal(); }); 
@@ -1419,17 +1573,19 @@
         const findRandomRoom = async (username) => {
             const roomsCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms`);
             try {
-                const q = query(roomsCollectionRef, where('users', '!=', []));
+                // Query for rooms that are not permanent and have users
+                const q = query(roomsCollectionRef, where('isPermanent', '==', false)); // NEW: Only consider non-permanent rooms for random join
                 const querySnapshot = await getDocs(q);
                 let availableRooms = [];
                 querySnapshot.forEach(docSnap => {
                     const roomData = docSnap.data();
                     const maxAllowedUsers = roomData.maxParticipants || 4;
+                    // Ensure room has users, is not full, and has no password for random join
                     if (roomData.users && roomData.users.length > 0 && roomData.users.length < maxAllowedUsers && !roomData.password) {
                         const isUsernameTaken = roomData.users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
                         if (!isUsernameTaken) {
-                             // Include hostId when pushing to availableRooms
-                            availableRooms.push({...roomData, code: docSnap.id, hostId: roomData.hostId });
+                             // Include hostId, isPermanent, permanentLastActivity when pushing to availableRooms
+                            availableRooms.push({...roomData, code: docSnap.id, hostId: roomData.hostId, isPermanent: roomData.isPermanent, permanentLastActivity: roomData.permanentLastActivity });
                         }
                     }
                 });
@@ -1437,8 +1593,8 @@
                     const randomIndex = Math.floor(Math.random() * availableRooms.length);
                     const roomToJoin = availableRooms[randomIndex];
                     const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomToJoin.code);
-                    // Pass hostId to performJoinRoomTransaction
-                    await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.maxParticipants, null, roomToJoin.hostId);
+                    // Pass all relevant roomData fields including isPermanent and permanentLastActivity
+                    await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.maxParticipants, null, roomToJoin.hostId, roomToJoin.isPermanent, roomToJoin.permanentLastActivity);
                 } else {
                     showModal("No Random Rooms", "No random rooms available. Try creating one!", () => hideModal());
                 }
@@ -1450,40 +1606,83 @@
         
         // Room Inactivity Check
         const checkInactivity = async (roomDocRef) => {
-            // ... (inactivity logic remains the same)
-             if (!currentRoom || !currentRoom.lastActivity) return;
-            const lastActivityDate = currentRoom.lastActivity.toDate ? currentRoom.lastActivity.toDate() : currentRoom.lastActivity;
-            if (!(lastActivityDate instanceof Date)) {
-                console.warn("lastActivity is not a valid timestamp or Date object:", currentRoom.lastActivity);
-                return;
-            }
-            const lastActivityTime = lastActivityDate.getTime();
-            const currentTime = Date.now();
-
-            if (currentTime - lastActivityTime >= INACTIVITY_TIMEOUT_MS) {
-                if (inactivityTimer) {
-                    clearInterval(inactivityTimer);
-                    inactivityTimer = null;
+            try {
+                const roomDoc = await getDoc(roomDocRef);
+                if (!roomDoc.exists()) {
+                    console.log("Room no longer exists, skipping inactivity check.");
+                    return;
                 }
-                showModal("Room Timed Out", "This room was deleted due to inactivity.", async () => {
-                    const roomCodeToDelete = currentRoom?.code;
-                    handleLeaveRoomCleanUp(); 
-                    hideModal(); 
-                    if (roomCodeToDelete) {
-                        try {
-                            await deleteDoc(doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCodeToDelete));
-                            console.log(`Room ${roomCodeToDelete} deleted due to inactivity.`);
-                        } catch (e) {
-                            console.warn(`Could not delete timed out room ${roomCodeToDelete}:`, e);
-                        }
+                const roomData = roomDoc.data();
+                const currentTime = Date.now();
+
+                let shouldDelete = false;
+                let reason = "";
+                let activityTimestamp = null;
+                let timeoutDuration = 0;
+
+                if (roomData.isPermanent) {
+                    activityTimestamp = roomData.permanentLastActivity ?
+                        (roomData.permanentLastActivity.toDate ? roomData.permanentLastActivity.toDate() : roomData.permanentLastActivity) :
+                        (roomData.createdAt.toDate ? roomData.createdAt.toDate() : roomData.createdAt); // Fallback to createdAt if permanentLastActivity is missing
+                    timeoutDuration = PERMANENT_INACTIVITY_TIMEOUT_MS;
+                    reason = "due to 1 week inactivity (permanent room)";
+                } else {
+                    activityTimestamp = roomData.lastActivity ?
+                        (roomData.lastActivity.toDate ? roomData.lastActivity.toDate() : roomData.lastActivity) :
+                        (roomData.createdAt.toDate ? roomData.createdAt.toDate() : roomData.createdAt); // Fallback to createdAt if lastActivity is missing
+                    timeoutDuration = INACTIVITY_TIMEOUT_MS;
+                    reason = "due to 15 minute inactivity (empty temporary room)";
+                }
+
+                if (!(activityTimestamp instanceof Date)) {
+                    console.warn("Activity timestamp is not a valid Date object:", activityTimestamp);
+                    return;
+                }
+                const lastActivityTime = activityTimestamp.getTime();
+
+                // For temporary rooms, only delete if empty AND inactive.
+                // For permanent rooms, delete if inactive, regardless of users (as they persist when empty).
+                if (roomData.isPermanent) {
+                    if (currentTime - lastActivityTime >= timeoutDuration) {
+                        shouldDelete = true;
                     }
-                });
+                } else {
+                    if ((roomData.users && roomData.users.length === 0) && (currentTime - lastActivityTime >= timeoutDuration)) {
+                        shouldDelete = true;
+                    }
+                }
+
+                if (shouldDelete) {
+                    if (inactivityTimer) {
+                        clearInterval(inactivityTimer);
+                        inactivityTimer = null;
+                    }
+                    showModal("Room Timed Out", `This room was deleted ${reason}.`, async () => {
+                        const roomCodeToDelete = roomDoc.id;
+                        handleLeaveRoomCleanUp();
+                        hideModal();
+                        if (roomCodeToDelete) {
+                            try {
+                                // Delete messages subcollection first
+                                const messagesQuerySnapshot = await getDocs(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCodeToDelete}/messages`));
+                                messagesQuerySnapshot.docs.forEach(async (msgDoc) => {
+                                    await deleteDoc(msgDoc.ref);
+                                });
+                                await deleteDoc(doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCodeToDelete));
+                                console.log(`Room ${roomCodeToDelete} deleted ${reason}.`);
+                            } catch (e) {
+                                console.warn(`Could not delete timed out room ${roomCodeToDelete}:`, e);
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error in checkInactivity:", error);
             }
         };
 
         // Setup Room Listeners
         const setupRoomListeners = async (roomCode) => {
-            // ... (unsubscribe logic)
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
             if (inactivityTimer) clearInterval(inactivityTimer);
@@ -1495,30 +1694,33 @@
                 const roomDoc = await getDoc(roomDocRef);
                 if (roomDoc.exists()) {
                     const roomData = roomDoc.data();
-                    currentRoom = { // Ensure all fields, including hostId, are set
+                    currentRoom = { // Ensure all fields, including hostId, isPermanent, permanentLastActivity, are set
                         code: roomCode,
                         users: roomData.users || [],
                         maxParticipants: roomData.maxParticipants || 4,
                         lastActivity: roomData.lastActivity,
                         password: roomData.password || null,
-                        hostId: roomData.hostId // Crucial: get hostId here
+                        hostId: roomData.hostId,
+                        isPermanent: roomData.isPermanent || false, // NEW
+                        permanentLastActivity: roomData.permanentLastActivity || null // NEW
                     };
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                     renderParticipants(currentRoom.users, currentRoom.hostId); // Pass hostId
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
-                } else { /* ... room ended logic ... */ 
+                    updatePermanentModeUI(); // NEW: Initial UI update for permanent mode
+                } else { 
                     showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
                         hideModal();
                     });
                     return;
                 }
-            } catch (error) { /* ... error handling ... */ 
+            } catch (error) { 
                  console.error("Error fetching initial room data:", error);
                 showModal("Connection Error", "Failed to get initial room data.", () => { hideModal(); });
                 return;
             }
-            // ... (initial messages fetch)
+            // Initial messages fetch
             try {
                 const initialMessagesQuery = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
                 const initialMessagesSnapshot = await getDocs(initialMessagesQuery);
@@ -1550,33 +1752,40 @@
                         users: roomData.users || [],
                         maxParticipants: roomData.maxParticipants || 4,
                         lastActivity: roomData.lastActivity,
-                        hostId: roomData.hostId // Update hostId from snapshot
+                        hostId: roomData.hostId, // Update hostId from snapshot
+                        isPermanent: roomData.isPermanent || false, // NEW
+                        permanentLastActivity: roomData.permanentLastActivity || null // NEW
                     };
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                     renderParticipants(currentRoom.users, currentRoom.hostId); // Pass hostId
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
+                    updatePermanentModeUI(); // NEW: Update permanent mode UI on snapshot
+                    
+                    // Reset and restart inactivity timer
                     if (inactivityTimer) clearInterval(inactivityTimer);
-                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000);
-                    checkInactivity(roomDocRef);
-                } else { /* ... room ended logic ... */
+                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000); // Check every minute
+                    checkInactivity(roomDocRef); // Run immediately on snapshot update
+                } else { 
                      showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
                         hideModal();
                     });
                 }
-            }, (error) => { /* ... error handling ... */ 
+            }, (error) => { 
                 console.error("Error listening to room:", error);
                 showModal("Connection Error", "Failed to get room updates.", () => { hideModal(); });
             });
-            // ... (messages listener)
+            
             unsubscribeMessagesListener = onSnapshot(query(messagesCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
                 const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderMessages(newMessages); 
                 if (currentRoom && currentRoom.code) {
                     const roomRefToUpdate = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                    updateDoc(roomRefToUpdate, {
-                        lastActivity: serverTimestamp()
-                    }).catch(e => console.error("Error updating last activity on message receive:", e));
+                    const updateFields = { lastActivity: serverTimestamp() };
+                    if (currentRoom.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                        updateFields.permanentLastActivity = serverTimestamp();
+                    }
+                    updateDoc(roomRefToUpdate, updateFields).catch(e => console.error("Error updating last activity on message receive:", e));
                 }
             }, (error) => {
                 console.error("Error listening to messages:", error);
@@ -1586,7 +1795,6 @@
 
         // Send Message
         messageForm.addEventListener('submit', async (e) => {
-            // ... (message sending logic remains the same)
             e.preventDefault();
             const newMessageText = newMessageInput.value.trim();
             if (!newMessageText) return;
@@ -1604,7 +1812,11 @@
                     timestamp: serverTimestamp(),
                     text: newMessageText,
                 });
-                await updateDoc(roomRef, { lastActivity: serverTimestamp() });
+                const updateFields = { lastActivity: serverTimestamp() };
+                if (currentRoom.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                    updateFields.permanentLastActivity = serverTimestamp();
+                }
+                await updateDoc(roomRef, updateFields);
                 newMessageInput.value = ''; 
             } catch (error) {
                 console.error("Error sending message:", error);
@@ -1614,7 +1826,6 @@
 
         // Leave Room Button
         leaveRoomBtn.addEventListener('click', () => {
-            // ... (leave room logic remains largely the same, uses currentUserObject)
             showModal("Leave Room", "Are you sure you want to leave this room?", async () => {
                 if (!currentRoom || !currentUserId || !currentUserObject) {
                     console.warn("Cannot leave room: state not properly set.");
@@ -1625,26 +1836,44 @@
                 try {
                     await runTransaction(db, async (transaction) => {
                         const roomDoc = await transaction.get(roomRef);
-                        if (roomDoc.exists()) {
-                            const roomData = roomDoc.data();
-                            const currentUsers = roomData.users || [];
-                            const userObjectToRemoveFromFirestore = currentUsers.find(u => u.userId === currentUserId);
-                            if (userObjectToRemoveFromFirestore) { 
-                                const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
-                                if (updatedUsers.length === 0 && roomData.hostId === currentUserId) { // If host leaves and room is empty
-                                    transaction.delete(roomRef);
-                                } else if (updatedUsers.length === 0) { // If last non-host leaves
-                                     transaction.delete(roomRef); // Or decide if room should persist if host is gone but it was password protected etc. For now, delete.
-                                }
-                                else {
+                        if (!roomDoc.exists()) {
+                            console.warn("Room already gone when attempting to leave.");
+                            return; // Room already gone, just clean up locally
+                        }
+                        const roomData = roomDoc.data();
+                        const currentUsers = roomData.users || [];
+                        const userObjectToRemoveFromFirestore = currentUsers.find(u => u.userId === currentUserId);
+
+                        if (userObjectToRemoveFromFirestore) { 
+                            const updatedUsers = currentUsers.filter(u => u.userId !== currentUserId);
+
+                            if (currentUserId === roomData.hostId) { // Current user is the host
+                                if (roomData.isPermanent) {
+                                    // NEW: Host leaving a permanent room: just remove host from users, room persists
                                     transaction.update(roomRef, {
-                                        users: arrayRemove(userObjectToRemoveFromFirestore), 
-                                        lastActivity: serverTimestamp() 
+                                        users: arrayRemove(userObjectToRemoveFromFirestore),
+                                        lastActivity: serverTimestamp(),
+                                        permanentLastActivity: serverTimestamp() // NEW: Update permanent activity
                                     });
+                                } else {
+                                    // NEW: Host leaving a non-permanent room: delete the room immediately regardless of other participants
+                                    // Delete all messages in the subcollection first
+                                    const messagesQuerySnapshot = await getDocs(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`));
+                                    messagesQuerySnapshot.docs.forEach(msgDoc => {
+                                        transaction.delete(msgDoc.ref);
+                                    });
+                                    transaction.delete(roomRef);
                                 }
-                            } else {
-                                console.warn("Attempted to leave room, user not found in Firestore. Cleaning up locally.");
+                            } else { // Current user is a participant (not host)
+                                const updateFields = { users: arrayRemove(userObjectToRemoveFromFirestore), lastActivity: serverTimestamp() };
+                                if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                                    updateFields.permanentLastActivity = serverTimestamp();
+                                }
+                                transaction.update(roomRef, updateFields);
+                                // If this was the last participant in a non-permanent room, the 15-min inactivity timer will delete it.
                             }
+                        } else {
+                            console.warn("Attempted to leave room, user not found in Firestore. Cleaning up locally.");
                         }
                     });
                     handleLeaveRoomCleanUp(); 
@@ -1662,7 +1891,6 @@
         
         // Local Cleanup
         const handleLeaveRoomCleanUp = () => {
-            // ... (local cleanup remains the same)
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
             if (inactivityTimer) clearInterval(inactivityTimer);
@@ -1678,7 +1906,6 @@
 
         // Page Exit (Best Effort)
         const handlePageExit = () => {
-            // ... (page exit logic remains the same, best-effort)
              if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
                 try {
@@ -1688,15 +1915,15 @@
                             const usersInFirestore = roomData.users || [];
                             const userToRemove = usersInFirestore.find(u => u.userId === currentUserId && u.username === currentUserObject.username);
                             if (userToRemove) {
-                                const updatedUsers = usersInFirestore.filter(u => u.userId !== currentUserId || u.username !== currentUserObject.username);
-                                if (updatedUsers.length === 0) {
-                                    deleteDoc(roomRef).catch(e => console.warn("Best-effort: Failed to delete room on exit:", e));
-                                } else {
-                                    updateDoc(roomRef, {
-                                        users: arrayRemove(userToRemove), 
-                                        lastActivity: serverTimestamp()
-                                    }).catch(e => console.warn("Best-effort: Failed to remove user on exit (updateDoc):", e));
+                                // Only remove the user. Let the onSnapshot and inactivity checks handle room deletion.
+                                const updateFields = { lastActivity: serverTimestamp() };
+                                if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                                    updateFields.permanentLastActivity = serverTimestamp();
                                 }
+                                updateDoc(roomRef, {
+                                    users: arrayRemove(userToRemove), 
+                                    ...updateFields
+                                }).catch(e => console.warn("Best-effort: Failed to remove user on exit (updateDoc):", e));
                             }
                         }
                     }).catch(e => console.warn("Best-effort: Error fetching room doc on exit:", e));
@@ -1706,8 +1933,50 @@
             }
         };
 
+        // NEW: Event listener for the "Toggle Permanent Mode" button
+        togglePermanentModeBtn.addEventListener('click', async () => {
+            if (!currentRoom || currentUserId !== currentRoom.hostId) {
+                showModal("Permission Denied", "Only the host can toggle permanent mode.", () => hideModal());
+                return;
+            }
+            // Removed: if (!currentRoom.password) check
+
+            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+            const newPermanentState = !currentRoom.isPermanent; // Toggle the state
+
+            showModal(
+                "Toggle Permanent Room",
+                `Are you sure you want to ${newPermanentState ? 'make this room permanent' : 'make this room temporary'}?`,
+                async () => {
+                    try {
+                        const updateFields = {
+                            isPermanent: newPermanentState,
+                            lastActivity: serverTimestamp() // Also update general activity
+                        };
+                        if (newPermanentState) {
+                            updateFields.permanentLastActivity = serverTimestamp(); // Set timestamp when made permanent
+                        } else {
+                            updateFields.permanentLastActivity = null; // Clear timestamp when made temporary
+                        }
+                        await updateDoc(roomRef, updateFields);
+                        
+                        // Update local state immediately for responsive UI
+                        currentRoom.isPermanent = newPermanentState; 
+                        currentRoom.permanentLastActivity = newPermanentState ? new Date() : null; 
+
+                        updatePermanentModeUI(); // Update UI based on new state
+                        hideModal();
+                    } catch (error) {
+                        console.error("Error toggling permanent mode:", error);
+                        showModal("Error", "Failed to toggle permanent mode. Please try again.", () => hideModal());
+                    }
+                },
+                true // Show cancel button
+            );
+        });
+
+
         // Dark Mode & UI Mode Switching
-        // ... (dark mode and UI mode switching logic remains the same)
         const applyDarkMode = (isDarkMode) => {
             document.body.classList.toggle('dark-mode', isDarkMode);
             iconMoonHome.classList.toggle('hidden', isDarkMode);
