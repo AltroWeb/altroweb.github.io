@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textroll - Web Chat</title>
-            <!-- Content Security Policy (CSP) Meta Tag -->
+
+    <!-- Content Security Policy (CSP) Meta Tag -->
     <!-- This CSP is designed to allow necessary resources while restricting others. -->
     <!-- 'self': Allows resources from the same origin as the document. -->
     <!-- 'unsafe-inline': Allows inline scripts and styles. This is generally NOT recommended for production -->
@@ -16,24 +17,11 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com;
         img-src 'self' data: https://placehold.co;
         font-src 'self' https://fonts.gstatic.com;
-        
-        connect-src 'self' 
-                    https://firestore.googleapis.com 
-                    https://securetoken.googleapis.com 
-                    https://identitytoolkit.googleapis.com 
-                    https://www.googleapis.com; /* General Google APIs */
-        
-        frame-src 'self' 
-                  https://textroll-79302.firebaseapp.com 
-                  https://*.firebaseapp.com 
-                  https://*.firebaseui.com 
-                  https://*.google.com; /* For Firebase auth popups and Google services within frames */
-        
-        object-src 'none'; /* Disallow <object>, <embed>, <applet> */
-        base-uri 'self';   /* Restrict base URL for relative URLs */
-        form-action 'self'; /* Restrict form submissions */
-        
-        /* Optional: upgrade-insecure-requests; */ /* Forces HTTP to HTTPS */
+        connect-src 'self' https://firestore.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://www.googleapis.com;
+        frame-src 'self' https://textroll-79302.firebaseapp.com https://*.firebaseapp.com https://*.firebaseui.com https://*.google.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
     ">
 
 
