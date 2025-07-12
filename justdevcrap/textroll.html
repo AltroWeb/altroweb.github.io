@@ -4,27 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textroll - Web Chat</title>
-        <!-- Content Security Policy (CSP) Meta Tag -->
+            <!-- Content Security Policy (CSP) Meta Tag -->
     <!-- This CSP is designed to allow necessary resources while restricting others. -->
     <!-- 'self': Allows resources from the same origin as the document. -->
     <!-- 'unsafe-inline': Allows inline scripts and styles. This is generally NOT recommended for production -->
     <!--                  but is often necessary for quick demos or when using frameworks like Tailwind JIT -->
     <!--                  without a build step that hashes inline styles. For production, prefer hashes or nonces. -->
-    <!-- https://cdn.tailwindcss.com: For Tailwind CSS. -->
-    <!-- https://www.gstatic.com: For Firebase SDK and other Google static assets. -->
-    <!-- https://www.gstatic.com/firebasejs/: More specific for Firebase SDK. -->
-    <!-- https://cdnjs.cloudflare.com: For general third-party libraries (e.g., Three.js, Cannon.js, etc.). -->
-    <!-- https://firestore.googleapis.com: For Firestore API calls. -->
-    <!-- https://securetoken.googleapis.com: For Firebase Authentication. -->
-    <!-- https://fonts.googleapis.com & https://fonts.gstatic.com: For Google Fonts. -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' https://cdn.tailwindcss.com https://www.gstatic.com https://www.gstatic.com/firebasejs/ 'unsafe-inline';
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.tailwindcss.com;
-        connect-src 'self' https://firestore.googleapis.com https://securetoken.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;
         img-src 'self' data: https://placehold.co;
+        font-src 'self' https://fonts.gstatic.com;
+        
+        connect-src 'self' 
+                    https://firestore.googleapis.com 
+                    https://securetoken.googleapis.com 
+                    https://identitytoolkit.googleapis.com 
+                    https://www.googleapis.com; /* General Google APIs */
+        
+        frame-src 'self' 
+                  https://textroll-79302.firebaseapp.com 
+                  https://*.firebaseapp.com 
+                  https://*.firebaseui.com 
+                  https://*.google.com; /* For Firebase auth popups and Google services within frames */
+        
+        object-src 'none'; /* Disallow <object>, <embed>, <applet> */
+        base-uri 'self';   /* Restrict base URL for relative URLs */
+        form-action 'self'; /* Restrict form submissions */
+        
+        /* Optional: upgrade-insecure-requests; */ /* Forces HTTP to HTTPS */
     ">
+
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="textroll.png">
