@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Textroll - Web Chat</title>
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="textroll.png">
     <!-- Content Security Policy (CSP) Meta Tag -->
-    <!-- This CSP is designed to allow necessary resources while restricting others. -->
+    <!-- This CSP is designed for stricter security, preventing 'unsafe-eval' for scripts. -->
     <!-- 'self': Allows resources from the same origin as the document. -->
-    <!-- 'unsafe-inline': Allows inline scripts and styles. This is generally NOT recommended for production -->
-    <!--                  but is often necessary for quick demos or when using frameworks like Tailwind JIT -->
-    <!--                  without a build step that hashes inline styles. For production, prefer hashes or nonces. -->
+    <!-- 'unsafe-inline': Still allowed for styles and necessary inline scripts (e.g., event handlers). -->
+    <!--                  For ultimate security, inline scripts should use nonces or hashes. -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' https://cdn.tailwindcss.com https://www.gstatic.com https://www.gstatic.com/firebasejs/ 'unsafe-inline';
@@ -23,10 +23,6 @@
         base-uri 'self';
         form-action 'self';
     ">
-
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="textroll.png">
     <style>
         /* CSS Variables for Theming */
         :root {
@@ -555,7 +551,7 @@
 
         /* NEW: Styling for Permanent Room Indicator */
         #permanent-room-indicator {
-            font-size: 0.55rem; /* Even smaller font */
+            font-size: 0.75rem; /* Even smaller font */
             font-weight: 600;
             color: var(--room-code-text); /* Using room code text color for consistency */
             background-color: var(--participant-bg-you); /* Light background for visibility */
@@ -1058,7 +1054,7 @@
             <h2>
                 Room: <span id="current-room-code"></span>
                 <!-- NEW: Permanent Room Indicator -->
-                <span id="permanent-room-indicator" class="hidden">PUBLIC</span>
+                <span id="permanent-room-indicator" class="hidden">PUBLIC ROOM</span>
             </h2>
             <!-- NEW: Toggle Permanent Mode Button -->
             <button id="toggle-permanent-mode-btn" class="hidden">
@@ -1096,12 +1092,15 @@
 
     <div id="app-footnote">
         Made by <a id="jdc-link" href="https://altroweb.github.io/justdevcrap">JustDevCrap.</a> With ☕. <a id="privacy-policy-link">Privacy Policy</a>
+        <!-- Hidden Admin Login Trigger (only you know where it is) -->
+        <span id="admin-login-trigger" style="cursor: pointer; opacity: 0.01; user-select: none;">.</span>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, GithubAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, addDoc, serverTimestamp, arrayUnion, arrayRemove, runTransaction, query, where, getDocs, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // No Cloud Functions import needed for this setup
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -1119,6 +1118,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+
         // DOM Elements
         const loadingScreen = document.getElementById('loading-screen');
         const homeScreen = document.getElementById('home-screen');
@@ -1133,10 +1133,10 @@
         const createPasswordInput = document.getElementById('create-password-input');
         const maxParticipantsInput = document.getElementById('max-participants-input');
         const roomCodeInput = document.getElementById('room-code-input');
-        const createRoomBtn = document.getElementById('create-room-btn');
-        const joinRoomBtn = document.getElementById('join-room-btn');
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
         const randomUsernameInput = document.getElementById('random-username-input');
-        const joinRandomRoomBtn = document.getElementById('join-random-room-btn');
+        const joinRandomRoomBtn = document.getElementById('joinRandomRoomBtn');
         const userIdDisplay = document.getElementById('user-id-display');
         const currentRoomCodeDisplay = document.getElementById('current-room-code');
         const participantsCount = document.getElementById('participants-count');
@@ -1173,6 +1173,9 @@
         const permanentRoomIndicator = document.getElementById('permanent-room-indicator');
         const togglePermanentModeBtn = document.getElementById('toggle-permanent-mode-btn');
 
+        // NEW: Admin Login Trigger
+        const adminLoginTrigger = document.getElementById('admin-login-trigger');
+
 
         // Application State
         let currentUserId = null;
@@ -1184,6 +1187,218 @@
         const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
         const PERMANENT_INACTIVITY_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 1 week in milliseconds
         let currentUserObject = null; // Stores { userId, username, joinTimestamp }
+
+
+        // --- START CUSTOM ENCRYPTION ALGORITHM ---
+        const ID_LENGTH = 32; // Fixed length for the hexadecimal master seed (16 bytes)
+        const NUM_ROUNDS = 3; // Number of encryption/decryption rounds
+        const HASH_LENGTH_HEX = 64; // SHA-256 hash length in hex characters (32 bytes)
+        const MIN_BLOCK_SIZE = 5; // Minimum block size for permutation
+        const MAX_BLOCK_SIZE = 15; // Maximum block size for permutation
+
+        function generateCharacterSet() {
+            let chars = [];
+            for (let i = 0x20; i <= 0x7E; i++) chars.push(String.fromCharCode(i));
+            for (let i = 0xA0; i <= 0xFF; i++) chars.push(String.fromCharCode(i));
+            for (let i = 0x100; i <= 0x17F; i++) chars.push(String.fromCharCode(i));
+            for (let i = 0x2000; i <= 0x27BF; i++) chars.push(String.fromCharCode(i));
+            for (let i = 0x2E00; i <= 0x312F; i++) chars.push(String.fromCharCode(i));
+            for (let i = 0x4E00; i <= 0x4E50; i++) chars.push(String.fromCharCode(i));
+            const commonEmojis = [
+                '😀', '😂', '😍', '👍', '🙏', '🚀', '🌟', '💡', '🎉', '🔥', '❤️', '✅', '❌', '✨', '🎶', '🌈', '🐶', '🐱', '🍎', '🍕',
+                '🤔', '😊', '🥳', '🤯', '😭', '😎', '🤩', '😏', '😒', '😞', '😔', '😟', '😕', '🙁',
+                '☹️', '😣', '😖', '😫', '😩', '😤', '😠', '😡', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾',
+                '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '🙈', '🙉', '🙊', '💋', '💌', '💘', '💝', '💖', '💗', '💓',
+                '💞', '💕', '💔', '❤️‍🔥', '❣️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '💯', '💢', '💥', '💫', '💦', '💨', '🕳️',
+                '💣', '💬', '👁️‍🗨️', '🗨️', '💭', '🗯️', '💤', '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈',
+                '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳',
+                '💪', '🦾', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '👶', '🧒', '👦', '👧',
+                '🧑', '👱', '👨', '🧔', '👴', '👵', '🧓', '🙍‍♂️', '🙍‍♀️', '🙅‍♂️', '🙅‍♀️', '🙆‍♂️', '🙆‍♀️', '💁‍♂️', '💁‍♀️', '🙋‍♂️', '🙋‍♀️', '🧏‍♂️', '🧏‍♀️',
+                '🙇‍♂️', '🙇‍♀️', '🤦‍♂️', '🤦‍♀️', '🤷‍♂️', '🤷‍♀️', '🧑‍⚕️', '👨‍🎓', '👩‍🏫', '👨‍⚖️', '👩‍🌾', '👨‍🍳', '👩‍🔧', '👨‍🏭', '👩‍💼', '👨‍🔬', '👩‍💻', '👨‍🎤',
+                '👩‍🎨', '👨‍✈️', '👩‍🚀', '👨‍🚒', '👮‍♂️', '👮‍♀️', '🕵️‍♂️', '🕵️‍♀️', '💂‍♂️', '💂‍♀️', '👷‍♂️', '👷‍♀️', '🤴', '👸', '👳‍♂️', '👳‍♀️', '👲', '🧕', '🤵',
+                '👰', '🤰', '🤱', '👼', '🎅', '🤶', '🦸‍♂️', '🦸‍♀️', '🦹‍♂️', '🦹‍♀️', '🧙‍♂️', '🧙‍♀️', '🧚‍♂️', '🧚‍♀️', '🧛‍♂️', '🧛‍♀️', '🧜‍♂️', '🧜‍♀️', '🧝‍♂️',
+                '🧝‍♀️', '🧞‍♂️', '🧞‍♀️', '🧟‍♂️', '🧟‍♀️', '🚶‍♂️', '🚶‍♀️', '🏃‍♂️', '🏃‍♀️', '🧍‍♂️', '🧍‍♀️', '🧎‍♂️', '🧎‍♀️', '👨‍🦯', '👩‍🦯', '👨‍🦼', '👩‍🦼', '👨‍🦽', '👩‍🦽',
+                '🐕', '🐈', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐥', '🦆',
+                '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🕷️', '🦂', '🦟', '🦠', '🐢', '🐍', '🦎',
+                '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🦈', '🐳', '🐬', '🐄', '🐏', '🐐', '🐪', '🦒', '🐘', '🦏', '🦛',
+                '🦝', '🦡', '🦦', '🦥', '🦧', '🦨', '🦘', '🦡', '🦃', '🐓', '🦢', '🕊️', '🦩', '🦚', '🦜', '🐸', '🐊', '🐍', '🦎', '🐉',
+                '🦕', '🦖', '🐳', '🐬', '🐟', '🐠', '🐡', '🦈', '🐙', '🐚', '🐌', '🦋', '🐛', '🐜', '🐝', '🐞', '🦗', '🕷️', '🕸️', '🦂',
+                '🦟', '🦠', '💐', '🌸', '💮', '🏵️', '🌹', '🥀', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️',
+                '🍀', '🍁', '🍂', '🍃', '🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🥝', '🍅',
+                '🥥', '🥑', '🍆', '🥔', '🥕', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🕺', '💃', '👯‍♂️', '👯‍♀️', '🕴️', '👤', '👥', '🗣️', '👣', '🦰', '🦱', '🦳', '🦲', '🧑‍🦱', '🧑‍🦳', '🧑‍🦰', '🧑‍🦲', '🚶', '🏃', '🧍', '🧎', '🧑‍🦯', '🧑‍🦼', '🧑‍🦽', '🧏', '🧑‍🤝‍🧑', '🧑‍🍼', '🎅🏻', '🎅🏼', '🎅🏽', '🎅🏾', '🎅🏿', '🤶🏻', '🤶🏼', '🤶🏽', '🤶🏾', '🤶🏿', '🦸🏻', '🦸🏼', '🦸🏽', '🦸🏾', '🦸🏿', '🦹🏻', '🦹🏼', '🦹🏽', '🦹🏾', '🦹🏿', '🧙🏻', '🧙🏼', '🧙🏽', '🧙🏾', '🧙🏿', '🧚🏻', '🧚🏼', '🧚🏽', '🧚🏾', '🧚🏿', '🧛🏻', '🧛🏼', '🧛🏽', '🧛🏾', '🧛🏿', '🧜🏻', '🧜🏼', '🧜🏽', '🧜🏾', '🧜🏿', '🧝🏻', '🧝🏼', '🧝🏽', '🧝🏾', '🧝🏿', '🧞‍♂️', '🧞‍♀️', '🧟‍♂️', '🧟‍♀️', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '👃', '👂', '🦻', '🦶', '🦵', '💪', '🦾', '🤲', '🙏', '🤝', '👍', '👎', '👊', '✊', '🤛', '🤜', '🤞', '✌️', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤏', '👌', '🤌', '✍️', '🤳', '💅', '🦰', '🦱', '🦳', '🦲', '👩‍🦰', '👨‍🦰', '👩‍🦱', '👨‍🦱', '👩‍🦳', '👨‍🦳', '👩‍🦲', '👨‍🦲', '🧑‍🦰', '🧑‍🦱', '🧑‍🦳', '🧑‍🦲', '👶', '🧒', '👦', '👧', '🧑', '👱', '👨', '👩', '👴', '👵', '🧓', '🙍', '🙎', '🙅', '🙆', '💁', '🙋', '🧏', '🙇', '🤦', '🤷', '🧑‍⚕️', '🧑‍🎓', '🧑‍🏫', '🧑‍⚖️', '🧑‍🌾', '🧑‍🍳', '🧑‍🔧', '🧑‍🏭', '🧑‍💼', '🧑‍🔬', '🧑‍💻', '🧑‍🎤', '🧑‍🎨', '🧑‍✈️', '🧑‍🚀', '🧑‍🚒', '👮', '🕵️', '💂', '👷', '🤴', '👸', '👳', '🧕', '🤵', '👰', '🤰', '🤱', '👼', '🎅', '🤶', '🦸', '🦹', '🧙', '🧚', '🧛', '🧜', '🧝', '🧞', '🧟', '🐕', '🐈', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🕷️', '🦂', '🦟', '🦠', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🦈', '🐳', '🐬', '🐄', '🐏', '🐐', '🐪', '🦒', '🐘', '🦏', '🦛', '🦝', '🦡', '🦦', '🦥', '🦧', '🦨', '🦘', '🦃', '🐓', '🦢', '🕊️', '🦩', '🦚', '🦜', '💐', '🌸', '💮', '🏵️', '🌹', '🥀', '🌺', '🌻', '🌼', '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿', '☘️', '🍀', '🍁', '🍂', '🍃', '🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐', '🍑', '🍒', '🍓', '🥝', '🍅', '🥥', '🥑', '🍆', '🥔', '🥕', '🌽', '🌶️', '🥒', '🥬', '🥦', '🧄', '🧅', '🍄', '🥜', '🌰', '🍞', '🥐', '🥖', '🥨', '🥯', '🥞', '🧇', '🧀', '🍖', '🍗', '🥩', '🥓', '🍔', '🍟', '🍕', '🌭', '🥪', '🌮', '🌯', '🥙', '🧆', '🥚', '🍳', '🥘', '🍲', '🥣', '🥗', '🍿', '🧈', '🧂', '🥫', '🍱', '🍘', '🍙', '🍚', '🍛', '🍜', '🍝', '🍠', '🍢', '🍣', '🍤', '🍥', '🍡', '🥟', '🥠', '🥡', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍮', '🍯', '🍼', '🥛', '☕', '🍵', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺', '🍻', '🥂', '🥃', '🥤', '🧋', '🧊', '🥢', '🥄', '🍴', '🍽️', '🥣', '🥡', '🏺'
+            ];
+            chars = chars.concat(commonEmojis);
+            return [...new Set(chars)];
+        }
+
+        const CHARACTER_SET = generateCharacterSet();
+
+        class PRNG {
+            constructor(seedString) {
+                let h1 = 0x85ebca6b;
+                let h2 = 0x9942f0a6;
+                for (let i = 0; i < seedString.length; i++) {
+                    h1 = (h1 * 31 + seedString.charCodeAt(i)) | 0;
+                    h2 = (h2 * 17 + seedString.charCodeAt((i + h1) % seedString.length)) | 0;
+                }
+                this.s0 = (BigInt(h1) << BigInt(32)) | BigInt(h2);
+                this.s1 = (BigInt(h2) << BigInt(32)) | BigInt(h1);
+                if (this.s0 === BigInt(0) && this.s1 === BigInt(0)) {
+                    this.s0 = BigInt(1);
+                }
+            }
+            next() {
+                let s0 = this.s0;
+                let s1 = this.s1;
+                let result = s0 + s1;
+                s1 ^= s0;
+                this.s0 = ((s0 << BigInt(24)) | (s0 >> BigInt(40))) ^ s1 ^ (s1 << BigInt(16));
+                this.s1 = ((s1 << BigInt(37)) | (s1 >> BigInt(27)));
+                return result;
+            }
+            random() {
+                const mask = BigInt('0x1FFFFFFFFFFFFF');
+                const divisor = BigInt('0x20000000000000');
+                return Number((this.next() & mask)) / Number(divisor);
+            }
+        }
+
+        function deterministicShuffle(array, prng) {
+            const shuffledArray = [...array];
+            for (let i = shuffledArray.length - 1; i > 0; i--) {
+                const j = Math.floor(prng.random() * (i + 1));
+                [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+            }
+            return shuffledArray;
+        }
+
+        function generateSubstitutionMap(prng) {
+            const originalChars = [...CHARACTER_SET];
+            const shuffledChars = deterministicShuffle(originalChars, prng);
+            const forwardMap = new Map();
+            const reverseMap = new Map();
+            for (let i = 0; i < originalChars.length; i++) {
+                forwardMap.set(originalChars[i], shuffledChars[i]);
+                reverseMap.set(shuffledChars[i], originalChars[i]);
+            }
+            return { forwardMap, reverseMap };
+        }
+
+        function applySubstitution(charArray, map) {
+            return charArray.map(char => map.has(char) ? map.get(char) : char);
+        }
+
+        function applyPermutation(charArray, blockSize) {
+            if (charArray.length < blockSize) return [...charArray];
+            let permutedArray = [];
+            for (let i = 0; i < charArray.length; i += blockSize) {
+                const block = charArray.slice(i, i + blockSize);
+                permutedArray.push(...block.reverse());
+            }
+            return permutedArray;
+        }
+
+        function applyInversePermutation(charArray, blockSize) {
+            return applyPermutation(charArray, blockSize);
+        }
+
+        async function sha256(message) {
+            if (!window.crypto || !window.crypto.subtle || !window.crypto.subtle.digest) {
+                console.warn('Your browser does not support Web Crypto API (SHA-256). Integrity check will be skipped.');
+                return null;
+            }
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hexHash;
+        }
+
+        // Function to derive a unique seed for the room
+        // Uses roomCode and optionally password to create a robust seed string
+        const deriveRoomSeed = (roomCode, password = '') => {
+            // Combine roomCode and password (or just roomCode if no password)
+            // A simple concatenation is okay here as the PRNG hashes the seed string.
+            return `${roomCode}-${password}`;
+        };
+
+        // Encrypts a message using the room's derived seed
+        async function encryptMessage(message, roomCode, roomPassword = '') {
+            const masterSeed = deriveRoomSeed(roomCode, roomPassword);
+            const prng = new PRNG(masterSeed);
+
+            const plaintextHash = await sha256(message);
+            
+            let textToEncryptChars = Array.from(message);
+            if (plaintextHash) {
+                textToEncryptChars.push(...Array.from(plaintextHash));
+            }
+
+            const roundParams = [];
+            for (let i = 0; i < NUM_ROUNDS; i++) {
+                const { forwardMap } = generateSubstitutionMap(prng);
+                const blockSize = Math.floor(prng.random() * (MAX_BLOCK_SIZE - MIN_BLOCK_SIZE + 1)) + MIN_BLOCK_SIZE;
+                roundParams.push({ forwardMap, blockSize });
+            }
+
+            let currentChars = [...textToEncryptChars];
+
+            for (let i = 0; i < NUM_ROUNDS; i++) {
+                currentChars = applySubstitution(currentChars, roundParams[i].forwardMap);
+                currentChars = applyPermutation(currentChars, roundParams[i].blockSize);
+            }
+            return currentChars.join(''); // Return just the encrypted text, no masterSeed prepended
+        }
+
+        // Decrypts a message using the room's derived seed
+        async function decryptMessage(encryptedText, roomCode, roomPassword = '') {
+            if (!encryptedText) return ''; // Handle empty encrypted text
+
+            const masterSeed = deriveRoomSeed(roomCode, roomPassword);
+            const prng = new PRNG(masterSeed);
+
+            const encryptedTextChars = Array.from(encryptedText);
+
+            const roundParams = [];
+            for (let i = 0; i < NUM_ROUNDS; i++) {
+                const { forwardMap, reverseMap } = generateSubstitutionMap(prng);
+                const blockSize = Math.floor(prng.random() * (MAX_BLOCK_SIZE - MIN_BLOCK_SIZE + 1)) + MIN_BLOCK_SIZE;
+                roundParams.push({ forwardMap, reverseMap, blockSize });
+            }
+
+            let currentChars = [...encryptedTextChars];
+
+            for (let i = NUM_ROUNDS - 1; i >= 0; i--) {
+                currentChars = applyInversePermutation(currentChars, roundParams[i].blockSize);
+                currentChars = applySubstitution(currentChars, roundParams[i].reverseMap);
+            }
+
+            let decryptedPlaintextChars = [...currentChars];
+            let decryptedHashChars = null;
+
+            if (currentChars.length >= HASH_LENGTH_HEX) {
+                decryptedPlaintextChars = currentChars.slice(0, currentChars.length - HASH_LENGTH_HEX);
+                decryptedHashChars = currentChars.slice(currentChars.length - HASH_LENGTH_HEX);
+            } else {
+                console.warn('Decrypted text too short to contain a hash. Integrity check skipped.');
+            }
+
+            const finalDecryptedPlaintext = decryptedPlaintextChars.join('');
+            const finalDecryptedHash = decryptedHashChars ? decryptedHashChars.join('') : null;
+
+            if (finalDecryptedHash) {
+                const recomputedHash = await sha256(finalDecryptedPlaintext);
+                if (recomputedHash === null) {
+                    console.warn('Integrity check skipped during decryption due to browser limitations.');
+                } else if (recomputedHash !== finalDecryptedHash) {
+                    console.error('Integrity check FAILED! Message might have been tampered with.');
+                    return "[TAMPERED MESSAGE]"; // Indicate tampering
+                }
+            }
+            return finalDecryptedPlaintext;
+        }
+        // --- END CUSTOM ENCRYPTION ALGORITHM ---
+
 
         // Utility to generate room code
         const generateRoomCode = () => {
@@ -1261,12 +1476,9 @@
             }
             const isHost = currentUserId === currentRoom.hostId;
             const isPermanent = currentRoom.isPermanent;
-            // const hasPassword = currentRoom.password; // Removed password check for permanent mode
 
             togglePermanentModeBtn.classList.toggle('hidden', !isHost); // Only host sees the button
-            // Shortened text for the button
             togglePermanentModeBtn.textContent = isPermanent ? 'Temp' : 'Perma';
-            // Always enable the button for the host, regardless of password
             togglePermanentModeBtn.disabled = false; 
 
             permanentRoomIndicator.classList.toggle('hidden', !isPermanent); // Show indicator if permanent
@@ -1285,7 +1497,8 @@
                 const usernameText = document.createTextNode(`${user.username} ${user.userId === currentUserId ? '(You)' : ''} ${user.userId === hostId ? '(Host)' : ''}`);
                 participantSpan.appendChild(usernameText);
 
-                if (isHost && user.userId !== currentUserId) { // Host can remove others
+                // Admin (host) can remove other participants
+                if (isHost && user.userId !== currentUserId) {
                     const removeBtn = document.createElement('button');
                     removeBtn.className = 'remove-participant-btn';
                     removeBtn.textContent = '✕'; // Using a multiplication X, or use an SVG/icon font
@@ -1298,7 +1511,7 @@
         };
         
         // Function for host to remove a participant
-        const handleRemoveParticipant = (userToRemove) => {
+        const handleRemoveParticipant = async (userToRemove) => {
             if (!currentRoom || currentUserId !== currentRoom.hostId) {
                 showModal("Error", "Only the host can remove participants.", () => hideModal());
                 return;
@@ -1343,10 +1556,10 @@
         };
 
 
-        // Render messages (filtered by joinTimestamp)
-        const renderMessages = (messages) => {
+        // Render messages (filtered by joinTimestamp and decrypted)
+        const renderMessages = async (messages) => { // Made async
             messagesContainer.innerHTML = '';
-            const currentUserJoinTimestamp = currentRoom?.users?.find(u => u.userId === currentUserId)?.joinTimestamp;
+            const currentUserJoinTimestamp = currentUserObject?.joinTimestamp;
             const currentUserJoinTime = currentUserJoinTimestamp instanceof Date ? currentUserJoinTimestamp.getTime() : (currentUserJoinTimestamp?.toDate ? currentUserJoinTimestamp.toDate().getTime() : 0);
 
             const filteredMessages = messages.filter(msg => {
@@ -1359,7 +1572,7 @@
                 noMessagesYet.classList.remove('hidden');
             } else {
                 noMessagesYet.classList.add('hidden');
-                filteredMessages.forEach(msg => {
+                for (const msg of filteredMessages) { // Use for...of for async/await
                     const messageDiv = document.createElement('div');
                     messageDiv.className = `message-item ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`;
                     const contentDiv = document.createElement('div');
@@ -1368,7 +1581,17 @@
                     senderSpan.className = "sender-info";
                     senderSpan.textContent = msg.senderId === currentUserId ? 'You' : msg.senderUsername;
                     const textP = document.createElement('p');
-                    textP.textContent = msg.text;
+                    
+                    // --- DECRYPT MESSAGE HERE ---
+                    try {
+                        const decryptedText = await decryptMessage(msg.text, currentRoom.code, currentRoom.password);
+                        textP.textContent = decryptedText;
+                    } catch (e) {
+                        console.error("Decryption failed for message:", msg.id, e);
+                        textP.textContent = "[Decryption Failed]"; // Show error if decryption fails
+                    }
+                    // --- END DECRYPT MESSAGE ---
+
                     const timestampDiv = document.createElement('div');
                     timestampDiv.className = "timestamp";
                     const date = msg.timestamp ? (msg.timestamp instanceof Date ? msg.timestamp : msg.timestamp.toDate()) : null;
@@ -1378,7 +1601,7 @@
                     contentDiv.appendChild(timestampDiv);
                     messageDiv.appendChild(contentDiv);
                     messagesContainer.appendChild(messageDiv);
-                });
+                }
             }
             messagesContainer.appendChild(messagesEndRef);
             messagesEndRef.scrollIntoView({ behavior: 'smooth' });
@@ -1400,48 +1623,12 @@
             updateUI();
         });
 
-        // Create Room
-        const createRoom = async (username, password = null, maxParticipants = 4) => {
-            let newRoomCode = generateRoomCode();
-            // Check if room code already exists (unlikely but possible)
-            let roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
-            let roomDoc = await getDoc(roomRef);
-            while (roomDoc.exists()) {
-                newRoomCode = generateRoomCode();
-                roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
-                roomDoc = await getDoc(roomRef);
-            }
-
-            const user = { userId: currentUserId, username: username, joinTimestamp: new Date() };
-            const roomData = {
-                code: newRoomCode,
-                users: [user],
-                hostId: currentUserId, // Set hostId on creation
-                createdAt: serverTimestamp(),
-                lastActivity: serverTimestamp(),
-                maxParticipants: maxParticipants,
-                isPermanent: false, // NEW: Default to not permanent
-                permanentLastActivity: null // NEW: No permanent activity yet
-            };
-            if (password) roomData.password = password;
-
-            try {
-                await setDoc(roomRef, roomData);
-                currentUserObject = user;
-                window.addEventListener('beforeunload', handlePageExit);
-                // Return the full room data including hostId, isPermanent, permanentLastActivity
-                return { ...roomData, users: [user], isPermanent: false, permanentLastActivity: null }; 
-            } catch (error) {
-                console.error("Error creating room:", error);
-                showModal("Creation Failed", "Failed to create room. Please try again.", () => hideModal());
-                return null;
-            }
-        };
-
+        // Create Room Button
         createRoomBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const password = createPasswordInput.value.trim();
             const maxParticipants = parseInt(maxParticipantsInput.value, 10);
+
             if (!username) {
                 showModal("Invalid Username", "Please enter a username.", () => hideModal());
                 return;
@@ -1450,73 +1637,49 @@
                 showModal("Invalid Max Participants", "Please set max participants between 2 and 10.", () => hideModal());
                 return;
             }
-            const room = await createRoom(username, password || null, maxParticipants);
-            if (room) {
-                currentRoom = room; // currentRoom now includes hostId, isPermanent, permanentLastActivity
-                roomCodeInput.value = room.code;
+            
+            let newRoomCode = generateRoomCode();
+            let roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
+            let roomDoc = await getDoc(roomRef);
+            while (roomDoc.exists()) {
+                newRoomCode = generateRoomCode();
+                roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, newRoomCode);
+                roomDoc = await getDoc(roomRef);
+            }
+
+            const user = { userId: currentUserId, username: username, joinTimestamp: serverTimestamp() }; // Use serverTimestamp for consistency
+            const roomData = {
+                code: newRoomCode,
+                users: [user],
+                hostId: currentUserId,
+                createdAt: serverTimestamp(),
+                lastActivity: serverTimestamp(),
+                maxParticipants: maxParticipants,
+                isPermanent: false,
+                permanentLastActivity: null
+            };
+            if (password) roomData.password = password; // Store plaintext password
+
+            try {
+                await setDoc(roomRef, roomData);
+                currentUserObject = user;
+                window.addEventListener('beforeunload', handlePageExit);
+                currentRoom = { ...roomData, code: newRoomCode, isPermanent: false, permanentLastActivity: null }; // Update currentRoom with actual code
+                roomCodeInput.value = newRoomCode;
                 createPasswordInput.value = '';
-                await setupRoomListeners(room.code);
+                await setupRoomListeners(newRoomCode); // Pass newRoomCode
                 updateUI();
+            } catch (error) {
+                console.error("Error creating room:", error);
+                showModal("Creation Failed", error.message || "Failed to create room. Please try again.", () => hideModal());
             }
         });
 
-        // Join Room Transaction
-        const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants, roomPassword = null, hostId = null, isPermanent = false, permanentLastActivity = null) => {
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const roomDoc = await transaction.get(roomRef);
-                    if (!roomDoc.exists()) throw new Error("Room no longer exists");
-                    const roomData = roomDoc.data();
-                    let usersInRoom = roomData.users || [];
-                    const maxAllowedUsers = roomData.maxParticipants || roomMaxParticipants || 4;
-                    let existingUserIndex = usersInRoom.findIndex(u => u.userId === currentUserId);
-
-                    if (existingUserIndex !== -1) {
-                        usersInRoom[existingUserIndex].joinTimestamp = new Date();
-                        usersInRoom[existingUserIndex].username = username;
-                    } else {
-                        if (usersInRoom.length >= maxAllowedUsers) throw new Error("Room full (re-check)");
-                        if (usersInRoom.some(u => u.username.toLowerCase() === username.toLowerCase())) throw new Error("Username taken (re-check)");
-                        const newUser = { userId: currentUserId, username: username, joinTimestamp: new Date() };
-                        usersInRoom.push(newUser);
-                    }
-                    
-                    const updateFields = { users: usersInRoom, lastActivity: serverTimestamp() };
-                    if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
-                        updateFields.permanentLastActivity = serverTimestamp();
-                    }
-                    transaction.update(roomRef, updateFields);
-
-                    // Ensure currentRoom is set with all necessary fields including hostId from roomData
-                    currentRoom = { 
-                        code: roomCode, 
-                        users: usersInRoom, 
-                        maxParticipants: maxAllowedUsers, 
-                        password: roomPassword,
-                        hostId: roomData.hostId || hostId, // Prefer hostId from roomData, fallback if needed
-                        isPermanent: roomData.isPermanent || isPermanent, // NEW
-                        permanentLastActivity: roomData.permanentLastActivity || permanentLastActivity // NEW
-                    };
-                });
-                currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
-                if (currentUserObject) window.addEventListener('beforeunload', handlePageExit);
-                else console.error("Could not find current user object after join transaction.");
-                await setupRoomListeners(roomCode);
-                updateUI();
-                hideModal();
-            } catch (error) {
-                console.error("Error joining room (transaction):", error);
-                let errorMessage = "Failed to join room. Please try again.";
-                if (error.message.includes("Room full")) errorMessage = "Room is now full.";
-                if (error.message.includes("Username taken")) errorMessage = "Username was taken.";
-                if (error.message.includes("Room no longer exists")) errorMessage = "The room no longer exists.";
-                showModal("Join Failed", errorMessage, () => hideModal());
-            }
-        };
-
+        // Join Room Button
         joinRoomBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
             const roomCode = roomCodeInput.value.trim().toUpperCase();
+
             if (!username) {
                 showModal("Invalid Username", "Please enter a username.", () => hideModal());
                 return;
@@ -1536,7 +1699,7 @@
                 const roomData = roomDoc.data();
                 const currentUsers = roomData.users || [];
                 const maxAllowedUsers = roomData.maxParticipants || 4;
-                
+
                 // Check if username is taken (case-insensitive)
                 const isUsernameTaken = currentUsers.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
                 if (isUsernameTaken) {
@@ -1550,28 +1713,87 @@
                     return;
                 }
 
-                if (roomData.password) {
-                     showModal("Enter Password", "This room is password protected.", async () => {
+                if (roomData.password) { // Room has a password
+                    showModal("Enter Password", "This room is password protected.", async () => {
                         const enteredPassword = modalPasswordInput.value.trim();
-                        if (enteredPassword === roomData.password) {
-                            modalPasswordError.classList.add('hidden');
-                            // Pass all relevant roomData fields including isPermanent and permanentLastActivity
-                            await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, roomData.password, roomData.hostId, roomData.isPermanent, roomData.permanentLastActivity);
-                        } else {
+                        modalPasswordError.classList.add('hidden');
+
+                        // --- PASSWORD VALIDATION (CLIENT-SIDE) ---
+                        // Since we are not using Cloud Functions, plaintext password validation happens here.
+                        if (enteredPassword !== roomData.password) {
                             modalPasswordError.textContent = "Incorrect password.";
                             modalPasswordError.classList.remove('hidden');
                             modalPasswordInput.value = '';
+                            return; // Stop execution, keep modal open
                         }
-                    }, true, () => {}, true);
-                } else {
-                    // Pass all relevant roomData fields including isPermanent and permanentLastActivity
+                        // --- END PASSWORD VALIDATION ---
+
+                        // If password is correct, proceed to join
+                        await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, roomData.password, roomData.hostId, roomData.isPermanent, roomData.permanentLastActivity);
+                        hideModal();
+                    }, true, () => {}, true); // Show cancel, show password input
+                } else { // Room has no password
                     await performJoinRoomTransaction(roomRef, roomCode, username, maxAllowedUsers, null, roomData.hostId, roomData.isPermanent, roomData.permanentLastActivity);
                 }
             } catch (error) {
                 console.error("Error joining room (initial check):", error);
-                showModal("Join Failed", "Failed to join room. Check code and try again.", () => hideModal());
+                showModal("Join Failed", error.message || "Failed to join room. Check code and try again.", () => hideModal());
             }
         });
+
+        // Transaction to join a room (used by both join and random join)
+        const performJoinRoomTransaction = async (roomRef, roomCode, username, roomMaxParticipants, roomPassword = null, hostId = null, isPermanent = false, permanentLastActivity = null) => {
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const roomDoc = await transaction.get(roomRef);
+                    if (!roomDoc.exists()) throw new Error("Room no longer exists");
+                    const roomData = roomDoc.data();
+                    let usersInRoom = roomData.users || [];
+                    const maxAllowedUsers = roomData.maxParticipants || roomMaxParticipants || 4;
+                    let existingUserIndex = usersInRoom.findIndex(u => u.userId === currentUserId);
+
+                    if (existingUserIndex !== -1) {
+                        usersInRoom[existingUserIndex].joinTimestamp = serverTimestamp(); // Update timestamp
+                        usersInRoom[existingUserIndex].username = username; // Update username if changed
+                    } else {
+                        if (usersInRoom.length >= maxAllowedUsers) throw new Error("Room full (re-check)");
+                        if (usersInRoom.some(u => u.username.toLowerCase() === username.toLowerCase())) throw new Error("Username taken (re-check)");
+                        const newUser = { userId: currentUserId, username: username, joinTimestamp: serverTimestamp() };
+                        usersInRoom.push(newUser);
+                    }
+                    
+                    const updateFields = { users: usersInRoom, lastActivity: serverTimestamp() };
+                    if (roomData.isPermanent) {
+                        updateFields.permanentLastActivity = serverTimestamp();
+                    }
+                    transaction.update(roomRef, updateFields);
+
+                    // Update currentRoom state with latest data from transaction
+                    currentRoom = { 
+                        code: roomCode, 
+                        users: usersInRoom, 
+                        maxParticipants: maxAllowedUsers, 
+                        password: roomPassword, // Keep password in local state for decryption
+                        hostId: roomData.hostId || hostId,
+                        isPermanent: roomData.isPermanent || isPermanent,
+                        permanentLastActivity: roomData.permanentLastActivity || permanentLastActivity
+                    };
+                });
+                currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
+                if (currentUserObject) window.addEventListener('beforeunload', handlePageExit);
+                else console.error("Could not find current user object after join transaction.");
+                await setupRoomListeners(roomCode);
+                updateUI();
+                hideModal();
+            } catch (error) {
+                console.error("Error joining room (transaction):", error);
+                let errorMessage = "Failed to join room. Please try again.";
+                if (error.message.includes("Room full")) errorMessage = "Room is now full.";
+                if (error.message.includes("Username taken")) errorMessage = "Username was taken.";
+                if (error.message.includes("Room no longer exists")) errorMessage = "The room no longer exists.";
+                showModal("Join Failed", errorMessage, () => hideModal());
+            }
+        };
 
         // Join Random Room
         joinRandomRoomBtn.addEventListener('click', async () => {
@@ -1592,11 +1814,10 @@
         });
 
         const findRandomRoom = async (username) => {
-            const roomsCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms`);
             try {
-                // Query for rooms that are not permanent and have users
-                const q = query(roomsCollectionRef, where('isPermanent', '==', false)); // NEW: Only consider non-permanent rooms for random join
-                const querySnapshot = await getDocs(q);
+                const roomsCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms`);
+                const querySnapshot = await getDocs(roomsCollectionRef); // Fetch all rooms
+                
                 let availableRooms = [];
                 querySnapshot.forEach(docSnap => {
                     const roomData = docSnap.data();
@@ -1605,37 +1826,47 @@
                     if (roomData.users && roomData.users.length > 0 && roomData.users.length < maxAllowedUsers && !roomData.password) {
                         const isUsernameTaken = roomData.users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
                         if (!isUsernameTaken) {
-                             // Include hostId, isPermanent, permanentLastActivity when pushing to availableRooms
-                            availableRooms.push({...roomData, code: docSnap.id, hostId: roomData.hostId, isPermanent: roomData.isPermanent, permanentLastActivity: roomData.permanentLastActivity });
+                            availableRooms.push({ id: docSnap.id, ...roomData }); // Include ID for join
                         }
                     }
                 });
+
                 if (availableRooms.length > 0) {
                     const randomIndex = Math.floor(Math.random() * availableRooms.length);
                     const roomToJoin = availableRooms[randomIndex];
-                    const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomToJoin.code);
-                    // Pass all relevant roomData fields including isPermanent and permanentLastActivity
-                    await performJoinRoomTransaction(roomRef, roomToJoin.code, username, roomToJoin.maxParticipants, null, roomToJoin.hostId, roomToJoin.isPermanent, roomToJoin.permanentLastActivity);
+                    await performJoinRoomTransaction(
+                        doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomToJoin.id),
+                        roomToJoin.id,
+                        username,
+                        roomToJoin.maxParticipants,
+                        roomToJoin.password,
+                        roomToJoin.hostId,
+                        roomToJoin.isPermanent,
+                        roomToJoin.permanentLastActivity
+                    );
                 } else {
                     showModal("No Random Rooms", "No random rooms available. Try creating one!", () => hideModal());
                 }
             } catch (error) {
                 console.error("Error finding random room:", error);
-                showModal("Error", "Failed to find a random room.", () => hideModal());
+                showModal("Error", error.message || "Failed to find a random room.", () => hideModal());
             }
         };
         
         // Room Inactivity Check
-        const checkInactivity = async (roomDocRef) => {
+        const checkInactivity = async (roomCode) => {
+            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCode);
             try {
-                const roomDoc = await getDoc(roomDocRef);
+                const roomDoc = await getDoc(roomRef); // Get latest room data
                 if (!roomDoc.exists()) {
-                    console.log("Room no longer exists, skipping inactivity check.");
+                    if (inactivityTimer) clearInterval(inactivityTimer);
+                    inactivityTimer = null;
+                    handleLeaveRoomCleanUp();
+                    showModal("Room Ended", "The room you were in has ended.", () => {});
                     return;
                 }
                 const roomData = roomDoc.data();
                 const currentTime = Date.now();
-
                 let shouldDelete = false;
                 let reason = "";
                 let activityTimestamp = null;
@@ -1643,14 +1874,14 @@
 
                 if (roomData.isPermanent) {
                     activityTimestamp = roomData.permanentLastActivity ?
-                        (roomData.permanentLastActivity.toDate ? roomData.permanentLastActivity.toDate() : roomData.permanentLastActivity) :
-                        (roomData.createdAt.toDate ? roomData.createdAt.toDate() : roomData.createdAt); // Fallback to createdAt if permanentLastActivity is missing
+                        (roomData.permanentLastActivity instanceof Date ? roomData.permanentLastActivity : roomData.permanentLastActivity.toDate()) :
+                        (roomData.createdAt instanceof Date ? roomData.createdAt : roomData.createdAt.toDate());
                     timeoutDuration = PERMANENT_INACTIVITY_TIMEOUT_MS;
                     reason = "due to 1 week inactivity (permanent room)";
                 } else {
                     activityTimestamp = roomData.lastActivity ?
-                        (roomData.lastActivity.toDate ? roomData.lastActivity.toDate() : roomData.lastActivity) :
-                        (roomData.createdAt.toDate ? roomData.createdAt.toDate() : roomData.createdAt); // Fallback to createdAt if lastActivity is missing
+                        (roomData.lastActivity instanceof Date ? roomData.lastActivity : roomData.lastActivity.toDate()) :
+                        (roomData.createdAt instanceof Date ? roomData.createdAt : roomData.createdAt.toDate());
                     timeoutDuration = INACTIVITY_TIMEOUT_MS;
                     reason = "due to 15 minute inactivity (empty temporary room)";
                 }
@@ -1661,8 +1892,6 @@
                 }
                 const lastActivityTime = activityTimestamp.getTime();
 
-                // For temporary rooms, only delete if empty AND inactive.
-                // For permanent rooms, delete if inactive, regardless of users (as they persist when empty).
                 if (roomData.isPermanent) {
                     if (currentTime - lastActivityTime >= timeoutDuration) {
                         shouldDelete = true;
@@ -1679,30 +1908,45 @@
                         inactivityTimer = null;
                     }
                     showModal("Room Timed Out", `This room was deleted ${reason}.`, async () => {
-                        const roomCodeToDelete = roomDoc.id;
-                        handleLeaveRoomCleanUp();
-                        hideModal();
-                        if (roomCodeToDelete) {
-                            try {
-                                // Delete messages subcollection first
-                                const messagesQuerySnapshot = await getDocs(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCodeToDelete}/messages`));
-                                messagesQuerySnapshot.docs.forEach(async (msgDoc) => {
-                                    await deleteDoc(msgDoc.ref);
+                        try {
+                            // Only host can delete the room
+                            if (currentUserId === roomData.hostId) {
+                                // Delete all messages in the subcollection first
+                                const messagesQuerySnapshot = await getDocs(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${roomCode}/messages`));
+                                messagesQuerySnapshot.docs.forEach(msgDoc => {
+                                    deleteDoc(msgDoc.ref); // Direct delete, relies on rules
                                 });
-                                await deleteDoc(doc(db, `artifacts/${textrollAppId}/public/data/rooms`, roomCodeToDelete));
-                                console.log(`Room ${roomCodeToDelete} deleted ${reason}.`);
-                            } catch (e) {
-                                console.warn(`Could not delete timed out room ${roomCodeToDelete}:`, e);
+                                await deleteDoc(roomRef); // Direct delete, relies on rules
+                                console.log(`Room ${roomCode} deleted ${reason} by host.`);
+                            } else {
+                                console.warn(`Room ${roomCode} should be deleted but current user is not host. Relying on host or manual cleanup.`);
+                                showModal("Room Timed Out", `This room was deleted ${reason}. You were not the host, so automatic deletion failed for you.`, () => {});
                             }
+                            handleLeaveRoomCleanUp();
+                            hideModal();
+                        } catch (e) {
+                            console.warn(`Could not delete timed out room ${roomCode}:`, e.message || e);
+                            handleLeaveRoomCleanUp(); // Still clean up client-side
+                            hideModal();
                         }
                     });
                 }
             } catch (error) {
                 console.error("Error in checkInactivity:", error);
+                // If room doesn't exist, it's already gone, just clean up.
+                if (error.code === 'not-found') {
+                     if (inactivityTimer) clearInterval(inactivityTimer);
+                     inactivityTimer = null;
+                     handleLeaveRoomCleanUp();
+                     hideModal();
+                     showModal("Room Ended", "The room you were in has ended.", () => {});
+                } else {
+                    showModal("Connection Error", error.message || "Failed to check room inactivity.", () => hideModal());
+                }
             }
         };
 
-        // Setup Room Listeners
+        // Setup Room Listeners (Updated to handle encrypted messages)
         const setupRoomListeners = async (roomCode) => {
             if (unsubscribeRoomListener) unsubscribeRoomListener();
             if (unsubscribeMessagesListener) unsubscribeMessagesListener();
@@ -1714,21 +1958,11 @@
             try {
                 const roomDoc = await getDoc(roomDocRef);
                 if (roomDoc.exists()) {
-                    const roomData = roomDoc.data();
-                    currentRoom = { // Ensure all fields, including hostId, isPermanent, permanentLastActivity, are set
-                        code: roomCode,
-                        users: roomData.users || [],
-                        maxParticipants: roomData.maxParticipants || 4,
-                        lastActivity: roomData.lastActivity,
-                        password: roomData.password || null,
-                        hostId: roomData.hostId,
-                        isPermanent: roomData.isPermanent || false, // NEW
-                        permanentLastActivity: roomData.permanentLastActivity || null // NEW
-                    };
+                    currentRoom = { ...roomDoc.data(), code: roomCode };
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
-                    renderParticipants(currentRoom.users, currentRoom.hostId); // Pass hostId
+                    renderParticipants(currentRoom.users, currentRoom.hostId);
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
-                    updatePermanentModeUI(); // NEW: Initial UI update for permanent mode
+                    updatePermanentModeUI();
                 } else { 
                     showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
@@ -1738,34 +1972,22 @@
                 }
             } catch (error) { 
                  console.error("Error fetching initial room data:", error);
-                showModal("Connection Error", "Failed to get initial room data.", () => { hideModal(); });
+                showModal("Connection Error", error.message || "Failed to get initial room data.", () => { hideModal(); });
                 return;
             }
-            // Initial messages fetch
-            try {
-                const initialMessagesQuery = query(messagesCollectionRef, orderBy('timestamp', 'asc'));
-                const initialMessagesSnapshot = await getDocs(initialMessagesQuery);
-                const initialMessages = initialMessagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderMessages(initialMessages);
-            } catch (error) {
-                console.error("Error fetching initial messages:", error);
-                showModal("Connection Error", "Failed to get initial messages.", () => { hideModal(); });
-                return; 
-            }
-
-
+            
+            // Real-time listener for room changes
             unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const roomData = docSnap.data();
-                    // Check if current user is still in the room's user list
                     const amIStillInRoom = roomData.users && roomData.users.some(u => u.userId === currentUserId);
 
-                    if (!amIStillInRoom && currentRoom) { // If current user was removed or left
+                    if (!amIStillInRoom && currentRoom) {
                         showModal("Removed from Room", "You have been removed from the room or the room has changed.", () => {
                             handleLeaveRoomCleanUp();
                             hideModal();
                         });
-                        return; // Stop further processing for this client in this room
+                        return;
                     }
 
                     currentRoom = {
@@ -1773,19 +1995,19 @@
                         users: roomData.users || [],
                         maxParticipants: roomData.maxParticipants || 4,
                         lastActivity: roomData.lastActivity,
-                        hostId: roomData.hostId, // Update hostId from snapshot
-                        isPermanent: roomData.isPermanent || false, // NEW
-                        permanentLastActivity: roomData.permanentLastActivity || null // NEW
+                        hostId: roomData.hostId,
+                        isPermanent: roomData.isPermanent || false,
+                        permanentLastActivity: roomData.permanentLastActivity || null
                     };
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
-                    renderParticipants(currentRoom.users, currentRoom.hostId); // Pass hostId
+                    renderParticipants(currentRoom.users, currentRoom.hostId);
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
-                    updatePermanentModeUI(); // NEW: Update permanent mode UI on snapshot
+                    updatePermanentModeUI();
                     
                     // Reset and restart inactivity timer
                     if (inactivityTimer) clearInterval(inactivityTimer);
-                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000); // Check every minute
-                    checkInactivity(roomDocRef); // Run immediately on snapshot update
+                    inactivityTimer = setInterval(() => checkInactivity(roomCode), 60 * 1000); // Pass roomCode
+                    checkInactivity(roomCode); // Run immediately
                 } else { 
                      showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
@@ -1794,27 +2016,20 @@
                 }
             }, (error) => { 
                 console.error("Error listening to room:", error);
-                showModal("Connection Error", "Failed to get room updates.", () => { hideModal(); });
+                showModal("Connection Error", error.message || "Failed to get room updates.", () => { hideModal(); });
             });
             
+            // Real-time listener for messages
             unsubscribeMessagesListener = onSnapshot(query(messagesCollectionRef, orderBy('timestamp', 'asc')), (snapshot) => {
                 const newMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderMessages(newMessages); 
-                if (currentRoom && currentRoom.code) {
-                    const roomRefToUpdate = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
-                    const updateFields = { lastActivity: serverTimestamp() };
-                    if (currentRoom.isPermanent) { // NEW: Update permanentLastActivity if permanent
-                        updateFields.permanentLastActivity = serverTimestamp();
-                    }
-                    updateDoc(roomRefToUpdate, updateFields).catch(e => console.error("Error updating last activity on message receive:", e));
-                }
             }, (error) => {
                 console.error("Error listening to messages:", error);
-                showModal("Connection Error", "Failed to get message updates.", () => { hideModal(); });
+                showModal("Connection Error", error.message || "Failed to get message updates.", () => { hideModal(); });
             });
         };
 
-        // Send Message
+        // Send Message (Now encrypts message)
         messageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const newMessageText = newMessageInput.value.trim();
@@ -1823,25 +2038,34 @@
                  console.warn("Cannot send message: currentRoom, currentUserId, or currentUserObject is not set.");
                  return;
             }
-            const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
-            const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code); 
+            
             try {
+                // --- ENCRYPT MESSAGE HERE ---
+                const encryptedText = await encryptMessage(newMessageText, currentRoom.code, currentRoom.password);
+                // --- END ENCRYPT MESSAGE ---
+
+                const messagesCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`);
                 await addDoc(messagesCollectionRef, {
                     senderId: currentUserId,
                     senderUsername: currentUserObject.username,
-                    type: 'text', 
+                    type: 'text',
                     timestamp: serverTimestamp(),
-                    text: newMessageText,
+                    text: encryptedText, // Store encrypted text
                 });
+
+                // Update room's last activity
+                const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
+                const roomData = (await getDoc(roomRef)).data(); // Get latest room data
                 const updateFields = { lastActivity: serverTimestamp() };
-                if (currentRoom.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                if (roomData.isPermanent) {
                     updateFields.permanentLastActivity = serverTimestamp();
                 }
                 await updateDoc(roomRef, updateFields);
+
                 newMessageInput.value = ''; 
             } catch (error) {
                 console.error("Error sending message:", error);
-                showModal("Message Failed", "Failed to send message.", () => { hideModal(); }); 
+                showModal("Message Failed", error.message || "Failed to send message.", () => { hideModal(); }); 
             }
         });
 
@@ -1870,28 +2094,27 @@
 
                             if (currentUserId === roomData.hostId) { // Current user is the host
                                 if (roomData.isPermanent) {
-                                    // NEW: Host leaving a permanent room: just remove host from users, room persists
+                                    // Host leaving a permanent room: just remove host from users, room persists
                                     transaction.update(roomRef, {
                                         users: arrayRemove(userObjectToRemoveFromFirestore),
                                         lastActivity: serverTimestamp(),
-                                        permanentLastActivity: serverTimestamp() // NEW: Update permanent activity
+                                        permanentLastActivity: serverTimestamp()
                                     });
                                 } else {
-                                    // NEW: Host leaving a non-permanent room: delete the room immediately regardless of other participants
+                                    // Host leaving a non-permanent room: delete the room immediately
                                     // Delete all messages in the subcollection first
                                     const messagesQuerySnapshot = await getDocs(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.code}/messages`));
                                     messagesQuerySnapshot.docs.forEach(msgDoc => {
-                                        transaction.delete(msgDoc.ref);
+                                        transaction.delete(msgDoc.ref); // Direct delete, relies on rules
                                     });
-                                    transaction.delete(roomRef);
+                                    transaction.delete(roomRef); // Direct delete, relies on rules
                                 }
                             } else { // Current user is a participant (not host)
                                 const updateFields = { users: arrayRemove(userObjectToRemoveFromFirestore), lastActivity: serverTimestamp() };
-                                if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
+                                if (roomData.isPermanent) {
                                     updateFields.permanentLastActivity = serverTimestamp();
                                 }
                                 transaction.update(roomRef, updateFields);
-                                // If this was the last participant in a non-permanent room, the 15-min inactivity timer will delete it.
                             }
                         } else {
                             console.warn("Attempted to leave room, user not found in Firestore. Cleaning up locally.");
@@ -1902,7 +2125,7 @@
                 }
                 catch (error) {
                     console.error("Error leaving room:", error);
-                    showModal("Leave Failed", "Could not leave room.", () => { 
+                    showModal("Leave Failed", error.message || "Could not leave room.", () => { 
                         handleLeaveRoomCleanUp(); 
                         hideModal(); 
                     }); 
@@ -1926,41 +2149,39 @@
         };
 
         // Page Exit (Best Effort)
-        const handlePageExit = () => {
+        const handlePageExit = async () => {
              if (currentRoom && currentUserId && currentUserObject) {
                 const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
                 try {
-                    getDoc(roomRef).then(roomDoc => {
-                        if (roomDoc.exists()) {
-                            const roomData = roomDoc.data();
-                            const usersInFirestore = roomData.users || [];
-                            const userToRemove = usersInFirestore.find(u => u.userId === currentUserId && u.username === currentUserObject.username);
-                            if (userToRemove) {
-                                // Only remove the user. Let the onSnapshot and inactivity checks handle room deletion.
-                                const updateFields = { lastActivity: serverTimestamp() };
-                                if (roomData.isPermanent) { // NEW: Update permanentLastActivity if permanent
-                                    updateFields.permanentLastActivity = serverTimestamp();
-                                }
-                                updateDoc(roomRef, {
-                                    users: arrayRemove(userToRemove), 
-                                    ...updateFields
-                                }).catch(e => console.warn("Best-effort: Failed to remove user on exit (updateDoc):", e));
+                    const roomDoc = await getDoc(roomRef);
+                    if (roomDoc.exists()) {
+                        const roomData = roomDoc.data();
+                        const usersInFirestore = roomData.users || [];
+                        const userToRemove = usersInFirestore.find(u => u.userId === currentUserId && u.username === currentUserObject.username);
+                        if (userToRemove) {
+                            // Only remove the user. Let the onSnapshot and inactivity checks handle room deletion.
+                            const updateFields = { lastActivity: serverTimestamp() };
+                            if (roomData.isPermanent) {
+                                updateFields.permanentLastActivity = serverTimestamp();
                             }
+                            await updateDoc(roomRef, {
+                                users: arrayRemove(userToRemove), 
+                                ...updateFields
+                            }).catch(e => console.warn("Best-effort: Failed to remove user on exit (updateDoc):", e));
                         }
-                    }).catch(e => console.warn("Best-effort: Error fetching room doc on exit:", e));
+                    }
                 } catch (e) {
                     console.warn("Best-effort: Error in handlePageExit:", e);
                 }
             }
         };
 
-        // NEW: Event listener for the "Toggle Permanent Mode" button
+        // Toggle Permanent Mode Button
         togglePermanentModeBtn.addEventListener('click', async () => {
             if (!currentRoom || currentUserId !== currentRoom.hostId) {
                 showModal("Permission Denied", "Only the host can toggle permanent mode.", () => hideModal());
                 return;
             }
-            // Removed: if (!currentRoom.password) check
 
             const roomRef = doc(db, `artifacts/${textrollAppId}/public/data/rooms`, currentRoom.code);
             const newPermanentState = !currentRoom.isPermanent; // Toggle the state
@@ -1972,12 +2193,12 @@
                     try {
                         const updateFields = {
                             isPermanent: newPermanentState,
-                            lastActivity: serverTimestamp() // Also update general activity
+                            lastActivity: serverTimestamp()
                         };
                         if (newPermanentState) {
-                            updateFields.permanentLastActivity = serverTimestamp(); // Set timestamp when made permanent
+                            updateFields.permanentLastActivity = serverTimestamp();
                         } else {
-                            updateFields.permanentLastActivity = null; // Clear timestamp when made temporary
+                            updateFields.permanentLastActivity = null;
                         }
                         await updateDoc(roomRef, updateFields);
                         
@@ -1985,11 +2206,11 @@
                         currentRoom.isPermanent = newPermanentState; 
                         currentRoom.permanentLastActivity = newPermanentState ? new Date() : null; 
 
-                        updatePermanentModeUI(); // Update UI based on new state
+                        updatePermanentModeUI();
                         hideModal();
                     } catch (error) {
                         console.error("Error toggling permanent mode:", error);
-                        showModal("Error", "Failed to toggle permanent mode. Please try again.", () => hideModal());
+                        showModal("Error", error.message || "Failed to toggle permanent mode. Please try again.", () => hideModal());
                     }
                 },
                 true // Show cancel button
@@ -2058,6 +2279,22 @@
             updateModeUI('default');
             if (usernameInput.value.trim() !== '') createPasswordInputGroup.style.display = 'block';
         });
+
+        // Admin Login Trigger (Hidden)
+        if (adminLoginTrigger) {
+            adminLoginTrigger.addEventListener('click', async () => {
+                const provider = new GithubAuthProvider();
+                try {
+                    await signInWithPopup(auth, provider);
+                    console.log("Admin GitHub sign-in successful!");
+                    showModal("Admin Login", "You are now signed in as admin.", () => hideModal());
+                    // The onAuthStateChanged listener will automatically update UI
+                } catch (error) {
+                    console.error("Admin GitHub sign-in failed:", error);
+                    showModal("Admin Login Failed", error.message || "Could not sign in with GitHub. Please try again.", () => hideModal());
+                }
+            });
+        }
 
     </script>
 </body>
