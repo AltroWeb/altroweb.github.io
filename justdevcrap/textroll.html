@@ -1923,9 +1923,8 @@
         const findRandomRoom = async (username) => {
             const roomsCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms`);
             try {
-                // Query for rooms that are not permanent
-                const q = query(roomsCollectionRef, where('isPermanent', '==', false)); 
-                const querySnapshot = await getDocs(q);
+                // Query for all rooms, regardless of permanent status
+                const querySnapshot = await getDocs(roomsCollectionRef);
                 let availableRooms = [];
                 for (const docSnap of querySnapshot.docs) {
                     const roomData = docSnap.data();
@@ -1959,9 +1958,12 @@
                         console.error("Error decrypting room password for random join check:", e);
                     }
 
-                    // Filter criteria: room is not full, has no password, and username is not taken
-                    // IMPORTANT FIX: Removed `roomData.users.length > 0` to allow joining empty rooms.
-                    if (usersInRoom.length < maxAllowedUsers && !decryptedPassword && !isUsernameTaken) {
+                    // Filter criteria:
+                    // 1. Room is not full (`usersInRoom.length < maxAllowedUsers`)
+                    // 2. Room is NOT password-protected (`!decryptedPassword`)
+                    // 3. Username is not taken (`!isUsernameTaken`)
+                    // 4. Room is either permanent OR has at least one user (`roomData.isPermanent || usersInRoom.length > 0`)
+                    if (usersInRoom.length < maxAllowedUsers && !decryptedPassword && !isUsernameTaken && (roomData.isPermanent || usersInRoom.length > 0)) {
                         // Decrypt the room code for local storage/display, but use internalId for Firestore operations
                         let decryptedRoomCode = roomData.encryptedCode;
                         try {
@@ -2126,14 +2128,24 @@
                         console.error("Error decrypting password for listener setup:", e);
                     }
 
+                    // Check if current user is still in the room's user list (using decrypted username for comparison)
+                    const amIStillInRoom = decryptedUsers.some(u => u.userId === currentUserId);
 
-                    currentRoom = { 
-                        internalId: roomInternalId, // Store Firestore document ID
-                        code: decryptedCode, // Store decrypted human-readable code
-                        users: decryptedUsers, // Store decrypted usernames
+                    if (!amIStillInRoom && currentRoom) { // If current user was removed or left
+                        showModal("Removed from Room", "You have been removed from the room or the room has changed.", () => {
+                            handleLeaveRoomCleanUp();
+                            hideModal();
+                        });
+                        return; // Stop further processing for this client in this room
+                    }
+
+                    currentRoom = {
+                        internalId: roomInternalId,
+                        code: decryptedCode,
+                        users: decryptedUsers,
                         maxParticipants: roomData.maxParticipants || 4,
                         lastActivity: roomData.lastActivity,
-                        password: decryptedPassword, // Store decrypted password
+                        password: decryptedPassword,
                         hostId: roomData.hostId,
                         isPermanent: roomData.isPermanent || false,
                         permanentLastActivity: roomData.permanentLastActivity || null
@@ -2141,13 +2153,17 @@
                     currentUserObject = currentRoom.users.find(u => u.userId === currentUserId);
                     renderParticipants(currentRoom.users, currentRoom.hostId); // Pass hostId
                     maxParticipantsDisplay.textContent = currentRoom.maxParticipants;
-                    updatePermanentModeUI(); // Initial UI update for permanent mode
+                    updatePermanentModeUI(); // Update permanent mode UI on snapshot
+                    
+                    // Reset and restart inactivity timer
+                    if (inactivityTimer) clearInterval(inactivityTimer);
+                    inactivityTimer = setInterval(() => checkInactivity(roomDocRef), 60 * 1000); // Check every minute
+                    checkInactivity(roomDocRef); // Run immediately on snapshot update
                 } else { 
-                    showModal("Room Ended", "The room you were in has ended.", () => {
+                     showModal("Room Ended", "The room you were in has ended.", () => {
                         handleLeaveRoomCleanUp();
                         hideModal();
                     });
-                    return;
                 }
             } catch (error) { 
                  console.error("Error fetching initial room data:", error);
