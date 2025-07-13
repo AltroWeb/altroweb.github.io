@@ -1328,7 +1328,7 @@
          * @returns {string|null} The encrypted string with master seed prepended, or null if input is invalid.
          */
         function encryptMessage(plaintext) {
-            if (!plaintext || !plaintext.trim()) {
+            if (!plaintext || typeof plaintext !== 'string' || !plaintext.trim()) {
                 return null;
             }
 
@@ -1353,16 +1353,20 @@
                 return ""; // Return empty string for empty or invalid input
             }
 
-            if (encryptedText.length < ID_LENGTH) {
-                console.error(`Invalid encrypted text: ID must be ${ID_LENGTH} characters long.`);
-                return "[Decryption Error: Invalid Format]";
+            // Check if it's already decrypted (e.g., if it doesn't start with a hex seed)
+            // This is a heuristic and not foolproof, but helps prevent double decryption errors.
+            if (encryptedText.length < ID_LENGTH || !/^[0-9a-fA-F]{16}/.test(encryptedText.substring(0, ID_LENGTH))) {
+                // It doesn't look like an encrypted string, return as is or a specific error
+                // For usernames, we want to show the original if it's not encrypted
+                return encryptedText; // Return original if it doesn't match expected encrypted format
             }
 
             const seed = encryptedText.substring(0, ID_LENGTH);
             const cipherText = encryptedText.substring(ID_LENGTH);
 
+            // Re-validate seed format more strictly after length check
             if (!/^[0-9a-fA-F]{16}$/.test(seed)) {
-                 console.error('Invalid ID format in encrypted message.');
+                 console.error('Invalid ID format in encrypted message:', seed);
                  return "[Decryption Error: Invalid ID]";
             }
 
@@ -1474,16 +1478,27 @@
                 const participantSpan = document.createElement('span');
                 participantSpan.className = `${user.userId === currentUserId ? 'bg-indigo-100' : 'bg-gray-100'}`;
                 
-                // Decrypt username for display
-                const decryptedUsername = decryptMessage(user.username);
-                const usernameText = document.createTextNode(`${decryptedUsername} ${user.userId === currentUserId ? '(You)' : ''} ${user.userId === hostId ? '(Host)' : ''}`);
+                // Decrypt username for display, with graceful fallback
+                let displayedUsername = user.username;
+                try {
+                    const decrypted = decryptMessage(user.username);
+                    // Only use decrypted if it's not an error message string
+                    if (!decrypted.startsWith("[Decryption Error")) {
+                        displayedUsername = decrypted;
+                    }
+                } catch (e) {
+                    console.error("Error decrypting username for display:", e);
+                    // Fallback to original if decryption fails unexpectedly
+                }
+
+                const usernameText = document.createTextNode(`${displayedUsername} ${user.userId === currentUserId ? '(You)' : ''} ${user.userId === hostId ? '(Host)' : ''}`);
                 participantSpan.appendChild(usernameText);
 
                 if (isHost && user.userId !== currentUserId) { // Host can remove others
                     const removeBtn = document.createElement('button');
                     removeBtn.className = 'remove-participant-btn';
                     removeBtn.textContent = '✕'; // Using a multiplication X, or use an SVG/icon font
-                    removeBtn.title = `Remove ${decryptedUsername}`;
+                    removeBtn.title = `Remove ${displayedUsername}`; // Use displayed username for title
                     removeBtn.onclick = () => handleRemoveParticipant(user);
                     participantSpan.appendChild(removeBtn);
                 }
@@ -1497,8 +1512,16 @@
                 showModal("Error", "Only the host can remove participants.", () => hideModal());
                 return;
             }
-            // Decrypt username for display in modal
-            const decryptedUsernameToRemove = decryptMessage(userToRemove.username);
+            // Decrypt username for display in modal, with graceful fallback
+            let decryptedUsernameToRemove = userToRemove.username;
+            try {
+                const decrypted = decryptMessage(userToRemove.username);
+                if (!decrypted.startsWith("[Decryption Error")) {
+                    decryptedUsernameToRemove = decrypted;
+                }
+            } catch (e) {
+                console.error("Error decrypting username for removal modal:", e);
+            }
 
             showModal(
                 "Remove Participant", 
@@ -1515,6 +1538,7 @@
                             const usersInRoom = roomData.users || [];
                             
                             // Find the exact user object in Firestore to remove by matching encrypted username and userId
+                            // Note: userToRemove.username is the *encrypted* username passed from the renderParticipants
                             const userObjectInFirestore = usersInRoom.find(u => u.userId === userToRemove.userId && u.username === userToRemove.username);
 
                             if (userObjectInFirestore) {
@@ -1561,13 +1585,31 @@
                     contentDiv.className = "message-content";
                     const senderSpan = document.createElement('div');
                     senderSpan.className = "sender-info";
-                    // Decrypt sender username for display
-                    const decryptedSenderUsername = decryptMessage(msg.senderUsername);
+                    
+                    // Decrypt sender username for display, with graceful fallback
+                    let decryptedSenderUsername = msg.senderUsername;
+                    try {
+                        const decrypted = decryptMessage(msg.senderUsername);
+                        if (!decrypted.startsWith("[Decryption Error")) {
+                            decryptedSenderUsername = decrypted;
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting sender username for message display:", e);
+                    }
                     senderSpan.textContent = msg.senderId === currentUserId ? 'You' : decryptedSenderUsername;
+                    
                     const textP = document.createElement('p');
                     
-                    // Decrypt the message text before displaying
-                    const decryptedText = decryptMessage(msg.text);
+                    // Decrypt the message text before displaying, with graceful fallback
+                    let decryptedText = msg.text;
+                    try {
+                        const decrypted = decryptMessage(msg.text);
+                        if (!decrypted.startsWith("[Decryption Error")) {
+                            decryptedText = decrypted;
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting message text:", e);
+                    }
                     textP.textContent = decryptedText;
 
                     const timestampDiv = document.createElement('div');
@@ -1689,7 +1731,18 @@
                         usersInRoom[existingUserIndex].username = encryptedUsername; // Update with encrypted username
                     } else {
                         // Check for username uniqueness by decrypting existing usernames
-                        const isUsernameTaken = usersInRoom.some(u => decryptMessage(u.username).toLowerCase() === username.toLowerCase());
+                        const isUsernameTaken = usersInRoom.some(u => {
+                            let decryptedExistingUsername = u.username;
+                            try {
+                                const decrypted = decryptMessage(u.username);
+                                if (!decrypted.startsWith("[Decryption Error")) {
+                                    decryptedExistingUsername = decrypted;
+                                }
+                            } catch (e) {
+                                console.error("Error decrypting existing username for uniqueness check:", e);
+                            }
+                            return decryptedExistingUsername.toLowerCase() === username.toLowerCase();
+                        });
                         if (isUsernameTaken) throw new Error("Username taken (re-check)");
                         
                         if (usersInRoom.length >= maxAllowedUsers) throw new Error("Room full (re-check)");
@@ -1705,7 +1758,18 @@
                     transaction.update(roomRef, updateFields);
 
                     // Reconstruct currentRoom object with decrypted values for local UI state
-                    const decryptedUsers = usersInRoom.map(u => ({ ...u, username: decryptMessage(u.username) }));
+                    const decryptedUsers = usersInRoom.map(u => {
+                        let decryptedUsername = u.username;
+                        try {
+                            const decrypted = decryptMessage(u.username);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedUsername = decrypted;
+                            }
+                        } catch (e) {
+                            console.error("Error decrypting user in transaction for currentRoom:", e);
+                        }
+                        return { ...u, username: decryptedUsername };
+                    });
                     const decryptedPassword = roomData.password ? decryptMessage(roomData.password) : null;
 
                     currentRoom = { 
@@ -1756,7 +1820,16 @@
                 const querySnapshot = await getDocs(roomsCollectionRef);
                 for (const docSnap of querySnapshot.docs) {
                     const roomData = docSnap.data();
-                    const decryptedCode = decryptMessage(roomData.encryptedCode);
+                    let decryptedCode = roomData.encryptedCode;
+                    try {
+                        const decrypted = decryptMessage(roomData.encryptedCode);
+                        if (!decrypted.startsWith("[Decryption Error")) {
+                            decryptedCode = decrypted;
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting room code during search:", e);
+                    }
+
                     if (decryptedCode === enteredRoomCode) {
                         foundRoomDoc = docSnap;
                         roomInternalId = docSnap.id; // Get the Firestore internal ID
@@ -1779,7 +1852,18 @@
             const maxAllowedUsers = roomData.maxParticipants || 4;
             
             // Check if username is taken (case-insensitive) by decrypting existing usernames
-            const isUsernameTaken = currentUsers.some(u => decryptMessage(u.username).toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
+            const isUsernameTaken = currentUsers.some(u => {
+                let decryptedExistingUsername = u.username;
+                try {
+                    const decrypted = decryptMessage(u.username);
+                    if (!decrypted.startsWith("[Decryption Error")) {
+                        decryptedExistingUsername = decrypted;
+                    }
+                } catch (e) {
+                    console.error("Error decrypting existing username for join check:", e);
+                }
+                return decryptedExistingUsername.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId;
+            });
             if (isUsernameTaken) {
                 showModal("Username Taken", "This username is already taken in this room. Please choose another.", () => hideModal());
                 return;
@@ -1794,7 +1878,16 @@
             if (roomData.password) { // If there's an encrypted password
                  showModal("Enter Password", "This room is password protected.", async () => {
                     const enteredPassword = modalPasswordInput.value.trim();
-                    const decryptedStoredPassword = decryptMessage(roomData.password); // Decrypt stored password for comparison
+                    let decryptedStoredPassword = roomData.password;
+                    try {
+                        const decrypted = decryptMessage(roomData.password);
+                        if (!decrypted.startsWith("[Decryption Error")) {
+                            decryptedStoredPassword = decrypted;
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting stored password for comparison:", e);
+                    }
+                    
                     if (enteredPassword === decryptedStoredPassword) {
                         modalPasswordError.classList.add('hidden');
                         await performJoinRoomTransaction(roomInternalId, enteredRoomCode, username, maxAllowedUsers, decryptedStoredPassword, roomData.hostId, roomData.isPermanent, roomData.permanentLastActivity);
@@ -1839,22 +1932,53 @@
                     const maxAllowedUsers = roomData.maxParticipants || 4;
                     const usersInRoom = roomData.users || []; // These usernames are encrypted
 
-                    // Decrypt usernames for uniqueness check
-                    const isUsernameTaken = usersInRoom.some(u => decryptMessage(u.username).toLowerCase() === username.toLowerCase() && u.userId !== currentUserId);
+                    // Decrypt usernames for uniqueness check, with graceful fallback
+                    const isUsernameTaken = usersInRoom.some(u => {
+                        let decryptedExistingUsername = u.username;
+                        try {
+                            const decrypted = decryptMessage(u.username);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedExistingUsername = decrypted;
+                            }
+                        } catch (e) {
+                            console.error("Error decrypting existing username for random join check:", e);
+                        }
+                        return decryptedExistingUsername.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId;
+                    });
 
-                    // Decrypt password to check if room is password-protected
-                    const decryptedPassword = roomData.password ? decryptMessage(roomData.password) : null;
+                    // Decrypt password to check if room is password-protected, with graceful fallback
+                    let decryptedPassword = roomData.password;
+                    try {
+                        if (roomData.password) {
+                            const decrypted = decryptMessage(roomData.password);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedPassword = decrypted;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting room password for random join check:", e);
+                    }
 
-                    // Ensure room has users, is not full, and has no password for random join
-                    if (usersInRoom.length > 0 && usersInRoom.length < maxAllowedUsers && !decryptedPassword && !isUsernameTaken) {
+                    // Filter criteria: room is not full, has no password, and username is not taken
+                    // IMPORTANT FIX: Removed `roomData.users.length > 0` to allow joining empty rooms.
+                    if (usersInRoom.length < maxAllowedUsers && !decryptedPassword && !isUsernameTaken) {
                         // Decrypt the room code for local storage/display, but use internalId for Firestore operations
-                        const decryptedRoomCode = decryptMessage(roomData.encryptedCode);
+                        let decryptedRoomCode = roomData.encryptedCode;
+                        try {
+                            const decrypted = decryptMessage(roomData.encryptedCode);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedRoomCode = decrypted;
+                            }
+                        } catch (e) {
+                            console.error("Error decrypting room code for random join list:", e);
+                        }
+
                         availableRooms.push({
                             internalId: docSnap.id, // Firestore document ID
                             code: decryptedRoomCode, // Decrypted human-readable code
-                            users: usersInRoom, // Encrypted usernames
+                            users: usersInRoom, // Encrypted usernames (as stored in Firestore)
                             maxParticipants: roomData.maxParticipants,
-                            password: decryptedPassword, // Decrypted password
+                            password: decryptedPassword, // Decrypted password (for local comparison if needed)
                             hostId: roomData.hostId,
                             isPermanent: roomData.isPermanent,
                             permanentLastActivity: roomData.permanentLastActivity
@@ -1966,10 +2090,42 @@
                 const roomDoc = await getDoc(roomDocRef);
                 if (roomDoc.exists()) {
                     const roomData = roomDoc.data();
-                    // Decrypt room code and usernames for local state
-                    const decryptedCode = decryptMessage(roomData.encryptedCode);
-                    const decryptedUsers = (roomData.users || []).map(u => ({ ...u, username: decryptMessage(u.username) }));
-                    const decryptedPassword = roomData.password ? decryptMessage(roomData.password) : null;
+                    // Decrypt room code and usernames for local state, with graceful fallback
+                    let decryptedCode = roomData.encryptedCode;
+                    try {
+                        const decrypted = decryptMessage(roomData.encryptedCode);
+                        if (!decrypted.startsWith("[Decryption Error")) {
+                            decryptedCode = decrypted;
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting room code during listener setup:", e);
+                    }
+
+                    const decryptedUsers = (roomData.users || []).map(u => {
+                        let decryptedUsername = u.username;
+                        try {
+                            const decrypted = decryptMessage(u.username);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedUsername = decrypted;
+                            }
+                        } catch (e) {
+                            console.error("Error decrypting username for listener setup:", e);
+                        }
+                        return { ...u, username: decryptedUsername };
+                    });
+                    
+                    let decryptedPassword = roomData.password;
+                    try {
+                        if (roomData.password) {
+                            const decrypted = decryptMessage(roomData.password);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedPassword = decrypted;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting password for listener setup:", e);
+                    }
+
 
                     currentRoom = { 
                         internalId: roomInternalId, // Store Firestore document ID
@@ -2014,10 +2170,41 @@
             unsubscribeRoomListener = onSnapshot(roomDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const roomData = docSnap.data();
-                    // Decrypt room code and usernames for local state
-                    const decryptedCode = decryptMessage(roomData.encryptedCode);
-                    const decryptedUsers = (roomData.users || []).map(u => ({ ...u, username: decryptMessage(u.username) }));
-                    const decryptedPassword = roomData.password ? decryptMessage(roomData.password) : null;
+                    // Decrypt room code and usernames for local state, with graceful fallback
+                    let decryptedCode = roomData.encryptedCode;
+                    try {
+                        const decrypted = decryptMessage(roomData.encryptedCode);
+                        if (!decrypted.startsWith("[Decryption Error")) {
+                            decryptedCode = decrypted;
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting room code during snapshot:", e);
+                    }
+
+                    const decryptedUsers = (roomData.users || []).map(u => {
+                        let decryptedUsername = u.username;
+                        try {
+                            const decrypted = decryptMessage(u.username);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedUsername = decrypted;
+                            }
+                        } catch (e) {
+                            console.error("Error decrypting username during snapshot:", e);
+                        }
+                        return { ...u, username: decryptedUsername };
+                    });
+                    
+                    let decryptedPassword = roomData.password;
+                    try {
+                        if (roomData.password) {
+                            const decrypted = decryptMessage(roomData.password);
+                            if (!decrypted.startsWith("[Decryption Error")) {
+                                decryptedPassword = decrypted;
+                            }
+                        }
+                    } catch (e) {
+                        console.error("Error decrypting password during snapshot:", e);
+                    }
 
                     // Check if current user is still in the room's user list (using decrypted username for comparison)
                     const amIStillInRoom = decryptedUsers.some(u => u.userId === currentUserId);
@@ -2137,7 +2324,9 @@
                         const currentUsers = roomData.users || []; // These usernames are encrypted
 
                         // Find the user object to remove by matching userId and *encrypted* username
-                        const userObjectToRemoveFromFirestore = currentUsers.find(u => u.userId === currentUserId && decryptMessage(u.username) === currentUserObject.username);
+                        // We need to encrypt currentUserObject.username to match what's in Firestore
+                        const encryptedCurrentUserUsername = encryptMessage(currentUserObject.username);
+                        const userObjectToRemoveFromFirestore = currentUsers.find(u => u.userId === currentUserId && u.username === encryptedCurrentUserUsername);
 
                         if (userObjectToRemoveFromFirestore) { 
                             if (currentUserId === roomData.hostId) { // Current user is the host
@@ -2206,7 +2395,8 @@
                             const roomData = roomDoc.data();
                             const usersInFirestore = roomData.users || []; // These usernames are encrypted
                             // Find user to remove by matching userId and *encrypted* username
-                            const userToRemove = usersInFirestore.find(u => u.userId === currentUserId && decryptMessage(u.username) === currentUserObject.username);
+                            const encryptedCurrentUserUsername = encryptMessage(currentUserObject.username);
+                            const userToRemove = usersInFirestore.find(u => u.userId === currentUserId && u.username === encryptedCurrentUserUsername);
                             if (userToRemove) {
                                 // Only remove the user. Let the onSnapshot and inactivity checks handle room deletion.
                                 const updateFields = { lastActivity: serverTimestamp() };
