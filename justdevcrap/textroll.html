@@ -1537,9 +1537,8 @@
                             const roomData = roomDoc.data();
                             const usersInRoom = roomData.users || [];
                             
-                            // Find the exact user object in Firestore to remove by matching encrypted username and userId
-                            // Note: userToRemove.username is the *encrypted* username passed from the renderParticipants
-                            const userObjectInFirestore = usersInRoom.find(u => u.userId === userToRemove.userId && u.username === userToRemove.username);
+                            // Find the exact user object in Firestore to remove by matching userId
+                            const userObjectInFirestore = usersInRoom.find(u => u.userId === userToRemove.userId);
 
                             if (userObjectInFirestore) {
                                 const updateFields = { users: arrayRemove(userObjectInFirestore), lastActivity: serverTimestamp() };
@@ -1923,13 +1922,19 @@
         const findRandomRoom = async (username) => {
             const roomsCollectionRef = collection(db, `artifacts/${textrollAppId}/public/data/rooms`);
             try {
-                // Query for all rooms, regardless of permanent status
+                // Query for all rooms
                 const querySnapshot = await getDocs(roomsCollectionRef);
                 let availableRooms = [];
+                console.log("Searching for random rooms...");
+
                 for (const docSnap of querySnapshot.docs) {
                     const roomData = docSnap.data();
+                    const roomInternalId = docSnap.id;
                     const maxAllowedUsers = roomData.maxParticipants || 4;
                     const usersInRoom = roomData.users || []; // These usernames are encrypted
+
+                    console.log(`--- Considering Room: ${roomInternalId} ---`);
+                    console.log("Room Data:", roomData);
 
                     // Decrypt usernames for uniqueness check, with graceful fallback
                     const isUsernameTaken = usersInRoom.some(u => {
@@ -1942,28 +1947,37 @@
                         } catch (e) {
                             console.error("Error decrypting existing username for random join check:", e);
                         }
+                        console.log(`  Checking username '${username}' against existing '${decryptedExistingUsername}' (ID: ${u.userId})`);
                         return decryptedExistingUsername.toLowerCase() === username.toLowerCase() && u.userId !== currentUserId;
                     });
+                    console.log("  Is username taken?", isUsernameTaken);
+
 
                     // Decrypt password to check if room is password-protected, with graceful fallback
-                    let decryptedPassword = roomData.password;
-                    try {
-                        if (roomData.password) {
+                    let hasPassword = false;
+                    if (roomData.password) {
+                        try {
                             const decrypted = decryptMessage(roomData.password);
-                            if (!decrypted.startsWith("[Decryption Error")) {
-                                decryptedPassword = decrypted;
+                            // A password exists if it's not an error and not an empty string after decryption
+                            if (!decrypted.startsWith("[Decryption Error") && decrypted.trim() !== '') {
+                                hasPassword = true;
                             }
+                        } catch (e) {
+                            console.error("Error decrypting room password for random join check:", e);
+                            hasPassword = true; // Assume password-protected if decryption fails
                         }
-                    } catch (e) {
-                        console.error("Error decrypting room password for random join check:", e);
                     }
+                    console.log("  Has password?", hasPassword);
 
                     // Filter criteria:
                     // 1. Room is not full (`usersInRoom.length < maxAllowedUsers`)
-                    // 2. Room is NOT password-protected (`!decryptedPassword`)
+                    // 2. Room is NOT password-protected (`!hasPassword`)
                     // 3. Username is not taken (`!isUsernameTaken`)
                     // 4. Room is either permanent OR has at least one user (`roomData.isPermanent || usersInRoom.length > 0`)
-                    if (usersInRoom.length < maxAllowedUsers && !decryptedPassword && !isUsernameTaken && (roomData.isPermanent || usersInRoom.length > 0)) {
+                    const isEligible = usersInRoom.length < maxAllowedUsers && !hasPassword && !isUsernameTaken && (roomData.isPermanent || usersInRoom.length > 0);
+                    console.log("  Is permanent?", roomData.isPermanent, "Users in room:", usersInRoom.length, "Is eligible?", isEligible);
+
+                    if (isEligible) {
                         // Decrypt the room code for local storage/display, but use internalId for Firestore operations
                         let decryptedRoomCode = roomData.encryptedCode;
                         try {
@@ -1980,17 +1994,23 @@
                             code: decryptedRoomCode, // Decrypted human-readable code
                             users: usersInRoom, // Encrypted usernames (as stored in Firestore)
                             maxParticipants: roomData.maxParticipants,
-                            password: decryptedPassword, // Decrypted password (for local comparison if needed)
+                            password: roomData.password, // Keep encrypted password for consistency, but we know it's null/empty for eligible rooms
                             hostId: roomData.hostId,
                             isPermanent: roomData.isPermanent,
                             permanentLastActivity: roomData.permanentLastActivity
                         });
+                        console.log("  Room added to availableRooms.");
+                    } else {
+                        console.log("  Room NOT eligible for random join.");
                     }
                 }
+
+                console.log("Total available rooms found:", availableRooms.length);
 
                 if (availableRooms.length > 0) {
                     const randomIndex = Math.floor(Math.random() * availableRooms.length);
                     const roomToJoin = availableRooms[randomIndex];
+                    console.log("Joining random room:", roomToJoin.code, "Internal ID:", roomToJoin.internalId);
                     // Pass decrypted room code and password to transaction for local use/comparison
                     await performJoinRoomTransaction(roomToJoin.internalId, roomToJoin.code, username, roomToJoin.maxParticipants, roomToJoin.password, roomToJoin.hostId, roomToJoin.isPermanent, roomToJoin.permanentLastActivity);
                 } else {
@@ -2164,8 +2184,9 @@
                         handleLeaveRoomCleanUp();
                         hideModal();
                     });
+                    return; // Crucial: Exit if room doesn't exist
                 }
-            } catch (error) { 
+            } catch (error) { // Catch for the initial getDoc(roomDocRef)
                  console.error("Error fetching initial room data:", error);
                 showModal("Connection Error", "Failed to get initial room data.", () => { hideModal(); });
                 return;
@@ -2176,7 +2197,7 @@
                 const initialMessagesSnapshot = await getDocs(initialMessagesQuery);
                 const initialMessages = initialMessagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderMessages(initialMessages); // Synchronous rendering
-            } catch (error) {
+            } catch (error) { // Catch for the initial getDocs(messagesCollectionRef)
                 console.error("Error fetching initial messages:", error);
                 showModal("Connection Error", "Failed to get initial messages.", () => { hideModal(); });
                 return; 
@@ -2219,7 +2240,7 @@
                             }
                         }
                     } catch (e) {
-                        console.error("Error decrypting password during snapshot:", e);
+                        console.error("Error decrypting password for listener setup:", e);
                     }
 
                     // Check if current user is still in the room's user list (using decrypted username for comparison)
@@ -2259,7 +2280,7 @@
                         hideModal();
                     });
                 }
-            }, (error) => { 
+            }, (error) => { // Catch for onSnapshot listener
                 console.error("Error listening to room:", error);
                 showModal("Connection Error", "Failed to get room updates.", () => { hideModal(); });
             });
@@ -2275,7 +2296,7 @@
                     }
                     updateDoc(roomRefToUpdate, updateFields).catch(e => console.error("Error updating last activity on message receive:", e));
                 }
-            }, (error) => {
+            }, (error) => { // Catch for onSnapshot listener
                 console.error("Error listening to messages:", error);
                 showModal("Connection Error", "Failed to get message updates.", () => { hideModal(); });
             });
@@ -2337,24 +2358,24 @@
                             return; // Room already gone, just clean up locally
                         }
                         const roomData = roomDoc.data();
-                        const currentUsers = roomData.users || []; // These usernames are encrypted
+                        const currentUsersInFirestore = roomData.users || []; // These are the encrypted user objects from Firestore
 
-                        // Find the user object to remove by matching userId and *encrypted* username
-                        // We need to encrypt currentUserObject.username to match what's in Firestore
-                        const encryptedCurrentUserUsername = encryptMessage(currentUserObject.username);
-                        const userObjectToRemoveFromFirestore = currentUsers.find(u => u.userId === currentUserId && u.username === encryptedCurrentUserUsername);
+                        // Find the user object in Firestore's array that corresponds to the current user by userId
+                        const userObjectInFirestoreToRemove = currentUsersInFirestore.find(u => u.userId === currentUserId);
 
-                        if (userObjectToRemoveFromFirestore) { 
+                        if (userObjectInFirestoreToRemove) { 
                             if (currentUserId === roomData.hostId) { // Current user is the host
                                 if (roomData.isPermanent) {
                                     // Host leaving a permanent room: just remove host from users, room persists
                                     transaction.update(roomRef, {
-                                        users: arrayRemove(userObjectToRemoveFromFirestore),
+                                        users: arrayRemove(userObjectInFirestoreToRemove), // Use the exact object found in Firestore
                                         lastActivity: serverTimestamp(),
                                         permanentLastActivity: serverTimestamp()
                                     });
+                                    console.log(`Host ${currentUserId} left permanent room ${currentRoom.internalId}. Room persists.`);
                                 } else {
                                     // Host leaving a non-permanent room: delete the room immediately regardless of other participants
+                                    console.log(`Host ${currentUserId} left non-permanent room ${currentRoom.internalId}. Deleting room.`);
                                     // Delete all messages in the subcollection first
                                     const messagesQuerySnapshot = await getDocs(collection(db, `artifacts/${textrollAppId}/public/data/rooms/${currentRoom.internalId}/messages`)); // Use internalId
                                     messagesQuerySnapshot.docs.forEach(msgDoc => {
@@ -2363,7 +2384,8 @@
                                     transaction.delete(roomRef);
                                 }
                             } else { // Current user is a participant (not host)
-                                const updateFields = { users: arrayRemove(userObjectToRemoveFromFirestore), lastActivity: serverTimestamp() };
+                                console.log(`Participant ${currentUserId} left room ${currentRoom.internalId}.`);
+                                const updateFields = { users: arrayRemove(userObjectInFirestoreToRemove), lastActivity: serverTimestamp() }; // Use the exact object found in Firestore
                                 if (roomData.isPermanent) {
                                     updateFields.permanentLastActivity = serverTimestamp();
                                 }
@@ -2410,9 +2432,8 @@
                         if (roomDoc.exists()) {
                             const roomData = roomDoc.data();
                             const usersInFirestore = roomData.users || []; // These usernames are encrypted
-                            // Find user to remove by matching userId and *encrypted* username
-                            const encryptedCurrentUserUsername = encryptMessage(currentUserObject.username);
-                            const userToRemove = usersInFirestore.find(u => u.userId === currentUserId && u.username === encryptedCurrentUserUsername);
+                            // Find user to remove by matching userId
+                            const userToRemove = usersInFirestore.find(u => u.userId === currentUserId);
                             if (userToRemove) {
                                 // Only remove the user. Let the onSnapshot and inactivity checks handle room deletion.
                                 const updateFields = { lastActivity: serverTimestamp() };
