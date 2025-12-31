@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Store Connect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #F5F5F7;
+            --card-bg: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --accent: #0071E3;
+            --border: #D2D2D7;
+            --danger: #FF3B30;
+            --success: #34C759;
+            --header-bg: rgba(255, 255, 255, 0.8);
+            --input-bg: #fff;
+        }
+
+        body.dark-mode {
+            --bg-color: #000000;
+            --card-bg: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #98989D;
+            --accent: #0A84FF;
+            --border: #38383A;
+            --header-bg: rgba(28, 28, 30, 0.8);
+            --input-bg: #2C2C2E;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            width: 100%;
+            padding: 15px 20px;
+            background: var(--header-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #1C91FF, #0071E3);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-menu {
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: background 0.2s;
+        }
+        .user-menu:hover { background: rgba(128,128,128,0.1); color: var(--text-primary); }
+
+        /* --- LAYOUT --- */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 40px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+            padding: 30px;
+            margin-bottom: 24px;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        h1, h2, h3 { margin: 0 0 20px 0; }
+        h1 { font-size: 28px; }
+
+        /* --- FORMS --- */
+        .form-group { margin-bottom: 24px; position: relative; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, textarea, select {
+            width: 100%; padding: 14px; font-size: 16px;
+            border: 1px solid var(--border); border-radius: 12px;
+            background: var(--input-bg); font-family: inherit; color: var(--text-primary);
+            outline: none; transition: border-color 0.2s, background 0.3s;
+            box-sizing: border-box;
+        }
+        input:focus, textarea:focus { border-color: var(--accent); }
+        input:disabled { opacity: 0.6; cursor: not-allowed; }
+        .hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+        /* Password Toggle */
+        .password-wrapper { position: relative; }
+        .password-wrapper input { padding-right: 45px; }
+        .toggle-password {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            cursor: pointer; color: var(--text-secondary); opacity: 0.7;
+            display: flex; align-items: center;
+        }
+        .toggle-password:hover { opacity: 1; color: var(--accent); }
+
+        /* --- BUTTONS --- */
+        .btn {
+            background: var(--accent); color: white; border: none;
+            padding: 12px 24px; border-radius: 99px; font-size: 15px; font-weight: 600;
+            cursor: pointer; transition: transform 0.1s, opacity 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            text-decoration: none;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:hover { opacity: 0.9; }
+        .btn.secondary { background: var(--border); color: var(--text-primary); }
+        .btn.danger { background: var(--danger); color: white; }
+        .btn.block { width: 100%; }
+        .btn.sm { padding: 6px 14px; font-size: 13px; }
+        .btn.icon-only { padding: 8px; width: 32px; height: 32px; border-radius: 50%; }
+
+        /* --- VIEWS --- */
+        .view { display: none; width: 100%; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- LISTS --- */
+        .app-list { list-style: none; padding: 0; margin: 0; }
+        .app-list-item {
+            display: flex; align-items: center; padding: 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+            border-radius: 12px;
+        }
+        .app-list-item:hover { background: rgba(128,128,128,0.05); }
+        .app-list-item:last-child { border-bottom: none; }
+        
+        .list-icon { 
+            width: 54px; height: 54px; border-radius: 12px; 
+            background: linear-gradient(45deg, #ccc, #999); 
+            margin-right: 16px; object-fit: cover; border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        .list-info { flex: 1; min-width: 0; margin-right: 10px; }
+        .list-name { font-weight: 600; font-size: 17px; margin-bottom: 4px; }
+        .list-meta { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .list-actions { display: flex; gap: 8px; }
+
+        .tag {
+            display: inline-block; padding: 2px 8px; border-radius: 6px; 
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            background: #E5E5EA; color: #8E8E93; margin-left: 8px;
+        }
+        body.dark-mode .tag { background: #333; }
+
+        /* --- TABS & TOGGLES --- */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .tab-item { 
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; 
+            color: var(--text-secondary); font-weight: 500; font-size: 14px;
+        }
+        .tab-item.active { background: var(--accent); color: white; }
+
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px;
+            background: var(--border); border-radius: 12px; cursor: pointer; transition: 0.3s;
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+            background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle-switch.checked { background: var(--success); }
+        .toggle-switch.checked::after { transform: translateX(20px); }
+
+        /* --- UTILS --- */
+        .loader {
+            border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #fff;
+            border-radius: 50%; width: 16px; height: 16px;
+            animation: spin 0.8s linear infinite; display: none;
+        }
+        .btn.loading .loader { display: block; }
+        .btn.loading span { display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .file-upload-box {
+            border: 2px dashed var(--border);
+            border-radius: 12px; padding: 20px; text-align: center;
+            cursor: pointer; transition: border-color 0.2s;
+        }
+        .file-upload-box:hover { border-color: var(--accent); }
+        .file-upload-box p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+
+        .auth-switch { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-secondary); }
+        .auth-link { color: var(--accent); cursor: pointer; font-weight: 600; text-decoration: underline; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+
+        .auth-logo {
+            display: flex; justify-content: center; margin-bottom: 24px;
+        }
+        .auth-logo .logo-icon {
+            width: 64px; height: 64px; border-radius: 16px;
+        }
+        .auth-logo svg { width: 32px; height: 32px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar" id="navbar">
+        <div class="brand">
+            <div class="logo-icon">
+            	
+            <img src="https://mailin.mitracare.com/images/App_Store.png" class="logo-icon" onerror="this.style.display='none'">           
+            
+            
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12.9,2.6c-0.2-0.5-0.9-0.5-1.1,0L9.4,7.8c-0.1,0.2-0.3,0.3-0.5,0.3L3.7,8.6c-0.5,0.1-0.7,0.7-0.4,1.1l3.9,3.5 c0.1,0.1,0.2,0.3,0.2,0.5l-1.1,5.3c-0.1,0.5,0.4,0.9,0.9,0.6l4.7-2.7c0.2-0.1,0.4-0.1,0.6,0l4.7,2.7c0.5,0.3,1-0.1,0.9-0.6l-1.1-5.3 c0-0.2,0-0.4,0.2-0.5l3.9-3.5c0.4-0.3,0.2-1-0.4-1.1l-5.2-0.5C14.7,7.8,14.5,7.7,14.4,7.5L12.9,2.6z" transform="rotate(25 12 12)"/></svg>
+            </div>
+            App Store Connect
+        </div>
+        <div class="nav-controls">
+             <div class="toggle-switch" id="dark-mode-toggle" onclick="appBuilder.toggleDarkMode()"></div>
+             <div class="user-menu" id="user-menu" onclick="appBuilder.showSettings()">
+                 <span id="nav-username">User</span>
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+             </div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- LOGIN VIEW -->
+        <div id="login-view" class="view active">
+            <div class="card" style="max-width: 400px; margin: 60px auto;">
+                <div class="auth-logo">
+                    <div class="logo-icon">
+                    	
+                    <img src="https://mailin.mitracare.com/images/App_Store.png" class="logo-icon" onerror="this.style.display='none'">           
+                    
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12.9,2.6c-0.2-0.5-0.9-0.5-1.1,0L9.4,7.8c-0.1,0.2-0.3,0.3-0.5,0.3L3.7,8.6c-0.5,0.1-0.7,0.7-0.4,1.1l3.9,3.5 c0.1,0.1,0.2,0.3,0.2,0.5l-1.1,5.3c-0.1,0.5,0.4,0.9,0.9,0.6l4.7-2.7c0.2-0.1,0.4-0.1,0.6,0l4.7,2.7c0.5,0.3,1-0.1,0.9-0.6l-1.1-5.3 c0-0.2,0-0.4,0.2-0.5l3.9-3.5c0.4-0.3,0.2-1-0.4-1.1l-5.2-0.5C14.7,7.8,14.5,7.7,14.4,7.5L12.9,2.6z" transform="rotate(25 12 12)"/></svg>
+                    </div>
+                </div>
+                <h1 style="text-align: center; margin-bottom: 10px;">Sign In</h1>
+                <p style="text-align: center; color: var(--text-secondary); margin-bottom: 30px;">Manage your apps on the App Store</p>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" placeholder="name@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="login-pass" placeholder="••••••••">
+                        <div class="toggle-password" onclick="appBuilder.togglePassword('login-pass', this)">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-top: 8px;">
+                         <span class="auth-link" style="font-size: 13px; font-weight:500;" onclick="appBuilder.forgotPassword()">Forgot Password?</span>
+                    </div>
+                </div>
+                <button class="btn block" id="btn-login" onclick="appBuilder.login()">
+                    <span>Sign In</span>
+                    <div class="loader"></div>
+                </button>
+                <div class="auth-switch">
+                    Don't have an account? <span class="auth-link" onclick="appBuilder.showRegister()">Create Account</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTER VIEW -->
+        <div id="register-view" class="view">
+            <div class="card" style="max-width: 400px; margin: 60px auto;">
+                <div class="auth-logo">
+                    <div class="logo-icon">
+                    	
+                    <img src="https://mailin.mitracare.com/images/App_Store.png" class="logo-icon" onerror="this.style.display='none'">           
+                    
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12.9,2.6c-0.2-0.5-0.9-0.5-1.1,0L9.4,7.8c-0.1,0.2-0.3,0.3-0.5,0.3L3.7,8.6c-0.5,0.1-0.7,0.7-0.4,1.1l3.9,3.5 c0.1,0.1,0.2,0.3,0.2,0.5l-1.1,5.3c-0.1,0.5,0.4,0.9,0.9,0.6l4.7-2.7c0.2-0.1,0.4-0.1,0.6,0l4.7,2.7c0.5,0.3,1-0.1,0.9-0.6l-1.1-5.3 c0-0.2,0-0.4,0.2-0.5l3.9-3.5c0.4-0.3,0.2-1-0.4-1.1l-5.2-0.5C14.7,7.8,14.5,7.7,14.4,7.5L12.9,2.6z" transform="rotate(25 12 12)"/></svg>
+                    </div>
+                </div>
+                <h1 style="text-align: center; margin-bottom: 30px;">Create Account</h1>
+                <div class="form-group">
+                    <label>Display Name (Public)</label>
+                    <input type="text" id="reg-name" placeholder="e.g. Studio X">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" placeholder="name@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reg-pass" placeholder="Min 6 chars, 1 symbol">
+                        <div class="toggle-password" onclick="appBuilder.togglePassword('reg-pass', this)">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </div>
+                    </div>
+                    <div class="hint">Must be at least 6 chars with 1 symbol or number.</div>
+                </div>
+                <button class="btn block" id="btn-register" onclick="appBuilder.register()">
+                    <span>Create Account</span>
+                    <div class="loader"></div>
+                </button>
+                <div class="auth-switch">
+                    Already have an account? <span class="auth-link" onclick="appBuilder.showLogin()">Sign In</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="view">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1>My Apps</h1>
+                <button class="btn" onclick="appBuilder.createNewApp()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    New App
+                </button>
+            </div>
+            
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <ul class="app-list" id="my-apps-list">
+                    <!-- Apps Injected Here -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- EDITOR VIEW -->
+        <div id="editor-view" class="view">
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
+                <button class="btn secondary sm" onclick="appBuilder.showDashboard()">
+                    &larr; Back
+                </button>
+                <h1 style="margin:0;" id="editor-title">Create App</h1>
+            </div>
+
+            <div class="card">
+                <div class="form-group">
+                    <label>App Name <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="edit-name" placeholder="e.g. Super Bird">
+                </div>
+
+                <div class="form-group">
+                    <label>App Icon URL (Optional)</label>
+                    <input type="text" id="edit-icon" placeholder="https://...">
+                    <div style="display:flex; align-items:center; gap:15px; margin-top:10px;">
+                        <img id="icon-preview" src="" style="width:60px; height:60px; border-radius:14px; background:linear-gradient(45deg, #ddd, #bbb); object-fit: cover;">
+                        <div class="hint">If left empty, a default icon will be used.</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description <span style="color:var(--danger)">*</span></label>
+                    <textarea id="edit-desc" rows="3" placeholder="Short description for the App Store..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Content Source <span style="color:var(--danger)">*</span></label>
+                    
+                    <div class="tabs" style="border:none; margin-bottom:10px;">
+                        <div class="tab-item active" id="tab-url" onclick="appBuilder.switchSourceTab('url')">URL Embed</div>
+                        <div class="tab-item" id="tab-file" onclick="appBuilder.switchSourceTab('file')">Upload HTML</div>
+                    </div>
+
+                    <!-- URL INPUT -->
+                    <div id="source-url-container">
+                        <input type="text" id="edit-embed" placeholder="https://skribbl.io/">
+                        <div class="hint">Ensure the URL allows embedding (No X-Frame-Options: DENY).</div>
+                    </div>
+
+                    <!-- FILE INPUT -->
+                    <div id="source-file-container" style="display:none;">
+                        <div class="file-upload-box" onclick="document.getElementById('html-file-input').click()">
+                            <p id="file-name-display">Click to select .html file</p>
+                        </div>
+                        <input type="file" id="html-file-input" accept=".html" style="display:none;" onchange="appBuilder.handleFileUpload(this)">
+                        <div class="hint">File will be converted to a data URI. Max 800KB.</div>
+                        <input type="hidden" id="edit-file-data">
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button class="btn block" id="btn-publish" onclick="appBuilder.publishApp()">
+                        <span id="publish-text">Publish to App Store</span>
+                        <div class="loader"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div id="settings-view" class="view">
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
+                <button class="btn secondary sm" onclick="appBuilder.showDashboard()">
+                    &larr; Back
+                </button>
+                <h1 style="margin:0;">Account Settings</h1>
+            </div>
+
+            <div class="card">
+                <div class="form-group">
+                    <label>Display Name</label>
+                    <input type="text" id="set-name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="set-email" disabled style="color: var(--text-secondary); cursor: not-allowed; background: rgba(0,0,0,0.05);">
+                    <div class="hint">Email cannot be changed directly.</div>
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="set-pass" placeholder="Min 6 chars, 1 symbol">
+                         <div class="toggle-password" onclick="appBuilder.togglePassword('set-pass', this)">
+                            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
+                     <button class="btn danger" onclick="appBuilder.confirmDeleteAccount()">Delete Account</button>
+                     <div style="display:flex; gap:10px;">
+                         <button class="btn secondary" onclick="appBuilder.confirmLogout()">Sign Out</button>
+                         <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()">Save Changes</button>
+                     </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn secondary sm" onclick="appBuilder.sendPasswordReset()">Request Password Reset Email</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- FIREBASE CONFIGURATION BLOCK ---
+        // REPLACE THIS WITH YOUR OWN FIREBASE CONFIG FROM CONSOLE
+        const FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyBmnPoBKKnfpQj1ms_zuwXrc_1AlVRcJt8",
+    authDomain: "ios-simu-app-store.firebaseapp.com",
+    projectId: "ios-simu-app-store",
+    storageBucket: "ios-simu-app-store.firebasestorage.app",
+    messagingSenderId: "112772830208",
+    appId: "1:112772830208:web:a0e84ee244865b949db4e5"
+        };
+        const GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // ----------------------------------------
+
+        class AppBuilder {
+            constructor() {
+                this.db = null;
+                this.auth = null;
+                this.user = null;
+                this.devProfile = null;
+                this.appId = GLOBAL_APP_ID;
+                this.currentEditingId = null;
+                this.sourceMode = 'url';
+
+                this.initFirebase();
+                this.setupInputs();
+                
+                if(localStorage.getItem('builder_dark_mode') === 'true') {
+                    this.toggleDarkMode(true);
+                }
+            }
+
+            setupInputs() {
+                document.getElementById('edit-icon').addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    document.getElementById('icon-preview').src = val || 'https://via.placeholder.com/60?text=Icon';
+                });
+            }
+            
+            togglePassword(inputId, iconEl) {
+                const input = document.getElementById(inputId);
+                const openIcon = iconEl.querySelector('.eye-open');
+                const closedIcon = iconEl.querySelector('.eye-closed');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    openIcon.style.display = 'none';
+                    closedIcon.style.display = 'block';
+                } else {
+                    input.type = 'password';
+                    openIcon.style.display = 'block';
+                    closedIcon.style.display = 'none';
+                }
+            }
+
+            toggleDarkMode(forceState) {
+                const body = document.body;
+                const toggle = document.getElementById('dark-mode-toggle');
+                let isDark = forceState !== undefined ? forceState : !body.classList.contains('dark-mode');
+                
+                if (isDark) { body.classList.add('dark-mode'); toggle.classList.add('checked'); } 
+                else { body.classList.remove('dark-mode'); toggle.classList.remove('checked'); }
+                localStorage.setItem('builder_dark_mode', isDark);
+            }
+
+            async initFirebase() {
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                }
+                this.auth = firebase.auth();
+                this.db = firebase.firestore();
+
+                // Listen for real auth state changes
+                this.auth.onAuthStateChanged((user) => {
+                    this.performFirebaseAuth(false);
+                });
+            }
+
+async performFirebaseAuth(isInteractive) {
+                this.user = this.auth.currentUser;
+                
+                if (this.user) {
+                     // 1. Try to load valid session from LocalStorage first
+                     let savedProfile = null;
+                     try {
+                         const stored = localStorage.getItem('ios_builder_session');
+                         if (stored) savedProfile = JSON.parse(stored);
+                     } catch(e) {}
+
+                     // 2. Determine Display Name Priority:
+                     // Priority 1: The name currently in Firebase Auth (if set)
+                     // Priority 2: The name in LocalStorage (if set and UID matches)
+                     // Priority 3: Fallback to Email
+                     let finalName = this.user.displayName;
+                     
+                     if (!finalName && savedProfile && savedProfile.uid === this.user.uid) {
+                         finalName = savedProfile.displayName;
+                     }
+                     if (!finalName) {
+                         finalName = this.user.email.split('@')[0];
+                     }
+
+                     // 3. Update the Profile
+                     this.devProfile = {
+                         email: this.user.email,
+                         displayName: finalName,
+                         uid: this.user.uid
+                     };
+                     
+                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+                     
+                     if(this.devProfile) {
+                        document.getElementById('nav-username').innerText = this.devProfile.displayName;
+                        document.getElementById('navbar').style.display = 'flex';
+                        
+                        const onAuthPage = document.getElementById('login-view').classList.contains('active') || 
+                                         document.getElementById('register-view').classList.contains('active');
+                                         
+                        if(onAuthPage) {
+                            this.showDashboard();
+                        }
+                     }
+                } else {
+                    if (!isInteractive && !document.getElementById('register-view').classList.contains('active')) {
+                        this.showLogin();
+                    }
+                }
+            }
+
+            validatePassword(password) {
+                // Min 6 chars, at least 1 number or special char
+                const minLength = 6;
+                const hasSymbolOrNumber = /[\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+                
+                if (password.length < minLength) return "Password must be at least 6 characters.";
+                if (!hasSymbolOrNumber) return "Password must contain at least 1 number or symbol.";
+                return null;
+            }
+
+            async login() {
+                const email = document.getElementById('login-email').value.trim();
+                const pass = document.getElementById('login-pass').value.trim();
+
+                if (!email || !pass) { alert("Please enter email and password."); return; }
+                
+                const btn = document.getElementById('btn-login');
+                btn.classList.add('loading');
+
+                try {
+                    await this.auth.signInWithEmailAndPassword(email, pass);
+                    // performFirebaseAuth will trigger via onAuthStateChanged
+                } catch (e) {
+                    console.error(e);
+                    let msg = "Login Failed: " + e.message;
+                    if (e.code === 'auth/user-not-found') msg = "No account found with this email.";
+                    if (e.code === 'auth/wrong-password') msg = "Incorrect password.";
+                    if (e.code === 'auth/invalid-email') msg = "Invalid email format.";
+                    alert(msg);
+                } finally {
+                    btn.classList.remove('loading');
+                }
+            }
+            
+            async forgotPassword() {
+                const email = prompt("Enter your email address to reset password:");
+                if (email) {
+                    try {
+                        await this.auth.sendPasswordResetEmail(email);
+                        alert("Password reset email sent! Check your inbox.");
+                    } catch(e) {
+                        alert("Error: " + e.message);
+                    }
+                }
+            }
+
+async register() {
+                const name = document.getElementById('reg-name').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const pass = document.getElementById('reg-pass').value.trim();
+
+                if (!name || !email || !pass) { alert("All fields are required."); return; }
+                
+                const passError = this.validatePassword(pass);
+                if (passError) { alert(passError); return; }
+
+                const btn = document.getElementById('btn-register');
+                btn.classList.add('loading');
+
+                try {
+                    // 1. Create Account
+                    const userCredential = await this.auth.createUserWithEmailAndPassword(email, pass);
+                    
+                    // 2. Update Profile on Server
+                    await userCredential.user.updateProfile({ displayName: name });
+
+                    // 3. Create Session Object
+                    this.devProfile = {
+                        email: email,
+                        displayName: name, // We use the input name directly
+                        uid: userCredential.user.uid
+                    };
+                    
+                    // 4. Save to Local Storage
+                    localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+
+                    // 5. [CRITICAL FIX] FORCE UPDATE UI INSTANTLY
+                    // We manually update the DOM right here, so the user sees their name
+                    // immediately without waiting for the background listener to catch up.
+                    document.getElementById('nav-username').innerText = name;
+                    document.getElementById('navbar').style.display = 'flex';
+
+                    this.showDashboard();
+                } catch (e) {
+                    console.error(e);
+                    let msg = "Registration Failed: " + e.message;
+                    if (e.code === 'auth/email-already-in-use') msg = "This email is already registered.";
+                    if (e.code === 'auth/weak-password') msg = "Password is too weak.";
+                    if (e.code === 'auth/invalid-email') msg = "Invalid email format.";
+                    alert(msg);
+                } finally {
+                    btn.classList.remove('loading');
+                }
+            }
+
+            confirmLogout() {
+                if(confirm("Are you sure you want to sign out?")) {
+                    this.logout();
+                }
+            }
+
+            logout() {
+                this.auth.signOut();
+                localStorage.removeItem('ios_builder_session');
+                this.user = null;
+                this.devProfile = null;
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-pass').value = '';
+                document.getElementById('navbar').style.display = 'none';
+                this.updateUIState('login');
+            }
+
+            showLogin() { this.updateUIState('login'); }
+            showRegister() { this.updateUIState('register'); }
+            showDashboard() { this.updateUIState('dashboard'); }
+            showSettings() { this.updateUIState('settings'); }
+
+            updateUIState(viewName) {
+                document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+                switch(viewName) {
+                    case 'login': document.getElementById('login-view').classList.add('active'); break;
+                    case 'register': document.getElementById('register-view').classList.add('active'); break;
+                    case 'dashboard':
+                        // Guard: if called before auth is ready
+                        if(!this.auth.currentUser) return; 
+                        document.getElementById('dashboard-view').classList.add('active');
+                        this.fetchMyApps();
+                        break;
+                    case 'editor': document.getElementById('editor-view').classList.add('active'); break;
+                    case 'settings': document.getElementById('settings-view').classList.add('active'); this.loadSettings(); break;
+                }
+            }
+
+            async fetchMyApps() {
+                const list = document.getElementById('my-apps-list');
+                list.innerHTML = '<li class="empty-state"><div class="loader" style="display:inline-block; border-color: #999; border-top-color:#333;"></div><br>Loading apps...</li>';
+
+                try {
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                    
+                    const myApps = [];
+                    // Filter by UID (securely assigned by Firebase Auth now)
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.authorId === this.devProfile.uid) {
+                            myApps.push({ id: doc.id, ...data });
+                        }
+                    });
+
+                    list.innerHTML = '';
+                    if (myApps.length === 0) {
+                        list.innerHTML = '<div class="empty-state"><h3>No Apps Yet</h3><p>Start building your ecosystem.</p></div>';
+                        return;
+                    }
+
+                    myApps.forEach(app => {
+                        const li = document.createElement('li');
+                        li.className = 'app-list-item';
+                        const iconSrc = app.iconUrl || ''; 
+                        
+                        li.innerHTML = `
+                            <img src="${iconSrc}" class="list-icon" onerror="this.src='https://via.placeholder.com/60?text=App'">
+                            <div class="list-info">
+                                <div class="list-name">${app.name} <span class="tag">Live</span></div>
+                                <div class="list-meta">v1.0 • ${new Date(app.createdAt).toLocaleDateString()}</div>
+                            </div>
+                            <div class="list-actions">
+                                <button class="btn secondary sm" onclick="appBuilder.editApp('${app.id}')">Edit</button>
+                                <button class="btn danger sm icon-only" onclick="appBuilder.deleteApp('${app.id}', '${app.name}')" title="Delete App">
+                                    <svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(li);
+                    });
+
+                } catch (e) {
+                    console.error(e);
+                    list.innerHTML = '<li class="empty-state" style="color:var(--danger)">Connection Error. Check console.</li>';
+                }
+            }
+
+            async deleteApp(appId, appName) {
+                if(confirm(`Are you sure you want to delete "${appName}"? This cannot be undone.`)) {
+                    try {
+                        await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).delete();
+                        this.fetchMyApps();
+                    } catch(e) {
+                        console.error(e);
+                        if (e.code === 'permission-denied') {
+                            alert("PERMISSION DENIED: You cannot delete this app.\n\nMake sure your Firebase Rules allow deletes for 'store_apps'.");
+                        } else {
+                            alert("Error deleting app: " + e.message);
+                        }
+                    }
+                }
+            }
+
+            createNewApp() {
+                this.currentEditingId = null;
+                document.getElementById('editor-title').innerText = "Create New App";
+                document.getElementById('publish-text').innerText = "Publish to App Store";
+                document.getElementById('edit-name').value = '';
+                document.getElementById('edit-icon').value = '';
+                document.getElementById('edit-desc').value = '';
+                document.getElementById('edit-embed').value = '';
+                document.getElementById('icon-preview').src = 'https://via.placeholder.com/60?text=Icon';
+                document.getElementById('edit-file-data').value = '';
+                document.getElementById('file-name-display').innerText = 'Click to select .html file';
+                this.switchSourceTab('url');
+                this.updateUIState('editor');
+            }
+
+            async editApp(appId) {
+                try {
+                    const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
+                    if (!doc.exists) return;
+                    
+                    const data = doc.data();
+                    this.currentEditingId = appId;
+                    document.getElementById('editor-title').innerText = "Edit App";
+                    document.getElementById('publish-text').innerText = "Save Changes";
+                    document.getElementById('edit-name').value = data.name;
+                    document.getElementById('edit-icon').value = data.iconUrl || '';
+                    document.getElementById('icon-preview').src = data.iconUrl || 'https://via.placeholder.com/60?text=Icon';
+                    document.getElementById('edit-desc').value = data.description;
+                    
+                    if (data.embedUrl && data.embedUrl.startsWith('data:text/html')) {
+                        this.switchSourceTab('file');
+                        document.getElementById('edit-file-data').value = data.embedUrl;
+                        document.getElementById('file-name-display').innerText = "Existing HTML File Loaded";
+                    } else {
+                        this.switchSourceTab('url');
+                        document.getElementById('edit-embed').value = data.embedUrl;
+                    }
+                    this.updateUIState('editor');
+                } catch(e) {
+                    alert("Error: " + e.message);
+                }
+            }
+
+            switchSourceTab(mode) {
+                this.sourceMode = mode;
+                document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+                if (mode === 'url') {
+                    document.getElementById('tab-url').classList.add('active');
+                    document.getElementById('source-url-container').style.display = 'block';
+                    document.getElementById('source-file-container').style.display = 'none';
+                } else {
+                    document.getElementById('tab-file').classList.add('active');
+                    document.getElementById('source-url-container').style.display = 'none';
+                    document.getElementById('source-file-container').style.display = 'block';
+                }
+            }
+
+            handleFileUpload(input) {
+                if (input.files && input.files[0]) {
+                    const file = input.files[0];
+                    if (file.size > 800000) { 
+                        alert("File is too large. Max 800KB.");
+                        input.value = '';
+                        return;
+                    }
+                    document.getElementById('file-name-display').innerText = file.name;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        document.getElementById('edit-file-data').value = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            async publishApp() {
+                const name = document.getElementById('edit-name').value.trim();
+                const icon = document.getElementById('edit-icon').value.trim();
+                const desc = document.getElementById('edit-desc').value.trim();
+                let embedUrl = this.sourceMode === 'url' ? document.getElementById('edit-embed').value.trim() : document.getElementById('edit-file-data').value;
+
+                if (!name || !desc || !embedUrl) { alert("Name, Description, and Source are required."); return; }
+
+                const btn = document.getElementById('btn-publish');
+                btn.classList.add('loading');
+
+                try {
+                    const appData = {
+                        name: name,
+                        iconUrl: icon,
+                        description: desc,
+                        embedUrl: embedUrl,
+                        author: this.devProfile.displayName,
+                        authorId: this.devProfile.uid,
+                        updatedAt: Date.now()
+                    };
+
+                    if (!this.currentEditingId) {
+                        appData.createdAt = Date.now();
+                        await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').add(appData);
+                    } else {
+                        await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId).update(appData);
+                    }
+                    this.showDashboard();
+                } catch (e) {
+                    console.error(e);
+                    if (e.code === 'permission-denied') {
+                        alert("PERMISSION DENIED: You cannot save changes.\n\nCheck your Firestore Rules.");
+                    } else {
+                        alert("Error saving app: " + e.message);
+                    }
+                } finally {
+                    btn.classList.remove('loading');
+                }
+            }
+
+            loadSettings() {
+                document.getElementById('set-name').value = this.devProfile.displayName;
+                document.getElementById('set-email').value = this.devProfile.email;
+                document.getElementById('set-pass').value = '';
+            }
+            
+            async sendPasswordReset() {
+                 try {
+                     await this.auth.sendPasswordResetEmail(this.devProfile.email);
+                     alert("Password reset email sent to " + this.devProfile.email);
+                 } catch(e) {
+                     alert("Error sending reset email: " + e.message);
+                 }
+            }
+
+            async saveSettings() {
+                const newName = document.getElementById('set-name').value.trim();
+                const newPass = document.getElementById('set-pass').value.trim();
+
+                if (!newName) { alert("Display Name cannot be empty."); return; }
+                
+                const btn = document.getElementById('btn-save-settings');
+                btn.classList.add('loading');
+
+                try {
+                    // 1. Update Profile (Name)
+                    if (newName !== this.devProfile.displayName) {
+                        await this.user.updateProfile({ displayName: newName });
+                        this.devProfile.displayName = newName;
+                    }
+                    
+                    // 2. Update Password (if provided)
+                    if (newPass) {
+                        const passError = this.validatePassword(newPass);
+                        if (passError) throw new Error(passError);
+                        
+                        try {
+                            await this.user.updatePassword(newPass);
+                        } catch(e) {
+                            // If requires-recent-login, we must re-auth
+                            if (e.code === 'auth/requires-recent-login') {
+                                const currentPass = prompt("Security Check: Please enter your CURRENT password to save changes.");
+                                if (currentPass) {
+                                    const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
+                                    await this.user.reauthenticateWithCredential(credential);
+                                    // Retry update
+                                    await this.user.updatePassword(newPass);
+                                } else {
+                                    throw new Error("Re-authentication cancelled. Password not changed.");
+                                }
+                            } else {
+                                throw e;
+                            }
+                        }
+                    }
+
+                    // Update local session
+                    localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+                    document.getElementById('nav-username').innerText = newName;
+                    
+                    alert("Settings Saved Successfully!");
+                    this.showDashboard();
+                    
+                } catch(e) {
+                    console.error(e);
+                    alert("Error saving settings: " + e.message);
+                } finally {
+                    btn.classList.remove('loading');
+                }
+            }
+
+            async confirmDeleteAccount() {
+                const userInput = prompt(`To confirm deletion, type "${this.devProfile.email}" below.\nWARNING: This will delete ALL your published apps permanently.`);
+                if (userInput === this.devProfile.email) {
+                    try {
+                        const btn = document.querySelector('.btn.danger');
+                        if(btn) btn.innerText = "Deleting...";
+
+                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                        const batch = this.db.batch();
+                        
+                        let count = 0;
+                        snapshot.forEach(doc => {
+                            if (doc.data().authorId === this.devProfile.uid) {
+                                batch.delete(doc.ref);
+                                count++;
+                            }
+                        });
+
+                        if (count > 0) await batch.commit();
+                        
+                        // Delete Firebase Auth User
+                        await this.user.delete();
+
+                        localStorage.removeItem('ios_builder_session');
+                        alert("Account and " + count + " apps deleted.");
+                        
+                        // User.delete() automatically signs out
+                        window.location.reload();
+
+                    } catch (e) {
+                        console.error(e);
+                        if (e.code === 'permission-denied') {
+                            alert("PERMISSION DENIED: You cannot delete these apps.\n\nUpdate Firestore Rules to allow delete operations.");
+                        } else if (e.code === 'auth/requires-recent-login') {
+                             alert("Security Check Failed: Please Sign Out and Sign In again, then try deleting your account immediately.");
+                        } else {
+                            alert("Error deleting account: " + e.message);
+                        }
+                        if(document.querySelector('.btn.danger')) document.querySelector('.btn.danger').innerText = "Delete Account";
+                    }
+                } else if (userInput !== null) {
+                    alert("Email did not match. Deletion cancelled.");
+                }
+            }
+        }
+
+        const appBuilder = new AppBuilder();
+    </script>
+</body>
+</html>

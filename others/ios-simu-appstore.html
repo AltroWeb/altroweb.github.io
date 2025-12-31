@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iOS Ultimate Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --app-radius: 44px; 
+            --icon-radius: 16px;
+            --screen-bg: #000;
+            
+            /* Professional Interaction Curves */
+            --ease-open: cubic-bezier(0.2, 0.8, 0.2, 1); 
+            --ease-close: cubic-bezier(0.32, 0.72, 0, 1);
+            --ease-vacuum: cubic-bezier(0.19, 1, 0.22, 1); 
+            --ease-island: cubic-bezier(0.18, 0.89, 0.32, 1.15); 
+            --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-squish: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: subpixel-antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            margin: 0; padding: 0; background-color: #000;
+            height: 100vh; width: 100vw; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+            overflow-y: auto; transition: background-color 0.3s;
+        }
+
+        /* --- DARK MODE IMPROVEMENTS --- */
+        body.dark-mode .screen-container { background: #000; }
+        body.dark-mode .wallpaper-layer { filter: brightness(0.5) !important; }
+        body.dark-mode .wallpaper-layer.active-app { filter: blur(30px) brightness(0.3) !important; }
+        body.dark-mode .app-icon { filter: brightness(0.75); }
+        body.dark-mode .dock-container { background: rgba(30, 30, 30, 0.4); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Specific ID overrides for Dark Mode */
+        body.dark-mode #main-window,
+        body.dark-mode #appstore-window,
+        body.dark-mode .app-window[data-app="Settings"] { background: #000 !important; color: #fff; }
+
+        body.dark-mode .app-window[data-app="Notes"],
+        body.dark-mode .app-window[data-app="Weather"] { background: #1c1c1e !important; color: #fff; }
+        
+        body.dark-mode .ios-list { background: #1c1c1e; }
+        body.dark-mode .ios-row { background: #1c1c1e; color: #fff; border-bottom: 0.5px solid rgba(255,255,255,0.15); }
+        body.dark-mode .ios-row:active { background: #2c2c2e; }
+        
+        body.dark-mode .app-header-large, 
+        body.dark-mode .nav-title { color: #fff !important; }
+        body.dark-mode .section-header { color: #8E8E93; }
+
+        body.dark-mode .ios-switch { background: #39393D; }
+        body.dark-mode .ios-switch:checked { background: #30D158; }
+        body.dark-mode .ios-slider { background: #39393D; }
+        body.dark-mode .ios-input { background: #1c1c1e; color: #fff; }
+        body.dark-mode .ios-search-bar { background: #1c1c1e !important; color: #fff !important; }
+        body.dark-mode .ios-search-bar input { color: #fff !important; }
+        body.dark-mode .ios-search-bar svg { opacity: 0.7; color: #8E8E93; }
+
+        body.dark-mode .ios-btn.secondary { background: #2c2c2e; color: #fff; }
+        body.dark-mode .ios-btn.secondary:active { background: #3a3a3c; }
+
+        body.dark-mode .app-navbar.scrolled {
+            background: rgba(20, 20, 20, 0.85); border-bottom: 0.5px solid rgba(255,255,255,0.1);
+        }
+
+        body.dark-mode .sys-alert-box { background: rgba(30,30,30,0.9); color: #fff; }
+        body.dark-mode .sa-title, body.dark-mode .sa-msg { color: #fff; }
+        body.dark-mode .sa-btn { border-right: 0.5px solid rgba(80,80,80,0.5); }
+        body.dark-mode .sa-btn-group { border-top: 0.5px solid rgba(80,80,80,0.5); }
+        body.dark-mode .sa-btn:active { background: rgba(255,255,255,0.1); }
+        
+        /* Dark Mode Store Items */
+        body.dark-mode .store-name { color: #fff; }
+        body.dark-mode .store-sub { color: #98989d; }
+
+        button, input, textarea { font-family: inherit; }
+
+        /* --- SCREEN --- */
+        .screen-container {
+            position: relative; width: 100%; height: 100%;
+            background: var(--screen-bg); overflow: hidden;
+            perspective: 1000px; transform: translateZ(0); border-radius: 0px; 
+        }
+
+        .wallpaper-layer {
+            position: absolute; inset: -20px;
+            background: url('https://images.unsplash.com/photo-1696429175928-793a1cdef1d3?q=80&w=1000&auto=format&fit=crop') center/cover no-repeat;
+            z-index: 1; transform: scale(1);
+            transition: transform 0.6s var(--ease-open), filter 0.6s var(--ease-open);
+            will-change: transform, filter; image-rendering: -webkit-optimize-contrast; 
+        }
+        .wallpaper-layer.active-app { transform: scale(1.15); filter: blur(30px) brightness(0.85); }
+
+        .homescreen-group {
+            position: absolute; inset: 0; z-index: 10;
+            transition: opacity 0.4s ease, transform 0.5s var(--ease-open), filter 0.4s ease;
+            transform-origin: center center; will-change: transform, opacity, filter;
+        }
+        .homescreen-group.minimized { opacity: 0; transform: scale(0.9); filter: blur(15px); pointer-events: none; }
+
+        /* --- PAGINATION --- */
+        .pages-wrapper {
+            display: flex; width: 100%; height: 100%;
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform;
+        }
+
+        .homescreen-page {
+            min-width: 100%; height: 100%; padding: 0 24px;
+            display: grid; grid-template-columns: repeat(3, 1fr); 
+            grid-auto-rows: min-content; gap: 30px 15px;
+            justify-items: center; max-width: 100%; margin: 0 auto; padding-top: 130px; 
+        }
+
+        .page-indicators {
+            position: absolute; bottom: 155px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; z-index: 25; transition: opacity 0.3s; pointer-events: none;
+        }
+        .dot {
+            width: 8px; height: 8px; background: rgba(255,255,255,0.3); 
+            border-radius: 50%; transition: background 0.3s;
+        }
+        .dot.active { background: #fff; }
+
+        /* --- DOCK --- */
+        .dock-container {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            width: 95%; max-width: 360px; height: 96px;
+            background: rgba(255, 255, 255, 0.25); 
+            backdrop-filter: blur(50px) saturate(180%); -webkit-backdrop-filter: blur(50px) saturate(180%);
+            border-radius: 36px; display: flex; 
+            align-items: center; justify-content: space-evenly;
+            padding: 0 10px; border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            z-index: 20; transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s;
+        }
+        .dock-container .app-item { justify-content: center; height: 100%; }
+
+        .app-item {
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            cursor: pointer; width: 70px; transition: opacity 0.2s; height: 90px;
+        }
+        .app-item:active { opacity: 0.5; }
+        .app-item:active .app-icon { transform: scale(0.92); filter: brightness(0.7); }
+
+        .app-icon {
+            width: 64px; height: 64px; background: #333;
+            border-radius: 16px; position: relative; overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.5s var(--ease-close), opacity 0.2s ease, filter 0.3s ease; 
+            backface-visibility: hidden; transform-origin: center center;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .app-icon.hidden-source { opacity: 0 !important; }
+        
+        .icon-bg-img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 5; border-radius: inherit;
+        }
+        .app-icon > *:not(.icon-bg-img) { z-index: 1; }
+        .app-name { 
+            color: #fff; font-size: 12px; font-weight: 500; 
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5); text-align: center; white-space: nowrap;
+        }
+
+        /* --- APP WINDOWS --- */
+        .app-window {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column; overflow: hidden;
+            transform-origin: center center; box-shadow: 0 0 0 0 rgba(0,0,0,0);
+            backface-visibility: hidden; will-change: transform, border-radius, filter, opacity;
+            background: #fff; border-radius: 0px; transition: background 0.3s;
+        }
+        .app-window.dragging { box-shadow: 0 20px 50px rgba(0,0,0,0.4); border-radius: 44px !important; }
+
+        #main-window { z-index: 100; }
+        #music-window { z-index: 200; background: #000 !important; color: white; }
+        #appstore-window { z-index: 150; background: #fff; }
+
+
+
+/* Settings App Background - Light Mode */
+        .app-window[data-app="Settings"] {
+            background: #F2F2F7; /* iOS System Gray */
+        }
+        
+        /* Ensure specific overrides for Dark Mode still apply */
+        body.dark-mode .app-window[data-app="Settings"] {
+            background: #000;
+        }
+
+#dynamic-app-container {
+            margin-left: -20px !important; 
+            margin-right: -20px !important;
+            width: auto; 
+        }
+
+
+        .app-window.receded {
+            transform: scale(0.88) !important; filter: blur(20px) brightness(0.6) !important;
+            border-radius: 44px !important; opacity: 0 !important; 
+            transition: transform 0.6s var(--ease-open), filter 0.6s ease, opacity 0.4s ease 0.2s; pointer-events: none;
+        }
+
+        .app-window.vacuum-active {
+            transition: transform 0.35s var(--ease-vacuum), border-radius 0.35s var(--ease-vacuum), filter 0.35s ease-in, opacity 0.15s ease 0.2s !important;
+            filter: blur(20px) drop-shadow(0 0 20px rgba(0, 122, 255, 0.6)) !important; opacity: 0 !important; 
+        }
+
+        @keyframes time-warp-launch {
+            0% { transform: translate3d(var(--tx), calc(var(--ty) + 70px), 0) scale(0.25); border-radius: 18.5px; filter: blur(10px); animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53); }
+            25% { transform: translate3d(0, 60px, 0) scale(0.7); border-radius: 44px; filter: blur(5px); animation-timing-function: cubic-bezier(0.1, 0.95, 0.15, 1); }
+            100% { transform: translate3d(0, 0, 0) scale(1); border-radius: 0px; filter: blur(0px); }
+        }
+        .launching-timewarp { animation: time-warp-launch 0.7s forwards; transition: none !important; }
+
+        .app-navbar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 90px;
+            z-index: 50; display: flex; align-items: flex-end; justify-content: center;
+            padding-bottom: 12px; background: rgba(255, 255, 255, 0); 
+            pointer-events: none; transition: background 0.3s;
+        }
+        .app-navbar.scrolled {
+            background: rgba(242, 242, 247, 0.85); backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 0.5px solid rgba(0,0,0,0.15);
+        }
+        #music-window .app-navbar.scrolled {
+            background: rgba(20, 20, 20, 0.85); border-bottom: 0.5px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-title {
+            font-size: 17px; font-weight: 600; opacity: 0;
+            transform: translateY(5px); transition: opacity 0.3s, transform 0.3s, color 0.3s; color: #000;
+        }
+        #music-window .nav-title { color: #fff; }
+        .app-navbar.scrolled .nav-title { opacity: 1; transform: translateY(0); }
+
+        .app-content-scroll {
+            flex: 1; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
+            padding: 0; padding-top: 50px; -webkit-overflow-scrolling: touch;
+        }
+        .app-content-scroll::-webkit-scrollbar { width: 0; }
+        .scroll-inner-padding { padding: 40px 20px 100px 20px; }
+        
+        #example-app { margin-left: -20px !important; margin-right: -20px !important; width: auto; }
+
+        /* iOS UI Components */
+        .ios-list {
+            background: #fff; border-radius: 12px;
+            overflow: hidden; margin-bottom: 24px; transition: background 0.3s;
+        }
+        .ios-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px; background: #fff; border-bottom: 0.5px solid rgba(0,0,0,0.1);
+            font-size: 17px; color: #000; transition: background 0.2s, color 0.3s, border 0.3s;
+        }
+        .ios-row:active { background: #E5E5EA; }
+        .ios-row:last-child { border-bottom: none; }
+        
+        .ios-switch {
+            position: relative; width: 51px; height: 31px; appearance: none;
+            background: #E9E9EA; border-radius: 100px;
+            transition: background 0.3s; cursor: pointer; outline: none;
+        }
+        .ios-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 27px; height: 27px; background: #fff;
+            border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .ios-switch:checked { background: #34C759; }
+        .ios-switch:checked::after { transform: translateX(20px); }
+
+        .ios-slider-container { width: 100%; padding: 10px 0; }
+        .ios-slider {
+            -webkit-appearance: none; width: 100%; height: 6px;
+            background: #E9E9EA; border-radius: 3px; outline: none; transition: background 0.3s;
+        }
+        .ios-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 28px; height: 28px; background: #fff;
+            border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.2); cursor: pointer;
+        }
+
+        .ios-btn {
+            background: #007AFF; color: #fff; border: none;
+            padding: 14px 20px; border-radius: 12px;
+            font-size: 17px; font-weight: 600; width: 100%;
+            cursor: pointer; transition: transform 0.1s, opacity 0.2s;
+        }
+        .ios-btn:active { transform: scale(0.98); opacity: 0.6; }
+        .ios-btn.secondary { background: #E9E9EA; color: #000; }
+
+        .ios-input {
+            width: 100%; padding: 12px 16px; background: #F2F2F7; 
+            border: none; border-radius: 10px; font-size: 17px; color: #000; outline: none;
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        .ios-search-bar {
+            width: 100%; padding: 10px 16px; background: #E9E9EA;
+            border-radius: 10px; border: none; font-size: 17px; color: #000;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+            transition: background 0.3s, color 0.3s;
+        }
+        .ios-search-bar svg { opacity: 0.5; }
+
+        .app-header-large {
+            font-size: 34px; font-weight: 700; color: #000;
+            margin: 0px 0 20px 0; letter-spacing: -0.5px; transition: color 0.3s;
+        }
+        .section-header {
+            font-size: 13px; color: #8E8E93; font-weight: 400;
+            text-transform: uppercase; margin: 20px 0 8px 16px;
+        }
+
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        /* --- APP STORE SPECIFIC --- */
+        .store-item {
+            display: flex; align-items: center; padding: 16px 0;
+            border-bottom: 0.5px solid rgba(0,0,0,0.1);
+        }
+        body.dark-mode .store-item { border-bottom: 0.5px solid rgba(255,255,255,0.15); }
+        .store-icon {
+            width: 60px; height: 60px; border-radius: 14px; background: #eee;
+            margin-right: 15px; object-fit: cover; flex-shrink: 0;
+        }
+        .store-info { flex: 1; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+        .store-name { font-weight: 600; font-size: 17px; color: inherit; }
+        .store-sub { font-size: 13px; color: #8E8E93; }
+        .store-get-btn {
+            background: #F2F2F7; color: #007AFF; font-weight: 700; font-size: 14px;
+            border-radius: 20px; padding: 6px 20px; border: none; cursor: pointer;
+            min-width: 72px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+        }
+        body.dark-mode .store-get-btn { background: #2c2c2e; }
+        
+        /* Spinner */
+        .spinner {
+            width: 16px; height: 16px; border: 2px solid rgba(0,122,255,0.3);
+            border-radius: 50%; border-top-color: #007AFF;
+            animation: spin 1s linear infinite; display: none;
+        }
+        .store-get-btn.loading .spinner { display: block; }
+        .store-get-btn.loading span { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Uninstall State */
+        .store-get-btn.installed { 
+            background: transparent; 
+            color: #FF3B30; /* Red */
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            font-weight: 600;
+        }
+
+        /* --- ALERT MODAL --- */
+        .sys-alert-overlay {
+            position: absolute; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .sys-alert-overlay.visible { opacity: 1; pointer-events: auto; }
+        .sys-alert-box {
+            width: 270px; background: rgba(240,240,240,0.95);
+            backdrop-filter: blur(20px); border-radius: 14px;
+            text-align: center; overflow: hidden;
+            transform: scale(1.1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, color 0.3s;
+        }
+        .sys-alert-overlay.visible .sys-alert-box { transform: scale(1); }
+        .sa-content { padding: 20px 16px; }
+        .sa-title { font-weight: 600; font-size: 17px; margin-bottom: 4px; color:#000; transition: color 0.3s; }
+        .sa-msg { font-size: 13px; color: #000; transition: color 0.3s; }
+        
+        .sa-btn-group { display: flex; width: 100%; border-top: 0.5px solid rgba(60,60,67,0.36); }
+        .sa-btn {
+            flex: 1; padding: 12px; font-size: 17px; color: #007AFF; 
+            background: transparent; border: none; cursor: pointer;
+            font-family: inherit; border-right: 0.5px solid rgba(60,60,67,0.36);
+        }
+        .sa-btn:last-child { border-right: none; }
+        .sa-btn.cancel { font-weight: 400; }
+        .sa-btn.ok { font-weight: 600; }
+        .sa-btn.danger { color: #FF3B30; }
+        .sa-btn:active { background: rgba(0,0,0,0.1); }
+
+        /* --- DYNAMIC ISLAND PRO --- */
+        .island-container {
+            position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+            z-index: 5000; display: flex; justify-content: center; width: 100%; pointer-events: none;
+        }
+        .island-capsule {
+            background: #000; width: 126px; height: 37px; border-radius: 18.5px;
+            transition: width 0.5s var(--ease-island), height 0.5s var(--ease-island), border-radius 0.5s var(--ease-island);
+            overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;
+            pointer-events: auto; box-shadow: 0 1px 1px rgba(0,0,0,0.5); z-index: 5001; cursor: pointer;
+            transform: translate3d(0,0,0); backface-visibility: hidden;
+            -webkit-font-smoothing: subpixel-antialiased;
+        }
+        .island-capsule.motion-blur { filter: blur(1.5px); }
+        .island-capsule.expanded { width: 324px; height: 80px; border-radius: 40px; }
+        .island-capsule.compact { width: 215px; height: 37px; border-radius: 18.5px; }
+
+        @keyframes island-impact-anim {
+            0% { transform: scale(1) translateY(0); }
+            30% { transform: scaleX(1.1) scaleY(0.9) translateY(-2px); }
+            60% { transform: scaleX(0.95) scaleY(1.05) translateY(1px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        .island-capsule.island-impact { animation: island-impact-anim 0.5s var(--ease-bounce); }
+        @keyframes island-bounce-anim { 0% { transform: scale(1); } 30% { transform: scale(1.04); } 60% { transform: scale(0.97); } 100% { transform: scale(1); } }
+        .island-capsule.island-bounce { animation: island-bounce-anim 0.4s var(--ease-bounce); }
+
+        .island-camera {
+            position: absolute; right: 25%; top: 50%; transform: translateY(-50%);
+            width: 10px; height: 10px; background: #101010; border-radius: 50%; opacity: 0.6; pointer-events: none; z-index: 5002;
+            transition: opacity 0.3s;
+        }
+        .island-capsule.expanded .island-camera { opacity: 0; }
+        .island-content {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; opacity: 0; transition: opacity 0.2s ease 0s; pointer-events: none;
+        }
+        .island-content.blur-out { filter: blur(4px); opacity: 0 !important; transition: opacity 0.2s, filter 0.2s; }
+        .island-capsule.expanded .island-content { opacity: 1; transition-delay: 0.2s; pointer-events: auto; }
+        .island-capsule.compact .island-content { opacity: 1; transition-delay: 0.1s; pointer-events: auto; }
+
+        .island-icon { width: 44px; height: 44px; border-radius: 10px; background: #333; background-size: cover; transition: width 0.3s, height 0.3s; }
+        .island-capsule.compact .island-icon { width: 24px; height: 24px; border-radius: 5px; }
+        .island-text { display: flex; flex-direction: column; flex: 1; margin-left: 12px; transition: opacity 0.2s; }
+        .island-capsule.compact .island-text { display: none; opacity: 0; } 
+        .island-title { color: #fff; font-size: 14px; font-weight: 600; line-height: 1.2; }
+        .island-sub { color: #999; font-size: 12px; font-weight: 400; }
+        .island-visualizer { display: flex; gap: 3px; align-items: flex-end; height: 20px; transition: transform 0.3s; }
+        .bar { width: 3px; background: #34C759; border-radius: 2px; animation: bounce 1s infinite ease-in-out; }
+        @keyframes bounce { 0%, 100% { height: 5px; } 50% { height: 18px; } }
+        .bar:nth-child(2) { animation-delay: 0.1s; } .bar:nth-child(3) { animation-delay: 0.2s; }
+
+        .status-bar {
+            position: absolute; top: 0; width: 100%; height: 50px; z-index: 4000;
+            display: flex; justify-content: space-between; padding: 14px 28px 0 28px; pointer-events: none; 
+            color: #fff; transition: color 0.3s, transform 0.5s var(--ease-squish), filter 0.4s ease, opacity 0.3s;
+            transform-origin: top center; will-change: transform, filter;
+        }
+        .status-bar.dark-text { color: #000; }
+        .status-bar.blurred { filter: blur(4px); opacity: 0.6; transform: scale(0.92); }
+        .status-bar.squished { transform: scale(0.88) translateY(2px); filter: blur(2px); opacity: 0.6; }
+
+        .sb-side { display: flex; gap: 6px; align-items: center; font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
+
+        .gesture-zone {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 50px; z-index: 6000;
+            display: flex; justify-content: center; align-items: flex-end; padding-bottom: 8px; cursor: grab; pointer-events: auto;
+        }
+        .home-indicator {
+            width: 130px; height: 5px; background: #fff; border-radius: 100px;
+            transition: width 0.3s, background 0.3s, opacity 0.4s ease, transform 0.4s ease; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); opacity: 1; transform: translateY(0);
+        }
+        .gesture-zone.dark-bar .home-indicator { background: #000; }
+        .gesture-zone.on-home .home-indicator { opacity: 0; transform: translateY(20px); }
+
+        /* Assets */
+        .flower-petal { position: absolute; width: 18px; height: 11px; border-radius: 10px; mix-blend-mode: multiply; }
+        .icon-photos { background: #fff; }
+        .icon-weather { background: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .icon-notes { background: #fff; display: flex; align-items: center; justify-content: center; }
+        .icon-settings { background: #8E8E93; display: flex; align-items: center; justify-content: center; }
+        .icon-maps { background: #F5F5DC; overflow: hidden; position: relative; }
+        .map-grid { position: absolute; width: 100%; height: 100%; background-image: linear-gradient(#A5D6A7 2px, transparent 2px), linear-gradient(90deg, #A5D6A7 2px, transparent 2px); background-size: 20px 20px; transform: rotate(15deg) scale(1.2); }
+
+        /* --- RESPONSIVE DOCK & ICONS --- */
+        @media (max-height: 800px) {
+            .homescreen-page { padding-top: 130px; gap: 40px 10px; }
+            .dock-container { bottom: 20px; height: 90px; }
+            .app-item { transform: scale(1.1); margin-bottom: 0; }
+        }
+        @media (max-height: 660px) {
+            .homescreen-page { padding-top: 100px; gap: 30px 15px; }
+            .dock-container { bottom: 12px; height: 85px; }
+            .app-item { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="screen-container" id="screen">
+        
+        <div class="wallpaper-layer" id="wallpaper"></div>
+
+        <div class="homescreen-group" id="homescreen-group">
+            <div class="pages-wrapper" id="pages-wrapper"></div>
+            <div class="page-indicators" id="page-indicators"></div>
+
+            <!-- SOURCE OF APPS -->
+            <div id="app-source" style="display:none;">
+                <div class="app-item" onclick="iOS.openApp(this, 'AppStore', 'light')">
+                    <div class="app-icon" style="background:#1C91FF; display:flex; align-items:center; justify-content:center;">
+                    	
+             <img src="https://mailin.mitracare.com/images/App_Store.png" class="icon-bg-img" onerror="this.style.display='none'">           
+                    
+                         <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M12.9,2.6c-0.2-0.5-0.9-0.5-1.1,0L9.4,7.8c-0.1,0.2-0.3,0.3-0.5,0.3L3.7,8.6c-0.5,0.1-0.7,0.7-0.4,1.1l3.9,3.5 c0.1,0.1,0.2,0.3,0.2,0.5l-1.1,5.3c-0.1,0.5,0.4,0.9,0.9,0.6l4.7-2.7c0.2-0.1,0.4-0.1,0.6,0l4.7,2.7c0.5,0.3,1-0.1,0.9-0.6l-1.1-5.3 c0-0.2,0-0.4,0.2-0.5l3.9-3.5c0.4-0.3,0.2-1-0.4-1.1l-5.2-0.5C14.7,7.8,14.5,7.7,14.4,7.5L12.9,2.6z" transform="rotate(25 12 12)"/></svg>
+                    </div>
+                    <div class="app-name">App Store</div>
+                </div>
+
+                <div class="app-item" onclick="iOS.openApp(this, 'Photos', 'light')">
+                    <div class="app-icon icon-photos">
+                        <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <div class="flower-petal" style="background:#FFAA00; top:10px; left:19px; transform:rotate(90deg);"></div>
+                        <div class="flower-petal" style="background:#FF3B30; top:19px; left:10px;"></div>
+                        <div class="flower-petal" style="background:#007AFF; top:19px; right:10px;"></div>
+                        <div class="flower-petal" style="background:#34C759; bottom:10px; left:19px; transform:rotate(90deg);"></div>
+                    </div>
+                    <div class="app-name">Photos</div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Calendar', 'light')">
+                    <div class="app-icon" style="background:#fff;">
+                        <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                            <span style="color:#FF3B30; font-size:8px; font-weight:700; margin-top:4px;">WED</span>
+                            <span style="color:#000; font-size:24px; font-weight:300; line-height:1;">26</span>
+                        </div>
+                    </div>
+                    <div class="app-name">Calendar</div>
+                </div>
+                 <div class="app-item" onclick="iOS.openApp(this, 'Weather', 'light')">
+                    <div class="app-icon icon-weather">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwmcMEOduiQ9uVBGnmpThi3yVbuh7Zw17xfrFyDtCeFQ&s=10" class="icon-bg-img" onerror="this.style.display='none'">
+                        <span style="position: relative; z-index: 1;">🌤️</span>
+                    </div>
+                    <div class="app-name">Weather</div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Clock', 'light')">
+                    <div class="app-icon" style="background:#000;">
+                        <img src="https://images.unsplash.com/photo-1509048191080-d2984bad6ae5?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                         <div style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center; border:1px solid #333; border-radius:16px;">
+                             <div style="width:44px; height:44px; border:2px solid #fff; border-radius:50%; position:relative;">
+                                  <div style="position:absolute; top:50%; left:50%; width:2px; height:16px; background:#fff; transform:translate(-50%, -100%) rotate(45deg); transform-origin: bottom center;"></div>
+                                  <div style="position:absolute; top:50%; left:50%; width:1px; height:18px; background:#FF9500; transform:translate(-50%, -85%) rotate(120deg); transform-origin: bottom center;"></div>
+                             </div>
+                        </div>
+                    </div>
+                    <div class="app-name">Clock</div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Maps', 'light')">
+                    <div class="app-icon icon-maps">
+                         <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <div class="map-grid"></div>
+                    </div>
+                    <div class="app-name">Maps</div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Notes', 'light')">
+                    <div class="app-icon icon-notes">
+                        <img src="https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <svg width="32" height="32" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#F5B942"/></svg>
+                    </div>
+                    <div class="app-name">Notes</div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Settings', 'light')">
+                    <div class="app-icon icon-settings">
+                        <img src="https://images.unsplash.com/photo-1458560871784-56d23406c091?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="#fff"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.83c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.37c-0.59,0.24-1.13,0.57-1.62,0.94L5.24,5.35c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.89 c-0.12,0.22-0.07,0.47,0.12,0.61l2.03,1.58c-0.04,0.3-0.06,0.61-0.06,0.94s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.57,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                    </div>
+                    <div class="app-name">Settings</div>
+                </div>
+
+                <!-- MOCK APPS START -->
+                <div class="app-item" onclick="iOS.openApp(this, 'Photos', 'light')"><div class="app-icon icon-photos"><div class="flower-petal" style="background:#FFAA00; top:10px; left:19px; transform:rotate(90deg);"></div><div class="flower-petal" style="background:#FF3B30; top:19px; left:10px;"></div><div class="flower-petal" style="background:#007AFF; top:19px; right:10px;"></div><div class="flower-petal" style="background:#34C759; bottom:10px; left:19px; transform:rotate(90deg);"></div></div><div class="app-name">Photos 2</div></div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Calendar', 'light')"><div class="app-icon" style="background:#fff;"><div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;"><span style="color:#FF3B30; font-size:8px; font-weight:700; margin-top:4px;">WED</span><span style="color:#000; font-size:24px; font-weight:300; line-height:1;">26</span></div></div><div class="app-name">Cal 2</div></div>
+                <!-- MOCK APPS END -->
+            </div>
+            
+            <div class="dock-container">
+                <div class="app-item" onclick="iOS.openApp(this, 'Phone', 'light')">
+                    <div class="app-icon" style="background:#34C759; display:flex; align-items:center; justify-content:center;">
+                         <img src="https://images.unsplash.com/photo-1520923642038-b4259acecbd7?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-2.2 2.2a15.053 15.053 0 01-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1.01A11.36 11.36 0 018.59 3.99c0-.55-.45-1-1-1H4.39c-.55 0-1 .45-1 1c0 9.39 7.61 17 17 17c.55 0 1-.45 1-1v-3.21c0-.55-.45-1-1-1z"/></svg>
+                    </div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Safari', 'light')">
+                    <div class="app-icon" style="background:linear-gradient(to top, #007AFF, #5AC8FA); display:flex; align-items:center; justify-content:center;">
+                         <img src="https://images.unsplash.com/photo-1501504905252-473c47e087f8?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    </div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Messages', 'light')">
+                    <div class="app-icon" style="background:#34C759; display:flex; align-items:center; justify-content:center;">
+                         <img src="https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    </div>
+                </div>
+                <div class="app-item" onclick="iOS.openApp(this, 'Music', 'dark')">
+                    <div class="app-icon" style="background:#FA2D48; display:flex; align-items:center; justify-content:center;">
+                         <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200&auto=format&fit=crop" class="icon-bg-img" onerror="this.style.display='none'">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN APP WINDOW -->
+        <div class="app-window" id="main-window">
+            <div class="app-navbar" id="main-navbar">
+                <span class="nav-title" id="nav-title-text">App</span>
+            </div>
+
+            <div class="app-content-scroll" id="main-scroll">
+                <div class="scroll-inner-padding">
+                    <!-- Generic Header -->
+                    <div class="content-section" id="generic-content">
+                        <div class="mock-line" style="width:40%; height:8px; background:rgba(0,0,0,0.1); border-radius:4px;"></div>
+                        <h1 id="app-title" class="app-header-large">App</h1>
+                        <div class="mock-card" style="width:100%; height:200px; background:rgba(0,0,0,0.05); border-radius:16px;"></div>
+                    </div>
+
+                    <!-- Settings Content -->
+                                        <div class="content-section" id="settings-content">
+                        <h1 class="app-header-large">Settings</h1>
+                        
+                        <div class="section-header">Appearance</div>
+                        <div class="ios-list">
+                            <div class="ios-row">
+                                <span>Dark Mode</span>
+                                <input type="checkbox" class="ios-switch" onchange="iOS.toggleDarkMode(this)">
+                            </div>
+                        </div>
+
+                        <div class="section-header">Connectivity</div>
+                        <div class="ios-list">
+                            <div class="ios-row">
+                                <span>Airplane Mode</span>
+                                <input type="checkbox" class="ios-switch">
+                            </div>
+                            <div class="ios-row">
+                                <span>Wi-Fi</span>
+                                <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">HomeNetwork <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
+                            </div>
+                            <div class="ios-row">
+                                <span>Bluetooth</span>
+                                <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">On <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
+                            </div>
+                        </div>
+
+                        <div class="section-header">Display & Brightness</div>
+                        <div class="ios-list">
+                            <div class="ios-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+                                <span style="font-size:13px; color:#8E8E93; text-transform:uppercase;">Brightness</span>
+                                <div class="ios-slider-container">
+                                    <input type="range" class="ios-slider">
+                                </div>
+                            </div>
+                            <div class="ios-row">
+                                <span>True Tone</span>
+                                <input type="checkbox" class="ios-switch" checked>
+                            </div>
+                        </div>
+
+                        <div class="section-header">Interactions</div>
+                        <div class="ios-list" style="background:transparent;">
+                            <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date 🚀')">Check for Updates</button>
+                            <div style="height:10px;"></div>
+                            <button class="ios-btn secondary">Reset Network Settings</button>
+                        </div>
+                    </div>
+
+                    <!-- Notes Content -->
+                   <div class="content-section" id="notes-content">
+                        <h1 class="app-header-large">Notes</h1>
+                        <input type="text" class="ios-input" placeholder="Search" style="margin-bottom:20px;">
+                        <div class="ios-list">
+                            <div class="ios-row">
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <span style="font-weight:600;">Grocery List</span>
+                                    <span style="font-size:14px; color:#8E8E93;">Milk, Eggs, Bread, Avocados</span>
+                                </div>
+                                <span style="font-size:14px; color:#8E8E93;">10:04 AM</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- DYNAMIC APP CONTENT CONTAINER -->
+                    <div class="content-section" id="dynamic-app-container">
+                        <!-- Embeds will be injected here -->
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <!-- APP STORE WINDOW -->
+        <div class="app-window" id="appstore-window">
+            <div class="app-navbar" id="store-navbar">
+                <span class="nav-title">App Store</span>
+            </div>
+            <div class="app-content-scroll" id="store-scroll">
+                <div class="scroll-inner-padding">
+                    <h1 class="app-header-large">Search</h1>
+                    <div class="ios-search-bar">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" id="store-search-input" placeholder="Games, Apps, Stories" style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;">
+                    </div>
+                    
+                    <div id="store-list">
+                        <!-- APPS INJECTED HERE -->
+                        <div style="text-align:center; color:#8E8E93; padding:40px;">Loading Store...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MUSIC OVERLAY WINDOW -->
+        <div class="app-window" id="music-window">
+             <div class="app-navbar">
+                <span class="nav-title">Music</span>
+            </div>
+            <div class="app-content-scroll">
+                <div class="scroll-inner-padding" style="display:flex; flex-direction:column; height:100%; justify-content:flex-start;">
+                    <div class="mock-line" style="width:40%; height:5px; background:rgba(255,255,255,0.2); border-radius:4px; align-self:center; margin-bottom:10px;"></div>
+                    <div class="mock-card" style="width:100%; aspect-ratio:1/1; background:linear-gradient(45deg, #333, #666); border-radius:12px; margin: 20px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                         <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=400&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; border-radius:12px; opacity:0.8;">
+                    </div>
+                    <div style="margin-top:10px;">
+                        <h2 style="margin:0; font-size:24px; font-weight:700;">The Hills</h2>
+                        <p style="margin:5px 0 0 0; color:rgba(255,255,255,0.6); font-size:18px;">The Weeknd</p>
+                    </div>
+                    <div class="ios-slider-container" style="margin-top:30px;">
+                        <input type="range" class="ios-slider" style="background:rgba(255,255,255,0.2);">
+                        <div style="display:flex; justify-content:space-between; color:rgba(255,255,255,0.4); font-size:12px; margin-top:8px;">
+                            <span>1:02</span>
+                            <span>4:02</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALERT MODAL -->
+        <div class="sys-alert-overlay" id="sys-alert">
+            <div class="sys-alert-box">
+                <div class="sa-content">
+                    <div class="sa-title" id="sa-title">Alert</div>
+                    <div class="sa-msg" id="sa-msg">Message</div>
+                </div>
+                <div class="sa-btn-group">
+                    <button class="sa-btn cancel" id="sa-btn-cancel">Cancel</button>
+                    <button class="sa-btn ok" id="sa-btn-ok">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="island-container">
+            <div class="island-capsule" id="island" onclick="iOS.handleIslandClick()">
+                <div class="island-camera"></div>
+                <div class="island-content">
+                    <div style="display:flex; align-items:center;">
+                        <div class="island-icon" style="background-image: url('https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100&auto=format&fit=crop');"></div>
+                        <div class="island-text">
+                            <span class="island-title">The Hills</span>
+                            <span class="island-sub">The Weeknd</span>
+                        </div>
+                    </div>
+                    <div class="island-visualizer">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar" id="status-bar">
+            <div class="sb-side" style="padding-left:10px;">
+                <span id="clock">9:41</span>
+            </div>
+            <div class="sb-side">
+                <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><path d="M1 10C1 10.55 1.45 11 2 11H3.5C4.05 11 4.5 10.55 4.5 10V8C4.5 7.45 4.05 7 3.5 7H2C1.45 7 1 7.45 1 8V10Z"/><path d="M6.5 10C6.5 10.55 6.95 11 7.5 11H9C9.55 11 10 10.55 10 10V6C10 5.45 9.55 5 9 5H7.5C6.95 5 6.5 5.45 6.5 6V10Z"/><path d="M12 10C12 10.55 12.45 11 13 11H14.5C15.05 11 15.5 10.55 15.5 10V3C15.5 2.45 15.05 2 14.5 2H13C12.45 2 12 2.45 12 3V10Z"/></svg>
+                <svg width="26" height="12" viewBox="0 0 26 12" fill="currentColor"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none" /><rect x="2.5" y="2.5" width="18" height="7" rx="1" fill="currentColor"/><path d="M24.5 4V8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+        </div>
+
+        <div class="gesture-zone" id="gesture-bar">
+            <div class="home-indicator"></div>
+        </div>
+    </div>
+
+    <script>
+        /* --- FIREBASE CONFIGURATION BLOCK --- */
+        // REPLACE THIS WITH YOUR FIREBASE PROJECT CONFIG
+        const FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyBmnPoBKKnfpQj1ms_zuwXrc_1AlVRcJt8",
+  authDomain: "ios-simu-app-store.firebaseapp.com",
+  projectId: "ios-simu-app-store",
+  storageBucket: "ios-simu-app-store.firebasestorage.app",
+  messagingSenderId: "112772830208",
+  appId: "1:112772830208:web:a0e84ee244865b949db4e5"
+};
+
+        const GLOBAL_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // ----------------------------------------
+
+        class AppStore {
+            constructor() {
+                this.db = null;
+                this.appId = GLOBAL_APP_ID;
+                this.apps = [];
+                this.initFirebase();
+                this.initSearch();
+            }
+
+            async initFirebase() {
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                }
+                const auth = firebase.auth();
+                this.db = firebase.firestore();
+
+                // FIX: Wrap Auth in Try-Catch
+                // This prevents the app from crashing if Anonymous Auth is disabled.
+                // It will simply proceed as a "Public Guest" which works with 'allow read: if true' rules.
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await auth.signInWithCustomToken(__initial_auth_token);
+                    } else {
+                        await auth.signInAnonymously();
+                    }
+                } catch (e) {
+                    console.warn("Auth skipped (Guest Mode):", e.message);
+                }
+
+                this.fetchApps();
+            }
+
+            async fetchApps() {
+                if (!this.db) return;
+                try {
+                    // 1. Fetch Server Apps
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                    this.apps = [];
+                    snapshot.forEach(doc => {
+                        this.apps.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    // 2. [NEW CODE] Merge Unlisted Installed Apps
+                    // This checks if you have an app installed that isn't on the server anymore
+                    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                    installed.forEach(localApp => {
+                        if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
+                            this.apps.push(localApp);
+                        }
+                    });
+
+                    this.renderStore(this.apps);
+                } catch (e) {
+                    console.error("Error fetching apps:", e);
+                    document.getElementById('store-list').innerHTML = '<div style="text-align:center; padding:20px;">No Apps Found</div>';
+                }
+            }
+
+            initSearch() {
+                const input = document.getElementById('store-search-input');
+                input.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = this.apps.filter(app => 
+                        app.name.toLowerCase().includes(term) || 
+                        app.author.toLowerCase().includes(term) ||
+                        app.description.toLowerCase().includes(term)
+                    );
+                    this.renderStore(filtered);
+                });
+            }
+
+            renderStore(appList) {
+                const listEl = document.getElementById('store-list');
+                listEl.innerHTML = '';
+                
+                if (appList.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
+                    return;
+                }
+
+                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+
+                appList.forEach(app => {
+                    const isInstalled = installedApps.some(ia => ia.id === app.id);
+                    const div = document.createElement('div');
+                    div.className = 'store-item';
+                    
+                    div.innerHTML = `
+                        <img src="${app.iconUrl}" class="store-icon" onerror="this.src='https://via.placeholder.com/60?text=App'">
+                        <div class="store-info">
+                            <div class="store-name">${app.name}</div>
+                            <div class="store-sub">${app.author} • ${app.description}</div>
+                        </div>
+                        <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+                            <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+                            <div class="spinner"></div>
+                        </button>
+                    `;
+                    listEl.appendChild(div);
+                });
+            }
+
+            async handleGetClick(btn, appId) {
+                const app = this.apps.find(a => a.id === appId);
+                if (!app) return;
+
+                const isInstalled = btn.classList.contains('installed');
+
+                if (isInstalled) {
+                    // Trigger Native iOS Alert for Uninstall
+                    iOS.showAlert(
+                        `Delete "${app.name}"?`,
+                        "Deleting this app will also delete its data.",
+                        () => this.uninstallApp(app, btn), // Callback on OK
+                        true // isDestructive
+                    );
+                } else {
+                    // Install Flow
+                    btn.classList.add('loading');
+                    await new Promise(r => setTimeout(r, 1500)); // Fake download time
+                    btn.classList.remove('loading');
+                    btn.classList.add('installed');
+                    btn.querySelector('span').innerText = 'UNINSTALL';
+                    
+                    this.installApp(app);
+                }
+            }
+
+            installApp(app) {
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                if (!installed.some(a => a.id === app.id)) {
+                    installed.push(app);
+                    localStorage.setItem('ios_installed_apps', JSON.stringify(installed));
+                    iOS.injectSingleApp(app);
+                }
+            }
+
+            uninstallApp(app, btn) {
+                // 1. Remove from Local Storage
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const newInstalled = installed.filter(a => a.id !== app.id);
+                localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
+
+                // 2. Remove from Home Screen
+                iOS.removeSingleApp(app.id);
+
+                // 3. [NEW CODE] Refresh Store List
+                // This will re-run fetchApps(). Since the app is now deleted locally
+                // and doesn't exist on the server, it will vanish from the list.
+                this.fetchApps();
+            }
+        }
+
+        /* --- IOS ENGINE --- */
+        class IOSEngine {
+            constructor() {
+                this.state = 'IDLE'; 
+                this.screen = document.getElementById('screen');
+                this.mainWindow = document.getElementById('main-window');
+                this.musicWindow = document.getElementById('music-window');
+                this.storeWindow = document.getElementById('appstore-window');
+                this.activeWindow = null; 
+                this.wallpaper = document.getElementById('wallpaper');
+                this.homescreenGroup = document.getElementById('homescreen-group');
+                this.statusBar = document.getElementById('status-bar');
+                this.gestureBar = document.getElementById('gesture-bar');
+                this.island = document.getElementById('island');
+                this.islandContent = this.island.querySelector('.island-content');
+                this.pagesWrapper = document.getElementById('pages-wrapper');
+                this.pageIndicators = document.getElementById('page-indicators');
+                
+                this.alertOverlay = document.getElementById('sys-alert');
+                this.alertOkBtn = document.getElementById('sa-btn-ok');
+                this.alertCancelBtn = document.getElementById('sa-btn-cancel');
+
+                this.activeAppIcon = null;
+                this.currentScale = 1; 
+                this.isIslandExpanded = false;
+                this.autoCollapseTimer = null;
+                this.openedFromIsland = false; 
+                this.isDarkMode = false;
+                this.resizeTimer = null;
+
+                // Pagination State
+                this.allApps = [];
+                this.currentPage = 0;
+                this.totalPages = 1;
+                
+                this.gestureBar.classList.add('on-home');
+
+                this.initClock();
+                this.initGestures();
+                this.initScrollEffects();
+                this.bindTransitionEvents();
+                this.setupOutsideClick();
+                this.setupAlerts();
+                
+                // Load installed apps first
+                this.restoreInstalledApps();
+                this.loadApps();
+                this.initPagination();
+                window.addEventListener('resize', () => {
+                     clearTimeout(this.resizeTimer);
+                     this.resizeTimer = setTimeout(() => this.initPagination(), 100);
+                });
+                this.initPageSwipes();
+            }
+
+            setupAlerts() {
+                this.alertCancelBtn.onclick = () => this.closeAlert();
+                // OK button listener is set dynamically
+            }
+
+            showAlert(title, msg, onOk = null, isDestructive = false) {
+                document.getElementById('sa-title').innerText = title;
+                document.getElementById('sa-msg').innerText = msg;
+                
+                this.alertOkBtn.onclick = () => {
+                    if (onOk) onOk();
+                    this.closeAlert();
+                };
+
+                if (isDestructive) {
+                    this.alertOkBtn.innerText = "Delete";
+                    this.alertOkBtn.classList.add('danger');
+                } else {
+                    this.alertOkBtn.innerText = "OK";
+                    this.alertOkBtn.classList.remove('danger');
+                }
+
+                this.alertOverlay.classList.add('visible');
+            }
+
+            closeAlert() {
+                this.alertOverlay.classList.remove('visible');
+            }
+
+            restoreInstalledApps() {
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                installed.forEach(app => {
+                    this.injectSingleApp(app, false); 
+                });
+            }
+
+            injectSingleApp(app, refresh = true) {
+                const source = document.getElementById('app-source');
+                const exists = Array.from(source.children).some(el => el.getAttribute('data-app-id') === app.id);
+                if (exists) return;
+
+                const item = document.createElement('div');
+                item.className = 'app-item';
+                item.setAttribute('data-app-id', app.id);
+                item.setAttribute('onclick', `iOS.openApp(this, '${app.id}', 'light')`);
+                item.innerHTML = `
+                    <div class="app-icon">
+                        <img src="${app.iconUrl}" class="icon-bg-img" onerror="this.src='https://via.placeholder.com/60?text=App'">
+                    </div>
+                    <div class="app-name">${app.name}</div>
+                `;
+                source.appendChild(item);
+                
+                if (refresh) {
+                    this.loadApps();
+                    this.initPagination();
+                }
+            }
+
+            removeSingleApp(appId) {
+                const source = document.getElementById('app-source');
+                const appEl = Array.from(source.children).find(el => el.getAttribute('data-app-id') === appId);
+                if (appEl) {
+                    source.removeChild(appEl);
+                    this.loadApps();
+                    this.initPagination();
+                }
+            }
+
+            loadApps() {
+                const source = document.getElementById('app-source');
+                this.allApps = Array.from(source.children);
+            }
+
+            initPagination() {
+                this.pagesWrapper.innerHTML = '';
+                this.pageIndicators.innerHTML = '';
+                
+                const screenHeight = window.innerHeight;
+                const topPadding = 130; 
+                const dockZoneHeight = 150; 
+                const availableHeight = screenHeight - topPadding - dockZoneHeight;
+                const itemFullHeight = 90 + 30; // 90px height + 30px gap
+                
+                let maxRows = Math.floor(availableHeight / itemFullHeight);
+                if (maxRows < 1) maxRows = 1;
+                
+                const cols = 3; 
+                const iconsPerPage = maxRows * cols;
+                
+                const pages = [];
+                for (let i = 0; i < this.allApps.length; i += iconsPerPage) {
+                    pages.push(this.allApps.slice(i, i + iconsPerPage));
+                }
+                this.totalPages = pages.length;
+                
+                pages.forEach((pageApps, index) => {
+                    const pageEl = document.createElement('div');
+                    pageEl.className = 'homescreen-page';
+                    pageApps.forEach(app => {
+                        const clone = app.cloneNode(true);
+                        // Re-attach listener specifically if needed, but onclick attrib persists
+                        pageEl.appendChild(clone);
+                    });
+                    this.pagesWrapper.appendChild(pageEl);
+                    if (this.totalPages > 1) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        if (index === 0) dot.classList.add('active');
+                        this.pageIndicators.appendChild(dot);
+                    }
+                });
+                
+                // Adjust current page if out of bounds
+                if (this.currentPage >= this.totalPages) this.currentPage = Math.max(0, this.totalPages - 1);
+                
+                this.updatePageScroll();
+            }
+
+            initPageSwipes() {
+                let startX = 0;
+                let currentX = 0;
+                let isDragging = false;
+                const wrapper = this.pagesWrapper;
+                const start = (e) => {
+                    if (this.state !== 'IDLE') return; 
+                    isDragging = true;
+                    startX = e.touches ? e.touches[0].clientX : e.clientX;
+                    wrapper.style.transition = 'none'; 
+                };
+                const move = (e) => {
+                    if (!isDragging) return;
+                    currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const diff = currentX - startX;
+                    const offset = -this.currentPage * 100; 
+                    const pxOffset = (diff / window.innerWidth) * 100;
+                    if ((this.currentPage === 0 && diff > 0) || (this.currentPage === this.totalPages - 1 && diff < 0)) {
+                         wrapper.style.transform = `translateX(calc(${offset}% + ${pxOffset * 0.3}%))`;
+                    } else {
+                         wrapper.style.transform = `translateX(calc(${offset}% + ${pxOffset}%))`;
+                    }
+                };
+                const end = (e) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    wrapper.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    const diff = currentX - startX;
+                    const threshold = window.innerWidth * 0.2; 
+                    if (Math.abs(diff) > threshold) {
+                        if (diff > 0 && this.currentPage > 0) this.currentPage--;
+                        else if (diff < 0 && this.currentPage < this.totalPages - 1) this.currentPage++;
+                    }
+                    this.updatePageScroll();
+                };
+                wrapper.addEventListener('mousedown', start);
+                wrapper.addEventListener('touchstart', start);
+                window.addEventListener('mousemove', move);
+                window.addEventListener('touchmove', move);
+                window.addEventListener('mouseup', end);
+                window.addEventListener('touchend', end);
+            }
+
+            updatePageScroll() {
+                this.pagesWrapper.style.transform = `translateX(-${this.currentPage * 100}%)`;
+                const dots = this.pageIndicators.querySelectorAll('.dot');
+                dots.forEach((dot, idx) => {
+                    if (idx === this.currentPage) dot.classList.add('active');
+                    else dot.classList.remove('active');
+                });
+            }
+
+            toggleDarkMode(toggle) {
+                this.isDarkMode = toggle.checked;
+                if (this.isDarkMode) document.body.classList.add('dark-mode');
+                else document.body.classList.remove('dark-mode');
+                
+                if (this.state === 'ACTIVE' && this.activeWindow) {
+                    if (this.activeWindow.getAttribute('data-app') === 'Music') {
+                         this.statusBar.classList.remove('dark-text');
+                         this.gestureBar.classList.remove('dark-bar');
+                    } else {
+                        if (this.isDarkMode) {
+                            this.statusBar.classList.remove('dark-text');
+                            this.gestureBar.classList.remove('dark-bar');
+                        } else {
+                            this.statusBar.classList.add('dark-text');
+                            this.gestureBar.classList.add('dark-bar');
+                        }
+                    }
+                }
+            }
+
+            initScrollEffects() {
+                const scrollContainer = document.getElementById('main-scroll');
+                const storeScroll = document.getElementById('store-scroll');
+                const navbar = document.getElementById('main-navbar');
+                const storeNav = document.getElementById('store-navbar');
+
+                scrollContainer.addEventListener('scroll', () => {
+                    if (scrollContainer.scrollTop > 45) navbar.classList.add('scrolled');
+                    else navbar.classList.remove('scrolled');
+                });
+                storeScroll.addEventListener('scroll', () => {
+                     if (storeScroll.scrollTop > 45) storeNav.classList.add('scrolled');
+                     else storeNav.classList.remove('scrolled');
+                });
+            }
+
+            setupOutsideClick() {
+                this.screen.addEventListener('click', (e) => {
+                    if (this.isIslandExpanded && !e.target.closest('#island')) {
+                        this.toggleIsland(false);
+                    }
+                });
+            }
+
+            bindTransitionEvents() {
+                [this.mainWindow, this.musicWindow, this.storeWindow].forEach(win => {
+                    win.addEventListener('transitionend', (e) => {
+                        if (this.state === 'CLOSING' && e.propertyName === 'transform') {
+                            this.finishClosing();
+                        }
+                    });
+                });
+                this.musicWindow.addEventListener('animationend', () => {
+                    if (this.musicWindow.classList.contains('launching-timewarp')) {
+                        this.musicWindow.classList.remove('launching-timewarp');
+                        this.musicWindow.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                        this.musicWindow.style.borderRadius = '0px'; 
+                        this.musicWindow.style.filter = 'blur(0px)';
+                        this.state = 'ACTIVE';
+                        this.activeWindow = this.musicWindow;
+                        this.activeWindow.setAttribute('data-app', 'Music');
+                    }
+                });
+            }
+
+            initClock() {
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById('clock').innerText = 
+                        `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
+                }, 1000);
+            }
+
+            getIconTransform(iconEl) {
+                if (!iconEl) return { scaleX: 0.5, scaleY: 0.5, transX: 0, transY: 0 };
+                const screenRect = this.screen.getBoundingClientRect();
+                const iconRect = iconEl.getBoundingClientRect();
+                const s = this.currentScale;
+                const iconW = iconRect.width / s;
+                const iconH = iconRect.height / s;
+                const iconL = (iconRect.left - screenRect.left) / s;
+                const iconT = (iconRect.top - screenRect.top) / s;
+                const screenW = screenRect.width / s;
+                const screenH = screenRect.height / s;
+                const scaleX = iconW / screenW;
+                const scaleY = iconH / screenH;
+                const transX = (iconL + iconW/2) - (screenW/2);
+                const transY = (iconT + iconH/2) - (screenH/2);
+                return { scaleX, scaleY, transX, transY };
+            }
+
+            getVisibleIconElement(appName) {
+                const apps = document.querySelectorAll('.homescreen-page .app-item');
+                for (let app of apps) {
+                    if (app.innerText.includes(appName) || (app.onclick && app.onclick.toString().includes(appName))) {
+                        return app.querySelector('.app-icon');
+                    }
+                }
+                const dockApps = document.querySelectorAll('.dock-container .app-item');
+                for (let app of dockApps) {
+                    if (app.onclick && app.onclick.toString().includes(`'${appName}'`)) {
+                        return app.querySelector('.app-icon');
+                    }
+                }
+                return null;
+            }
+
+            routeContent(appName) {
+                const generic = document.getElementById('generic-content');
+                const settings = document.getElementById('settings-content');
+                const notes = document.getElementById('notes-content');
+                const container = document.getElementById('dynamic-app-container');
+                const titleText = document.getElementById('nav-title-text');
+                const appTitle = document.getElementById('app-title');
+                
+                // Reset
+                [generic, settings, notes, container].forEach(el => el.classList.remove('active'));
+                container.innerHTML = ''; // Clear dynamic content
+                titleText.innerText = appName;
+
+                if (appName === 'Settings') {
+                    settings.classList.add('active');
+                } else if (appName === 'Notes') {
+                    notes.classList.add('active');
+                } else if (appName === 'AppStore') {
+                     // handled
+                } else {
+                    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                    const customApp = installed.find(a => a.id === appName);
+
+                    if (customApp) {
+                        container.classList.add('active');
+                        appTitle.innerText = customApp.name;
+                        titleText.innerText = customApp.name;
+                        container.innerHTML = `<embed src="${customApp.embedUrl}" style="width:100%; height:100%; border:none; border-radius:12px;">`;
+                    } else {
+                        generic.classList.add('active');
+                        appTitle.innerText = appName;
+                    }
+                }
+            }
+
+            openApp(el, appName, theme = 'light') {
+                if (this.state !== 'IDLE') return;
+                this.openedFromIsland = false;
+                this.gestureBar.classList.remove('on-home');
+
+                if (appName === 'Music') {
+                    this.activeAppIcon = el.querySelector('.app-icon');
+                    this.activeWindow = this.musicWindow;
+                    this.activeWindow.setAttribute('data-app', 'Music');
+                } else if (appName === 'AppStore') {
+                    this.activeAppIcon = el.querySelector('.app-icon');
+                    this.activeWindow = this.storeWindow;
+                    this.activeWindow.setAttribute('data-app', 'AppStore');
+                } else {
+                    this.activeAppIcon = el.querySelector('.app-icon');
+                    this.activeWindow = this.mainWindow; 
+                    this.routeContent(appName); 
+                    this.activeWindow.setAttribute('data-app', appName);
+                    document.getElementById('main-scroll').scrollTop = 0;
+                    document.getElementById('main-navbar').classList.remove('scrolled');
+                }
+
+                this.state = 'OPENING';
+                
+                if (theme === 'light' && !this.isDarkMode) {
+                    this.statusBar.classList.add('dark-text');
+                    this.gestureBar.classList.add('dark-bar');
+                } else {
+                    this.statusBar.classList.remove('dark-text');
+                    this.gestureBar.classList.remove('dark-bar');
+                }
+                if (appName === 'Music') {
+                    this.statusBar.classList.remove('dark-text');
+                    this.gestureBar.classList.remove('dark-bar');
+                }
+
+                this.activeWindow.style.display = 'flex';
+                this.activeWindow.style.transformOrigin = 'center center';
+                this.activeWindow.style.transition = 'none';
+                this.activeWindow.style.opacity = '1';
+                this.activeWindow.style.filter = 'blur(0px)';
+                
+                const tf = this.getIconTransform(this.activeAppIcon);
+                this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
+                this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
+                this.activeAppIcon.classList.add('hidden-source');
+                this.activeWindow.offsetHeight; 
+
+                this.activeWindow.style.transition = 'transform 0.5s var(--ease-open), border-radius 0.5s var(--ease-open), opacity 0.3s ease';
+                this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
+                this.activeWindow.style.borderRadius = '0px';
+
+                this.wallpaper.classList.add('active-app');
+                this.homescreenGroup.classList.add('minimized');
+                
+                setTimeout(() => {
+                    this.state = 'ACTIVE';
+                    this.activeWindow.style.transition = 'border-radius 0.3s ease'; 
+                    setTimeout(() => {
+                         if (this.state === 'ACTIVE') this.activeWindow.style.transition = ''; 
+                    }, 300);
+                }, 500);
+            }
+
+            launchMusicFromIsland() {
+                if (this.activeWindow === this.musicWindow) return;
+                
+                // FIX: Recede logic now handles BOTH mainWindow AND storeWindow
+                if (this.state === 'ACTIVE') {
+                    if (this.activeWindow === this.mainWindow) {
+                        this.mainWindow.classList.add('receded');
+                    } else if (this.activeWindow === this.storeWindow) {
+                        this.storeWindow.classList.add('receded');
+                    }
+                }
+
+                this.state = 'OPENING';
+                this.openedFromIsland = true;
+                clearTimeout(this.autoCollapseTimer);
+                this.toggleIsland(false); 
+                this.statusBar.classList.remove('blurred');
+                this.statusBar.classList.remove('squished');
+                this.gestureBar.classList.remove('on-home');
+                
+                const visibleIcon = this.getVisibleIconElement('Music');
+                this.activeAppIcon = visibleIcon;
+
+                this.activeWindow = this.musicWindow; 
+                this.activeWindow.setAttribute('data-app', 'Music');
+                this.statusBar.classList.remove('dark-text');
+                this.gestureBar.classList.remove('dark-bar');
+
+                const islandRect = this.island.getBoundingClientRect();
+                const screenRect = this.screen.getBoundingClientRect();
+                const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
+                const dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
+
+                this.activeWindow.style.display = 'flex';
+                this.activeWindow.style.transition = 'none'; 
+                this.activeWindow.style.transformOrigin = 'center center'; 
+                this.activeWindow.style.opacity = '1'; 
+                this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.25)`;
+                this.activeWindow.style.setProperty('--tx', `${dx}px`);
+                this.activeWindow.style.setProperty('--ty', `${dy}px`);
+                this.activeWindow.style.borderRadius = '50px'; 
+                this.activeWindow.offsetHeight; 
+                this.activeWindow.classList.add('launching-timewarp');
+
+                this.wallpaper.classList.add('active-app');
+                this.homescreenGroup.classList.add('minimized');
+                
+                setTimeout(() => {
+                    this.island.style.transition = ''; 
+                    if (this.state === 'ACTIVE') {
+                        this.activeWindow.style.transition = 'border-radius 0.3s ease';
+                        this.activeWindow.style.borderRadius = '0px';
+                        setTimeout(() => {
+                             if (this.state === 'ACTIVE') this.activeWindow.style.transition = ''; 
+                        }, 300);
+                    }
+                }, 750); 
+            }
+
+            closeApp() {
+                if (this.state === 'IDLE' || this.state === 'CLOSING') return;
+                this.state = 'CLOSING';
+                
+                const currentAppName = this.activeWindow.getAttribute('data-app');
+
+                this.activeWindow.style.borderRadius = 'var(--app-radius)';
+                this.statusBar.classList.remove('dark-text');
+                this.gestureBar.classList.remove('dark-bar');
+                this.gestureBar.classList.add('on-home');
+
+                // FIX: Remove receded class from BOTH
+                if (this.activeWindow === this.musicWindow) {
+                    this.mainWindow.classList.remove('receded');
+                    this.storeWindow.classList.remove('receded');
+                    
+                    this.mainWindow.style.opacity = '0';
+                    this.mainWindow.style.display = 'none';
+                    this.mainWindow.style.transform = '';
+                    this.storeWindow.style.display = 'none';
+                }
+
+                this.homescreenGroup.classList.remove('minimized');
+                this.wallpaper.classList.remove('active-app');
+
+                document.querySelectorAll('.app-icon').forEach(icon => {
+                     icon.classList.remove('hidden-source');
+                });
+
+                // FIX: Only re-fetch if the original icon is missing/disconnected (e.g. after resize)
+                // This ensures duplicate apps close to their specific original icon.
+                if (!this.activeAppIcon || !this.activeAppIcon.isConnected) {
+                    this.activeAppIcon = this.getVisibleIconElement(currentAppName);
+                }
+
+                // FIX: RESTORED "VACUUM" ANIMATION IF OPENED FROM ISLAND
+                if (this.openedFromIsland && this.activeWindow.getAttribute('data-app') === 'Music') {
+                    const islandRect = this.island.getBoundingClientRect();
+                    const screenRect = this.screen.getBoundingClientRect();
+                    const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
+                    let dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
+                    dy += 28; 
+
+                    this.activeWindow.classList.add('vacuum-active');
+                    this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.1)`; 
+                    this.activeWindow.style.borderRadius = '50px'; 
+                    this.activeWindow.style.opacity = '0'; 
+
+                    if (this.activeAppIcon) {
+                         this.activeAppIcon.classList.remove('hidden-source');
+                         this.activeAppIcon.style.opacity = '1';
+                         this.activeAppIcon.style.transform = 'scale(1)';
+                    }
+
+                    setTimeout(() => {
+                        this.island.classList.add('compact');
+                        this.island.classList.add('island-impact'); 
+                        setTimeout(() => this.island.classList.remove('island-impact'), 600);
+                        this.statusBar.classList.add('squished');
+                        clearTimeout(this.autoCollapseTimer);
+                        this.autoCollapseTimer = setTimeout(() => {
+                            this.islandContent.classList.add('blur-out');
+                            setTimeout(() => {
+                                this.island.classList.remove('compact');
+                                this.statusBar.classList.remove('squished');
+                                setTimeout(() => {
+                                    this.islandContent.classList.remove('blur-out');
+                                }, 300); 
+                            }, 200); 
+                        }, 3000);
+                    }, 280); 
+                    this.openedFromIsland = false;
+                } else {
+                    // Standard close to icon
+                    if (this.activeAppIcon) {
+                        const tf = this.getIconTransform(this.activeAppIcon);
+                        this.activeAppIcon.classList.remove('hidden-source');
+                        this.activeAppIcon.style.transition = 'none';
+                        this.activeAppIcon.style.transform = `scale(${1/tf.scaleX})`;
+                        this.activeAppIcon.style.opacity = '0';
+                        this.activeAppIcon.offsetHeight;
+
+                        this.activeWindow.style.transformOrigin = 'center center'; 
+                        this.activeAppIcon.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
+                        this.activeAppIcon.style.transform = 'scale(1)';
+                        this.activeAppIcon.style.opacity = '1';
+
+                        this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), border-radius 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
+                        this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
+                        this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
+                        this.activeWindow.style.opacity = '0'; 
+                    } else {
+                        this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease';
+                        this.activeWindow.style.transform = 'scale(0.5)';
+                        this.activeWindow.style.opacity = '0';
+                    }
+                }
+            }
+
+            finishClosing() {
+                if(this.state !== 'CLOSING') return;
+                
+                this.activeWindow.classList.remove('vacuum-active'); 
+                this.activeWindow.style.display = 'none';
+                this.activeWindow.style.transform = 'none';
+                this.activeWindow.style.opacity = '1';
+                this.activeWindow.style.filter = 'blur(0px)';
+                
+                if (this.activeAppIcon) {
+                    this.activeAppIcon.style.transition = '';
+                    this.activeAppIcon.style.transform = '';
+                    this.activeAppIcon.style.opacity = '';
+                }
+                
+                this.activeAppIcon = null;
+                this.state = 'IDLE';
+                this.activeWindow = null;
+            }
+
+            handleIslandClick() {
+                if (this.state === 'ACTIVE' && this.activeWindow?.getAttribute('data-app') === 'Music') {
+                     this.toggleIsland(true);
+                     return;
+                }
+                if (this.isIslandExpanded) {
+                    this.launchMusicFromIsland();
+                } else if (this.island.classList.contains('compact')) {
+                    this.launchMusicFromIsland();
+                } else {
+                    this.toggleIsland(true);
+                }
+            }
+
+            toggleIsland(forceState) {
+                const island = document.getElementById('island');
+                const currentApp = this.activeWindow ? this.activeWindow.getAttribute('data-app') : null;
+
+                if (this.state === 'ACTIVE' && currentApp === 'Music') {
+                    island.classList.remove('island-bounce');
+                    void island.offsetWidth; 
+                    island.classList.add('island-bounce');
+                    return;
+                }
+                const newState = forceState !== undefined ? forceState : !this.isIslandExpanded;
+                this.isIslandExpanded = newState;
+                clearTimeout(this.autoCollapseTimer);
+                this.island.classList.remove('compact'); 
+
+                if (this.isIslandExpanded) {
+                    this.autoCollapseTimer = setTimeout(() => {
+                        if (this.isIslandExpanded) this.toggleIsland(false);
+                    }, 4000);
+                    this.island.classList.add('motion-blur');
+                    setTimeout(() => this.island.classList.remove('motion-blur'), 300);
+                    this.island.classList.add('expanded');
+                    this.statusBar.classList.add('blurred');
+                } else {
+                    this.island.classList.remove('motion-blur');
+                    this.island.classList.remove('expanded');
+                    this.statusBar.classList.remove('blurred');
+                }
+            }
+
+            initGestures() {
+                const bar = document.getElementById('gesture-bar');
+                let startY = 0;
+                let startX = 0;
+                let isDragging = false;
+                const start = (e) => {
+                    if (this.state !== 'ACTIVE' || !this.activeWindow) return;
+                    isDragging = true;
+                    this.activeWindow.classList.add('dragging');
+                    startY = e.touches ? e.touches[0].clientY : e.clientY;
+                    startX = e.touches ? e.touches[0].clientX : e.clientX;
+                    this.activeWindow.style.transition = 'border-radius 0.2s ease-out';
+                    this.activeWindow.style.borderRadius = 'var(--app-radius)';
+                };
+                const move = (e) => {
+                    if (!isDragging) return;
+                    const y = e.touches ? e.touches[0].clientY : e.clientY;
+                    const x = e.touches ? e.touches[0].clientX : e.clientX;
+                    const deltaY = (y - startY) / this.currentScale;
+                    const deltaX = (x - startX) / this.currentScale;
+                    let scale = 1;
+                    let translateY = deltaY;
+                    let translateX = Math.max(-25, Math.min(25, deltaX * 0.15));
+                    if (deltaY < 0) {
+                        translateY = deltaY * 0.3;
+                        scale = Math.max(0.35, 1 - (Math.abs(deltaY) / 800)); 
+                    } else {
+                         translateY = deltaY * 0.3;
+                         scale = 1 - (translateY / 2000); 
+                    }
+                    this.activeWindow.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+                };
+                const end = (e) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    this.activeWindow.classList.remove('dragging');
+                    const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                    const deltaY = (y - startY) / this.currentScale;
+                    if (deltaY < -100) {
+                        this.closeApp();
+                    } else {
+                        this.activeWindow.style.transition = 'transform 0.4s var(--ease-open), border-radius 0.4s ease';
+                        this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                        this.activeWindow.style.borderRadius = 'var(--app-radius)'; 
+                        setTimeout(() => {
+                            if (this.state === 'ACTIVE') {
+                                this.activeWindow.style.transition = 'border-radius 0.3s ease';
+                                this.activeWindow.style.borderRadius = '0px';
+                                setTimeout(() => {
+                                    if (this.state === 'ACTIVE') this.activeWindow.style.transition = '';
+                                }, 300);
+                            }
+                        }, 400);
+                    }
+                };
+                bar.addEventListener('mousedown', start);
+                bar.addEventListener('touchstart', start, {passive: false});
+                window.addEventListener('mousemove', move);
+                window.addEventListener('touchmove', move, {passive: false});
+                window.addEventListener('mouseup', end);
+                window.addEventListener('touchend', end);
+            }
+        }
+
+        const iOS = new IOSEngine();
+        const appStore = new AppStore();
+    </script>
+</body>
+</html>
