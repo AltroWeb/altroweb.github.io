@@ -521,7 +521,7 @@
             setupInputs() {
                 document.getElementById('edit-icon').addEventListener('input', (e) => {
                     const val = e.target.value;
-                    document.getElementById('icon-preview').src = val || 'https://via.placeholder.com/60?text=Icon';
+                    document.getElementById('icon-preview').src = val || 'grey.png';
                 });
             }
             
@@ -776,7 +776,7 @@ async register() {
                         const iconSrc = app.iconUrl || ''; 
                         
                         li.innerHTML = `
-                            <img src="${iconSrc}" class="list-icon" onerror="this.src='https://via.placeholder.com/60?text=App'">
+                            <img src="${iconSrc}" class="list-icon" onerror="this.src='grey.png'">
                             <div class="list-info">
                                 <div class="list-name">${app.name} <span class="tag">Live</span></div>
                                 <div class="list-meta">v1.0 • ${new Date(app.createdAt).toLocaleDateString()}</div>
@@ -821,7 +821,7 @@ async register() {
                 document.getElementById('edit-icon').value = '';
                 document.getElementById('edit-desc').value = '';
                 document.getElementById('edit-embed').value = '';
-                document.getElementById('icon-preview').src = 'https://via.placeholder.com/60?text=Icon';
+                document.getElementById('icon-preview').src = 'gray.png';
                 document.getElementById('edit-file-data').value = '';
                 document.getElementById('file-name-display').innerText = 'Click to select .html file';
                 this.switchSourceTab('url');
@@ -839,7 +839,7 @@ async register() {
                     document.getElementById('publish-text').innerText = "Save Changes";
                     document.getElementById('edit-name').value = data.name;
                     document.getElementById('edit-icon').value = data.iconUrl || '';
-                    document.getElementById('icon-preview').src = data.iconUrl || 'https://via.placeholder.com/60?text=Icon';
+                    document.getElementById('icon-preview').src = data.iconUrl || 'grey.png';
                     document.getElementById('edit-desc').value = data.description;
                     
                     if (data.embedUrl && data.embedUrl.startsWith('data:text/html')) {
