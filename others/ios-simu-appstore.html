@@ -905,7 +905,7 @@
                     div.className = 'store-item';
                     
                     div.innerHTML = `
-                        <img src="${app.iconUrl}" class="store-icon" onerror="this.src='https://via.placeholder.com/60?text=App'">
+                        <img src="${app.iconUrl}" class="store-icon" onerror="this.src='grey.png'">
                         <div class="store-info">
                             <div class="store-name">${app.name}</div>
                             <div class="store-sub">${app.author} • ${app.description}</div>
@@ -1072,7 +1072,7 @@
                 item.setAttribute('onclick', `iOS.openApp(this, '${app.id}', 'light')`);
                 item.innerHTML = `
                     <div class="app-icon">
-                        <img src="${app.iconUrl}" class="icon-bg-img" onerror="this.src='https://via.placeholder.com/60?text=App'">
+                        <img src="${app.iconUrl}" class="icon-bg-img" onerror="this.src='grey.png'">
                     </div>
                     <div class="app-name">${app.name}</div>
                 `;
