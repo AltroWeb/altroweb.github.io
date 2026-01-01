@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ProCam Ultimate</title>
+    <style>
+        :root {
+            --accent: #ffd700; /* Pro Gold */
+            --danger: #ff3b30; /* Recording Red */
+            --bg-overlay: rgba(0, 0, 0, 0.4);
+            --system-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, Helvetica, sans-serif;
+            --safe-top: max(16px, env(safe-area-inset-top));
+            --safe-bottom: max(24px, env(safe-area-inset-bottom));
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: #000; font-family: var(--system-font);
+            overflow: hidden; color: #fff;
+            display: flex; flex-direction: column;
+        }
+
+        /* --- Viewport Layer --- */
+        #viewport {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            background: #000;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #camera-feed {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scaleX(-1); /* Default Selfie Mirror */
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Cinema Mask (Square Mode) */
+        .mask {
+            position: absolute; width: 100%; background: #000;
+            transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 5;
+        }
+        .mask-top { top: 0; height: 0; }
+        .mask-bottom { bottom: 0; height: 0; }
+        
+        body[data-mode="SQUARE"] .mask-top,
+        body[data-mode="SQUARE"] .mask-bottom {
+            height: calc((100% - 100vw) / 2);
+        }
+
+        /* Flash FX (Screen) */
+        #flash-screen {
+            position: absolute; inset: 0; background: #fff;
+            opacity: 0; pointer-events: none; z-index: 20;
+            transition: opacity 0.15s ease-out;
+        }
+
+        /* Recording Timer */
+        #rec-pill {
+            position: absolute; top: calc(var(--safe-top) + 12px); 
+            background: rgba(255, 59, 48, 0.9);
+            padding: 4px 10px; border-radius: 100px;
+            font-size: 13px; font-weight: 600; font-feature-settings: "tnum";
+            display: flex; align-items: center; gap: 6px;
+            opacity: 0; transform: translateY(-10px);
+            transition: all 0.3s;
+            z-index: 30;
+        }
+        #rec-pill.visible { opacity: 1; transform: translateY(0); }
+        .rec-dot { width: 6px; height: 6px; background: white; border-radius: 50%; animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
+
+        /* --- UI Layer --- */
+        #ui-layer {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; justify-content: space-between;
+            z-index: 40; pointer-events: none;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            padding: var(--safe-top) 20px 10px;
+            display: flex; justify-content: space-between;
+            align-items: center;
+            pointer-events: auto;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+        }
+
+        .tool-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(0,0,0,0.25); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: none; color: white; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .tool-btn:active { transform: scale(0.92); background: rgba(50,50,50,0.5); }
+        .tool-btn.active { color: #000; background: var(--accent); } /* Active Flash state */
+        .tool-btn svg { width: 22px; height: 22px; fill: currentColor; }
+
+        /* Zoom Control (Floating) */
+        .zoom-bubble {
+            position: absolute; bottom: 160px; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; cursor: pointer;
+            pointer-events: auto; transition: 0.2s;
+        }
+        .zoom-bubble:active { transform: translateX(-50%) scale(1.2); }
+
+        /* Bottom Controls */
+        .bottom-bar {
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.0));
+            padding-bottom: var(--safe-bottom);
+            padding-top: 20px;
+            pointer-events: auto;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* Carousel */
+        .mode-viewport {
+            width: 100%; height: 40px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+            /* Gradient Masks */
+            mask-image: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent);
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent);
+        }
+        .mode-strip {
+            display: flex;
+            align-items: center;
+            position: absolute; left: 50%; top: 50%;
+            transform: translate(0, -50%); /* X is handled by JS */
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            gap: 20px;
+        }
+        .mode-text {
+            font-size: 13px; font-weight: 600; letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.5);
+            white-space: nowrap; cursor: pointer;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+        .mode-text.active { color: var(--accent); text-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
+
+        /* Main Triggers */
+        .trigger-row {
+            width: 100%; padding: 0 40px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* Gallery */
+        #gallery-btn {
+            width: 48px; height: 48px; border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            overflow: hidden; cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #gallery-btn:active { transform: scale(0.9); }
+        #gallery-img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
+
+        /* Shutter */
+        #shutter-ring {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 5px solid rgba(255,255,255,1);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #shutter-core {
+            width: 66px; height: 66px; border-radius: 50%;
+            background: white;
+            transition: all 0.3s cubic-bezier(0.3, 2, 0.3, 1); /* Bouncy */
+        }
+        #shutter-ring:active { transform: scale(0.95); opacity: 0.8; }
+        
+        /* Video Shutter State */
+        body[data-mode="VIDEO"] #shutter-core { background: var(--danger); }
+        body[data-mode="VIDEO"].recording #shutter-ring { border-color: rgba(255,255,255,0.6); }
+        body[data-mode="VIDEO"].recording #shutter-core { 
+            width: 32px; height: 32px; border-radius: 6px; 
+        }
+
+        /* Flip Button */
+        #flip-btn {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            border: none; color: white; cursor: pointer;
+        }
+        #flip-btn:active { transform: scale(0.9) rotate(180deg); transition: 0.4s; }
+        #flip-btn svg { width: 26px; height: 26px; fill: currentColor; }
+
+        /* Focus Animation */
+        #focus-box {
+            position: absolute; width: 80px; height: 80px;
+            border: 1px solid var(--accent);
+            transform: translate(-50%, -50%) scale(1.2);
+            opacity: 0; pointer-events: none; z-index: 10;
+            transition: all 0.25s ease-out;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        #focus-box.animate { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
+    </style>
+</head>
+<body data-mode="PHOTO">
+
+    <div id="viewport">
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <canvas id="hidden-canvas" style="display:none;"></canvas>
+        
+        <div class="mask mask-top"></div>
+        <div class="mask mask-bottom"></div>
+        <div id="flash-screen"></div>
+        <div id="focus-box"></div>
+        
+        <div id="rec-pill">
+            <div class="rec-dot"></div>
+            <span id="rec-time">00:00</span>
+        </div>
+    </div>
+
+    <div id="ui-layer">
+        <div class="top-bar">
+            <!-- Flash -->
+            <button class="tool-btn" id="flash-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+                    <path d="M0 0h24v24H0z" fill="none"/>
+                </svg>
+            </button>
+            
+            <!-- Grid (Optional, visual only for this demo) -->
+            <button class="tool-btn" id="grid-btn" style="opacity:0.5">
+                <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 20V4h4v16H8zm6 0V4h4v16h-4z"/></svg>
+            </button>
+        </div>
+
+        <button class="zoom-bubble" id="zoom-btn">1x</button>
+
+        <div class="bottom-bar">
+            <!-- Centered Carousel -->
+            <div class="mode-viewport">
+                <div class="mode-strip" id="mode-strip">
+                    <span class="mode-text" data-mode="VIDEO">VIDEO</span>
+                    <span class="mode-text active" data-mode="PHOTO">PHOTO</span>
+                    <span class="mode-text" data-mode="SQUARE">SQUARE</span>
+                </div>
+            </div>
+
+            <div class="trigger-row">
+                <!-- Gallery -->
+                <div id="gallery-btn">
+                    <img id="gallery-img" src="">
+                </div>
+
+                <!-- Shutter -->
+                <div id="shutter-ring">
+                    <div id="shutter-core"></div>
+                </div>
+
+                <!-- Flip -->
+                <button id="flip-btn">
+                    <svg viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 11.5V13H9v2.5L5.5 12 9 8.5V11h6V8.5l3.5 3.5-3.5 3.5z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        const state = {
+            mode: 'PHOTO', // PHOTO, VIDEO, SQUARE
+            stream: null,
+            track: null,
+            facing: 'user', // 'user' or 'environment'
+            zoom: 1,
+            flashMode: false, // On/Off preference
+            isRecording: false,
+            recorder: null,
+            chunks: [],
+            startTime: 0,
+            timer: null
+        };
+
+        // --- Elements ---
+        const ui = {
+            body: document.body,
+            video: document.getElementById('camera-feed'),
+            strip: document.getElementById('mode-strip'),
+            modes: document.querySelectorAll('.mode-text'),
+            shutter: document.getElementById('shutter-ring'),
+            flashBtn: document.getElementById('flash-btn'),
+            flashScreen: document.getElementById('flash-screen'),
+            recPill: document.getElementById('rec-pill'),
+            recTime: document.getElementById('rec-time'),
+            canvas: document.getElementById('hidden-canvas'),
+            galleryImg: document.getElementById('gallery-img'),
+            flipBtn: document.getElementById('flip-btn'),
+            zoomBtn: document.getElementById('zoom-btn'),
+            focusBox: document.getElementById('focus-box')
+        };
+
+        // --- Core Camera Logic ---
+        async function initCamera() {
+            if (state.stream) state.stream.getTracks().forEach(t => t.stop());
+
+            const constraints = {
+                audio: state.mode === 'VIDEO',
+                video: {
+                    facingMode: state.facing,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            };
+
+            // Attempt to get advanced controls for torch
+            try {
+                state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                ui.video.srcObject = state.stream;
+                
+                // Get Video Track for Flash/Torch control
+                state.track = state.stream.getVideoTracks()[0];
+                
+                applyTransform();
+                applyFlash(); // Re-apply flash state if persistent
+            } catch (err) {
+                console.error("Camera Error:", err);
+            }
+        }
+
+        // --- Flash Logic (Hardware + Software) ---
+        async function toggleFlash() {
+            state.flashMode = !state.flashMode;
+            vibrate(10); // Haptic
+            
+            // UI Toggle
+            ui.flashBtn.classList.toggle('active', state.flashMode);
+            
+            applyFlash();
+        }
+
+        async function applyFlash() {
+            if (!state.track) return;
+
+            // 1. Try Hardware Torch
+            const capabilities = state.track.getCapabilities();
+            if (capabilities.torch) {
+                try {
+                    await state.track.applyConstraints({
+                        advanced: [{ torch: state.flashMode }]
+                    });
+                } catch (e) {
+                    console.log("Torch not supported on this track");
+                }
+            }
+        }
+
+        function triggerFlashEffect() {
+            // Software Flash (White screen overlay)
+            // Even if hardware flash is on, this adds a nice "shutter" feel
+            ui.flashScreen.style.opacity = 1;
+            setTimeout(() => ui.flashScreen.style.opacity = 0, 150);
+        }
+
+        // --- Carousel Center Logic ---
+        function setMode(mode) {
+            state.mode = mode;
+            ui.body.setAttribute('data-mode', mode);
+            vibrate(15);
+
+            // 1. Highlight Active
+            ui.modes.forEach(el => {
+                if(el.dataset.mode === mode) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+
+            // 2. Calculate Center
+            // To center an element: (ContainerWidth / 2) - (ElementCenterOffset)
+            const activeEl = document.querySelector(`.mode-text[data-mode="${mode}"]`);
+            if (activeEl) {
+                const stripCenter = ui.strip.offsetWidth / 2; // This might change if strip grows
+                // Better approach: Calculate relative to the strip's internal coordinates
+                const elLeft = activeEl.offsetLeft;
+                const elWidth = activeEl.offsetWidth;
+                const centerOffset = elLeft + (elWidth / 2);
+                
+                // We want to translate the strip so that 'centerOffset' is at 0 (center of screen)
+                // Since strip is absolute centered with left:50%, transform:translate(X, -50%)
+                // X should be negative of the element's center offset
+                
+                ui.strip.style.transform = `translate(${-centerOffset}px, -50%)`;
+            }
+
+            // Re-init if switching Video/Photo (Audio permissions differ)
+            initCamera();
+        }
+
+        // --- Shutter & Capture ---
+        ui.shutter.addEventListener('click', () => {
+            vibrate(20);
+            if (state.mode === 'VIDEO') {
+                toggleRecording();
+            } else {
+                capturePhoto();
+            }
+        });
+
+        function capturePhoto() {
+            if (!state.stream) return;
+            
+            triggerFlashEffect();
+
+            const ctx = ui.canvas.getContext('2d');
+            const vW = ui.video.videoWidth;
+            const vH = ui.video.videoHeight;
+            
+            // Dimensions
+            let sW = vW, sH = vH, sX = 0, sY = 0;
+
+            if (state.mode === 'SQUARE') {
+                const min = Math.min(vW, vH);
+                sX = (vW - min) / 2;
+                sY = (vH - min) / 2;
+                sW = min; sH = min;
+            }
+
+            ui.canvas.width = sW;
+            ui.canvas.height = sH;
+
+            // Draw & Transform (Mirror)
+            ctx.save();
+            if (state.facing === 'user') {
+                ctx.translate(sW, 0);
+                ctx.scale(-1, 1);
+            }
+            // Zoom Logic (Software Crop)
+            if (state.zoom === 2) {
+                // If 2x, we draw the center 50% of the source to the full canvas
+                ctx.drawImage(ui.video, sX + (sW/4), sY + (sH/4), sW/2, sH/2, 0, 0, sW, sH);
+            } else {
+                ctx.drawImage(ui.video, sX, sY, sW, sH, 0, 0, sW, sH);
+            }
+            ctx.restore();
+
+            // Save
+            const data = ui.canvas.toDataURL('image/jpeg', 0.95);
+            updateGallery(data);
+            download(data, `IMG_${Date.now()}.jpg`);
+        }
+
+        // --- Recording Logic ---
+        function toggleRecording() {
+            if (state.isRecording) stopRec();
+            else startRec();
+        }
+
+        function startRec() {
+            state.chunks = [];
+            const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+            
+            try {
+                state.recorder = new MediaRecorder(state.stream, { mimeType: mime });
+                state.recorder.ondataavailable = e => { if(e.data.size > 0) state.chunks.push(e.data); };
+                state.recorder.onstop = saveVideo;
+                state.recorder.start();
+                
+                state.isRecording = true;
+                ui.body.classList.add('recording');
+                ui.recPill.classList.add('visible');
+                
+                // Timer
+                state.startTime = Date.now();
+                state.timer = setInterval(() => {
+                    const sec = Math.floor((Date.now() - state.startTime)/1000);
+                    const m = String(Math.floor(sec/60)).padStart(2,'0');
+                    const s = String(sec%60).padStart(2,'0');
+                    ui.recTime.innerText = `${m}:${s}`;
+                }, 1000);
+            } catch(e) {
+                alert("Recording not supported");
+            }
+        }
+
+        function stopRec() {
+            state.recorder.stop();
+            state.isRecording = false;
+            ui.body.classList.remove('recording');
+            ui.recPill.classList.remove('visible');
+            clearInterval(state.timer);
+            ui.recTime.innerText = "00:00";
+        }
+
+        function saveVideo() {
+            const blob = new Blob(state.chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            download(url, `VID_${Date.now()}.webm`);
+            // Can't easily gen video thumbnail in JS without heavy libraries
+        }
+
+        // --- Utilities ---
+        function download(url, name) {
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function updateGallery(url) {
+            ui.galleryImg.src = url;
+            ui.galleryImg.style.opacity = 1;
+            ui.galleryImg.parentElement.style.transform = "scale(0.8)";
+            setTimeout(() => ui.galleryImg.parentElement.style.transform = "scale(1)", 150);
+        }
+
+        function vibrate(ms) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+
+        function applyTransform() {
+            let t = '';
+            if (state.facing === 'user') t += 'scaleX(-1) ';
+            if (state.zoom === 2) t += 'scale(2)';
+            ui.video.style.transform = t;
+        }
+
+        // --- Interactions ---
+        // Carousel Clicks
+        ui.modes.forEach(m => m.addEventListener('click', (e) => setMode(e.target.dataset.mode)));
+        
+        // Flip Camera
+        ui.flipBtn.addEventListener('click', () => {
+            vibrate(20);
+            state.facing = state.facing === 'user' ? 'environment' : 'user';
+            initCamera();
+        });
+
+        // Zoom
+        ui.zoomBtn.addEventListener('click', () => {
+            vibrate(10);
+            state.zoom = state.zoom === 1 ? 2 : 1;
+            ui.zoomBtn.innerText = state.zoom + 'x';
+            applyTransform();
+        });
+
+        // Flash
+        ui.flashBtn.addEventListener('click', toggleFlash);
+
+        // Tap to Focus (Visual)
+        document.getElementById('viewport').addEventListener('click', (e) => {
+            if(e.target !== ui.video) return; // Ignore if clicking UI
+            const rect = ui.video.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ui.focusBox.style.left = x + 'px';
+            ui.focusBox.style.top = y + 'px';
+            ui.focusBox.classList.remove('animate');
+            void ui.focusBox.offsetWidth; // Trigger reflow
+            ui.focusBox.classList.add('animate');
+            setTimeout(() => ui.focusBox.classList.remove('animate'), 1000);
+        });
+
+        // Init
+        window.addEventListener('load', () => {
+            setMode('PHOTO'); // This triggers initCamera
+        });
+
+    </script>
+</body>
+</html>

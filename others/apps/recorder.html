@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Voice Memos</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --panel-bg: #151515;
+            --card-active: #1c1c1e;
+            --red: #ff3b30;
+            --text-main: #ffffff;
+            --text-sec: #8e8e93;
+            --separator: #38383a;
+            --blue: #0a84ff;
+            --safe-top: max(20px, env(safe-area-inset-top));
+            --safe-bottom: max(20px, env(safe-area-inset-bottom));
+            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100dvh; /* Dynamic viewport height */
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            overflow: hidden; /* Prevent full page scroll */
+            display: flex; flex-direction: column;
+        }
+
+        /* --- Header --- */
+        header {
+            flex-shrink: 0;
+            padding: calc(var(--safe-top) + 16px) 20px 10px;
+            background: var(--bg);
+            z-index: 10;
+        }
+        h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.4px; }
+
+        /* --- Scrollable List --- */
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 140px; /* Space for the collapsed recording bar */
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Backdrop Dimmer */
+        .backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(2px);
+            z-index: 50;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        body.recording-mode .backdrop { opacity: 1; pointer-events: auto; }
+
+        .empty-state {
+            margin-top: 100px;
+            text-align: center;
+            color: var(--text-sec);
+            font-size: 17px;
+        }
+
+        /* --- Memo Item --- */
+        .memo-item {
+            background: var(--bg);
+            border-bottom: 1px solid var(--separator);
+            margin-left: 20px;
+            padding: 14px 20px 14px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .memo-item:last-child { border-bottom: none; }
+        .memo-item.active { background: var(--card-active); margin-left: 0; padding-left: 20px; }
+
+        .memo-row-top { display: flex; justify-content: space-between; align-items: baseline; }
+        .memo-title { font-size: 17px; font-weight: 600; color: var(--text-main); }
+        .memo-date { font-size: 14px; color: var(--text-sec); margin-top: 4px; }
+        .memo-duration { font-size: 15px; color: var(--text-sec); }
+
+        /* --- Player Drawer (Hidden by default) --- */
+        .player-drawer {
+            height: 0; overflow: hidden;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+        .memo-item.expanded .player-drawer { height: 110px; opacity: 1; margin-top: 16px; }
+
+        .scrubber-area {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+        }
+        .time-label { font-size: 12px; color: var(--text-sec); font-variant-numeric: tabular-nums; width: 40px; }
+        .time-label.right { text-align: right; }
+        
+        .track-bg {
+            flex: 1; height: 4px; background: #333; border-radius: 2px;
+            position: relative; overflow: hidden;
+        }
+        .track-fill {
+            height: 100%; width: 0%; background: var(--text-main);
+        }
+
+        .controls-area {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 10px;
+        }
+        .action-btn {
+            background: none; border: none; padding: 10px;
+            color: var(--blue); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .action-btn.delete { color: var(--blue); opacity: 0.8; }
+        .action-btn.play { color: var(--text-main); }
+        .action-btn:active { opacity: 0.5; }
+        
+        .icon-sm { width: 22px; height: 22px; fill: currentColor; }
+        .icon-lg { width: 32px; height: 32px; fill: currentColor; }
+
+        /* --- FIXED Bottom Panel (Record) --- */
+        .bottom-panel {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            height: 120px; /* Default height */
+            background: var(--panel-bg);
+            border-top: 1px solid #222;
+            z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+            padding-bottom: var(--safe-bottom);
+            transition: height 0.4s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.4s;
+            box-shadow: 0 -5px 30px rgba(0,0,0,0.6);
+        }
+
+        /* Expand panel when recording */
+        .bottom-panel.recording {
+            height: 50%; 
+            max-height: 450px; /* Prevent over-expansion on desktop */
+            min-height: 350px; /* Ensure space on mobile */
+            background: var(--card-active);
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+        }
+
+        /* Container for Waveform & Timer (Only visible when recording) */
+        .wave-view {
+            flex: 1; width: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+            padding-top: 20px;
+        }
+        .bottom-panel.recording .wave-view { opacity: 1; pointer-events: auto; }
+
+        .rec-label { font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-sec); text-transform: uppercase; margin-bottom: 8px; }
+        .rec-timer { font-size: 56px; font-weight: 200; font-variant-numeric: tabular-nums; margin-bottom: 20px; letter-spacing: -1px; }
+        canvas { width: 100%; height: 100px; }
+
+        /* The Big Red Button Container */
+        .btn-container {
+            height: 80px; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 10px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* The Button Itself */
+        .red-btn {
+            width: 64px; height: 64px;
+            background-color: var(--red);
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 4px var(--panel-bg); /* Fake transparent gap */
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 101;
+        }
+
+        /* Recording State of Button */
+        .bottom-panel.recording .red-btn {
+            transform: scale(0.55);
+            border-radius: 8px; /* Square stop button */
+            box-shadow: none;
+            border-color: transparent;
+        }
+        /* Touch Hit Area expander */
+        .red-btn::after {
+            content:''; position: absolute; top:-20px; bottom:-20px; left:-20px; right:-20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>All Recordings</h1>
+    </header>
+
+    <div class="list-container" id="memoList">
+        <div class="empty-state">No recordings yet</div>
+    </div>
+    
+    <!-- Dim background when recording -->
+    <div class="backdrop"></div>
+
+    <!-- Fixed Bottom Controls -->
+    <div class="bottom-panel" id="panel">
+        
+        <!-- Waveform View -->
+        <div class="wave-view">
+            <div class="rec-label">Recording</div>
+            <div class="rec-timer" id="mainTimer">00:00.00</div>
+            <canvas id="waveCanvas"></canvas>
+        </div>
+
+        <!-- Record Button -->
+        <div class="btn-container">
+            <div class="red-btn" id="recordToggle"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            isRecording: false,
+            startTime: 0,
+            timerInterval: null,
+            mediaRecorder: null,
+            chunks: [],
+            audioCtx: null,
+            analyser: null,
+            dataArray: null
+        };
+
+        // --- Elements ---
+        const body = document.body;
+        const panel = document.getElementById('panel');
+        const recBtn = document.getElementById('recordToggle');
+        const mainTimer = document.getElementById('mainTimer');
+        const list = document.getElementById('memoList');
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Init ---
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        });
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        // --- Interaction Logic ---
+        
+        recBtn.addEventListener('click', () => {
+            if (state.isRecording) stopRecording();
+            else startRecording();
+        });
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Audio Setup
+                state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = state.audioCtx.createMediaStreamSource(stream);
+                state.analyser = state.audioCtx.createAnalyser();
+                state.analyser.fftSize = 256;
+                source.connect(state.analyser);
+                state.dataArray = new Uint8Array(state.analyser.frequencyBinCount);
+
+                state.mediaRecorder = new MediaRecorder(stream);
+                state.chunks = [];
+                state.mediaRecorder.ondataavailable = e => state.chunks.push(e.data);
+                
+                state.mediaRecorder.onstop = () => {
+                    const blob = new Blob(state.chunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString();
+                    const recCount = list.querySelectorAll('.memo-item').length + 1;
+                    const title = `New Recording ${recCount}`;
+                    
+                    addMemoToList(url, title, dateStr, "Just now");
+                };
+
+                state.mediaRecorder.start();
+                state.isRecording = true;
+                
+                // UI Updates
+                panel.classList.add('recording');
+                body.classList.add('recording-mode'); // Dims background
+                
+                // Remove empty state immediately on start
+                const empty = document.querySelector('.empty-state');
+                if (empty) empty.remove();
+
+                state.startTime = Date.now();
+                state.timerInterval = setInterval(updateTimer, 30);
+                drawWaveform();
+
+            } catch (err) {
+                alert("Microphone access needed.");
+            }
+        }
+
+        function stopRecording() {
+            if (!state.mediaRecorder) return;
+            state.mediaRecorder.stop();
+            state.isRecording = false;
+            
+            panel.classList.remove('recording');
+            body.classList.remove('recording-mode'); // Undims background
+            
+            clearInterval(state.timerInterval);
+            mainTimer.innerText = "00:00.00";
+            
+            // Cleanup audio context
+            if(state.audioCtx) state.audioCtx.close();
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+        }
+
+        function updateTimer() {
+            const diff = Date.now() - state.startTime;
+            const m = Math.floor(diff / 60000).toString().padStart(2, '0');
+            const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+            const ms = Math.floor((diff % 1000) / 10).toString().padStart(2, '0');
+            mainTimer.innerText = `${m}:${s}.${ms}`;
+        }
+
+        function drawWaveform() {
+            if (!state.isRecording) return;
+            requestAnimationFrame(drawWaveform);
+            
+            state.analyser.getByteFrequencyData(state.dataArray);
+            
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+            ctx.clearRect(0, 0, w, h);
+            
+            const barWidth = 4;
+            const gap = 4;
+            const count = Math.floor(w / (barWidth + gap));
+            const cx = w / 2;
+
+            for (let i = 0; i < count / 2; i++) {
+                const val = state.dataArray[i];
+                const barH = (val / 255) * h * 0.8;
+                
+                ctx.fillStyle = '#ff3b30';
+                // Mirror from center
+                ctx.fillRect(cx + (i * (barWidth + gap)), (h - barH)/2, barWidth, barH);
+                ctx.fillRect(cx - ((i + 1) * (barWidth + gap)), (h - barH)/2, barWidth, barH);
+            }
+        }
+
+        // --- List Item Creation ---
+        function addMemoToList(url, title, date, duration) {
+            const item = document.createElement('div');
+            item.className = 'memo-item';
+            
+            const playIcon = `<svg class="icon-lg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            const pauseIcon = `<svg class="icon-lg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+            
+            item.innerHTML = `
+                <div class="memo-row-top">
+                    <div>
+                        <div class="memo-title">${title}</div>
+                        <div class="memo-date">${date}</div>
+                    </div>
+                    <div class="memo-duration">${duration}</div>
+                </div>
+                
+                <div class="player-drawer">
+                    <div class="scrubber-area">
+                        <span class="time-label">0:00</span>
+                        <div class="track-bg"><div class="track-fill"></div></div>
+                        <span class="time-label right">--:--</span>
+                    </div>
+                    <div class="controls-area">
+                        <button class="action-btn delete"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                        <button class="action-btn play">${playIcon}</button>
+                        <button class="action-btn download"><svg class="icon-sm" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
+                    </div>
+                </div>
+            `;
+            
+            // Append to top
+            list.insertBefore(item, list.firstChild);
+
+            // Logic setup
+            let audio = null;
+            if(url) audio = new Audio(url);
+            
+            const playBtn = item.querySelector('.play');
+            const trackFill = item.querySelector('.track-fill');
+            const dlBtn = item.querySelector('.download');
+            const delBtn = item.querySelector('.delete');
+            const timeCurrent = item.querySelector('.time-label');
+            const timeTotal = item.querySelectorAll('.time-label')[1];
+
+            // Click Item to Expand
+            item.onclick = (e) => {
+                if(e.target.closest('button')) return; // Ignore buttons
+                
+                // Collapse others
+                document.querySelectorAll('.memo-item.expanded').forEach(i => {
+                    if(i !== item) i.classList.remove('expanded');
+                });
+                item.classList.toggle('expanded');
+                item.classList.toggle('active');
+            };
+
+            if(audio) {
+                audio.onloadedmetadata = () => {
+                    const m = Math.floor(audio.duration / 60);
+                    const s = Math.floor(audio.duration % 60).toString().padStart(2,'0');
+                    if (isFinite(audio.duration)) {
+                        timeTotal.innerText = `${m}:${s}`;
+                        item.querySelector('.memo-duration').innerText = `${m}:${s}`;
+                    } else {
+                        timeTotal.innerText = "--:--";
+                    }
+                };
+
+                audio.ontimeupdate = () => {
+                    if (isFinite(audio.duration)) {
+                        const pct = (audio.currentTime / audio.duration) * 100;
+                        trackFill.style.width = pct + '%';
+                        
+                        const m = Math.floor(audio.currentTime / 60);
+                        const s = Math.floor(audio.currentTime % 60).toString().padStart(2,'0');
+                        timeCurrent.innerText = `${m}:${s}`;
+                    }
+                };
+
+                audio.onended = () => {
+                    playBtn.innerHTML = playIcon;
+                    trackFill.style.width = '0%';
+                    timeCurrent.innerText = '0:00';
+                };
+
+                playBtn.onclick = () => {
+                    if (audio.paused) {
+                        // Pause others
+                        document.querySelectorAll('audio').forEach(a => { if(a!==audio) a.pause(); });
+                        document.querySelectorAll('.play').forEach(b => { if(b!==playBtn) b.innerHTML = playIcon; });
+                        
+                        audio.play();
+                        playBtn.innerHTML = pauseIcon;
+                    } else {
+                        audio.pause();
+                        playBtn.innerHTML = playIcon;
+                    }
+                };
+
+                dlBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${title}.webm`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+            }
+
+            // Fixed Delete Logic
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                // Removed Confirm() to prevent sandbox blocking
+                if (audio) { audio.pause(); audio = null; } // Cleanup
+                item.remove();
+                
+                // Restore empty state if last item
+                if (list.querySelectorAll('.memo-item').length === 0) {
+                    list.innerHTML = '<div class="empty-state">No recordings yet</div>';
+                }
+            };
+        }
+    </script>
+</body>
+</html>
