@@ -776,7 +776,7 @@ async register() {
                         const iconSrc = app.iconUrl || ''; 
                         
                         li.innerHTML = `
-                            <img src="${iconSrc}" class="list-icon" onerror="this.src='grey.png'">
+                            <img src="${iconSrc}" class="list-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                             <div class="list-info">
                                 <div class="list-name">${app.name} <span class="tag">Live</span></div>
                                 <div class="list-meta">v1.0 • ${new Date(app.createdAt).toLocaleDateString()}</div>

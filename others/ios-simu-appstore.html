@@ -175,9 +175,20 @@
         }
         .app-icon > *:not(.icon-bg-img) { z-index: 1; }
         .app-name { 
-            color: #fff; font-size: 12px; font-weight: 500; 
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5); text-align: center; white-space: nowrap;
-        }
+    color: #fff; 
+    font-size: 12px; 
+    font-weight: 500; 
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5); 
+    text-align: center; 
+    
+    /* --- Add these lines for truncation --- */
+    white-space: nowrap;       /* Keeps text on one line */
+    overflow: hidden;          /* Hides the text that sticks out */
+    text-overflow: ellipsis;   /* Adds the "..." at the end */
+    max-width: 100%;           /* Forces it to stay within the 70px parent width */
+    display: block;            /* Necessary for max-width to apply correctly */
+    padding: 0 1px;            /* Optional: prevents letters from touching the very edge */
+}
 
         /* --- APP WINDOWS --- */
         .app-window {
@@ -905,7 +916,7 @@
                     div.className = 'store-item';
                     
                     div.innerHTML = `
-                        <img src="${app.iconUrl}" class="store-icon" onerror="this.src='grey.png'">
+                        <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
                             <div class="store-name">${app.name}</div>
                             <div class="store-sub">${app.author} • ${app.description}</div>
@@ -1072,7 +1083,7 @@
                 item.setAttribute('onclick', `iOS.openApp(this, '${app.id}', 'light')`);
                 item.innerHTML = `
                     <div class="app-icon">
-                        <img src="${app.iconUrl}" class="icon-bg-img" onerror="this.src='grey.png'">
+                        <img src="${app.iconUrl}" class="icon-bg-img" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                     </div>
                     <div class="app-name">${app.name}</div>
                 `;
