@@ -37,8 +37,7 @@
             width: 100%; height: 100%;
             object-fit: cover;
             display: block;
-            transform: scaleX(-1); /* Default Selfie Mirror */
-            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         /* Cinema Mask (Square Mode) */
@@ -111,7 +110,7 @@
             background: rgba(0,0,0,0.4); backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.2);
             display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; cursor: pointer;
+            font-size: 12px; font-weight: 700; cursor: pointer; color: white;
             pointer-events: auto; transition: 0.2s;
         }
         .zoom-bubble:active { transform: translateX(-50%) scale(1.2); }
@@ -323,36 +322,29 @@
                 }
             };
 
-            // Attempt to get advanced controls for torch
             try {
                 state.stream = await navigator.mediaDevices.getUserMedia(constraints);
                 ui.video.srcObject = state.stream;
                 
-                // Get Video Track for Flash/Torch control
                 state.track = state.stream.getVideoTracks()[0];
                 
                 applyTransform();
-                applyFlash(); // Re-apply flash state if persistent
+                applyFlash(); 
             } catch (err) {
                 console.error("Camera Error:", err);
             }
         }
 
-        // --- Flash Logic (Hardware + Software) ---
+        // --- Flash Logic ---
         async function toggleFlash() {
             state.flashMode = !state.flashMode;
-            vibrate(10); // Haptic
-            
-            // UI Toggle
+            vibrate(10);
             ui.flashBtn.classList.toggle('active', state.flashMode);
-            
             applyFlash();
         }
 
         async function applyFlash() {
             if (!state.track) return;
-
-            // 1. Try Hardware Torch
             const capabilities = state.track.getCapabilities();
             if (capabilities.torch) {
                 try {
@@ -366,42 +358,29 @@
         }
 
         function triggerFlashEffect() {
-            // Software Flash (White screen overlay)
-            // Even if hardware flash is on, this adds a nice "shutter" feel
             ui.flashScreen.style.opacity = 1;
             setTimeout(() => ui.flashScreen.style.opacity = 0, 150);
         }
 
-        // --- Carousel Center Logic ---
+        // --- Carousel Logic ---
         function setMode(mode) {
             state.mode = mode;
             ui.body.setAttribute('data-mode', mode);
             vibrate(15);
 
-            // 1. Highlight Active
             ui.modes.forEach(el => {
                 if(el.dataset.mode === mode) el.classList.add('active');
                 else el.classList.remove('active');
             });
 
-            // 2. Calculate Center
-            // To center an element: (ContainerWidth / 2) - (ElementCenterOffset)
             const activeEl = document.querySelector(`.mode-text[data-mode="${mode}"]`);
             if (activeEl) {
-                const stripCenter = ui.strip.offsetWidth / 2; // This might change if strip grows
-                // Better approach: Calculate relative to the strip's internal coordinates
                 const elLeft = activeEl.offsetLeft;
                 const elWidth = activeEl.offsetWidth;
                 const centerOffset = elLeft + (elWidth / 2);
-                
-                // We want to translate the strip so that 'centerOffset' is at 0 (center of screen)
-                // Since strip is absolute centered with left:50%, transform:translate(X, -50%)
-                // X should be negative of the element's center offset
-                
                 ui.strip.style.transform = `translate(${-centerOffset}px, -50%)`;
             }
 
-            // Re-init if switching Video/Photo (Audio permissions differ)
             initCamera();
         }
 
@@ -424,7 +403,6 @@
             const vW = ui.video.videoWidth;
             const vH = ui.video.videoHeight;
             
-            // Dimensions
             let sW = vW, sH = vH, sX = 0, sY = 0;
 
             if (state.mode === 'SQUARE') {
@@ -437,22 +415,28 @@
             ui.canvas.width = sW;
             ui.canvas.height = sH;
 
-            // Draw & Transform (Mirror)
             ctx.save();
+            
+            // Mirroring logic for capture
             if (state.facing === 'user') {
                 ctx.translate(sW, 0);
                 ctx.scale(-1, 1);
             }
-            // Zoom Logic (Software Crop)
+
+            // Digital Zoom Logic for capture (Crop)
             if (state.zoom === 2) {
-                // If 2x, we draw the center 50% of the source to the full canvas
-                ctx.drawImage(ui.video, sX + (sW/4), sY + (sH/4), sW/2, sH/2, 0, 0, sW, sH);
+                // To zoom 2x, we crop the center 50% of the calculated source area
+                const cropW = sW / 2;
+                const cropH = sH / 2;
+                const cropX = sX + (sW / 4);
+                const cropY = sY + (sH / 4);
+                ctx.drawImage(ui.video, cropX, cropY, cropW, cropH, 0, 0, sW, sH);
             } else {
                 ctx.drawImage(ui.video, sX, sY, sW, sH, 0, 0, sW, sH);
             }
+            
             ctx.restore();
 
-            // Save
             const data = ui.canvas.toDataURL('image/jpeg', 0.95);
             updateGallery(data);
             download(data, `IMG_${Date.now()}.jpg`);
@@ -478,7 +462,6 @@
                 ui.body.classList.add('recording');
                 ui.recPill.classList.add('visible');
                 
-                // Timer
                 state.startTime = Date.now();
                 state.timer = setInterval(() => {
                     const sec = Math.floor((Date.now() - state.startTime)/1000);
@@ -504,7 +487,6 @@
             const blob = new Blob(state.chunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
             download(url, `VID_${Date.now()}.webm`);
-            // Can't easily gen video thumbnail in JS without heavy libraries
         }
 
         // --- Utilities ---
@@ -526,24 +508,35 @@
         }
 
         function applyTransform() {
-            let t = '';
-            if (state.facing === 'user') t += 'scaleX(-1) ';
-            if (state.zoom === 2) t += 'scale(2)';
-            ui.video.style.transform = t;
+            // Fix: Front camera mirrors, Rear camera does NOT mirror.
+            let transform = '';
+            if (state.facing === 'user') {
+                transform = 'scaleX(-1)';
+            } else {
+                transform = 'scaleX(1)';
+            }
+            ui.video.style.transform = transform;
+
+            // Digital Zoom: Instead of scaling the element (which flips it),
+            // we use scale() on top of the mirror state, but it must be managed carefully.
+            // A better way for digital zoom without "flipping" is setting the scale
+            // as part of the transform string while preserving the direction.
+            
+            if (state.zoom === 2) {
+                // Append scaling to existing mirror transform
+                ui.video.style.transform += ' scale(2)';
+            }
         }
 
         // --- Interactions ---
-        // Carousel Clicks
         ui.modes.forEach(m => m.addEventListener('click', (e) => setMode(e.target.dataset.mode)));
         
-        // Flip Camera
         ui.flipBtn.addEventListener('click', () => {
             vibrate(20);
             state.facing = state.facing === 'user' ? 'environment' : 'user';
             initCamera();
         });
 
-        // Zoom
         ui.zoomBtn.addEventListener('click', () => {
             vibrate(10);
             state.zoom = state.zoom === 1 ? 2 : 1;
@@ -551,12 +544,10 @@
             applyTransform();
         });
 
-        // Flash
         ui.flashBtn.addEventListener('click', toggleFlash);
 
-        // Tap to Focus (Visual)
         document.getElementById('viewport').addEventListener('click', (e) => {
-            if(e.target !== ui.video) return; // Ignore if clicking UI
+            if(e.target !== ui.video) return; 
             const rect = ui.video.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -564,14 +555,13 @@
             ui.focusBox.style.left = x + 'px';
             ui.focusBox.style.top = y + 'px';
             ui.focusBox.classList.remove('animate');
-            void ui.focusBox.offsetWidth; // Trigger reflow
+            void ui.focusBox.offsetWidth; 
             ui.focusBox.classList.add('animate');
             setTimeout(() => ui.focusBox.classList.remove('animate'), 1000);
         });
 
-        // Init
         window.addEventListener('load', () => {
-            setMode('PHOTO'); // This triggers initCamera
+            setMode('PHOTO'); 
         });
 
     </script>
