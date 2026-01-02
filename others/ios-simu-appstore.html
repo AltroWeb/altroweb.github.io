@@ -509,6 +509,15 @@
             .dock-container { bottom: 12px; height: 85px; }
             .app-item { transform: scale(1); }
         }
+
+.verified-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 12px; height: 12px; background: #007AFF;
+    border-radius: 50%; margin-left: 2px; vertical-align: text-bottom; position: relative; top: -1px;
+}
+.verified-badge svg { width: 8px; height: 8px; fill: white; display: block; }
+
+
     </style>
 </head>
 <body>
@@ -837,6 +846,29 @@
                 this.initSearch();
             }
 
+async init() {
+        this.setupUI();
+        // 1. FETCH VERIFIED USERS FIRST
+        await this.fetchVerifiedUsers(); 
+        this.fetchApps();
+    }
+
+    async fetchVerifiedUsers() {
+        this.verifiedUserIds = new Set();
+        try {
+            const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('users').get();
+            snapshot.forEach(doc => {
+                if (doc.data().verified === true) {
+                    this.verifiedUserIds.add(doc.id);
+                }
+            });
+        } catch(e) {
+            console.log("Could not fetch verified users", e);
+        }
+    }
+
+
+
             async initFirebase() {
                 if (firebase.apps.length === 0) {
                     firebase.initializeApp(FIREBASE_CONFIG);
@@ -900,35 +932,45 @@
             }
 
             renderStore(appList) {
-                const listEl = document.getElementById('store-list');
-                listEl.innerHTML = '';
-                
-                if (appList.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
-                    return;
-                }
+    const listEl = document.getElementById('store-list');
+    listEl.innerHTML = '';
+    
+    if (appList.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
+        return;
+    }
 
-                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
 
-                appList.forEach(app => {
-                    const isInstalled = installedApps.some(ia => ia.id === app.id);
-                    const div = document.createElement('div');
-                    div.className = 'store-item';
-                    
-                    div.innerHTML = `
-                        <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                        <div class="store-info">
-                            <div class="store-name">${app.name}</div>
-                            <div class="store-sub">${app.author} • ${app.description}</div>
-                        </div>
-                        <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                            <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
-                            <div class="spinner"></div>
-                        </button>
-                    `;
-                    listEl.appendChild(div);
-                });
-            }
+    appList.forEach(app => {
+        const isInstalled = installedApps.some(ia => ia.id === app.id);
+        
+        // --- CHECK VERIFICATION (Efficient Look-up) ---
+        // Check if the app's authorId is in our verified set
+        const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
+        
+        const badgeHTML = isVerified ? `
+            <span class="verified-badge" title="Verified Developer">
+                <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+            </span>` : '';
+        // ----------------------------------------------
+
+        const div = document.createElement('div');
+        div.className = 'store-item';
+        div.innerHTML = `
+            <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+            <div class="store-info">
+                <div class="store-name">${app.name}</div>
+                <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+            </div>
+            <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+                <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+                <div class="spinner"></div>
+            </button>
+        `;
+        listEl.appendChild(div);
+    });
+}
 
             async handleGetClick(btn, appId) {
                 const app = this.apps.find(a => a.id === appId);

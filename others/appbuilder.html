@@ -251,6 +251,16 @@
         }
         .auth-logo svg { width: 32px; height: 32px; }
 
+
+
+        /* Badge Style */
+.verified-badge-nav {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 12px; height: 12px; background: #007AFF;
+    border-radius: 50%; margin-left: 2px; vertical-align: middle;
+}
+.verified-badge-nav svg { width: 8px; height: 8px; fill: white; display: block; }
+
     </style>
 </head>
 <body>
@@ -748,54 +758,82 @@ async register() {
                 }
             }
 
-            async fetchMyApps() {
-                const list = document.getElementById('my-apps-list');
-                list.innerHTML = '<li class="empty-state"><div class="loader" style="display:inline-block; border-color: #999; border-top-color:#333;"></div><br>Loading apps...</li>';
+            // Inside AppBuilder class
+async fetchMyApps() {
+    const list = document.getElementById('my-apps-list');
+    list.innerHTML = '<li class="empty-state"><div class="loader" style="display:inline-block; border-color: #999; border-top-color:#333;"></div><br>Loading apps...</li>';
 
-                try {
-                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                    
-                    const myApps = [];
-                    // Filter by UID (securely assigned by Firebase Auth now)
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.authorId === this.devProfile.uid) {
-                            myApps.push({ id: doc.id, ...data });
-                        }
-                    });
-
-                    list.innerHTML = '';
-                    if (myApps.length === 0) {
-                        list.innerHTML = '<div class="empty-state"><h3>No Apps Yet</h3><p>Start building your ecosystem.</p></div>';
-                        return;
-                    }
-
-                    myApps.forEach(app => {
-                        const li = document.createElement('li');
-                        li.className = 'app-list-item';
-                        const iconSrc = app.iconUrl || ''; 
-                        
-                        li.innerHTML = `
-                            <img src="${iconSrc}" class="list-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                            <div class="list-info">
-                                <div class="list-name">${app.name} <span class="tag">Live</span></div>
-                                <div class="list-meta">v1.0 • ${new Date(app.createdAt).toLocaleDateString()}</div>
-                            </div>
-                            <div class="list-actions">
-                                <button class="btn secondary sm" onclick="appBuilder.editApp('${app.id}')">Edit</button>
-                                <button class="btn danger sm icon-only" onclick="appBuilder.deleteApp('${app.id}', '${app.name}')" title="Delete App">
-                                    <svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                </button>
-                            </div>
-                        `;
-                        list.appendChild(li);
-                    });
-
-                } catch (e) {
-                    console.error(e);
-                    list.innerHTML = '<li class="empty-state" style="color:var(--danger)">Connection Error. Check console.</li>';
-                }
+    try {
+        // 1. Fetch Apps
+        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+        const myApps = [];
+        snapshot.forEach(doc => {
+            if (doc.data().authorId === this.devProfile.uid) {
+                myApps.push({ id: doc.id, ...doc.data() });
             }
+        });
+
+        // 2. CHECK VERIFIED STATUS (Server-Side Control)
+        // We fetch the document: /artifacts/{appId}/public/data/users/{userId}
+        // If it exists and verified is true, we show the badge.
+        let isVerified = false;
+        try {
+            const userDoc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('users').doc(this.devProfile.uid).get();
+            if (userDoc.exists && userDoc.data().verified === true) {
+                isVerified = true;
+            }
+        } catch(err) { console.log("User status check failed or not verified"); }
+
+        // 3. Update Navbar Badge
+        const navUser = document.getElementById('nav-username');
+        if (navUser) {
+            navUser.innerText = this.devProfile.displayName;
+            if (isVerified) {
+                navUser.innerHTML += `
+                    <span class="verified-badge-nav" title="Verified Developer">
+                        <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+                    </span>`;
+            }
+        }
+
+        // 4. Render List
+        list.innerHTML = '';
+        if (myApps.length === 0) {
+            list.innerHTML = '<div class="empty-state"><h3>No Apps Yet</h3><p>Start building your ecosystem.</p></div>';
+            return;
+        }
+
+        myApps.forEach(app => {
+            const li = document.createElement('li');
+            li.className = 'app-list-item';
+            
+            // Show badge on individual items if user is verified
+            const badgeHTML = isVerified ? `
+                <span class="verified-badge-nav" style="margin-left:4px; width:12px; height:12px;">
+                    <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+                </span>` : '';
+
+            li.innerHTML = `
+                <img src="${app.iconUrl || ''}" class="list-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                <div class="list-info">
+                    <div class="list-name">${app.name} <span class="tag">Live</span></div>
+                    <div class="list-meta">v1.0${badgeHTML} • ${new Date(app.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="list-actions">
+                    <button class="btn secondary sm" onclick="appBuilder.editApp('${app.id}')">Edit</button>
+                    <button class="btn danger sm icon-only" onclick="appBuilder.deleteApp('${app.id}', '${app.name}')">
+                        <svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            `;
+            list.appendChild(li);
+        });
+
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<li class="empty-state" style="color:var(--danger)">Connection Error. Check console.</li>';
+    }
+}
 
             async deleteApp(appId, appName) {
                 if(confirm(`Are you sure you want to delete "${appName}"? This cannot be undone.`)) {
