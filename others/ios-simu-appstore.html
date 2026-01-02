@@ -509,29 +509,6 @@
             .dock-container { bottom: 12px; height: 85px; }
             .app-item { transform: scale(1); }
         }
-
-/* Verified Badge CSS */
-.verified-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 12px;
-    height: 12px;
-    background: #007AFF; /* iOS Blue */
-    border-radius: 50%;
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    position: relative;
-    top: -1px;
-}
-.verified-badge svg {
-    width: 8px;
-    height: 8px;
-    fill: white;
-    display: block;
-}
-
-
     </style>
 </head>
 <body>
@@ -938,19 +915,11 @@
                     const div = document.createElement('div');
                     div.className = 'store-item';
                     
-                    // --- NEW BADGE LOGIC ---
-                    const badgeHTML = app.authorVerified ? `
-                        <span class="verified-badge" title="Verified Developer">
-                            <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
-                        </span>` : '';
-                    // -----------------------
-                    
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
                             <div class="store-name">${app.name}</div>
-                            <!-- Added badgeHTML here -->
-                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                            <div class="store-sub">${app.author} • ${app.description}</div>
                         </div>
                         <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
                             <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
