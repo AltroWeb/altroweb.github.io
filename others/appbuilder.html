@@ -1097,38 +1097,52 @@ const appData = {
                         }
                     }
 
-                    // --- ROBUST SECURITY BADGE UPDATE ---
-                    // A. Calculate Verdict: (IsEligible AND IsChecked)
-                    // If appCount < 15, this is FALSE, ignoring the hacker's checkbox.
-                    const isEligible = (this.appCount || 0) >= 15;
-                    const toggleState = document.getElementById('verified-toggle').classList.contains('checked');
-                    const finalVerdict = isEligible && toggleState;
-
-                    // B. Batch Update All Apps
+                    // --- ROBUST SECURITY BADGE UPDATE (FRESH COUNT) ---
+                    
+                    // A. Fetch fresh data to prevent "Tab Exploit"
                     const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                    const batch = this.db.batch();
-                    let batchCount = 0;
+                    let freshCount = 0;
+                    const myAppsRefs = [];
 
                     snapshot.forEach(doc => {
                         if (doc.data().authorId === this.devProfile.uid) {
-                            // Only update if value is different to save writes
-                            if (doc.data().authorVerified !== finalVerdict) {
-                                batch.update(doc.ref, { authorVerified: finalVerdict });
-                                batchCount++;
-                            }
+                            freshCount++;
+                            myAppsRefs.push(doc); // Store doc for batch update later
+                        }
+                    });
+
+                    // B. Calculate Verdict
+                    // STRICT CHECK: Must have 15 or more apps in the database right now.
+                    const isEligible = freshCount >= 15; 
+                    const toggleState = document.getElementById('verified-toggle').classList.contains('checked');
+                    
+                    // If not eligible, FORCE FALSE. If eligible, respect toggle.
+                    const finalVerdict = isEligible && toggleState;
+
+                    // C. Batch Update All Apps
+                    const batch = this.db.batch();
+                    let batchCount = 0;
+
+                    myAppsRefs.forEach(doc => {
+                        // Only update if value is different to save writes
+                        if (doc.data().authorVerified !== finalVerdict) {
+                            batch.update(doc.ref, { authorVerified: finalVerdict });
+                            batchCount++;
                         }
                     });
 
                     if (batchCount > 0) {
                         await batch.commit();
-                        console.log("Updated badge status:", finalVerdict);
+                        console.log(`Security Enforcement: Updated badge to ${finalVerdict} for ${batchCount} apps (Count: ${freshCount})`);
                     }
-                    // ------------------------------------
+                    // --------------------------------------------------
 
                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
                     document.getElementById('nav-username').innerText = newName;
                     
                     alert("Settings Saved Successfully!");
+                    
+                    // Refresh Dashboard to reflect changes (e.g. Navbar badge)
                     this.showDashboard();
                     
                 } catch(e) {
