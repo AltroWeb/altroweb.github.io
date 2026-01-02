@@ -842,32 +842,25 @@
                 this.db = null;
                 this.appId = GLOBAL_APP_ID;
                 this.apps = [];
-                this.initFirebase();
-                this.initSearch();
+                this.verifiedUserIds = new Set();
+                
+                // FIX: Call init() here instead of individual methods
+                this.init();
             }
 
-async init() {
-        this.setupUI();
-        // 1. FETCH VERIFIED USERS FIRST
-        await this.fetchVerifiedUsers(); 
-        this.fetchApps();
-    }
+            async init() {
+                // 1. Initialize Firebase First
+                await this.initFirebase();
+                
+                // 2. Initialize Search Listeners
+                this.initSearch();
 
-    async fetchVerifiedUsers() {
-        this.verifiedUserIds = new Set();
-        try {
-            const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('users').get();
-            snapshot.forEach(doc => {
-                if (doc.data().verified === true) {
-                    this.verifiedUserIds.add(doc.id);
-                }
-            });
-        } catch(e) {
-            console.log("Could not fetch verified users", e);
-        }
-    }
-
-
+                // 3. Fetch Verified Users (Wait for this!)
+                await this.fetchVerifiedUsers(); 
+                
+                // 4. Finally Fetch Apps (Now logic can check verified status)
+                this.fetchApps();
+            }
 
             async initFirebase() {
                 if (firebase.apps.length === 0) {
@@ -876,9 +869,6 @@ async init() {
                 const auth = firebase.auth();
                 this.db = firebase.firestore();
 
-                // FIX: Wrap Auth in Try-Catch
-                // This prevents the app from crashing if Anonymous Auth is disabled.
-                // It will simply proceed as a "Public Guest" which works with 'allow read: if true' rules.
                 try {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await auth.signInWithCustomToken(__initial_auth_token);
@@ -888,22 +878,37 @@ async init() {
                 } catch (e) {
                     console.warn("Auth skipped (Guest Mode):", e.message);
                 }
+            }
 
-                this.fetchApps();
+            async fetchVerifiedUsers() {
+                this.verifiedUserIds = new Set();
+                if (!this.db) return; // Guard against DB failure
+
+                try {
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('users').get();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // Check for 'verified' OR 'authorVerified'
+                        if (data.verified === true || data.authorVerified === true) {
+                            this.verifiedUserIds.add(doc.id);
+                        }
+                    });
+                    console.log("Verified Users:", this.verifiedUserIds.size);
+                } catch(e) {
+                    console.log("Could not fetch verified users", e);
+                }
             }
 
             async fetchApps() {
                 if (!this.db) return;
                 try {
-                    // 1. Fetch Server Apps
                     const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
                     this.apps = [];
                     snapshot.forEach(doc => {
                         this.apps.push({ id: doc.id, ...doc.data() });
                     });
 
-                    // 2. [NEW CODE] Merge Unlisted Installed Apps
-                    // This checks if you have an app installed that isn't on the server anymore
+                    // Merge Unlisted Installed Apps
                     const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                     installed.forEach(localApp => {
                         if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
@@ -920,6 +925,7 @@ async init() {
 
             initSearch() {
                 const input = document.getElementById('store-search-input');
+                if(!input) return; // Guard if element missing
                 input.addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
                     const filtered = this.apps.filter(app => 
@@ -932,46 +938,48 @@ async init() {
             }
 
             renderStore(appList) {
-    const listEl = document.getElementById('store-list');
-    listEl.innerHTML = '';
-    
-    if (appList.length === 0) {
-        listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
-        return;
-    }
+                const listEl = document.getElementById('store-list');
+                listEl.innerHTML = '';
+                
+                if (appList.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
+                    return;
+                }
 
-    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
 
-    appList.forEach(app => {
-        const isInstalled = installedApps.some(ia => ia.id === app.id);
-        
-        // --- CHECK VERIFICATION (Efficient Look-up) ---
-        // Check if the app's authorId is in our verified set
-        const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
-        
-        const badgeHTML = isVerified ? `
-            <span class="verified-badge" title="Verified Developer">
-                <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
-            </span>` : '';
-        // ----------------------------------------------
+                appList.forEach(app => {
+                    const isInstalled = installedApps.some(ia => ia.id === app.id);
+                    
+                    // --- CHECK VERIFICATION ---
+                    // Now this works because fetchVerifiedUsers() finished before fetchApps()
+                    const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
+                    
+                    const badgeHTML = isVerified ? `
+                        <span class="verified-badge" title="Verified Developer">
+                            <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+                        </span>` : '';
+                    // --------------------------
 
-        const div = document.createElement('div');
-        div.className = 'store-item';
-        div.innerHTML = `
-            <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-            <div class="store-info">
-                <div class="store-name">${app.name}</div>
-                <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
-            </div>
-            <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
-                <div class="spinner"></div>
-            </button>
-        `;
-        listEl.appendChild(div);
-    });
-}
-
+                    const div = document.createElement('div');
+                    div.className = 'store-item';
+                    
+                    div.innerHTML = `
+                        <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                        <div class="store-info">
+                            <div class="store-name">${app.name}</div>
+                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                        </div>
+                        <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+                            <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+                            <div class="spinner"></div>
+                        </button>
+                    `;
+                    listEl.appendChild(div);
+                });
+            }
+            // ... (keep handleGetClick, installApp, uninstallApp as they were) ...
+            
             async handleGetClick(btn, appId) {
                 const app = this.apps.find(a => a.id === appId);
                 if (!app) return;
@@ -979,17 +987,15 @@ async init() {
                 const isInstalled = btn.classList.contains('installed');
 
                 if (isInstalled) {
-                    // Trigger Native iOS Alert for Uninstall
                     iOS.showAlert(
                         `Delete "${app.name}"?`,
                         "Deleting this app will also delete its data.",
-                        () => this.uninstallApp(app, btn), // Callback on OK
-                        true // isDestructive
+                        () => this.uninstallApp(app, btn),
+                        true
                     );
                 } else {
-                    // Install Flow
                     btn.classList.add('loading');
-                    await new Promise(r => setTimeout(r, 1500)); // Fake download time
+                    await new Promise(r => setTimeout(r, 1500));
                     btn.classList.remove('loading');
                     btn.classList.add('installed');
                     btn.querySelector('span').innerText = 'UNINSTALL';
@@ -1008,17 +1014,10 @@ async init() {
             }
 
             uninstallApp(app, btn) {
-                // 1. Remove from Local Storage
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 const newInstalled = installed.filter(a => a.id !== app.id);
                 localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
-
-                // 2. Remove from Home Screen
                 iOS.removeSingleApp(app.id);
-
-                // 3. [NEW CODE] Refresh Store List
-                // This will re-run fetchApps(). Since the app is now deleted locally
-                // and doesn't exist on the server, it will vanish from the list.
                 this.fetchApps();
             }
         }
