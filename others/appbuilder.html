@@ -804,8 +804,8 @@ async register() {
         if (navUser) {
             navUser.innerText = this.devProfile.displayName; // Reset text
             
-            // Only show badge if they have 8+ apps AND are verified
-            if (this.appCount >= 8 && isVerified) {
+            // Only show badge if they have 15+ apps AND are verified
+            if (this.appCount >= 15 && isVerified) {
                 navUser.innerHTML += `
                     <span class="verified-badge-nav">
                         <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
@@ -819,7 +819,7 @@ async register() {
         const vHint = document.getElementById('verified-hint');
 
         if (vSection && vToggle) {
-            if (this.appCount >= 8) {
+            if (this.appCount >= 15) {
                 vSection.style.opacity = '1';
                 vSection.style.pointerEvents = 'auto';
                 vHint.innerText = "Display the blue checkmark on the App Store.";
@@ -872,12 +872,45 @@ async register() {
             async deleteApp(appId, appName) {
                 if(confirm(`Are you sure you want to delete "${appName}"? This cannot be undone.`)) {
                     try {
+                        // 1. Delete the specific app
                         await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).delete();
-                        this.fetchMyApps();
+                        
+                        // 2. IMMEDIATE SELF-CHECK (The Fix)
+                        // We fetch the remaining apps to check the count immediately
+                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                        
+                        let remainingApps = [];
+                        snapshot.forEach(doc => {
+                            if (doc.data().authorId === this.devProfile.uid) {
+                                remainingApps.push({ ref: doc.ref, ...doc.data() });
+                            }
+                        });
+
+                        const newCount = remainingApps.length;
+
+                        // 3. ENFORCE RULE: If count drops below 15, STRIP BADGE from everyone
+                        if (newCount < 15) {
+                            const batch = this.db.batch();
+                            let updateCount = 0;
+                            
+                            remainingApps.forEach(app => {
+                                if (app.authorVerified === true) {
+                                    batch.update(app.ref, { authorVerified: false });
+                                    updateCount++;
+                                }
+                            });
+
+                            if (updateCount > 0) {
+                                await batch.commit();
+                                console.log(`Auto-Revoke: Stripped badge from ${updateCount} apps because count dropped to ${newCount}.`);
+                            }
+                        }
+
+                        this.fetchMyApps(); // Refresh UI
                     } catch(e) {
                         console.error(e);
                         if (e.code === 'permission-denied') {
-                            alert("PERMISSION DENIED: You cannot delete this app.\n\nMake sure your Firebase Rules allow deletes for 'store_apps'.");
+                            alert("PERMISSION DENIED: You cannot delete this app.");
                         } else {
                             alert("Error deleting app: " + e.message);
                         }
@@ -977,15 +1010,19 @@ async register() {
                 btn.classList.add('loading');
 
                 try {
-                    const appData = {
-                        name: name,
-                        iconUrl: icon,
-                        description: desc,
-                        embedUrl: embedUrl,
-                        author: this.devProfile.displayName,
-                        authorId: this.devProfile.uid,
-                        updatedAt: Date.now()
-                    };
+                    // Check if user is currently verified based on the UI state + count
+const isVerified = (this.appCount >= 15) && document.getElementById('verified-toggle').classList.contains('checked');
+
+const appData = {
+    name: name,
+    iconUrl: icon,
+    description: desc,
+    embedUrl: embedUrl,
+    author: this.devProfile.displayName,
+    authorId: this.devProfile.uid,
+    authorVerified: isVerified, // <--- THIS LINE FIXES IT
+    updatedAt: Date.now()
+};
 
                     if (!this.currentEditingId) {
                         appData.createdAt = Date.now();
