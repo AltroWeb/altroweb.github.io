@@ -494,7 +494,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
             <label style="margin-bottom:4px; color: var(--accent);">Show verified badge</label>
-            <div class="hint" id="verified-hint">Unlocks when you have 8+ apps published.</div>
+            <div class="hint" id="verified-hint">Unlocks when you have 15+ apps published.</div>
         </div>
         <div class="toggle-switch" id="verified-toggle" onclick="this.classList.toggle('checked')"></div>
     </div>
@@ -829,7 +829,7 @@ async register() {
             } else {
                 vSection.style.opacity = '0.5';
                 vSection.style.pointerEvents = 'none';
-                vHint.innerText = `Unlocks at 8 apps (Current: ${this.appCount})`;
+                vHint.innerText = `Unlocks at 15 apps (Current: ${this.appCount})`;
                 vToggle.classList.remove('checked');
             }
         }

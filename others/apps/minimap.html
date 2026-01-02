@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minimap</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <style>
+        :root {
+            --primary: #007AFF;
+            --danger: #FF3B30;
+            --success: #34C759;
+            --warning: #FF9500;
+            --bg-light: rgba(255, 255, 255, 0.95);
+            --bg-dark: rgba(28, 28, 30, 0.95);
+            --card-light: #ffffff;
+            --card-dark: #2c2c2e;
+            --separator-light: #c6c6c8;
+            --separator-dark: #38383a;
+            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: var(--font-stack);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f2f2f7;
+        }
+
+        body.dark-mode {
+            background-color: #000;
+            color: white;
+        }
+
+        /* Map Container */
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Top Search Bar */
+        .top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 12px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            z-index: 1000;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+        }
+
+        .search-container {
+            pointer-events: auto;
+            width: 100%;
+            max-width: 460px;
+            height: 48px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        
+        .glass {
+            background: var(--bg-light);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        body.dark-mode .glass {
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-icon {
+            width: 48px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; background: transparent;
+            color: inherit; border-radius: 50%;
+        }
+        .btn-icon:active { background-color: rgba(128,128,128,0.1); }
+
+        .search-input {
+            flex: 1; height: 100%; border: none; background: transparent;
+            font-size: 16px; outline: none; color: inherit;
+        }
+
+        .suggestions-list {
+            position: absolute; top: 54px; left: 12px; right: 12px;
+            background: white; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-height: 40vh; overflow-y: auto; display: none; padding: 0; overflow: hidden;
+        }
+        body.dark-mode .suggestions-list { background: #1c1c1e; }
+
+        .suggestion-item {
+            padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 12px;
+            border-bottom: 0.5px solid var(--separator-light); font-size: 14px;
+        }
+        body.dark-mode .suggestion-item { border-bottom: 0.5px solid var(--separator-dark); }
+        .suggestion-item:hover { background-color: rgba(0,0,0,0.05); }
+
+        /* Left Controls Stack */
+        .controls-stack {
+            position: absolute;
+            bottom: max(30px, env(safe-area-inset-bottom));
+            left: 16px;
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .fab {
+            width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .fab:active { transform: scale(0.95); }
+        .fab.active { background-color: var(--primary); color: white; border: none; }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: max(30px, env(safe-area-inset-bottom));
+            right: 16px;
+            z-index: 900;
+            display: flex; flex-direction: column; gap: 16px;
+        }
+
+        /* Exit Nav Button */
+        .exit-nav-btn {
+            position: absolute;
+            top: max(80px, calc(env(safe-area-inset-top) + 60px));
+            right: 16px;
+            background: var(--danger);
+            color: white;
+            border-radius: 20px;
+            padding: 10px 18px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            z-index: 950;
+            display: none;
+            cursor: pointer;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Layer Menu */
+        .stack-menu {
+            position: absolute; bottom: 0; left: 60px;
+            background: white; border-radius: 12px; padding: 8px;
+            display: none; flex-direction: column; gap: 8px;
+            min-width: 140px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        body.dark-mode .stack-menu { background: #1c1c1e; }
+
+        /* Measurement HUD */
+        .measure-hud {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            padding: 8px 12px 8px 20px; border-radius: 24px;
+            font-size: 14px; font-weight: 600; display: none; z-index: 950;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap;
+            align-items: center; gap: 12px;
+        }
+        .measure-undo-btn {
+            background: rgba(128,128,128,0.2); border: none; border-radius: 50%;
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: inherit;
+        }
+
+        /* Bottom Sheet */
+        .bottom-sheet {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: white; z-index: 1001;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+            transform: translateY(110%);
+            transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            max-height: 80vh; overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        body.dark-mode .bottom-sheet { background: #1c1c1e; }
+
+        .sheet-header-row {
+            display: flex; justify-content: center; align-items: center;
+            position: sticky; top: 0; background: inherit; z-index: 10;
+            padding-top: 12px; padding-bottom: 8px;
+        }
+        .sheet-handle { width: 36px; height: 4px; background: #d1d1d6; border-radius: 2px; }
+        .btn-close-sheet {
+            position: absolute; right: 16px; top: 12px;
+            background: rgba(128,128,128,0.2); border: none;
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: inherit; cursor: pointer;
+        }
+
+        .sheet-content { padding: 0 20px 30px 20px; padding-bottom: max(30px, env(safe-area-inset-bottom)); }
+
+        .place-title { font-size: 24px; font-weight: 700; margin: 0 0 4px 0; letter-spacing: -0.5px; }
+        .place-subtitle { font-size: 15px; color: #8e8e93; margin-bottom: 16px; }
+        
+        .wiki-snippet {
+            margin: 16px 0; font-size: 15px; line-height: 1.5; color: #333;
+            display: flex; gap: 16px; align-items: flex-start;
+        }
+        body.dark-mode .wiki-snippet { color: #ddd; }
+        
+        .wiki-thumb {
+            width: 80px; height: 80px; object-fit: cover;
+            border-radius: 12px; background: #eee; flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn-read-more {
+            display: inline-block; margin-top: 8px; font-size: 14px;
+            font-weight: 600; color: var(--primary); text-decoration: none;
+        }
+
+        .action-buttons {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;
+        }
+
+        .action-btn {
+            height: 48px; border-radius: 12px; border: none;
+            font-weight: 600; font-size: 15px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: rgba(128,128,128,0.15); color: var(--primary); }
+        body.dark-mode .btn-secondary { background: rgba(255,255,255,0.15); color: white; }
+        .btn-full-width { grid-column: 1 / -1; }
+
+        /* Full Screen Modals */
+        .fullscreen-modal {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 2000; transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            display: flex; flex-direction: column; background: #f2f2f7;
+            overflow-y: auto;
+        }
+        body.dark-mode .fullscreen-modal { background: #000; }
+
+        .modal-header {
+            padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+            padding-top: max(16px, env(safe-area-inset-top));
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 10;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        body.dark-mode .modal-header { background: rgba(28,28,30,0.8); border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+        /* Compact Settings */
+        .settings-group {
+            background: white; margin: 12px; border-radius: 12px; overflow: hidden;
+        }
+        body.dark-mode .settings-group { background: #1c1c1e; }
+
+        .setting-item {
+            padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 0.5px solid var(--separator-light); cursor: pointer; font-size: 16px;
+        }
+        body.dark-mode .setting-item { border-bottom: 0.5px solid var(--separator-dark); }
+        .setting-item:last-child { border-bottom: none; }
+
+        /* Explore List */
+        .explore-list {
+            padding: 16px;
+        }
+        .explore-item {
+            background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;
+            transition: transform 0.2s;
+        }
+        body.dark-mode .explore-item { background: #1c1c1e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .explore-item:active { transform: scale(0.98); }
+        
+        .explore-icon {
+            width: 48px; height: 48px; background: rgba(0,122,255,0.1); color: var(--primary);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .explore-info { flex: 1; }
+        .explore-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+        .explore-meta { font-size: 13px; color: #8e8e93; }
+
+        /* Toggles */
+        .toggle-switch {
+            width: 50px; height: 30px; background: #e9e9eb; border-radius: 15px;
+            position: relative; transition: 0.3s;
+        }
+        body.dark-mode .toggle-switch { background: #39393d; }
+        .toggle-switch.on { background: var(--success); }
+        .toggle-knob {
+            width: 26px; height: 26px; background: white; border-radius: 50%;
+            position: absolute; top: 2px; left: 2px; transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+
+        /* Custom Markers */
+        .user-location-marker {
+            position: relative;
+        }
+        .user-dot {
+            width: 18px; height: 18px; background-color: #007AFF;
+            border: 3px solid white; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 2;
+        }
+        .user-halo {
+            width: 60px; height: 60px;
+            background-color: rgba(0, 122, 255, 0.2);
+            border-radius: 50%;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2.5s infinite;
+            z-index: 1;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+        }
+
+        .measure-dot {
+            background: var(--warning); border: 2px solid white;
+            border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: grab;
+        }
+        .measure-dot:active { cursor: grabbing; }
+
+        /* Route Info Panel */
+        .route-info {
+            background: var(--primary); color: white; padding: 16px;
+            border-radius: 16px; margin-bottom: 16px; display: none;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+        }
+        .route-stats { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; }
+        .route-sub { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+        /* SCOPED ICONS ONLY */
+        .btn-icon svg, 
+        .action-btn svg, 
+        .setting-item svg,
+        .explore-icon svg,
+        .measure-undo-btn svg,
+        .exit-nav-btn svg,
+        .fab svg { 
+            width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Map Element -->
+    <div id="map"></div>
+
+    <!-- Exit Navigation Button -->
+    <div class="exit-nav-btn" id="btn-exit-nav" onclick="app.exitNavigation()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        Exit Navigation
+    </div>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="search-container glass">
+            <button class="btn-icon" id="btn-menu">
+                <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <input type="text" class="search-input" placeholder="Search..." id="search-input">
+            <button class="btn-icon" id="btn-search-clear" style="display:none;">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="suggestions-list" id="suggestions-list"></div>
+        </div>
+    </div>
+
+    <!-- Measure HUD -->
+    <div class="measure-hud glass" id="measure-hud">
+        <span id="measure-text">Tap map</span>
+        <button class="measure-undo-btn" id="btn-measure-undo" title="Undo">
+            <svg viewBox="0 0 24 24"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+        </button>
+    </div>
+
+    <!-- Bottom Left Controls -->
+    <div class="controls-stack">
+        <!-- Layer Menu -->
+        <div class="stack-menu" id="layer-menu">
+            <div class="setting-item" onclick="app.setLayer('streets')">Standard</div>
+            <div class="setting-item" onclick="app.setLayer('satellite')">Satellite</div>
+            <div class="setting-item" onclick="app.setLayer('dark')">Dark Mode</div>
+            <div class="setting-item" onclick="app.setLayer('terrain')">Terrain</div>
+        </div>
+
+        <button class="fab glass" id="btn-layers" title="Map Type">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        </button>
+        
+        <button class="fab glass" id="btn-measure" title="Measure Tool">
+            <svg viewBox="0 0 24 24"><path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path><path d="M7 3.34V5a3 3 0 0 0 3 3v0a2 2 0 0 1 2 2v0c0 1.1.9 2 2 2v0a2 2 0 0 0 2-2v0c0-1.1.9-2 2-2h3.17"></path><path d="M11 21.95V18a2 2 0 0 0-2-2v0a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"></path><circle cx="12" cy="12" r="10"></circle></svg>
+        </button>
+
+        <button class="fab glass" id="btn-location" title="Current Location">
+            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+        </button>
+    </div>
+
+    <!-- Bottom Right Controls (Zoom) -->
+    <div class="zoom-controls">
+        <button class="fab glass" id="btn-zoom-in">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button class="fab glass" id="btn-zoom-out">
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+    </div>
+
+    <!-- Bottom Sheet -->
+    <div class="bottom-sheet" id="bottom-sheet">
+        <div class="sheet-header-row">
+            <div class="sheet-handle"></div>
+            <button class="btn-close-sheet" onclick="app.closeBottomSheet()">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="sheet-content">
+            <h2 class="place-title" id="sheet-title">Selected Location</h2>
+            <div class="place-subtitle" id="sheet-coords"></div>
+            
+            <div class="route-info" id="route-info">
+                <div class="route-stats">
+                    <span id="route-time"></span>
+                    <span id="route-dist"></span>
+                </div>
+                <div class="route-sub">Fastest route via OSRM</div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn btn-primary" id="btn-directions">
+                    <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                    Directions
+                </button>
+                <button class="action-btn btn-secondary" id="btn-share">
+                    <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    Share
+                </button>
+                <button class="action-btn btn-secondary" id="btn-streetview">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    Street View
+                </button>
+                <button class="action-btn btn-secondary" id="btn-set-home">
+                    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    Set Home
+                </button>
+            </div>
+
+            <div id="wiki-container"></div>
+            <div id="sheet-details" style="margin-top: 16px; color: #666; font-size: 14px;"></div>
+        </div>
+    </div>
+
+    <!-- Explore Modal -->
+    <div class="fullscreen-modal" id="explore-modal" style="z-index: 2200;">
+        <div class="modal-header">
+            <button class="btn-icon" onclick="app.toggleExplore(false)">
+                <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <span style="font-size: 18px; font-weight: 600;">Nearby Places</span>
+            <div style="width: 48px;"></div>
+        </div>
+        <div id="explore-content" class="explore-list">
+            <div style="text-align:center; padding: 40px; color: #8e8e93;">
+                Scanning area...
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Modal -->
+    <div class="fullscreen-modal" id="menu-modal">
+        <div class="modal-header">
+            <span style="font-size: 24px; font-weight: 700;">Menu</span>
+            <button class="btn-icon" onclick="app.toggleMenu(false)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <div class="settings-group">
+            <div class="setting-item" onclick="app.openExplore()">
+                <span>Explore Nearby</span>
+                <svg viewBox="0 0 24 24" style="color:var(--primary)"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+            </div>
+            <div class="setting-item" onclick="app.navigateHome()">
+                <span>Go Home</span>
+                <svg viewBox="0 0 24 24" style="color:var(--primary)"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </div>
+             <div class="setting-item" onclick="app.flyToRandom()">
+                <span>Random Place</span>
+                <svg viewBox="0 0 24 24" style="color:var(--primary)"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="setting-item" onclick="app.toggleSettings(true)">
+                <span>Settings</span>
+                <svg viewBox="0 0 24 24" style="color:#8e8e93"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1 2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+            <div class="setting-item" onclick="app.toggleAbout(true)">
+                <span>About</span>
+                <svg viewBox="0 0 24 24" style="color:#8e8e93"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="setting-item" onclick="app.toggleDarkMode()">
+                <span>Dark Mode</span>
+                <div class="toggle-switch" id="toggle-dark">
+                    <div class="toggle-knob"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="fullscreen-modal" id="settings-modal" style="z-index: 2100;">
+        <div class="modal-header">
+            <button class="btn-icon" onclick="app.toggleSettings(false)">
+                <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <span style="font-size: 18px; font-weight: 600;">Settings</span>
+            <div style="width: 48px;"></div>
+        </div>
+
+        <div class="settings-group">
+            <div class="setting-item" onclick="app.toggleTrackingSetting()">
+                <span>Active Tracking</span>
+                <div class="toggle-switch" id="toggle-tracking"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="setting-item" onclick="app.toggleUnits()">
+                <span>Unit System</span>
+                <span style="color: #8e8e93" id="unit-display">Metric</span>
+            </div>
+            <div class="setting-item" onclick="app.toggleTraffic()">
+                <span>Traffic Overlay</span>
+                <div class="toggle-switch" id="toggle-traffic"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="setting-item" onclick="app.clearHome()">
+                <span style="color: var(--danger)">Clear Home Location</span>
+            </div>
+             <div class="setting-item" onclick="app.clearCache()">
+                <span style="color: var(--danger)">Reset All Settings</span>
+            </div>
+        </div>
+        
+        <p style="padding: 16px; font-size: 13px; color: #8e8e93; text-align: center;">
+            Map data © OpenStreetMap contributors<br>
+            Tiles courtesy of CartoDB, OpenTopoMap
+        </p>
+    </div>
+
+    <!-- About Modal -->
+    <div class="fullscreen-modal" id="about-modal" style="z-index: 2200;">
+        <div class="modal-header">
+            <button class="btn-icon" onclick="app.toggleAbout(false)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <span style="font-size: 18px; font-weight: 600;">About</span>
+            <div style="width: 48px;"></div>
+        </div>
+        <div style="padding: 32px; text-align: center;">
+            <div style="width: 80px; height: 80px; background: var(--primary); border-radius: 20px; margin: 0 auto 24px auto; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 10px 30px rgba(0, 122, 255, 0.4);">
+                <svg viewBox="0 0 24 24" style="width: 40px; height: 40px;"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+            </div>
+            <h1 style="font-size: 28px; margin-bottom: 8px;">Minimap</h1>
+            <p style="color: #8e8e93; font-size: 17px;">Version 1.0.3</p>
+            <br>
+            <p style="font-size: 15px; line-height: 1.6; color: #333; max-width: 400px; margin: 0 auto;">
+                The ultimate navigation tool. Featuring live nearby exploration, street view integration, and precision tools.
+            </p>
+            <br>
+            <div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px;">
+                <p style="font-size: 12px; color: #aaa;">© 2026 Made by Major Apps.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        const AppState = {
+            map: null,
+            baseLayer: null,
+            overlayLayer: null,
+            markers: [],
+            measureMarkers: [], 
+            measurePoints: [],  
+            measureLayer: null,
+            routeLayer: null,
+            routeBorder: null,
+            routeMarkers: [],
+            nearbyMarkers: [],
+            homeMarker: null,
+            userMarker: null,
+            userLocation: null,
+            watchId: null,
+            tempMarker: null,
+            isMeasuring: false,
+            isNavigating: false,
+            isTracking: localStorage.getItem('compass_tracking') !== 'false', // Default true
+            units: localStorage.getItem('compass_units') || 'metric',
+            darkMode: localStorage.getItem('compass_theme') === 'dark',
+            showTraffic: localStorage.getItem('compass_traffic') === 'true',
+            selectedLocation: null,
+            homeLocation: JSON.parse(localStorage.getItem('compass_home')) || null,
+            currentLayerName: localStorage.getItem('compass_layer') || 'streets',
+            lastRouteUpdatePos: null
+        };
+
+        const app = {
+            init: function() {
+                AppState.map = L.map('map', {
+                    zoomControl: false,
+                    attributionControl: false,
+                    zoomAnimation: true,
+                    fadeAnimation: true
+                }).setView([51.505, -0.09], 13);
+                
+                AppState.map.createPane('routePane');
+                AppState.map.getPane('routePane').style.zIndex = 600;
+
+                this.setLayer(AppState.currentLayerName);
+                if(AppState.darkMode) {
+                    document.body.classList.add('dark-mode');
+                    document.getElementById('toggle-dark').classList.add('on');
+                }
+                if(AppState.showTraffic) {
+                    document.getElementById('toggle-traffic').classList.add('on');
+                    this.toggleTraffic(true);
+                }
+                if(AppState.isTracking) {
+                    document.getElementById('toggle-tracking').classList.add('on');
+                    this.startTracking();
+                } else {
+                    this.locateUser(false); // Just locate once
+                }
+                
+                document.getElementById('unit-display').innerText = AppState.units === 'metric' ? 'Metric' : 'Imperial';
+
+                this.renderHomeMarker();
+
+                AppState.map.on('click', (e) => this.handleMapClick(e));
+                
+                this.bindEvents();
+            },
+
+            bindEvents: function() {
+                document.getElementById('btn-menu').onclick = () => this.toggleMenu(true);
+                document.getElementById('btn-location').onclick = () => this.flyToUser();
+                document.getElementById('btn-layers').onclick = () => {
+                    const menu = document.getElementById('layer-menu');
+                    menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+                };
+                document.getElementById('btn-measure').onclick = () => this.toggleMeasure();
+                document.getElementById('btn-measure-undo').onclick = (e) => { e.stopPropagation(); this.undoMeasurePoint(); };
+                
+                document.getElementById('btn-zoom-in').onclick = () => AppState.map.zoomIn();
+                document.getElementById('btn-zoom-out').onclick = () => AppState.map.zoomOut();
+
+                const searchInput = document.getElementById('search-input');
+                searchInput.oninput = (e) => this.handleSearch(e.target.value);
+                searchInput.onfocus = () => { if(searchInput.value.length > 2) document.getElementById('suggestions-list').style.display = 'block'; };
+                
+                document.getElementById('btn-search-clear').onclick = () => {
+                    searchInput.value = '';
+                    document.getElementById('suggestions-list').style.display = 'none';
+                    document.getElementById('btn-search-clear').style.display = 'none';
+                };
+
+                document.getElementById('btn-directions').onclick = () => this.getDirections();
+                document.getElementById('btn-set-home').onclick = () => this.setHomeLocation();
+                document.getElementById('btn-streetview').onclick = () => this.openStreetView();
+                
+                document.getElementById('btn-share').onclick = () => {
+                   if (navigator.share) {
+                       navigator.share({ title: 'Location', url: window.location.href });
+                   } else {
+                       alert("URL copied to clipboard!");
+                   }
+                };
+            },
+
+            setLayer: function(type) {
+                if(AppState.baseLayer) AppState.map.removeLayer(AppState.baseLayer);
+                
+                let url = '';
+                if(type === 'streets') url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                else if(type === 'satellite') url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+                else if(type === 'dark') url = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+                else if(type === 'terrain') url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+
+                AppState.baseLayer = L.tileLayer(url, { maxZoom: 19 }).addTo(AppState.map);
+                AppState.currentLayerName = type;
+                localStorage.setItem('compass_layer', type);
+                
+                if(AppState.routeBorder) AppState.routeBorder.bringToFront();
+                if(AppState.routeLayer) AppState.routeLayer.bringToFront();
+                if(AppState.overlayLayer) AppState.overlayLayer.bringToFront();
+                
+                document.getElementById('layer-menu').style.display = 'none';
+            },
+
+            // --- TRACKING & TOGGLE ---
+            toggleTrackingSetting: function() {
+                AppState.isTracking = !AppState.isTracking;
+                localStorage.setItem('compass_tracking', AppState.isTracking);
+                const el = document.getElementById('toggle-tracking');
+                if(AppState.isTracking) {
+                    el.classList.add('on');
+                    this.startTracking();
+                } else {
+                    el.classList.remove('on');
+                    this.stopTracking();
+                }
+            },
+
+            startTracking: function() {
+                if(!navigator.geolocation) return;
+                
+                // Clear existing watch if any
+                if(AppState.watchId) navigator.geolocation.clearWatch(AppState.watchId);
+
+                AppState.watchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const latlng = [pos.coords.latitude, pos.coords.longitude];
+                        AppState.userLocation = { lat: latlng[0], lng: latlng[1] };
+                        
+                        this.updateUserMarker(latlng);
+                        
+                        // Dynamic Routing Logic
+                        if(AppState.isNavigating && AppState.selectedLocation) {
+                            // Check distance moved since last calculation to avoid API spam
+                            const dist = AppState.lastRouteUpdatePos ? 
+                                AppState.map.distance(latlng, AppState.lastRouteUpdatePos) : 9999;
+                            
+                            if(dist > 25) { // 25 meters threshold
+                                this.getDirections(true); // Silent update
+                                AppState.lastRouteUpdatePos = latlng;
+                            }
+                        }
+                    },
+                    (err) => console.warn(err), 
+                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+                );
+            },
+
+            stopTracking: function() {
+                if(AppState.watchId) {
+                    navigator.geolocation.clearWatch(AppState.watchId);
+                    AppState.watchId = null;
+                }
+            },
+
+            locateUser: function(flyTo) {
+                if(!navigator.geolocation) {
+                    AppState.userLocation = { lat: 51.505, lng: -0.09 };
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const latlng = [pos.coords.latitude, pos.coords.longitude];
+                    AppState.userLocation = { lat: latlng[0], lng: latlng[1] };
+                    this.updateUserMarker(latlng);
+                    if(flyTo) AppState.map.flyTo(latlng, 16);
+                }, err => {
+                    const center = AppState.map.getCenter();
+                    AppState.userLocation = { lat: center.lat, lng: center.lng };
+                }, { enableHighAccuracy: true });
+            },
+
+            updateUserMarker: function(latlng) {
+                if(!AppState.userMarker) {
+                    const dotIcon = L.divIcon({
+                        className: 'user-location-marker',
+                        html: '<div class="user-halo"></div><div class="user-dot"></div>',
+                        iconSize: [60, 60],
+                        iconAnchor: [30, 30]
+                    });
+                    AppState.userMarker = L.marker(latlng, { icon: dotIcon, zIndexOffset: 1000 }).addTo(AppState.map);
+                } else {
+                    AppState.userMarker.setLatLng(latlng);
+                }
+            },
+            
+            flyToUser: function() {
+                if(AppState.userLocation) {
+                    AppState.map.flyTo([AppState.userLocation.lat, AppState.userLocation.lng], 17);
+                } else {
+                    this.locateUser(true);
+                }
+            },
+
+            // --- Home & Persistent Markers ---
+            renderHomeMarker: function() {
+                if(!AppState.homeLocation) return;
+                if(AppState.homeMarker) AppState.map.removeLayer(AppState.homeMarker);
+                
+                const homeIcon = L.divIcon({
+                    className: '',
+                    html: `<div style="background:#007AFF;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);color:white;">
+                            <svg style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                           </div>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+
+                AppState.homeMarker = L.marker([AppState.homeLocation.lat, AppState.homeLocation.lng], { icon: homeIcon })
+                    .addTo(AppState.map)
+                    .on('click', () => this.selectLocation(AppState.homeLocation.lat, AppState.homeLocation.lng, "Home"));
+            },
+
+            setHomeLocation: function() {
+                if(!AppState.selectedLocation) return;
+                AppState.homeLocation = {
+                    lat: AppState.selectedLocation.lat,
+                    lng: AppState.selectedLocation.lng,
+                    name: document.getElementById('sheet-title').innerText
+                };
+                localStorage.setItem('compass_home', JSON.stringify(AppState.homeLocation));
+                this.renderHomeMarker();
+                this.updateHomeButton(true);
+                alert("Home location saved!");
+                this.closeBottomSheet();
+            },
+
+            navigateHome: function() {
+                this.toggleMenu(false);
+                if(!AppState.homeLocation) return alert("No home location set.");
+                AppState.map.flyTo([AppState.homeLocation.lat, AppState.homeLocation.lng], 16, { animate: true, duration: 1.5 });
+                AppState.selectedLocation = AppState.homeLocation;
+                setTimeout(() => this.getDirections(), 1000); 
+            },
+
+            clearHome: function() {
+                localStorage.removeItem('compass_home');
+                AppState.homeLocation = null;
+                if(AppState.homeMarker) AppState.map.removeLayer(AppState.homeMarker);
+                this.updateHomeButton(false);
+                alert("Home location cleared.");
+            },
+            
+            isLocationHome: function(lat, lng) {
+                if(!AppState.homeLocation) return false;
+                return Math.abs(lat - AppState.homeLocation.lat) < 0.0001 && Math.abs(lng - AppState.homeLocation.lng) < 0.0001;
+            },
+            
+            updateHomeButton: function(isHome) {
+                const btn = document.getElementById('btn-set-home');
+                if(isHome) {
+                    btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Remove Home';
+                    btn.style.color = 'var(--danger)';
+                    btn.onclick = () => this.clearHome();
+                } else {
+                    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Set Home';
+                    btn.style.color = '';
+                    btn.onclick = () => this.setHomeLocation();
+                }
+            },
+
+            openExplore: function() {
+                this.toggleMenu(false);
+                this.toggleExplore(true);
+                this.findNearbyPlaces();
+            },
+            
+            toggleExplore: function(show) {
+                document.getElementById('explore-modal').style.transform = show ? 'translateX(0)' : 'translateX(-100%)';
+            },
+
+            findNearbyPlaces: function() {
+                const center = AppState.map.getCenter();
+                const radius = 2500;
+                const container = document.getElementById('explore-content');
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color: #8e8e93;">Scanning area...</div>';
+                
+                AppState.nearbyMarkers.forEach(m => AppState.map.removeLayer(m));
+                AppState.nearbyMarkers = [];
+
+                const query = `
+                    [out:json][timeout:25];
+                    (
+                      node["tourism"](around:${radius},${center.lat},${center.lng});
+                      node["amenity"="restaurant"](around:${radius},${center.lat},${center.lng});
+                      node["amenity"="cafe"](around:${radius},${center.lat},${center.lng});
+                    );
+                    out body 20;
+                    >;
+                    out skel qt;
+                `;
+
+                const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        container.innerHTML = '';
+                        if(!data.elements || data.elements.length === 0) {
+                            container.innerHTML = '<div style="text-align:center; padding: 20px;">No places found nearby.</div>';
+                            return;
+                        }
+                        data.elements.forEach(el => {
+                            if(el.tags && el.tags.name) {
+                                const marker = L.circleMarker([el.lat, el.lon], {
+                                    radius: 6, color: '#FF3B30', fillColor: 'white', fillOpacity: 1, weight: 2
+                                }).addTo(AppState.map);
+                                marker.on('click', () => {
+                                    this.selectLocation(el.lat, el.lon, el.tags.name);
+                                });
+                                AppState.nearbyMarkers.push(marker);
+                                let type = "Place";
+                                let icon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle></svg>';
+                                if(el.tags.amenity === 'restaurant') { type = "Restaurant"; icon = '<svg viewBox="0 0 24 24"><path d="M11 5 L11 19"></path><path d="M15 5 L15 19"></path></svg>'; }
+                                else if(el.tags.tourism) { type = "Attraction"; icon = '<svg viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l8-4 8 4v14"></path></svg>'; }
+                                const div = document.createElement('div');
+                                div.className = 'explore-item';
+                                div.innerHTML = `<div class="explore-icon">${icon}</div><div class="explore-info"><div class="explore-name">${el.tags.name}</div><div class="explore-meta">${type}</div></div><svg viewBox="0 0 24 24" style="color:#c7c7cc;width:20px;height:20px;"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+                                div.onclick = () => {
+                                    this.toggleExplore(false);
+                                    AppState.map.flyTo([el.lat, el.lon], 16);
+                                    setTimeout(() => this.selectLocation(el.lat, el.lon, el.tags.name), 800);
+                                };
+                                container.appendChild(div);
+                            }
+                        });
+                    })
+                    .catch(() => {
+                        container.innerHTML = '<div style="text-align:center; padding: 20px; color:red;">Failed to load places.</div>';
+                    });
+            },
+
+            openStreetView: function() {
+                if(!AppState.selectedLocation) return;
+                const { lat, lng } = AppState.selectedLocation;
+                window.open(`https://www.google.com/maps?layer=c&cbll=${lat},${lng}`, '_blank');
+            },
+
+            flyToRandom: function() {
+                const places = [
+                    { lat: 48.8584, lng: 2.2945, name: "Eiffel Tower" },
+                    { lat: 40.7484, lng: -73.9857, name: "Empire State Building" },
+                    { lat: 35.6586, lng: 139.7454, name: "Tokyo Tower" },
+                    { lat: -22.9519, lng: -43.2105, name: "Christ the Redeemer" },
+                    { lat: 51.5007, lng: -0.1246, name: "Big Ben" },
+                    { lat: 37.8199, lng: -122.4783, name: "Golden Gate Bridge" }
+                ];
+                const place = places[Math.floor(Math.random() * places.length)];
+                AppState.map.flyTo([place.lat, place.lng], 17);
+                this.toggleMenu(false);
+                setTimeout(() => this.selectLocation(place.lat, place.lng, place.name), 1500);
+            },
+
+            handleMapClick: function(e) {
+                if(AppState.isMeasuring) {
+                    this.addMeasurePoint(e.latlng);
+                } else {
+                    this.selectLocation(e.latlng.lat, e.latlng.lng);
+                }
+            },
+
+            selectLocation: function(lat, lng, name = null) {
+                AppState.selectedLocation = { lat, lng };
+                const isHome = this.isLocationHome(lat, lng);
+                this.updateHomeButton(isHome);
+                if(!name) {
+                    name = "Marked Location";
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            const title = data.display_name.split(',')[0];
+                            document.getElementById('sheet-title').innerText = title;
+                            document.getElementById('sheet-details').innerText = data.display_name;
+                            this.fetchWikipedia(title, lat, lng);
+                        });
+                } else {
+                     this.fetchWikipedia(name, lat, lng);
+                }
+                document.getElementById('sheet-title').innerText = name;
+                document.getElementById('sheet-coords').innerText = `${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}`;
+                document.getElementById('bottom-sheet').style.transform = 'translateY(0)';
+                if(AppState.tempMarker) AppState.map.removeLayer(AppState.tempMarker);
+                AppState.tempMarker = L.marker([lat, lng]).addTo(AppState.map);
+            },
+
+            handleSearch: function(query) {
+                const clearBtn = document.getElementById('btn-search-clear');
+                clearBtn.style.display = query.length > 0 ? 'flex' : 'none';
+                if(query.length < 3) return;
+                if(this.searchTimeout) clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                        .then(res => res.json())
+                        .then(data => this.renderSuggestions(data));
+                }, 400);
+            },
+
+            renderSuggestions: function(data) {
+                const list = document.getElementById('suggestions-list');
+                list.innerHTML = '';
+                list.style.display = 'block';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;color:#8e8e93;flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle></svg><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.display_name}</span>`;
+                    div.onclick = () => {
+                        AppState.map.flyTo([item.lat, item.lon], 16);
+                        this.selectLocation(item.lat, item.lon, item.display_name.split(',')[0]);
+                        list.style.display = 'none';
+                        document.getElementById('search-input').value = item.display_name.split(',')[0];
+                    };
+                    list.appendChild(div);
+                });
+            },
+
+            fetchWikipedia: function(query, lat, lng) {
+                const container = document.getElementById('wiki-container');
+                container.innerHTML = '<div style="padding:10px;text-align:center;opacity:0.5;">Looking up details...</div>';
+                const geoUrl = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lng}&gsradius=1000&gslimit=1&format=json&origin=*`;
+                fetch(geoUrl)
+                    .then(r => r.json())
+                    .then(geoData => {
+                        let pageId = null;
+                        if(geoData.query && geoData.query.geosearch.length > 0) pageId = geoData.query.geosearch[0].pageid;
+                        if(!pageId) return this.searchWikiString(query);
+                        else return this.getWikiDetails(pageId);
+                    })
+                    .catch(() => { container.innerHTML = ''; });
+            },
+
+            searchWikiString: function(query) {
+                const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+                fetch(url).then(r=>r.json()).then(data => {
+                    if(data.query && data.query.search.length > 0) this.getWikiDetails(data.query.search[0].pageid);
+                    else document.getElementById('wiki-container').innerHTML = '';
+                });
+            },
+
+            getWikiDetails: function(pageId) {
+                const url = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts|pageimages|info&inprop=url&exintro&explaintext&pithumbsize=300&pageids=${pageId}&format=json&origin=*`;
+                fetch(url).then(r=>r.json()).then(data => {
+                    const page = data.query.pages[pageId];
+                    if(!page) return;
+                    const html = `<div class="wiki-snippet">${page.thumbnail ? `<img src="${page.thumbnail.source}" class="wiki-thumb">` : ''}<div><div style="font-weight:700;margin-bottom:4px;font-size:16px;">Wikipedia</div>${page.extract.substring(0, 160)}...<a href="${page.fullurl}" target="_blank" class="btn-read-more">Read on Wikipedia</a></div></div>`;
+                    document.getElementById('wiki-container').innerHTML = html;
+                });
+            },
+
+            closeBottomSheet: function() {
+                document.getElementById('bottom-sheet').style.transform = 'translateY(110%)';
+            },
+            
+            exitNavigation: function() {
+                AppState.isNavigating = false;
+                this.clearRoute();
+                if(AppState.tempMarker) AppState.map.removeLayer(AppState.tempMarker);
+                document.getElementById('btn-exit-nav').style.display = 'none';
+            },
+
+            toggleMeasure: function() {
+                AppState.isMeasuring = !AppState.isMeasuring;
+                const btn = document.getElementById('btn-measure');
+                const hud = document.getElementById('measure-hud');
+                if(AppState.isMeasuring) {
+                    btn.classList.add('active'); hud.style.display = 'flex';
+                    this.updateMeasureText(); this.clearMeasure(); this.closeBottomSheet();
+                } else {
+                    btn.classList.remove('active'); hud.style.display = 'none'; this.clearMeasure();
+                }
+            },
+
+            addMeasurePoint: function(latlng) {
+                const dot = L.marker(latlng, { icon: L.divIcon({ className: 'measure-dot', iconSize: [14, 14], iconAnchor: [7, 7] }), draggable: true, zIndexOffset: 1000 }).addTo(AppState.map);
+                dot.index = AppState.measurePoints.length; 
+                dot.on('drag', (e) => { AppState.measurePoints[dot.index] = e.target.getLatLng(); this.redrawMeasureShape(); });
+                AppState.measurePoints.push(latlng);
+                AppState.measureMarkers.push(dot);
+                this.redrawMeasureShape();
+            },
+            
+            undoMeasurePoint: function() {
+                if(AppState.measurePoints.length === 0) return;
+                AppState.measurePoints.pop();
+                const lastMarker = AppState.measureMarkers.pop();
+                AppState.map.removeLayer(lastMarker);
+                this.redrawMeasureShape();
+            },
+
+            redrawMeasureShape: function() {
+                if(AppState.measureLayer) AppState.map.removeLayer(AppState.measureLayer);
+                const points = AppState.measurePoints;
+                if(points.length > 2) {
+                    AppState.measureLayer = L.polygon(points, {color: '#FF9500', weight: 3}).addTo(AppState.map);
+                    const area = this.calculateArea(points);
+                    document.getElementById('measure-text').innerText = `Area: ${this.formatArea(area)}`;
+                } else if (points.length > 1) {
+                    AppState.measureLayer = L.polyline(points, {color: '#FF9500', weight: 3, dashArray: '10, 10'}).addTo(AppState.map);
+                    const dist = this.calculateLength(points);
+                    document.getElementById('measure-text').innerText = `Dist: ${this.formatDist(dist)}`;
+                } else {
+                    document.getElementById('measure-text').innerText = "Tap map to add points";
+                }
+            },
+
+            clearMeasure: function() {
+                AppState.measurePoints = [];
+                if(AppState.measureLayer) AppState.map.removeLayer(AppState.measureLayer);
+                AppState.measureMarkers.forEach(m => AppState.map.removeLayer(m));
+                AppState.measureMarkers = [];
+                document.getElementById('measure-text').innerText = "Tap map";
+            },
+
+            calculateLength: function(latlngs) {
+                let dist = 0;
+                for(let i=0; i < latlngs.length -1; i++) dist += latlngs[i].distanceTo(latlngs[i+1]);
+                return dist;
+            },
+
+            calculateArea: function(latlngs) {
+                const earthRadius = 6378137; let area = 0;
+                if (latlngs.length > 2) {
+                    for (let i = 0; i < latlngs.length; i++) {
+                        let j = (i + 1) % latlngs.length;
+                        let p1 = latlngs[i]; let p2 = latlngs[j];
+                        area += (p2.lng - p1.lng) * (2 + Math.sin(p1.lat * Math.PI / 180) + Math.sin(p2.lat * Math.PI / 180));
+                    }
+                    area = area * earthRadius * earthRadius / 2.0;
+                    area = Math.abs(area * Math.PI / 180.0) / 2.0; 
+                }
+                return area;
+            },
+            
+            updateMeasureText: function() {
+                 if(AppState.measurePoints.length === 0) document.getElementById('measure-text').innerText = "Tap map to measure";
+            },
+
+            formatDist: function(m) {
+                if(AppState.units === 'imperial') {
+                    const feet = m * 3.28084;
+                    if(feet > 5280) return (feet/5280).toFixed(2) + " mi";
+                    return Math.round(feet) + " ft";
+                }
+                if(m > 1000) return (m/1000).toFixed(2) + " km";
+                return Math.round(m) + " m";
+            },
+
+            formatArea: function(sqm) {
+                if(AppState.units === 'imperial') {
+                    const sqft = sqm * 10.7639;
+                    if(sqft > 27878400) return (sqft/27878400).toFixed(2) + " sq mi";
+                    return Math.round(sqft) + " sq ft";
+                }
+                if(sqm > 1000000) return (sqm/1000000).toFixed(2) + " km²";
+                return Math.round(sqm) + " m²";
+            },
+
+            getDirections: function(silent = false) {
+                if(!AppState.selectedLocation) return;
+                const dest = AppState.selectedLocation;
+                let start = AppState.userLocation;
+                if(!start) start = AppState.map.getCenter();
+
+                if(!silent) {
+                    this.clearRoute(); 
+                    document.getElementById('btn-directions').innerText = "Calculating...";
+                }
+                
+                const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
+                
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        if(!silent) document.getElementById('btn-directions').innerText = "Directions";
+                        if(data.routes && data.routes.length > 0) {
+                            this.drawRoute(data.routes[0]);
+                        } else if(!silent) {
+                            alert("No route found.");
+                        }
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        if(!silent) {
+                            document.getElementById('btn-directions').innerText = "Directions";
+                            alert("Routing unavailable.");
+                        }
+                    });
+            },
+
+            drawRoute: function(route) {
+                AppState.isNavigating = true;
+                document.getElementById('btn-exit-nav').style.display = 'flex';
+                document.getElementById('route-info').style.display = 'block';
+                document.getElementById('bottom-sheet').style.transform = 'translateY(110%)'; 
+                
+                const durationMins = Math.round(route.duration / 60);
+                const distKm = (route.distance / 1000).toFixed(1);
+                document.getElementById('route-time').innerText = durationMins > 60 
+                    ? `${Math.floor(durationMins/60)}h ${durationMins%60}m` : `${durationMins} min`;
+                document.getElementById('route-dist').innerText = AppState.units === 'metric' 
+                    ? `${distKm} km` : `${(distKm * 0.621371).toFixed(1)} mi`;
+                
+                const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                
+                if(AppState.routeBorder) AppState.map.removeLayer(AppState.routeBorder);
+                if(AppState.routeLayer) AppState.map.removeLayer(AppState.routeLayer);
+
+                AppState.routeBorder = L.polyline(coords, { 
+                    color: 'white', weight: 9, opacity: 0.9, lineCap: 'round', pane: 'routePane' 
+                }).addTo(AppState.map);
+                
+                AppState.routeLayer = L.polyline(coords, { 
+                    color: '#007AFF', weight: 5, opacity: 1, lineCap: 'round', pane: 'routePane' 
+                }).addTo(AppState.map);
+
+                // Markers only added once to avoid flickering or duplication
+                if(AppState.routeMarkers.length === 0) {
+                    const startDot = L.circleMarker(coords[0], {radius: 7, color: 'green', fillColor: 'white', fillOpacity:1, weight:3, pane: 'routePane'}).addTo(AppState.map);
+                    const endDot = L.circleMarker(coords[coords.length-1], {radius: 7, color: 'red', fillColor: 'white', fillOpacity:1, weight:3, pane: 'routePane'}).addTo(AppState.map);
+                    AppState.routeMarkers = [startDot, endDot];
+                    AppState.map.fitBounds(AppState.routeLayer.getBounds(), {padding: [50, 150]});
+                }
+            },
+
+            clearRoute: function() {
+                if(AppState.routeLayer) AppState.map.removeLayer(AppState.routeLayer);
+                if(AppState.routeBorder) AppState.map.removeLayer(AppState.routeBorder);
+                AppState.routeMarkers.forEach(m => AppState.map.removeLayer(m));
+                AppState.routeMarkers = [];
+                document.getElementById('route-info').style.display = 'none';
+                document.getElementById('btn-exit-nav').style.display = 'none';
+            },
+
+            toggleMenu: function(show) { document.getElementById('menu-modal').style.transform = show ? 'translateX(0)' : 'translateX(-100%)'; },
+            toggleSettings: function(show) { document.getElementById('settings-modal').style.transform = show ? 'translateX(0)' : 'translateX(100%)'; },
+            toggleAbout: function(show) { document.getElementById('about-modal').style.transform = show ? 'translateX(0)' : 'translateX(100%)'; },
+
+            toggleDarkMode: function() {
+                AppState.darkMode = !AppState.darkMode;
+                localStorage.setItem('compass_theme', AppState.darkMode ? 'dark' : 'light');
+                document.body.classList.toggle('dark-mode');
+                document.getElementById('toggle-dark').classList.toggle('on');
+                if(AppState.darkMode && AppState.currentLayerName === 'streets') this.setLayer('dark');
+            },
+
+            toggleUnits: function() {
+                AppState.units = AppState.units === 'metric' ? 'imperial' : 'metric';
+                localStorage.setItem('compass_units', AppState.units);
+                document.getElementById('unit-display').innerText = AppState.units === 'metric' ? 'Metric' : 'Imperial';
+            },
+
+            toggleTraffic: function(forceState) {
+                if(typeof forceState === 'boolean') AppState.showTraffic = forceState;
+                else AppState.showTraffic = !AppState.showTraffic;
+                localStorage.setItem('compass_traffic', AppState.showTraffic);
+                const el = document.getElementById('toggle-traffic');
+                if(AppState.showTraffic) el.classList.add('on'); else el.classList.remove('on');
+                if(AppState.showTraffic) {
+                    if(!AppState.overlayLayer) {
+                         AppState.overlayLayer = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+                            opacity: 0.6, maxZoom: 19, zIndex: 10
+                        }).addTo(AppState.map);
+                        AppState.overlayLayer.bringToFront();
+                    }
+                } else {
+                    if(AppState.overlayLayer) {
+                        AppState.map.removeLayer(AppState.overlayLayer);
+                        AppState.overlayLayer = null;
+                    }
+                }
+            },
+
+            clearCache: function() { localStorage.clear(); window.location.reload(); }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
