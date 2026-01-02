@@ -997,8 +997,10 @@ async fetchMyApps() {
                 btn.classList.add('loading');
 
                 try {
+                    const oldName = this.devProfile.displayName;
+                    
                     // 1. Update Profile (Name)
-                    if (newName !== this.devProfile.displayName) {
+                    if (newName !== oldName) {
                         await this.user.updateProfile({ displayName: newName });
                         this.devProfile.displayName = newName;
                     }
@@ -1011,13 +1013,11 @@ async fetchMyApps() {
                         try {
                             await this.user.updatePassword(newPass);
                         } catch(e) {
-                            // If requires-recent-login, we must re-auth
                             if (e.code === 'auth/requires-recent-login') {
                                 const currentPass = prompt("Security Check: Please enter your CURRENT password to save changes.");
                                 if (currentPass) {
                                     const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
                                     await this.user.reauthenticateWithCredential(credential);
-                                    // Retry update
                                     await this.user.updatePassword(newPass);
                                 } else {
                                     throw new Error("Re-authentication cancelled. Password not changed.");
@@ -1027,6 +1027,29 @@ async fetchMyApps() {
                             }
                         }
                     }
+
+                    // --- 3. BATCH UPDATE AUTHOR NAME ON ALL APPS ---
+                    // This ensures existing apps show the new name immediately
+                    if (newName !== oldName) {
+                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                        const batch = this.db.batch();
+                        let count = 0;
+
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            // Only update my apps
+                            if (data.authorId === this.devProfile.uid) {
+                                batch.update(doc.ref, { author: newName });
+                                count++;
+                            }
+                        });
+
+                        if (count > 0) {
+                            await batch.commit();
+                            console.log(`Updated author name for ${count} apps.`);
+                        }
+                    }
+                    // -----------------------------------------------
 
                     // Update local session
                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
