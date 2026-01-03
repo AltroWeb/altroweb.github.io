@@ -99,9 +99,8 @@
     <script>
     (function() {
         // --- CONFIGURATION ---
-        // MUST MATCH APP BUILDER NAME EXACTLY
         const CONFIG = {
-            appName: "My Custom Music", 
+            appName: "My Custom Music", // MUST MATCH APP BUILDER NAME EXACTLY
             islandTitle: "Now Playing",
             islandSub: "Pro Audio",
             islandIcon: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100"
@@ -121,15 +120,23 @@
             } catch (e) { return null; }
         }
 
-        // --- 2. FIND REAL ID ---
+        // --- 2. INTELLIGENT ID DISCOVERY & PERSISTENCE ---
         function findRealAppID(parentWindow) {
             try {
+                // 1. Try to find ID in installed apps list
                 const raw = parentWindow.localStorage.getItem('ios_installed_apps');
-                if (!raw) return null;
-                const apps = JSON.parse(raw);
-                const match = apps.find(a => a.name === CONFIG.appName);
-                return match ? match.id : null;
+                if (raw) {
+                    const apps = JSON.parse(raw);
+                    const match = apps.find(a => a.name === CONFIG.appName);
+                    if (match && match.id) return match.id;
+                }
+                
+                // 2. Fallback: Check if we saved it previously
+                const savedID = parentWindow.localStorage.getItem('my_custom_music_id');
+                if (savedID) return savedID;
+
             } catch(e) { return null; }
+            return null;
         }
 
         // --- 3. UI HELPER ---
@@ -138,7 +145,7 @@
             const sub = doc.querySelector('.island-sub');
             const icon = doc.querySelector('.island-icon');
             
-            // Only force if we are the owner
+            // Aggressively force text if we are owner
             if (window.parent.eval('iOS')._islandOwner === REAL_APP_ID) {
                 if (title) title.innerText = CONFIG.islandTitle;
                 if (sub) sub.innerText = CONFIG.islandSub;
@@ -146,7 +153,7 @@
             }
         }
 
-        // --- 4. MAIN INJECTION LOGIC ---
+        // --- 4. MAIN LOGIC ---
         function init() {
             const engine = getEngine();
             if (!engine) {
@@ -157,23 +164,24 @@
 
             REAL_APP_ID = findRealAppID(window.parent);
             if (!REAL_APP_ID) {
+                // Only use name as ID if absolutely necessary (legacy fallback)
+                REAL_APP_ID = CONFIG.appName;
                 statusText.innerText = "ID Not Found";
-                // Only for debugging if not found
-                REAL_APP_ID = CONFIG.appName; 
             } else {
-                statusText.innerText = `ID: ${REAL_APP_ID.substring(0,6)}...`;
+                // Save ID for persistence across reloads
+                window.parent.localStorage.setItem('my_custom_music_id', REAL_APP_ID);
+                statusText.innerText = `ID: ${REAL_APP_ID.substring(0,6)}`;
                 statusPill.classList.add('active');
             }
 
             // --- CROSS-DUPLICATE HANDLING ---
-            // Whenever we load (meaning user opened THIS duplicate), set a global flag
             window.parent.localStorage.setItem('last_active_music_id', REAL_APP_ID);
 
-            // Force immediate ownership
+            // Force initial ownership
             iOS._islandOwner = REAL_APP_ID;
             forceIslandText(doc);
 
-            // SAVE ORIGINALS
+            // SAVE ORIGINALS (Safety check)
             if (!iOS._originals) {
                 iOS._originals = {
                     launch: iOS.launchMusicFromIsland,
@@ -196,24 +204,19 @@
                     return; 
                 }
 
-                // 2. Otherwise, the "Last Active" custom app takes ownership.
-                // If WE are the last active custom app (or duplicates), we own it.
+                // 2. Otherwise, FORCE ownership to us if we were the last active custom app
                 if (lastActiveID === REAL_APP_ID) {
                     iOS._islandOwner = REAL_APP_ID;
                     forceIslandText(doc);
                 }
-                
-                // Note: If another duplicate (Different ID) was opened last, 
-                // IT will be running this same loop and setting ownership to ITSELF.
-                // We respectfully let it have ownership if lastActiveID !== REAL_APP_ID.
 
-            }, 50); // Fast check (50ms)
+            }, 50); // High frequency check
 
             // =======================================================
-            // OVERRIDE 1: LAUNCH (With Aggressive Recede)
+            // OVERRIDE 1: LAUNCH (Aggressive Recede & No-Loop)
             // =======================================================
             iOS.launchMusicFromIsland = function() {
-                // Ownership check
+                // Yield only if we really don't own it
                 if (iOS._islandOwner !== REAL_APP_ID) return iOS._originals.launch.call(this);
 
                 // Bounce if active
@@ -222,8 +225,7 @@
                     return;
                 }
 
-                // 1. AGGRESSIVE RECEDE
-                // Whatever was active before us gets pushed back
+                // 1. AGGRESSIVE RECEDE: Push back WHATEVER is active
                 if (this.state === 'ACTIVE' && this.activeWindow) {
                     this.activeWindow.classList.add('receded');
                 } else {
@@ -232,7 +234,7 @@
                 }
 
                 this.state = 'OPENING';
-                this.openedFromIsland = true; // Enables Vacuum
+                this.openedFromIsland = true;
 
                 // 2. CLEANUP
                 clearTimeout(this.autoCollapseTimer);
@@ -240,16 +242,16 @@
                 this.statusBar.classList.remove('blurred', 'squished', 'dark-text');
                 this.gestureBar.classList.remove('on-home', 'dark-bar');
 
-                // 3. TARGET US
+                // 3. TARGET US (Main Window)
                 this.activeWindow = this.mainWindow;
                 
-                // NO RELOAD: Only route if content differs
+                // CRITICAL: Only route content if ID has changed to prevent reload loop
                 if (this.activeWindow.getAttribute('data-app') !== REAL_APP_ID) {
                     this.routeContent(REAL_APP_ID);
                 }
                 this.activeWindow.setAttribute('data-app', REAL_APP_ID);
 
-                // 4. ANIMATION (Warp)
+                // 4. WARP ANIMATION
                 const islandRect = this.island.getBoundingClientRect();
                 const screenRect = this.screen.getBoundingClientRect();
                 const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
@@ -265,7 +267,7 @@
                 this.activeWindow.offsetHeight; 
                 this.activeWindow.classList.add('launching-timewarp');
 
-                // 5. UNLOCK GESTURES (Force Active)
+                // 5. UNLOCK GESTURES (Force Active State)
                 setTimeout(() => {
                     this.island.style.transition = '';
                     if (this.state === 'OPENING') {
@@ -282,6 +284,7 @@
             // =======================================================
             iOS.toggleIsland = function(forceState) {
                 const currentID = this.activeWindow ? this.activeWindow.getAttribute('data-app') : null;
+                // If WE are active, always bounce
                 if (this.state === 'ACTIVE' && currentID === REAL_APP_ID) {
                     this.island.classList.remove('island-bounce');
                     void this.island.offsetWidth;
@@ -292,14 +295,14 @@
             };
 
             // =======================================================
-            // OVERRIDE 3: CLOSE (Vacuum + Clean)
+            // OVERRIDE 3: CLOSE (Vacuum + Reset)
             // =======================================================
             iOS.closeApp = function() {
                 if (this.state === 'IDLE' || this.state === 'CLOSING') return;
                 
                 const currentID = this.activeWindow.getAttribute('data-app');
 
-                // If US and Opened from Island -> VACUUM
+                // Only Vacuum if it's US AND opened from Island
                 if (currentID === REAL_APP_ID && this.openedFromIsland) {
                     this.state = 'CLOSING';
 
@@ -308,7 +311,7 @@
                     this.gestureBar.classList.remove('dark-bar');
                     this.gestureBar.classList.add('on-home');
 
-                    // Reset Receded Apps
+                    // Reset Receded Elements
                     doc.querySelectorAll('.receded').forEach(el => el.classList.remove('receded'));
                     this.homescreenGroup.classList.remove('minimized');
                     this.wallpaper.classList.remove('active-app');
@@ -352,7 +355,7 @@
 
                     this.openedFromIsland = false;
 
-                    // 4. FORCE FINISH CLOSING
+                    // 4. FORCE CLOSE FINISH
                     setTimeout(() => {
                         if (this.state === 'CLOSING') {
                             this.finishClosing(); 
@@ -369,16 +372,16 @@
             // OVERRIDE 4: CLICK (Hijack)
             // =======================================================
             iOS.handleIslandClick = function() {
-                // If Music owns it, standard behavior
-                if (iOS._islandOwner !== REAL_APP_ID) return iOS._originals.click.call(this);
+                // If Music owns it (user explicitly opened it), let it be
+                if (iOS._islandOwner === 'Music') return iOS._originals.click.call(this);
 
-                // Bounce if active
+                // Otherwise, WE force control
                 if (this.state === 'ACTIVE' && this.activeWindow && this.activeWindow.getAttribute('data-app') === REAL_APP_ID) {
                     this.toggleIsland(true);
                     return;
                 }
                 
-                // Launch if expanding
+                // If expanding, launch US
                 if (this.isIslandExpanded || this.island.classList.contains('compact')) {
                     this.launchMusicFromIsland();
                 } else {
@@ -388,8 +391,8 @@
 
             // UNLOAD CLEANUP
             window.addEventListener('unload', () => {
+                // If we currently own the island, try to restore defaults for stability
                 if (iOS._islandOwner === REAL_APP_ID) {
-                    // Try to be nice, but mostly just resetting for stability
                     iOS.launchMusicFromIsland = iOS._originals.launch;
                     iOS.toggleIsland = iOS._originals.toggle;
                     iOS.closeApp = iOS._originals.close;
