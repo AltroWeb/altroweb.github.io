@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>iMessage P2P Ultra</title>
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --header-bg: rgba(30, 30, 30, 0.85);
+            --text-primary: #ffffff;
+            --text-secondary: #8e8e93;
+            --bubble-blue: #0A84FF;
+            --bubble-gray: #26262a;
+            --separator: #38383a;
+            --input-bg: #1c1c1e;
+            --search-bg: #1c1c1e;
+            --font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            --danger: #FF453A;
+            --success: #32D74B;
+            --alert-bg: rgba(30, 30, 30, 0.9);
+            --menu-bg: rgba(45, 45, 45, 0.95);
+            --context-bg: rgba(50, 50, 50, 0.95);
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+        }
+
+        .light-mode {
+            --bg-color: #ffffff;
+            --header-bg: rgba(245, 245, 247, 0.85);
+            --text-primary: #000000;
+            --text-secondary: #8e8e93;
+            --bubble-blue: #007AFF;
+            --bubble-gray: #E9E9EB;
+            --separator: #C6C6C8;
+            --input-bg: #ffffff;
+            --search-bg: #E3E3E8;
+            --alert-bg: rgba(245, 245, 245, 0.9);
+            --menu-bg: rgba(250, 250, 250, 0.95);
+            --context-bg: rgba(240, 240, 240, 0.95);
+            --modal-overlay: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Base & Reset */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-family); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-primary); overflow: hidden; height: 100dvh; width: 100vw; }
+        
+        button { background: none; border: none; outline: none; cursor: pointer; color: inherit; user-select: none; }
+        input, textarea { outline: none; border: none; background: none; color: inherit; font-family: inherit; resize: none; }
+        a { text-decoration: none; color: inherit; }
+
+        #app { display: flex; height: 100%; width: 100%; position: relative; overflow: hidden; }
+
+        /* Views & Animations */
+        .view { display: flex; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background-color: var(--bg-color); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); z-index: 10; will-change: transform; }
+        .view.hidden { transform: translateX(100%); pointer-events: none; }
+        .view.active { transform: translateX(0); z-index: 20; }
+        
+        #sidebar-view { position: relative; border-right: 1px solid var(--separator); z-index: 15; }
+        @media (min-width: 768px) { #sidebar-view { width: 340px; flex-shrink: 0; } .view.active { width: 100%; } }
+
+        /* Header */
+        .header { flex: 0 0 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background-color: var(--header-bg); border-bottom: 1px solid var(--separator); z-index: 30; position: relative; }
+        .header-title { font-size: 17px; font-weight: 600; position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; }
+        
+        .icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--bubble-blue); transition: opacity 0.2s; }
+        .icon-btn:active { opacity: 0.5; }
+        .icon-btn.danger { color: var(--danger); }
+        
+        /* Search */
+        .search-container { padding: 8px 16px; background-color: var(--bg-color); }
+        .search-bar { background-color: var(--search-bg); border-radius: 10px; height: 36px; display: flex; align-items: center; padding: 0 10px; gap: 8px; transition: background 0.3s; }
+        .search-icon { color: var(--text-secondary); opacity: 0.7; }
+        .search-input { flex: 1; font-size: 16px; height: 100%; }
+
+        .scroll-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
+
+        /* Contacts */
+        .contact-item { display: flex; padding: 12px 16px; border-bottom: 1px solid var(--separator); cursor: pointer; position: relative; transition: background 0.2s; }
+        .contact-item:active { background-color: var(--input-bg); }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #8e8e93, #636366); margin-right: 12px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 20px; color: #fff; flex-shrink: 0; transition: transform 0.2s; }
+        .contact-item:active .avatar { transform: scale(0.95); }
+        .contact-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+        .contact-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .contact-name { font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .contact-time { font-size: 14px; color: var(--text-secondary); flex-shrink: 0; }
+        .contact-preview { font-size: 15px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+        
+        .unread-dot { width: 10px; height: 10px; background-color: var(--bubble-blue); border-radius: 50%; position: absolute; right: 16px; top: 50%; margin-top: -5px; box-shadow: 0 0 5px var(--bubble-blue); display: none; animation: pulseDot 2s infinite; }
+        @keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* Chat View */
+        #chat-view { display: flex; flex-direction: column; height: 100%; }
+        .chat-header-info { display: flex; flex-direction: column; align-items: center; flex: 1; }
+        .chat-header-name { font-weight: 600; font-size: 15px; }
+        .chat-header-status { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+
+        #messages-container { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 4px; overflow-y: auto; scroll-behavior: smooth; }
+        
+        .message-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; width: 100%; transform-origin: center bottom; position: relative; }
+        .message-group.animate { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .message { max-width: 78%; padding: 8px 14px; border-radius: 18px; font-size: 16px; line-height: 1.35; position: relative; word-wrap: break-word; user-select: none; transition: transform 0.1s; }
+        .message.me { align-self: flex-end; background-color: var(--bubble-blue); color: white; border-bottom-right-radius: 4px; }
+        .message.them { align-self: flex-start; background-color: var(--bubble-gray); color: var(--text-primary); border-bottom-left-radius: 4px; }
+        .message.me:active, .message.me.context-active { filter: brightness(0.9); transform: scale(0.98); }
+        
+        .message img { max-width: 100%; border-radius: 12px; display: block; margin: 4px 0; pointer-events: none; }
+        .message .time { font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; user-select: none; }
+        
+        /* Message Context Menu */
+        .msg-context-menu { position: absolute; z-index: 1000; background: var(--context-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 14px; display: none; box-shadow: 0 8px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; min-width: 140px; animation: menuFade 0.2s ease-out; }
+        .msg-context-item { padding: 12px 16px; font-size: 16px; color: var(--text-primary); cursor: pointer; border-bottom: 1px solid rgba(128,128,128,0.2); text-align: center; font-weight: 400; }
+        .msg-context-item:last-child { border-bottom: none; }
+        .msg-context-item:active { background: rgba(128,128,128,0.2); }
+        .msg-context-item.danger { color: var(--danger); }
+        
+        /* File Attachment */
+        .file-attach { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.1); padding: 8px; border-radius: 10px; margin: 4px 0; max-width: 100%; }
+        .file-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; flex-shrink: 0; }
+        .file-details { flex: 1; overflow: hidden; min-width: 0; }
+        .file-name { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .file-size { font-size: 11px; opacity: 0.7; }
+        .download-btn { width: 28px; height: 28px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; box-shadow: 0 2px 4px rgba(0,0,0,0.2); flex-shrink: 0; transition: transform 0.1s; pointer-events: auto; }
+        .download-btn:active { transform: scale(0.9); }
+        .download-btn svg { width: 16px; height: 16px; }
+
+        .img-wrapper { position: relative; display: inline-block; pointer-events: auto; }
+        .img-dl-btn { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 1px solid rgba(255,255,255,0.3); pointer-events: auto; }
+
+        .call-log { align-self: center; font-size: 13px; color: var(--text-secondary); background: rgba(128,128,128,0.15); padding: 4px 12px; border-radius: 12px; margin: 8px 0; display: flex; align-items: center; gap: 6px; }
+        .call-log svg { width: 14px; height: 14px; }
+
+        .tick-container { position: absolute; bottom: 4px; right: 6px; display: flex; align-items: center; }
+        .message.me .time { margin-right: 14px; } 
+        .tick-svg { width: 14px; height: 14px; color: rgba(255,255,255,0.5); }
+        .message.me .seen .tick-svg { color: #ffffff; opacity: 1; }
+
+        .typing-bubble { margin-left: 16px; margin-bottom: 16px; background-color: var(--bubble-gray); padding: 10px 14px; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; display: none; align-items: center; gap: 3px; }
+        .typing-bubble.active { display: flex; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .dot { width: 7px; height: 7px; background-color: var(--text-secondary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out; opacity: 0.6; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0.6); } 40% { transform: scale(1); } }
+
+        /* Dynamic Input Area */
+        .input-area { flex: 0 0 auto; background-color: var(--header-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 8px 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; border-top: 1px solid var(--separator); z-index: 40; }
+        .input-wrapper { flex: 1; background: var(--bg-color); border: 1px solid var(--separator); border-radius: 18px; padding: 8px 14px; display: flex; align-items: center; min-height: 36px; max-height: 120px; transition: border-color 0.2s; }
+        .input-wrapper:focus-within { border-color: var(--bubble-blue); }
+        #message-input { flex: 1; font-size: 16px; line-height: 20px; max-height: 100px; overflow-y: auto; background: transparent; padding: 0; margin: 0; }
+        .send-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--bubble-blue); color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 2px; transition: all 0.2s; opacity: 0.5; pointer-events: none; }
+        .send-btn.ready { opacity: 1; pointer-events: auto; }
+        .send-btn svg { width: 16px; height: 16px; margin-left: 2px; }
+
+        /* Call Screen */
+        #call-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding: 0; transition: opacity 0.5s ease; opacity: 0; pointer-events: none; }
+        #call-screen.active { opacity: 1; pointer-events: auto; }
+        
+        .call-spacer { flex: 1; }
+        .call-info { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 80px; }
+        .call-avatar { width: 140px; height: 140px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; font-size: 60px; color: white; border: 2px solid rgba(255,255,255,0.1); animation: pulseAvatar 2s infinite; }
+        @keyframes pulseAvatar { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); } 70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
+        
+        .call-name { font-size: 34px; font-weight: 600; color: white; text-align: center; }
+        .call-status { font-size: 18px; color: #8e8e93; }
+        
+        .call-controls-wrapper { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 80px; }
+        .call-controls { display: flex; gap: 60px; align-items: center; justify-content: center; width: 100%; transition: all 0.3s ease; }
+        .call-btn { width: 75px; height: 75px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: transform 0.1s, opacity 0.3s; gap: 5px; }
+        .call-btn:active { transform: scale(0.95); opacity: 0.8; }
+        .call-btn.accept { background: var(--success); }
+        .call-btn.decline { background: var(--danger); }
+        .call-btn.mute { background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); }
+        .call-btn.mute.active { background: white; color: black; }
+        .call-btn-label { font-size: 12px; margin-top: 8px; color: white; }
+        
+        .hidden-layout { display: none !important; }
+
+        /* Modals */
+        #ios-modal-overlay { position: fixed; inset: 0; z-index: 5000; background: var(--modal-overlay); display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        #ios-modal-overlay.active { visibility: visible; opacity: 1; }
+        .ios-modal { width: 280px; background: var(--alert-bg); border-radius: 14px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); overflow: hidden; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        #ios-modal-overlay.active .ios-modal { transform: scale(1); }
+        .ios-modal-content { padding: 20px; text-align: center; }
+        .ios-modal-title { font-weight: 600; font-size: 17px; margin-bottom: 5px; }
+        .ios-modal-msg { font-size: 13px; margin-bottom: 15px; line-height: 1.4; }
+        .ios-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--separator); background: rgba(128,128,128,0.1); font-size: 15px; margin-top: 5px; }
+        .ios-modal-btns { display: flex; border-top: 1px solid rgba(128,128,128,0.3); }
+        .ios-modal-btn { flex: 1; padding: 14px; font-size: 17px; color: var(--bubble-blue); border-right: 1px solid rgba(128,128,128,0.3); cursor: pointer; text-align: center; justify-content: center; display: flex; }
+        .ios-modal-btn:last-child { border-right: none; }
+        .ios-modal-btn:active { background: rgba(128,128,128,0.1); }
+        .ios-modal-btn.danger { color: var(--danger); }
+        .ios-modal-btn.bold { font-weight: 600; }
+
+        /* Chat Menu */
+        .chat-menu { position: absolute; top: 52px; right: 10px; background: var(--menu-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 12px; z-index: 100; display: none; width: 200px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); animation: menuFade 0.2s ease-out; }
+        @keyframes menuFade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .chat-menu-item { padding: 14px 16px; font-size: 16px; cursor: pointer; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); }
+        .chat-menu-item:last-child { border-bottom: none; }
+        .chat-menu-item.danger { color: var(--danger); }
+        .chat-menu-item.action { color: var(--bubble-blue); }
+
+        /* Settings */
+        .settings-item { padding: 14px 16px; border-bottom: 1px solid var(--separator); display: flex; justify-content: space-between; align-items: center; font-size: 16px; background: var(--bg-color); }
+        .settings-header { padding: 30px 16px 8px; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #39393d; transition: .3s; border-radius: 34px; }
+        .light-mode .slider { background-color: #e9e9eb; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .hidden { display: none !important; }
+        svg { display: block; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <div id="sidebar-view" class="view active">
+            <div class="header">
+                <button id="settings-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                <div class="header-title">Messages</div>
+                <button id="new-msg-btn" class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            </div>
+            <div class="search-container">
+                <div class="search-bar">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="contact-search" class="search-input" placeholder="Search">
+                </div>
+            </div>
+            <div id="contact-list" class="scroll-content"></div>
+        </div>
+
+        <!-- Chat View -->
+        <div id="chat-view" class="view hidden">
+            <div class="header">
+                <button id="chat-back-btn" class="icon-btn" style="margin-right: -12px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <div class="chat-header-info">
+                    <div id="chat-title" class="chat-header-name">User</div>
+                    <div id="chat-status" class="chat-header-status">Online</div>
+                </div>
+                <div style="display: flex;">
+                    <button id="chat-call-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+                    <button id="chat-menu-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                </div>
+                <div id="chat-menu" class="chat-menu">
+                    <div class="chat-menu-item" id="rename-contact">Change Name</div>
+                    <div class="chat-menu-item danger" id="block-toggle-btn">Block User</div>
+                    <div class="chat-menu-item danger" id="delete-chat">Delete Chat</div>
+                </div>
+            </div>
+            <div id="messages-container"></div>
+            <div class="typing-bubble" id="typing-bubble">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="input-area">
+                <button id="file-btn" class="icon-btn" style="width: 36px; height: 36px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                <input type="file" id="file-input" hidden>
+                <div class="input-wrapper">
+                    <textarea id="message-input" rows="1" placeholder="iMessage"></textarea>
+                </div>
+                <button id="send-btn" class="send-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+            </div>
+            
+            <!-- Context Menu for Message -->
+            <div id="msg-context-menu" class="msg-context-menu">
+                <div class="msg-context-item" id="ctx-edit">Edit</div>
+                <div class="msg-context-item danger" id="ctx-unsend">Unsend</div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div id="settings-view" class="view hidden">
+            <div class="header">
+                <button id="settings-back-btn" class="icon-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <div class="header-title">Settings</div>
+                <div style="width: 44px;"></div>
+            </div>
+            <div class="scroll-content">
+                <div class="settings-item">
+                    <span>Dark Mode</span>
+                    <label class="switch"><input type="checkbox" id="dark-mode-toggle"><span class="slider"></span></label>
+                </div>
+                <div class="settings-item">
+                    <span>Peer ID</span>
+                    <span id="my-id-val" style="user-select: all; font-family: monospace; color: var(--text-secondary);">...</span>
+                </div>
+                <div class="settings-item" onclick="changeMyName()">
+                    <span>My Name</span>
+                    <span id="my-name-val" style="color: var(--text-secondary);">User</span>
+                </div>
+                <div class="settings-item" onclick="$('blocklist-view').classList.remove('hidden'); $('blocklist-view').classList.add('active'); renderBlocklist()">
+                    <span>Blocked</span>
+                    <span id="blocklist-count" style="color: var(--text-secondary);">0</span>
+                </div>
+                <div class="settings-item" id="reset-btn" style="color: var(--danger);">Reset All Data</div>
+                
+                <div class="settings-header">About</div>
+                <div class="settings-item">
+                    <span>App Developer</span>
+                    <span style="color: var(--text-secondary);">Gemini 2.0 Flash</span>
+                </div>
+                <div class="settings-item">
+                    <span>Version</span>
+                    <span style="color: var(--text-secondary);">2.3.0 (Ultra)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocklist -->
+        <div id="blocklist-view" class="view hidden">
+            <div class="header">
+                <button onclick="$('blocklist-view').classList.remove('active'); $('blocklist-view').classList.add('hidden')" class="icon-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <div class="header-title">Blocked</div>
+                <div style="width: 44px;"></div>
+            </div>
+            <div id="blocklist-content" class="scroll-content"></div>
+        </div>
+
+        <!-- Call Screen -->
+        <div id="call-screen">
+            <div class="call-spacer"></div>
+            <div class="call-info">
+                <div class="call-avatar" id="call-avatar">?</div>
+                <div class="call-name" id="call-name">Unknown</div>
+                <div class="call-status" id="call-status-text">Calling...</div>
+            </div>
+            <div class="call-spacer"></div>
+            
+            <div class="call-controls-wrapper">
+                <!-- Incoming Controls -->
+                <div id="incoming-controls" class="call-controls hidden-layout">
+                    <div style="text-align: center;">
+                        <button id="decline-call-btn" class="call-btn decline"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" transform="rotate(135 12 12)"/></svg></button>
+                        <div class="call-btn-label">Decline</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <button id="accept-call-btn" class="call-btn accept"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></button>
+                        <div class="call-btn-label">Accept</div>
+                    </div>
+                </div>
+
+                <!-- Active/Outgoing Controls -->
+                <div id="active-controls" class="call-controls hidden-layout">
+                    <div id="mute-container" style="text-align: center;">
+                        <button id="mute-btn" class="call-btn mute"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                        <div class="call-btn-label">Mute</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <button id="end-call-btn" class="call-btn decline"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" transform="rotate(135 12 12)"/></svg></button>
+                        <div class="call-btn-label">End</div>
+                    </div>
+                </div>
+            </div>
+            
+            <audio id="remote-audio" autoplay></audio>
+        </div>
+
+        <!-- Custom Modal -->
+        <div id="ios-modal-overlay">
+            <div class="ios-modal">
+                <div class="ios-modal-content">
+                    <div class="ios-modal-title" id="m-title">Title</div>
+                    <div class="ios-modal-msg" id="m-msg">Message</div>
+                    <input type="text" id="m-input" class="ios-input hidden">
+                </div>
+                <div class="ios-modal-btns" id="m-btns"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const generateShortId = () => Math.floor(10000000 + Math.random() * 90000000).toString();
+        const uuid = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+        
+        let mySavedId = localStorage.getItem('my_peer_id') || generateShortId();
+        localStorage.setItem('my_peer_id', mySavedId);
+
+        const CONFIG = { host: '0.peerjs.com', secure: true, port: 443, debug: 1 };
+        
+        let peer = null, myId = mySavedId, currentChatId = null, activeConn = null, activeCall = null, localStream = null, typingTimeout = null, muted = false;
+        let ctxMsgId = null; 
+
+        const state = {
+            contacts: JSON.parse(localStorage.getItem('contacts') || '[]'),
+            chats: JSON.parse(localStorage.getItem('chats') || '{}'),
+            blocklist: JSON.parse(localStorage.getItem('blocklist') || '[]'),
+            settings: JSON.parse(localStorage.getItem('settings') || '{"name":"User","darkMode":true}')
+        };
+
+        const Ringer = {
+            audioCtx: null,
+            source: null,
+            init() { if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); },
+            async start() {
+                this.init();
+                if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
+                this.stop();
+                const buffer = this.audioCtx.createBuffer(1, this.audioCtx.sampleRate * 2.0, this.audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) data[i] = (i / this.audioCtx.sampleRate < 1.5) ? Math.sin(2 * Math.PI * 440 * (i / this.audioCtx.sampleRate)) * 0.1 : 0;
+                this.source = this.audioCtx.createBufferSource();
+                this.source.buffer = buffer;
+                this.source.loop = true;
+                this.source.connect(this.audioCtx.destination);
+                this.source.start();
+            },
+            stop() { if (this.source) { try { this.source.stop(); } catch(e){} this.source.disconnect(); this.source = null; } }
+        };
+        document.body.addEventListener('click', () => { if (Ringer.audioCtx && Ringer.audioCtx.state === 'suspended') Ringer.audioCtx.resume(); }, { once: true });
+
+        function showModal(title, msg, inputPlaceholder, buttons) {
+            $('m-title').textContent = title;
+            $('m-msg').textContent = msg;
+            $('m-input').classList.toggle('hidden', !inputPlaceholder);
+            $('m-input').value = '';
+            $('m-input').placeholder = inputPlaceholder || '';
+            const btns = $('m-btns');
+            btns.innerHTML = '';
+            buttons.forEach(b => {
+                const btn = document.createElement('div');
+                btn.className = `ios-modal-btn ${b.bold?'bold':''} ${b.danger?'danger':''}`;
+                btn.textContent = b.text;
+                btn.onclick = () => { if (b.onClick) b.onClick($('m-input').value.trim()); $('ios-modal-overlay').classList.remove('active'); };
+                btns.appendChild(btn);
+            });
+            $('ios-modal-overlay').classList.add('active');
+            if (inputPlaceholder) setTimeout(() => $('m-input').focus(), 100);
+        }
+
+        /* --- PEER & SIGNALING (ROBUST) --- */
+        function initPeer() {
+            peer = new Peer(myId, CONFIG);
+            peer.on('open', id => { myId = id; $('my-id-val').textContent = id; });
+            peer.on('connection', conn => { setupConnection(conn); }); // Allow conn, handle block in data
+            peer.on('call', call => { if (state.blocklist.includes(call.peer)) { call.close(); return; } handleIncomingCall(call); });
+            peer.on('error', err => { if (err.type === 'unavailable-id') { myId = generateShortId(); localStorage.setItem('my_peer_id', myId); location.reload(); }});
+        }
+
+        function setupConnection(conn) {
+            if (activeConn && activeConn.peer === conn.peer && activeConn.open) { activeConn = conn; return; } 
+            activeConn = conn;
+            ensureContact(conn.peer);
+            
+            conn.on('data', data => {
+                // BLOCK CHECK: Silent drop if blocked
+                if (state.blocklist.includes(conn.peer)) return;
+
+                switch(data.type) {
+                    case 'msg': 
+                        addMessage(conn.peer, 'them', data.content, data.format, data.id); 
+                        if (currentChatId === conn.peer) { sendData('seen'); markSeen(conn.peer); }
+                        break;
+                    case 'typing': showTyping(conn.peer, data.isTyping); break;
+                    case 'seen': markSeen(conn.peer); break;
+                    case 'call-rejected': addMessage(conn.peer, 'them', 'Call Declined', 'call', uuid()); endCallUI(); break;
+                    case 'call-ended': addMessage(conn.peer, 'them', 'Call Ended', 'call', uuid()); endCallUI(); break;
+                    case 'msg-unsend': handleUnsend(conn.peer, data.id); break;
+                    case 'msg-edit': handleEdit(conn.peer, data.id, data.newContent); break;
+                }
+            });
+            conn.on('close', () => { if(activeConn === conn) activeConn = null; });
+            conn.on('error', () => { if(activeConn === conn) activeConn = null; });
+        }
+
+        function sendData(type, content = null, format = null, extra = {}) {
+            const payload = { type, content, format, ...extra };
+            if (activeConn && activeConn.open) { activeConn.send(payload); return; } 
+            if (currentChatId) {
+                // Try ephemeral connection
+                const conn = peer.connect(currentChatId, { reliable: true });
+                conn.on('open', () => { conn.send(payload); setTimeout(()=>conn.close(), 1000); });
+            }
+        }
+
+        /* --- CALL LOGIC --- */
+        function startCall() {
+            if (!activeConn || !activeConn.open) { activeConn = peer.connect(currentChatId, { reliable: true }); activeConn.on('open', () => performCall()); } else performCall();
+        }
+
+        async function performCall() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                showCallUI('outgoing');
+                addMessage(currentChatId, 'me', 'Outgoing Call', 'call', uuid());
+                activeCall = peer.call(currentChatId, localStream);
+                activeCall.on('stream', remoteStream => { $('remote-audio').srcObject = remoteStream; showCallUI('connected'); });
+                activeCall.on('close', endCallUI); activeCall.on('error', endCallUI);
+            } catch (e) { showModal('Error', 'Microphone access denied.', null, [{text:'OK'}]); }
+        }
+
+        function handleIncomingCall(call) { 
+            activeCall = call; Ringer.start(); showCallUI('incoming', call.peer); 
+            addMessage(call.peer, 'them', 'Incoming Call', 'call', uuid());
+        }
+
+        $('accept-call-btn').onclick = async () => {
+            Ringer.stop();
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                activeCall.answer(localStream);
+                activeCall.on('stream', stream => { $('remote-audio').srcObject = stream; showCallUI('connected'); });
+                activeCall.on('close', endCallUI);
+            } catch (e) { endCallUI(); }
+        };
+
+        $('end-call-btn').onclick = () => { sendData('call-ended'); addMessage(currentChatId, 'me', 'Call Ended', 'call', uuid()); endCallUI(); };
+        $('decline-call-btn').onclick = () => { sendData('call-rejected'); addMessage(currentChatId, 'me', 'Call Declined', 'call', uuid()); endCallUI(); };
+
+        function showCallUI(state, peerId) {
+            $('call-screen').classList.add('active');
+            $('call-name').textContent = getContactName(peerId || currentChatId);
+            $('incoming-controls').classList.add('hidden-layout');
+            $('active-controls').classList.add('hidden-layout');
+            $('mute-container').classList.add('hidden-layout');
+
+            if (state === 'incoming') {
+                $('call-status-text').textContent = 'Incoming Audio Call...';
+                $('incoming-controls').classList.remove('hidden-layout');
+            } else if (state === 'outgoing') {
+                $('call-status-text').textContent = 'Calling...';
+                $('active-controls').classList.remove('hidden-layout');
+                $('mute-container').classList.add('hidden-layout');
+            } else if (state === 'connected') {
+                $('call-status-text').textContent = 'Connected';
+                $('active-controls').classList.remove('hidden-layout');
+                $('mute-container').classList.remove('hidden-layout');
+            }
+        }
+
+        function endCallUI() {
+            Ringer.stop();
+            if (activeCall) { activeCall.close(); activeCall = null; }
+            if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+            $('remote-audio').srcObject = null;
+            $('call-screen').classList.remove('active');
+        }
+
+        $('mute-btn').onclick = () => {
+            if (localStream) { muted = !muted; localStream.getAudioTracks()[0].enabled = !muted; $('mute-btn').classList.toggle('active', muted); }
+        };
+
+        /* --- MESSAGING & ACTIONS --- */
+        function createMessageElement(m, animate = false) {
+            const div = document.createElement('div');
+            div.className = 'message-group' + (animate ? ' animate' : '');
+            div.id = `msg-${m.id}`;
+            
+            if (m.format === 'call') {
+                let icon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57a1.02 1.02 0 0 0-1.02.24l-2.2 2.2a15.045 15.045 0 0 1-6.59-6.59l2.2-2.21a.96.96 0 0 0 .25-1A11.36 11.36 0 0 1 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1zM5.03 5h1.5a12.82 12.82 0 0 0 .7 2.81l-1.2 1.2c-.65-1.25-1-2.61-1-4.01zM19 18.97c-1.4 0-2.76-.35-4.01-1l1.2-1.2c.9.23 1.84.47 2.81.7v1.5z"/></svg>';
+                div.innerHTML = `<div class="call-log">${icon} <span>${m.content}</span></div>`;
+                return div;
+            }
+
+            let contentHtml = '';
+            let data = m.content.data || m.content;
+            let name = m.content.name || 'Image';
+
+            if (m.format === 'image') {
+                contentHtml = `<div class="img-wrapper"><img src="${data}"><a href="${data}" download="${name}" class="img-dl-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>`;
+            } else if (m.format === 'file') {
+                contentHtml = `<div class="file-attach"><div class="file-icon">DOC</div><div class="file-details"><div class="file-name">${name}</div><div class="file-size">Attachment</div></div><a href="${data}" download="${name}" class="download-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>`;
+            } else {
+                contentHtml = `<span class="msg-text">${m.content}</span>`;
+            }
+
+            const statusHtml = m.sender === 'me' ? `<div class="tick-container ${m.seen ? 'seen' : ''}"><svg class="tick-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>` : '';
+
+            div.innerHTML = `<div class="message ${m.sender}" oncontextmenu="openMsgMenu(event, '${m.id}', '${m.sender}', '${m.format}')" ontouchstart="handleTouchStart(event, '${m.id}', '${m.sender}', '${m.format}')" ontouchend="handleTouchEnd(event)">
+                        ${contentHtml}
+                        <div class="time">${new Date(m.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                        ${statusHtml}
+                    </div>`;
+            return div;
+        }
+
+        function renderMessages() {
+            const container = $('messages-container');
+            container.innerHTML = '';
+            const msgs = state.chats[currentChatId] || [];
+            msgs.forEach(m => container.appendChild(createMessageElement(m, false)));
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addMessage(chatId, sender, content, format='text', id=null) {
+            if (!id) id = uuid();
+            if (!state.chats[chatId]) state.chats[chatId] = [];
+            
+            const msg = { id, sender, content, format, time: Date.now(), seen: sender === 'them' && currentChatId === chatId }; 
+            state.chats[chatId].push(msg);
+            
+            const c = state.contacts.find(x => x.id === chatId);
+            if (c) {
+                if (format === 'text') c.lastMsg = content;
+                else if (format === 'image') c.lastMsg = 'Sent a photo';
+                else if (format === 'file') c.lastMsg = 'Sent a file';
+                else c.lastMsg = content;
+
+                c.time = Date.now();
+                if (sender === 'them' && currentChatId !== chatId) c.unread = (c.unread || 0) + 1;
+                state.contacts = [c, ...state.contacts.filter(x => x.id !== chatId)];
+            }
+            saveState(); renderContacts();
+            
+            if (currentChatId === chatId) {
+                const container = $('messages-container');
+                container.appendChild(createMessageElement(msg, true));
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        /* --- EDIT & UNSEND --- */
+        let touchTimer = null;
+        window.handleTouchStart = (e, id, sender, format) => { touchTimer = setTimeout(() => openMsgMenu(e, id, sender, format), 500); };
+        window.handleTouchEnd = () => clearTimeout(touchTimer);
+
+        window.openMsgMenu = (e, id, sender, format) => {
+            if (sender !== 'me') return; 
+            e.preventDefault();
+            ctxMsgId = id;
+            
+            const menu = $('msg-context-menu');
+            $('ctx-edit').style.display = format === 'text' ? 'block' : 'none';
+            
+            let x = e.clientX || e.touches[0].clientX;
+            let y = e.clientY || e.touches[0].clientY;
+            if (x + 140 > window.innerWidth) x -= 140;
+            if (y + 100 > window.innerHeight) y -= 100;
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            menu.style.display = 'block';
+
+            const msgEl = document.querySelector(`#msg-${id} .message`);
+            if (msgEl) msgEl.classList.add('context-active');
+
+            const closeMenu = () => {
+                menu.style.display = 'none';
+                if (msgEl) msgEl.classList.remove('context-active');
+                document.removeEventListener('click', closeMenu);
+            };
+            setTimeout(() => document.addEventListener('click', closeMenu), 10);
+        };
+
+        $('ctx-unsend').onclick = () => {
+            if (!ctxMsgId) return;
+            handleUnsend(currentChatId, ctxMsgId);
+            sendData('msg-unsend', null, null, { id: ctxMsgId });
+        };
+
+        $('ctx-edit').onclick = () => {
+            if (!ctxMsgId) return;
+            const msg = state.chats[currentChatId].find(m => m.id === ctxMsgId);
+            if (!msg) return;
+
+            showModal('Edit Message', '', msg.content, [{text:'Cancel'}, {text:'Save', bold:true, onClick: (newText) => {
+                if (newText && newText !== msg.content) {
+                    handleEdit(currentChatId, ctxMsgId, newText);
+                    sendData('msg-edit', null, null, { id: ctxMsgId, newContent: newText });
+                }
+            }}]);
+        };
+
+        function handleUnsend(chatId, msgId) {
+            if (!state.chats[chatId]) return;
+            state.chats[chatId] = state.chats[chatId].filter(m => m.id !== msgId);
+            
+            // Sync Last Msg preview
+            const c = state.contacts.find(x => x.id === chatId);
+            if (c) {
+                const last = state.chats[chatId][state.chats[chatId].length - 1];
+                c.lastMsg = last ? (last.format === 'text' ? last.content : 'Attachment') : '';
+            }
+            saveState(); renderContacts();
+
+            if (currentChatId === chatId) {
+                const el = document.getElementById(`msg-${msgId}`);
+                if (el) el.remove();
+            }
+        }
+
+        function handleEdit(chatId, msgId, newContent) {
+            if (!state.chats[chatId]) return;
+            const msg = state.chats[chatId].find(m => m.id === msgId);
+            if (msg) {
+                msg.content = newContent;
+                // Sync Last Msg preview
+                const c = state.contacts.find(x => x.id === chatId);
+                if (c && state.chats[chatId][state.chats[chatId].length - 1].id === msgId) {
+                    c.lastMsg = newContent;
+                }
+                saveState(); renderContacts();
+
+                if (currentChatId === chatId) {
+                    const el = document.querySelector(`#msg-${msgId} .msg-text`);
+                    if (el) el.textContent = newContent;
+                }
+            }
+        }
+
+        /* --- UTILS & REMAINDER --- */
+        function ensureContact(id) {
+            if (!state.contacts.find(c => c.id === id)) {
+                state.contacts.unshift({ id, name: 'User ' + id, lastMsg: '', time: Date.now(), unread: 0 });
+                saveState(); renderContacts();
+            }
+        }
+        function getContactName(id) { return state.contacts.find(x => x.id === id)?.name || id; }
+        function markSeen(chatId) {
+            if (state.chats[chatId]) {
+                let changed = false;
+                state.chats[chatId].forEach(m => { if (m.sender === 'me' && !m.seen) { m.seen = true; changed = true; }});
+                if (changed) { saveState(); if (currentChatId === chatId) document.querySelectorAll('.tick-container:not(.seen)').forEach(el => el.classList.add('seen')); }
+            }
+        }
+        function showTyping(chatId, isTyping) {
+            const el = document.querySelector(`[data-id="${chatId}"] .contact-preview`);
+            if (el) el.style.color = isTyping ? 'var(--bubble-blue)' : '';
+            if (el) el.textContent = isTyping ? 'typing...' : (state.contacts.find(c => c.id === chatId)?.lastMsg || '');
+            if (currentChatId === chatId) {
+                $('chat-status').textContent = isTyping ? 'typing...' : 'Online';
+                if (isTyping) { $('typing-bubble').classList.add('active'); $('messages-container').scrollTop = $('messages-container').scrollHeight + 50; }
+                else $('typing-bubble').classList.remove('active');
+            }
+        }
+        function renderContacts() {
+            const filter = $('contact-search').value.toLowerCase();
+            const list = state.contacts.filter(c => c.name.toLowerCase().includes(filter) || c.id.includes(filter));
+            $('contact-list').innerHTML = list.map(c => `
+                <div class="contact-item" onclick="openChat('${c.id}')" data-id="${c.id}">
+                    <div class="avatar">${c.name[0]}</div>
+                    <div class="contact-info">
+                        <div class="contact-top"><span class="contact-name">${c.name}</span><span class="contact-time">${new Date(c.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+                        <div class="contact-preview">${c.lastMsg}</div>
+                    </div>
+                    <div class="unread-dot" style="display:${c.unread ? 'block' : 'none'}"></div>
+                </div>
+            `).join('');
+            $('blocklist-count').textContent = state.blocklist.length;
+        }
+
+        function openChat(id) {
+            currentChatId = id;
+            const c = state.contacts.find(x => x.id === id);
+            if(c) { c.unread = 0; saveState(); renderContacts(); }
+            $('chat-title').textContent = getContactName(id);
+            $('chat-view').classList.remove('hidden');
+            $('chat-view').classList.add('active');
+            renderMessages();
+            if (!activeConn || activeConn.peer !== id) activeConn = peer.connect(id, { reliable: true });
+            activeConn.on('open', () => { sendData('seen'); });
+            setupConnection(activeConn);
+        }
+
+        const msgInput = $('message-input');
+        msgInput.addEventListener('input', function() {
+            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
+            if (this.value.trim().length > 0) $('send-btn').classList.add('ready'); else $('send-btn').classList.remove('ready');
+            sendData('typing', null, null, { isTyping: true });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => sendData('typing', null, null, { isTyping: false }), 2000);
+        });
+
+        $('send-btn').onclick = () => {
+            const txt = msgInput.value.trim();
+            if (!txt) return;
+            const id = uuid();
+            sendData('msg', txt, 'text', { id });
+            sendData('typing', null, null, { isTyping: false });
+            addMessage(currentChatId, 'me', txt, 'text', id);
+            msgInput.value = ''; msgInput.style.height = 'auto'; $('send-btn').classList.remove('ready');
+        };
+
+        $('file-btn').onclick = () => $('file-input').click();
+        $('file-input').onchange = (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            if (f.size > 5 * 1024 * 1024) return showModal('File Too Large', 'Please select a file smaller than 5MB.', null, [{text:'OK'}]);
+            const r = new FileReader();
+            r.onload = (evt) => {
+                const payload = { data: evt.target.result, name: f.name };
+                const format = f.type.startsWith('image/') ? 'image' : 'file';
+                const id = uuid();
+                sendData('msg', payload, format, { id });
+                addMessage(currentChatId, 'me', payload, format, id);
+            };
+            r.readAsDataURL(f);
+        };
+
+        function saveState() {
+            localStorage.setItem('contacts', JSON.stringify(state.contacts));
+            localStorage.setItem('chats', JSON.stringify(state.chats));
+            localStorage.setItem('blocklist', JSON.stringify(state.blocklist));
+            localStorage.setItem('settings', JSON.stringify(state.settings));
+        }
+
+        $('contact-search').addEventListener('input', renderContacts);
+        $('dark-mode-toggle').onclick = (e) => { state.settings.darkMode = e.target.checked; document.body.classList.toggle('light-mode', !e.target.checked); saveState(); };
+        $('chat-back-btn').onclick = () => { $('chat-view').classList.remove('active'); $('chat-view').classList.add('hidden'); currentChatId = null; };
+        $('new-msg-btn').onclick = () => showModal('New Chat', 'Enter Peer ID:', 'Peer ID', [{text:'Cancel'}, {text:'Connect', bold:true, onClick: (id) => { if(id) { ensureContact(id); openChat(id); }}}]);
+        $('settings-btn').onclick = () => { $('settings-view').classList.remove('hidden'); $('settings-view').classList.add('active'); };
+        $('settings-back-btn').onclick = () => { $('settings-view').classList.remove('active'); $('settings-view').classList.add('hidden'); };
+        $('reset-btn').onclick = () => showModal('Reset Data', 'This will wipe all chats.', null, [{text:'Cancel'}, {text:'Reset', danger:true, onClick: () => { localStorage.clear(); location.reload(); }}]);
+        window.changeMyName = () => showModal('Change Name', 'Enter your name:', 'Name', [{text:'Cancel'}, {text:'Save', bold:true, onClick: (n) => { if(n) { state.settings.name = n; $('my-name-val').textContent = n; saveState(); }}}]);
+        
+        $('chat-menu-btn').onclick = (e) => { 
+            e.stopPropagation(); 
+            const isBlocked = state.blocklist.includes(currentChatId);
+            const blockBtn = $('block-toggle-btn');
+            blockBtn.textContent = isBlocked ? 'Unblock User' : 'Block User';
+            blockBtn.className = isBlocked ? 'chat-menu-item action' : 'chat-menu-item danger';
+            $('chat-menu').style.display = $('chat-menu').style.display === 'block' ? 'none' : 'block'; 
+        };
+        document.onclick = () => $('chat-menu').style.display = 'none';
+
+        $('rename-contact').onclick = () => showModal('Rename', 'New name:', 'Name', [{text:'Cancel'}, {text:'Save', bold:true, onClick: (n) => { if(n) { const c = state.contacts.find(x=>x.id===currentChatId); if(c) c.name = n; saveState(); renderContacts(); $('chat-title').textContent = n; }}}]);
+        
+        $('block-toggle-btn').onclick = () => {
+            const blocked = state.blocklist.includes(currentChatId);
+            showModal(blocked ? 'Unblock?' : 'Block?', blocked ? 'Allow messages?' : 'Block this user?', null, [{text:'Cancel'}, {text: blocked?'Unblock':'Block', danger:true, onClick: () => {
+                if(blocked) state.blocklist = state.blocklist.filter(x => x !== currentChatId); else state.blocklist.push(currentChatId);
+                saveState(); renderContacts(); $('chat-back-btn').click();
+            }}]);
+        };
+
+        $('delete-chat').onclick = () => showModal('Delete?', 'Cannot be undone.', null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: () => { delete state.chats[currentChatId]; state.contacts = state.contacts.filter(c => c.id !== currentChatId); saveState(); renderContacts(); $('chat-back-btn').click(); }}]);
+
+        $('chat-call-btn').onclick = startCall;
+        window.renderBlocklist = () => $('blocklist-content').innerHTML = state.blocklist.map(id => `<div class="settings-item"><span>${getContactName(id)}</span><button style="color:var(--bubble-blue)" onclick="state.blocklist=state.blocklist.filter(x=>x!=='${id}');saveState();renderBlocklist();renderContacts()">Unblock</button></div>`).join('');
+
+        document.body.classList.toggle('light-mode', !state.settings.darkMode);
+        $('dark-mode-toggle').checked = state.settings.darkMode;
+        $('my-name-val').textContent = state.settings.name;
+        initPeer(); renderContacts();
+    </script>
+</body>
+</html>
