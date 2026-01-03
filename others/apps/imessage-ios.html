@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>iMessage P2P Ultra</title>
+    <title>iMessage</title>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -52,7 +52,7 @@
 
         #app { display: flex; height: 100%; width: 100%; position: relative; overflow: hidden; }
 
-        /* Views & Animations */
+        /* Views */
         .view { display: flex; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background-color: var(--bg-color); transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1); z-index: 10; will-change: transform; }
         .view.hidden { transform: translateX(100%); pointer-events: none; }
         .view.active { transform: translateX(0); z-index: 20; }
@@ -94,7 +94,7 @@
         #chat-view { display: flex; flex-direction: column; height: 100%; }
         .chat-header-info { display: flex; flex-direction: column; align-items: center; flex: 1; }
         .chat-header-name { font-weight: 600; font-size: 15px; }
-        .chat-header-status { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+        .chat-header-status { font-size: 11px; color: var(--text-secondary); margin-top: 1px; transition: color 0.2s; }
 
         #messages-container { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 4px; overflow-y: auto; scroll-behavior: smooth; }
         
@@ -155,18 +155,17 @@
         .send-btn svg { width: 16px; height: 16px; margin-left: 2px; }
 
         /* Call Screen */
-        #call-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; padding: 0; transition: opacity 0.5s ease; opacity: 0; pointer-events: none; }
+        #call-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 0; transition: opacity 0.5s ease; opacity: 0; pointer-events: none; }
         #call-screen.active { opacity: 1; pointer-events: auto; }
         
-        .call-spacer { flex: 1; }
-        .call-info { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 80px; }
+        .call-info { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
         .call-avatar { width: 140px; height: 140px; border-radius: 50%; background: #2c2c2e; display: flex; align-items: center; justify-content: center; font-size: 60px; color: white; border: 2px solid rgba(255,255,255,0.1); animation: pulseAvatar 2s infinite; }
         @keyframes pulseAvatar { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); } 70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
         
         .call-name { font-size: 34px; font-weight: 600; color: white; text-align: center; }
-        .call-status { font-size: 18px; color: #8e8e93; }
+        .call-status { font-size: 18px; color: #8e8e93; margin-top: 5px; }
         
-        .call-controls-wrapper { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 80px; }
+        .call-controls-wrapper { width: 100%; display: flex; justify-content: center; align-items: center; padding-bottom: 60px; }
         .call-controls { display: flex; gap: 60px; align-items: center; justify-content: center; width: 100%; transition: all 0.3s ease; }
         .call-btn { width: 75px; height: 75px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: transform 0.1s, opacity 0.3s; gap: 5px; }
         .call-btn:active { transform: scale(0.95); opacity: 0.8; }
@@ -241,7 +240,7 @@
                 <button id="chat-back-btn" class="icon-btn" style="margin-right: -12px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
                 <div class="chat-header-info">
                     <div id="chat-title" class="chat-header-name">User</div>
-                    <div id="chat-status" class="chat-header-status">Online</div>
+                    <div id="chat-status" class="chat-header-status">Offline</div>
                 </div>
                 <div style="display: flex;">
                     <button id="chat-call-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
@@ -302,11 +301,11 @@
                 <div class="settings-header">About</div>
                 <div class="settings-item">
                     <span>App Developer</span>
-                    <span style="color: var(--text-secondary);">Gemini 2.0 Flash</span>
+                    <span style="color: var(--text-secondary);">Zenith Apps, Inc.</span>
                 </div>
                 <div class="settings-item">
                     <span>Version</span>
-                    <span style="color: var(--text-secondary);">2.3.0 (Ultra)</span>
+                    <span style="color: var(--text-secondary);">1.0.1 Early</span>
                 </div>
             </div>
         </div>
@@ -385,6 +384,8 @@
         
         let peer = null, myId = mySavedId, currentChatId = null, activeConn = null, activeCall = null, localStream = null, typingTimeout = null, muted = false;
         let ctxMsgId = null; 
+        let callPeerId = null;
+        let heartbeatInterval = null;
 
         const state = {
             contacts: JSON.parse(localStorage.getItem('contacts') || '[]'),
@@ -433,25 +434,42 @@
             if (inputPlaceholder) setTimeout(() => $('m-input').focus(), 100);
         }
 
-        /* --- PEER & SIGNALING (ROBUST) --- */
+        /* --- PEER & SIGNALING --- */
         function initPeer() {
             peer = new Peer(myId, CONFIG);
             peer.on('open', id => { myId = id; $('my-id-val').textContent = id; });
-            peer.on('connection', conn => { setupConnection(conn); }); // Allow conn, handle block in data
+            peer.on('connection', conn => { setupConnection(conn); }); 
             peer.on('call', call => { if (state.blocklist.includes(call.peer)) { call.close(); return; } handleIncomingCall(call); });
             peer.on('error', err => { if (err.type === 'unavailable-id') { myId = generateShortId(); localStorage.setItem('my_peer_id', myId); location.reload(); }});
         }
 
+        function updateStatusDisplay(isOnline) {
+            if (!currentChatId) return;
+            const statusEl = $('chat-status');
+            if (isOnline) {
+                statusEl.textContent = 'Online';
+            } else {
+                statusEl.textContent = 'Offline';
+            }
+        }
+
         function setupConnection(conn) {
-            if (activeConn && activeConn.peer === conn.peer && activeConn.open) { activeConn = conn; return; } 
+            if (activeConn && activeConn.peer === conn.peer && activeConn.open) { activeConn = conn; return; }
             activeConn = conn;
             ensureContact(conn.peer);
             
-            conn.on('data', data => {
-                // BLOCK CHECK: Silent drop if blocked
-                if (state.blocklist.includes(conn.peer)) return;
+            // Connection Lifecycle Events for Status
+            conn.on('open', () => { if(currentChatId === conn.peer) updateStatusDisplay(true); });
+            conn.on('close', () => { if(activeConn === conn) { activeConn = null; if(currentChatId === conn.peer) updateStatusDisplay(false); }});
+            conn.on('error', () => { if(activeConn === conn) { activeConn = null; if(currentChatId === conn.peer) updateStatusDisplay(false); }});
 
+            // Immediate Check
+            if(conn.open && currentChatId === conn.peer) updateStatusDisplay(true);
+
+            conn.on('data', data => {
+                if (state.blocklist.includes(conn.peer)) return;
                 switch(data.type) {
+                    case 'ping': break; // Heartbeat
                     case 'msg': 
                         addMessage(conn.peer, 'them', data.content, data.format, data.id); 
                         if (currentChatId === conn.peer) { sendData('seen'); markSeen(conn.peer); }
@@ -464,32 +482,70 @@
                     case 'msg-edit': handleEdit(conn.peer, data.id, data.newContent); break;
                 }
             });
-            conn.on('close', () => { if(activeConn === conn) activeConn = null; });
-            conn.on('error', () => { if(activeConn === conn) activeConn = null; });
+        }
+
+        // Heartbeat Logic
+        function startHeartbeat(peerId) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = setInterval(() => {
+                if(currentChatId !== peerId) return clearInterval(heartbeatInterval);
+                if (activeConn && activeConn.open) {
+                    try { activeConn.send({ type: 'ping' }); } catch(e) { updateStatusDisplay(false); }
+                } else {
+                    // Try to reconnect silently
+                    if(!activeConn) {
+                        const conn = peer.connect(peerId);
+                        conn.on('open', () => { setupConnection(conn); });
+                        conn.on('error', () => updateStatusDisplay(false));
+                    } else {
+                        updateStatusDisplay(false);
+                    }
+                }
+            }, 2000);
         }
 
         function sendData(type, content = null, format = null, extra = {}) {
             const payload = { type, content, format, ...extra };
-            if (activeConn && activeConn.open) { activeConn.send(payload); return; } 
-            if (currentChatId) {
-                // Try ephemeral connection
-                const conn = peer.connect(currentChatId, { reliable: true });
-                conn.on('open', () => { conn.send(payload); setTimeout(()=>conn.close(), 1000); });
+            // Optimistic Send: Logic assumes success locally first (handled by addMessage call in UI logic)
+            if (activeConn && activeConn.open) { 
+                try { activeConn.send(payload); } catch(e) { console.log('Send failed'); }
+            } else if (currentChatId) {
+                // Try ephemeral connect to send
+                const conn = peer.connect(currentChatId);
+                conn.on('open', () => { conn.send(payload); setTimeout(()=>conn.close(), 500); });
+                // If this fails, message is just "sent" locally (grey tick) -> "Sent but receiver doesn't get it"
             }
         }
 
         /* --- CALL LOGIC --- */
-        function startCall() {
-            if (!activeConn || !activeConn.open) { activeConn = peer.connect(currentChatId, { reliable: true }); activeConn.on('open', () => performCall()); } else performCall();
+        async function startCall() {
+            // Robust Check: Must have active connection to call
+            if (!activeConn || !activeConn.open) { 
+                // Attempt one quick connect check
+                const conn = peer.connect(currentChatId);
+                conn.on('open', () => {
+                    setupConnection(conn);
+                    performCall(); 
+                });
+                conn.on('error', () => {
+                    showModal('User Offline', 'Cannot place call because the user is offline.', null, [{text:'OK'}]);
+                });
+                // If timeout after 1s
+                setTimeout(() => {
+                    if(!conn.open) showModal('User Offline', 'Cannot place call because the user is offline.', null, [{text:'OK'}]);
+                }, 1000);
+            } else {
+                performCall();
+            }
         }
 
         async function performCall() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                showCallUI('outgoing');
+                showCallUI('outgoing', currentChatId);
                 addMessage(currentChatId, 'me', 'Outgoing Call', 'call', uuid());
                 activeCall = peer.call(currentChatId, localStream);
-                activeCall.on('stream', remoteStream => { $('remote-audio').srcObject = remoteStream; showCallUI('connected'); });
+                activeCall.on('stream', remoteStream => { $('remote-audio').srcObject = remoteStream; showCallUI('connected', currentChatId); });
                 activeCall.on('close', endCallUI); activeCall.on('error', endCallUI);
             } catch (e) { showModal('Error', 'Microphone access denied.', null, [{text:'OK'}]); }
         }
@@ -504,17 +560,21 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 activeCall.answer(localStream);
-                activeCall.on('stream', stream => { $('remote-audio').srcObject = stream; showCallUI('connected'); });
+                activeCall.on('stream', stream => { $('remote-audio').srcObject = stream; showCallUI('connected', callPeerId); });
                 activeCall.on('close', endCallUI);
             } catch (e) { endCallUI(); }
         };
 
-        $('end-call-btn').onclick = () => { sendData('call-ended'); addMessage(currentChatId, 'me', 'Call Ended', 'call', uuid()); endCallUI(); };
-        $('decline-call-btn').onclick = () => { sendData('call-rejected'); addMessage(currentChatId, 'me', 'Call Declined', 'call', uuid()); endCallUI(); };
+        $('end-call-btn').onclick = () => { sendData('call-ended'); addMessage(callPeerId || currentChatId, 'me', 'Call Ended', 'call', uuid()); endCallUI(); };
+        $('decline-call-btn').onclick = () => { sendData('call-rejected'); addMessage(callPeerId || currentChatId, 'me', 'Call Declined', 'call', uuid()); endCallUI(); };
 
         function showCallUI(state, peerId) {
+            callPeerId = peerId;
             $('call-screen').classList.add('active');
-            $('call-name').textContent = getContactName(peerId || currentChatId);
+            const name = getContactName(peerId);
+            $('call-name').textContent = name;
+            $('call-avatar').textContent = name[0].toUpperCase();
+            
             $('incoming-controls').classList.add('hidden-layout');
             $('active-controls').classList.add('hidden-layout');
             $('mute-container').classList.add('hidden-layout');
@@ -539,6 +599,7 @@
             if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
             $('remote-audio').srcObject = null;
             $('call-screen').classList.remove('active');
+            callPeerId = null;
         }
 
         $('mute-btn').onclick = () => {
@@ -670,7 +731,6 @@
             if (!state.chats[chatId]) return;
             state.chats[chatId] = state.chats[chatId].filter(m => m.id !== msgId);
             
-            // Sync Last Msg preview
             const c = state.contacts.find(x => x.id === chatId);
             if (c) {
                 const last = state.chats[chatId][state.chats[chatId].length - 1];
@@ -689,7 +749,6 @@
             const msg = state.chats[chatId].find(m => m.id === msgId);
             if (msg) {
                 msg.content = newContent;
-                // Sync Last Msg preview
                 const c = state.contacts.find(x => x.id === chatId);
                 if (c && state.chats[chatId][state.chats[chatId].length - 1].id === msgId) {
                     c.lastMsg = newContent;
@@ -703,7 +762,7 @@
             }
         }
 
-        /* --- UTILS & REMAINDER --- */
+        /* --- UTILS --- */
         function ensureContact(id) {
             if (!state.contacts.find(c => c.id === id)) {
                 state.contacts.unshift({ id, name: 'User ' + id, lastMsg: '', time: Date.now(), unread: 0 });
@@ -722,10 +781,19 @@
             const el = document.querySelector(`[data-id="${chatId}"] .contact-preview`);
             if (el) el.style.color = isTyping ? 'var(--bubble-blue)' : '';
             if (el) el.textContent = isTyping ? 'typing...' : (state.contacts.find(c => c.id === chatId)?.lastMsg || '');
+            
             if (currentChatId === chatId) {
-                $('chat-status').textContent = isTyping ? 'typing...' : 'Online';
-                if (isTyping) { $('typing-bubble').classList.add('active'); $('messages-container').scrollTop = $('messages-container').scrollHeight + 50; }
-                else $('typing-bubble').classList.remove('active');
+                const statusEl = $('chat-status');
+                if (isTyping) {
+                    statusEl.textContent = 'typing...';
+                    statusEl.style.color = 'var(--bubble-blue)';
+                    $('typing-bubble').classList.add('active'); 
+                    $('messages-container').scrollTop = $('messages-container').scrollHeight + 50; 
+                } else {
+                    updateStatusDisplay(true); // Revert to online logic
+                    statusEl.style.color = 'var(--text-secondary)';
+                    $('typing-bubble').classList.remove('active');
+                }
             }
         }
         function renderContacts() {
@@ -749,12 +817,23 @@
             const c = state.contacts.find(x => x.id === id);
             if(c) { c.unread = 0; saveState(); renderContacts(); }
             $('chat-title').textContent = getContactName(id);
+            
+            updateStatusDisplay(false); // Default to offline until connected
             $('chat-view').classList.remove('hidden');
             $('chat-view').classList.add('active');
             renderMessages();
-            if (!activeConn || activeConn.peer !== id) activeConn = peer.connect(id, { reliable: true });
-            activeConn.on('open', () => { sendData('seen'); });
-            setupConnection(activeConn);
+            
+            startHeartbeat(id); // START HEARTBEAT
+            
+            if (!activeConn || activeConn.peer !== id) {
+                activeConn = peer.connect(id);
+                if(activeConn) {
+                    activeConn.on('open', () => { sendData('seen'); updateStatusDisplay(true); });
+                    setupConnection(activeConn);
+                }
+            } else if (activeConn.open) {
+                updateStatusDisplay(true);
+            }
         }
 
         const msgInput = $('message-input');
@@ -801,7 +880,12 @@
 
         $('contact-search').addEventListener('input', renderContacts);
         $('dark-mode-toggle').onclick = (e) => { state.settings.darkMode = e.target.checked; document.body.classList.toggle('light-mode', !e.target.checked); saveState(); };
-        $('chat-back-btn').onclick = () => { $('chat-view').classList.remove('active'); $('chat-view').classList.add('hidden'); currentChatId = null; };
+        $('chat-back-btn').onclick = () => { 
+            $('chat-view').classList.remove('active'); 
+            $('chat-view').classList.add('hidden'); 
+            currentChatId = null; 
+            clearInterval(heartbeatInterval);
+        };
         $('new-msg-btn').onclick = () => showModal('New Chat', 'Enter Peer ID:', 'Peer ID', [{text:'Cancel'}, {text:'Connect', bold:true, onClick: (id) => { if(id) { ensureContact(id); openChat(id); }}}]);
         $('settings-btn').onclick = () => { $('settings-view').classList.remove('hidden'); $('settings-view').classList.add('active'); };
         $('settings-back-btn').onclick = () => { $('settings-view').classList.remove('active'); $('settings-view').classList.add('hidden'); };
