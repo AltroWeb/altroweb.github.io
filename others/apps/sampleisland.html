@@ -5,355 +5,276 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Music Player</title>
     <style>
+        /* --- APP STYLING --- */
         body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(180deg, #2a2a2a 0%, #000000 100%);
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            user-select: none;
+            margin: 0; padding: 0;
+            background: linear-gradient(180deg, #1c1c1e 0%, #000000 100%);
+            color: white; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none;
         }
-
-        /* --- UI STYLING (The Look) --- */
-        .player-container {
-            padding: 20px 24px;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            padding-top: 60px; /* Space for dynamic island area */
+        .player-header { padding-top: 50px; text-align: center; color: rgba(255,255,255,0.5); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; margin-bottom: 20px;}
+        .player-container { padding: 0 32px; display: flex; flex-direction: column; height: 100%; }
+        .artwork-container {
+            width: 100%; aspect-ratio: 1/1; margin-bottom: 40px;
+            display: flex; align-items: center; justify-content: center;
         }
-
         .artwork {
-            width: 100%;
-            aspect-ratio: 1/1;
-            background-image: url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=1000&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            margin-bottom: 40px;
-            transform: scale(0.95);
+            width: 100%; height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600');
+            background-size: cover; background-position: center; border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(1);
             transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-
-        .track-info {
-            margin-bottom: 30px;
-        }
-
-        .track-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .track-artist {
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            margin-bottom: 10px;
-            position: relative;
-        }
-
-        .progress-fill {
-            width: 35%;
-            height: 100%;
-            background: #fff;
-            border-radius: 2px;
-            position: relative;
-        }
-
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            top: -4px;
-            width: 12px;
-            height: 12px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .time-stamps {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: rgba(255,255,255,0.4);
-            font-weight: 600;
-            margin-bottom: 40px;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px;
-        }
-
-        .btn-control {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 0;
-            opacity: 1;
-            transition: opacity 0.2s, transform 0.1s;
-        }
+        .track-info { margin-bottom: 30px; }
+        .track-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-artist { font-size: 18px; color: rgba(255, 255, 255, 0.6); font-weight: 500; }
+        .progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-bottom: 10px; position: relative; }
+        .progress-fill { width: 65%; height: 100%; background: #a2a2a2; border-radius: 2px; position: relative; }
+        .time-stamps { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 600; margin-bottom: 40px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        .btn-control { background: none; border: none; color: white; cursor: pointer; padding: 0; opacity: 1; transition: opacity 0.2s, transform 0.1s; }
         .btn-control:active { transform: scale(0.9); opacity: 0.7; }
-
-        .play-btn {
-            width: 70px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .status-pill {
+            display: inline-block; padding: 4px 12px; border-radius: 20px;
+            background: rgba(255,255,255,0.1); font-size: 12px; font-weight: 600;
+            margin-top: 10px; color: #8E8E93; border: 1px solid rgba(255,255,255,0.05);
         }
-        
-        .badge {
-            background: #FF3B30;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            vertical-align: middle;
-            text-transform: uppercase;
-        }
-        .badge.connected { background: #34C759; }
+        .status-pill.active { color: #30D158; border-color: rgba(48, 209, 88, 0.3); background: rgba(48, 209, 88, 0.1); }
     </style>
 </head>
 <body>
 
-    <!-- VISIBLE CONTENT OF THE APP -->
+    <div class="player-header">Island Controller</div>
+
     <div class="player-container">
-        <div class="artwork" id="album-art"></div>
+        <div class="artwork-container">
+            <div class="artwork" id="album-art"></div>
+        </div>
         
         <div class="track-info">
-            <div class="track-title">
-                Code Injection <span class="badge" id="status-badge">OFFLINE</span>
-            </div>
-            <div class="track-artist">System Override</div>
+            <div class="track-title">Dynamic Island Override</div>
+            <div class="track-artist">System Connected</div>
+            <div id="connection-status" class="status-pill">Waiting for Engine...</div>
         </div>
 
-        <div class="progress-bar">
-            <div class="progress-fill"></div>
-        </div>
-        <div class="time-stamps">
-            <span>1:24</span>
-            <span>-2:48</span>
-        </div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="time-stamps"><span>2:14</span><span>-1:30</span></div>
 
         <div class="controls">
-            <button class="btn-control"><svg width="25" height="25" viewBox="0 0 24 24" fill="white"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
-            <button class="btn-control play-btn">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </button>
-            <button class="btn-control"><svg width="25" height="25" viewBox="0 0 24 24" fill="white"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
+            <button class="btn-control"><svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
+            <button class="btn-control play-btn"><svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+            <button class="btn-control"><svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
         </div>
     </div>
 
     <!-- 
       =======================================================
-      THE INJECTION PAYLOAD (Robust Version)
+      THE ROBUST INJECTION LOGIC
       =======================================================
     -->
     <script>
     (function() {
-        // --- CONFIGURATION ---
+        // --- CONFIGURATION: MUST MATCH APP BUILDER EXACTLY ---
         const CONFIG = {
             appName: "My Custom Music", 
-            islandTitle: "Code Injection",
-            islandSub: "System Override",
-            islandIcon: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=100"
+            islandTitle: "Now Playing",
+            islandSub: "Custom App",
+            islandIcon: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100"
         };
 
-        const statusBadge = document.getElementById('status-badge');
+        const statusEl = document.getElementById('connection-status');
 
-        function findIOSEngine() {
-            // Try to find the iOS engine by traversing up parent frames
-            // This helps if the simulator is nested in a preview container.
-            let currentWin = window;
-            let iOS = null;
-            let doc = null;
-
-            for (let i = 0; i < 5; i++) { // Max depth 5
-                try {
-                    if (currentWin.parent === currentWin) break; // Top reached
-                    currentWin = currentWin.parent;
-                    
-                    // Attempt to access iOS via eval (required for const variables)
-                    // This will THROW if Cross-Origin is enforced.
-                    iOS = currentWin.eval('iOS');
-                    
-                    if (iOS) {
-                        doc = currentWin.document;
-                        console.log(`[Injector] Found iOS Engine at depth ${i+1}`);
-                        return { iOS, doc };
-                    }
-                } catch (e) {
-                    // Security Error expected if cross-origin
-                    console.log(`[Injector] Depth ${i+1} access failed: ${e.message}`);
-                }
+        // 1. SAFE ENGINE FINDER
+        function getEngine() {
+            try {
+                if (window.parent === window) return null; // Not in iframe
+                const iOS = window.parent.eval('iOS');
+                const doc = window.parent.document;
+                return (iOS && doc) ? { iOS, doc } : null;
+            } catch (e) {
+                console.warn("Cross-Origin Block:", e.message);
+                return null;
             }
-            return null;
         }
 
-        try {
-            const engine = findIOSEngine();
-            
+        function init() {
+            const engine = getEngine();
             if (!engine) {
-                throw new Error("Could not access iOS Engine (likely Blocked by Cross-Origin Policy)");
+                statusEl.innerText = "Connection Failed (CORS)";
+                statusEl.style.color = "#FF3B30";
+                return;
             }
 
             const { iOS, doc } = engine;
             
-            // --- SUCCESS: Update UI ---
-            console.log(`[Injector] Hooking into: ${CONFIG.appName}`);
-            statusBadge.innerText = "CONNECTED";
-            statusBadge.classList.add('connected');
+            // --- SUCCESS UI ---
+            console.log(`[Injector] Connected to iOS Engine for ${CONFIG.appName}`);
+            statusEl.innerText = "System Connected";
+            statusEl.classList.add('active');
 
-            // --- 2. UPDATE ISLAND UI ---
-            function updateIslandUI() {
-                const titleEl = doc.querySelector('.island-title');
-                const subEl = doc.querySelector('.island-sub');
-                const iconEl = doc.querySelector('.island-icon');
-                
-                if (titleEl) titleEl.innerText = CONFIG.islandTitle;
-                if (subEl) subEl.innerText = CONFIG.islandSub;
-                if (iconEl) iconEl.style.backgroundImage = `url('${CONFIG.islandIcon}')`;
+            // --- 2. UPDATE ISLAND APPEARANCE ---
+            function updateIslandLook() {
+                const title = doc.querySelector('.island-title');
+                const sub = doc.querySelector('.island-sub');
+                const icon = doc.querySelector('.island-icon');
+                if (title) title.innerText = CONFIG.islandTitle;
+                if (sub) sub.innerText = CONFIG.islandSub;
+                if (icon) icon.style.backgroundImage = `url('${CONFIG.islandIcon}')`;
             }
-            updateIslandUI();
+            updateIslandLook();
 
-            // --- 3. OVERRIDE: LAUNCH FROM ISLAND ---
-            iOS.launchMusicFromIsland = function() {
-                if (this.activeWindow === this.mainWindow && this.activeWindow.getAttribute('data-app') === CONFIG.appName) {
-                    this.toggleIsland(true); 
-                    return;
-                }
-                if (this.state === 'ACTIVE' && this.activeWindow) this.activeWindow.classList.add('receded');
-
-                this.state = 'OPENING';
-                this.openedFromIsland = true;
-                
-                clearTimeout(this.autoCollapseTimer);
-                this.toggleIsland(false); 
-                this.statusBar.classList.remove('blurred', 'squished');
-                this.gestureBar.classList.remove('on-home');
-
-                this.activeWindow = this.mainWindow; 
-                this.routeContent(CONFIG.appName); 
-                this.activeWindow.setAttribute('data-app', CONFIG.appName);
-                
-                this.statusBar.classList.remove('dark-text');
-                this.gestureBar.classList.remove('dark-bar');
-
-                const islandRect = this.island.getBoundingClientRect();
-                const screenRect = this.screen.getBoundingClientRect();
-                const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
-                const dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
-
-                this.activeWindow.style.display = 'flex';
-                this.activeWindow.style.transition = 'none'; 
-                this.activeWindow.style.opacity = '1'; 
-                this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.25)`;
-                this.activeWindow.style.borderRadius = '50px'; 
-                this.activeWindow.style.setProperty('--tx', `${dx}px`);
-                this.activeWindow.style.setProperty('--ty', `${dy}px`);
-                this.activeWindow.offsetHeight;
-                this.activeWindow.classList.add('launching-timewarp');
-
-                this.wallpaper.classList.add('active-app');
-                this.homescreenGroup.classList.add('minimized');
-                
-                setTimeout(() => {
-                    this.island.style.transition = ''; 
-                    if (this.state === 'ACTIVE') {
-                        this.activeWindow.style.borderRadius = '0px';
-                    }
-                }, 750); 
-            };
-
-            // --- 4. OVERRIDE: TOGGLE ISLAND ---
+            // --- 3. OVERRIDE: TOGGLE ISLAND (BOUNCE LOGIC) ---
+            // This ensures clicking the island just bounces if our app is open
             const originalToggle = iOS.toggleIsland.bind(iOS);
             iOS.toggleIsland = function(forceState) {
                 const currentApp = this.activeWindow ? this.activeWindow.getAttribute('data-app') : null;
-                if (this.state === 'ACTIVE' && (currentApp === 'Music' || currentApp === CONFIG.appName)) {
+                
+                // If currently active app is US, bounce instead of expand
+                if (this.state === 'ACTIVE' && currentApp === CONFIG.appName) {
                     this.island.classList.remove('island-bounce');
-                    void this.island.offsetWidth; 
+                    void this.island.offsetWidth; // Trigger reflow
                     this.island.classList.add('island-bounce');
                     return;
                 }
                 originalToggle(forceState);
             };
 
-            // --- 5. OVERRIDE: CLOSE APP ---
+            // --- 4. OVERRIDE: LAUNCH FROM ISLAND (TIME WARP) ---
+            iOS.launchMusicFromIsland = function() {
+                // A. Check if we are already open to prevent "Dummy Window" / Reload loop
+                if (this.activeWindow === this.mainWindow && this.activeWindow.getAttribute('data-app') === CONFIG.appName) {
+                    this.toggleIsland(true);
+                    return;
+                }
+
+                // B. Visual Prep
+                if (this.state === 'ACTIVE' && this.activeWindow) {
+                    this.activeWindow.classList.add('receded');
+                }
+
+                this.state = 'OPENING';
+                this.openedFromIsland = true;
+
+                // C. Island UI Reset
+                clearTimeout(this.autoCollapseTimer);
+                this.toggleIsland(false);
+                this.statusBar.classList.remove('blurred', 'squished');
+                this.gestureBar.classList.remove('on-home');
+
+                // D. ACTIVATE MAIN WINDOW (Without reloading content if possible)
+                this.activeWindow = this.mainWindow;
+                
+                // Only route content if it's NOT already us
+                if (this.activeWindow.getAttribute('data-app') !== CONFIG.appName) {
+                    this.routeContent(CONFIG.appName);
+                }
+                this.activeWindow.setAttribute('data-app', CONFIG.appName);
+
+                // E. Styling Overrides (Dark Mode for Music look)
+                this.statusBar.classList.remove('dark-text');
+                this.gestureBar.classList.remove('dark-bar');
+
+                // F. THE TIME WARP ANIMATION
+                const islandRect = this.island.getBoundingClientRect();
+                const screenRect = this.screen.getBoundingClientRect();
+                const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
+                const dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
+
+                this.activeWindow.style.display = 'flex';
+                this.activeWindow.style.transition = 'none';
+                this.activeWindow.style.opacity = '1';
+                this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.25)`;
+                this.activeWindow.style.borderRadius = '50px';
+                
+                // Pass coordinates to CSS variable for keyframes
+                this.activeWindow.style.setProperty('--tx', `${dx}px`);
+                this.activeWindow.style.setProperty('--ty', `${dy}px`);
+                
+                this.activeWindow.offsetHeight; // Force Paint
+                this.activeWindow.classList.add('launching-timewarp');
+
+                this.wallpaper.classList.add('active-app');
+                this.homescreenGroup.classList.add('minimized');
+
+                // G. Cleanup Animation
+                setTimeout(() => {
+                    this.island.style.transition = '';
+                    if (this.state === 'ACTIVE') {
+                        this.activeWindow.style.borderRadius = '0px';
+                    }
+                }, 750);
+            };
+
+            // --- 5. OVERRIDE: CLOSE APP (VACUUM EFFECT) ---
             iOS.closeApp = function() {
                 if (this.state === 'IDLE' || this.state === 'CLOSING') return;
                 this.state = 'CLOSING';
-                
+
                 const currentAppName = this.activeWindow.getAttribute('data-app');
-                
+
+                // Reset general UI
                 this.statusBar.classList.remove('dark-text');
                 this.gestureBar.classList.remove('dark-bar');
                 this.gestureBar.classList.add('on-home');
                 this.mainWindow.classList.remove('receded');
                 this.storeWindow.classList.remove('receded');
 
-                if (this.openedFromIsland && (currentAppName === 'Music' || currentAppName === CONFIG.appName)) {
+                // *** CUSTOM LOGIC: IF OPENED FROM ISLAND -> SUCK INTO ISLAND ***
+                if (this.openedFromIsland && currentAppName === CONFIG.appName) {
+                    
+                    // 1. Math for Vacuum target
                     const islandRect = this.island.getBoundingClientRect();
                     const screenRect = this.screen.getBoundingClientRect();
                     const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
                     let dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
-                    dy += 28; 
+                    dy += 28; // Slight offset for visual center
 
+                    // 2. Apply "Vacuum" classes to MAIN WINDOW
                     this.activeWindow.classList.add('vacuum-active');
-                    this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.1)`; 
-                    this.activeWindow.style.borderRadius = '50px'; 
-                    this.activeWindow.style.opacity = '0'; 
+                    this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.1)`;
+                    this.activeWindow.style.borderRadius = '50px';
+                    this.activeWindow.style.opacity = '0';
 
+                    // 3. Restore App Icon
                     if (this.activeAppIcon) {
-                         this.activeAppIcon.classList.remove('hidden-source');
-                         this.activeAppIcon.style.opacity = '1';
-                         this.activeAppIcon.style.transform = 'scale(1)';
+                        this.activeAppIcon.classList.remove('hidden-source');
+                        this.activeAppIcon.style.opacity = '1';
+                        this.activeAppIcon.style.transform = 'scale(1)';
                     }
 
+                    // 4. Island Impact Animation
                     setTimeout(() => {
-                        this.island.classList.add('compact', 'island-impact'); 
+                        this.island.classList.add('compact', 'island-impact');
                         setTimeout(() => this.island.classList.remove('island-impact'), 600);
                         this.statusBar.classList.add('squished');
-                        
+
+                        // 5. Restore Island Text Logic
                         clearTimeout(this.autoCollapseTimer);
                         this.autoCollapseTimer = setTimeout(() => {
-                            if(this.islandContent) this.islandContent.classList.add('blur-out');
+                            if (this.islandContent) this.islandContent.classList.add('blur-out');
                             setTimeout(() => {
                                 this.island.classList.remove('compact');
                                 this.statusBar.classList.remove('squished');
                                 setTimeout(() => {
-                                    if(this.islandContent) this.islandContent.classList.remove('blur-out');
-                                }, 300); 
-                            }, 200); 
+                                    if (this.islandContent) this.islandContent.classList.remove('blur-out');
+                                }, 300);
+                            }, 200);
                         }, 3000);
-                    }, 280); 
+
+                    }, 280);
+
                     this.openedFromIsland = false;
-                } else {
-                    // Standard fallback close
-                    this.activeWindow.style.borderRadius = 'var(--app-radius)';
+                    // Note: 'transitionend' event in original code will call finishClosing()
+                    // which hides the window completely.
+                } 
+                // *** FALLBACK: STANDARD CLOSE ANIMATION ***
+                else {
                     this.homescreenGroup.classList.remove('minimized');
                     this.wallpaper.classList.remove('active-app');
-                    doc.querySelectorAll('.app-icon').forEach(i => i.classList.remove('hidden-source'));
+                    
+                    doc.querySelectorAll('.app-icon').forEach(icon => icon.classList.remove('hidden-source'));
 
+                    // Re-find icon if needed
                     if (!this.activeAppIcon || !this.activeAppIcon.isConnected) {
                         this.activeAppIcon = this.getVisibleIconElement(currentAppName);
                     }
@@ -364,54 +285,56 @@
                         this.activeAppIcon.style.transition = 'none';
                         this.activeAppIcon.style.transform = `scale(${1/tf.scaleX})`;
                         this.activeAppIcon.style.opacity = '0';
-                        this.activeAppIcon.offsetHeight;
+                        this.activeAppIcon.offsetHeight; // Reflow
 
-                        this.activeWindow.style.transformOrigin = 'center center'; 
+                        this.activeWindow.style.transformOrigin = 'center center';
+                        
                         this.activeAppIcon.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
                         this.activeAppIcon.style.transform = 'scale(1)';
                         this.activeAppIcon.style.opacity = '1';
 
                         this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), border-radius 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
                         this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
-                        this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
-                        this.activeWindow.style.opacity = '0'; 
+                        this.activeWindow.style.borderRadius = `${16/tf.scaleX}px`;
+                        this.activeWindow.style.opacity = '0';
                     } else {
+                        // Fallback if no icon
                         this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease';
                         this.activeWindow.style.transform = 'scale(0.5)';
                         this.activeWindow.style.opacity = '0';
                     }
                 }
             };
-            
-            // --- 6. HANDLE CLICKS ---
+
+            // --- 6. HANDLE ISLAND CLICK ---
             iOS.handleIslandClick = function() {
+                // If us or music is open, just bounce
                 if (this.state === 'ACTIVE' && this.activeWindow && (this.activeWindow.getAttribute('data-app') === CONFIG.appName || this.activeWindow.getAttribute('data-app') === 'Music')) {
-                     this.toggleIsland(true);
-                     return;
+                    this.toggleIsland(true);
+                    return;
                 }
+                
+                // Launch logic
                 if (this.isIslandExpanded || this.island.classList.contains('compact')) {
                     this.launchMusicFromIsland();
                 } else {
                     this.toggleIsland(true);
                 }
             };
-
-            // Setup basic local UI logic
-            const playBtn = document.querySelector('.play-btn');
-            if(playBtn) {
-                playBtn.addEventListener('click', () => {
-                    const icon = playBtn.querySelector('svg');
-                    if(icon.innerHTML.includes('M6 19')) icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-                    else icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-                });
-            }
-
-        } catch (e) {
-            console.warn("Injection Blocked:", e.message);
-            statusBadge.innerText = "FAILED";
-            statusBadge.title = "Cross-Origin Security Policy blocked access to Simulator.";
-            statusBadge.style.backgroundColor = "#ff9500";
         }
+
+        // Retry logic to ensure Simulator is loaded before injecting
+        let attempts = 0;
+        const interval = setInterval(() => {
+            if (getEngine()) {
+                clearInterval(interval);
+                init();
+            } else {
+                attempts++;
+                if (attempts > 20) clearInterval(interval); // Stop after 2s
+            }
+        }, 100);
+
     })();
     </script>
 </body>
