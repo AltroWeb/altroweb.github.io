@@ -216,8 +216,8 @@
             // OVERRIDE 1: LAUNCH (Aggressive Recede & No-Loop)
             // =======================================================
             iOS.launchMusicFromIsland = function() {
-                // Yield only if we really don't own it
-                if (iOS._islandOwner !== REAL_APP_ID) return iOS._originals.launch.call(this);
+                // FORCE OWNERSHIP ON LAUNCH
+                iOS._islandOwner = REAL_APP_ID;
 
                 // Bounce if active
                 if (this.activeWindow === this.mainWindow && this.activeWindow.getAttribute('data-app') === REAL_APP_ID) {
@@ -245,10 +245,8 @@
                 // 3. TARGET US (Main Window)
                 this.activeWindow = this.mainWindow;
                 
-                // CRITICAL: Only route content if ID has changed to prevent reload loop
-                if (this.activeWindow.getAttribute('data-app') !== REAL_APP_ID) {
-                    this.routeContent(REAL_APP_ID);
-                }
+                // CRITICAL: Always ensure REAL_APP_ID is targeted
+                this.routeContent(REAL_APP_ID);
                 this.activeWindow.setAttribute('data-app', REAL_APP_ID);
 
                 // 4. WARP ANIMATION
@@ -372,21 +370,18 @@
             // OVERRIDE 4: CLICK (Hijack)
             // =======================================================
             iOS.handleIslandClick = function() {
-                // If Music owns it (user explicitly opened it), let it be
-                if (iOS._islandOwner === 'Music') return iOS._originals.click.call(this);
+                // If Music explicitly owns it and we are not forcing control, let it be.
+                // However, the request is to ALWAYS open the app, so we force ownership here.
+                iOS._islandOwner = REAL_APP_ID;
 
-                // Otherwise, WE force control
+                // If WE are active, just bounce the island
                 if (this.state === 'ACTIVE' && this.activeWindow && this.activeWindow.getAttribute('data-app') === REAL_APP_ID) {
                     this.toggleIsland(true);
                     return;
                 }
                 
-                // If expanding, launch US
-                if (this.isIslandExpanded || this.island.classList.contains('compact')) {
-                    this.launchMusicFromIsland();
-                } else {
-                    iOS._originals.toggle.call(this, true);
-                }
+                // ALWAYS launch this app regardless of current expanded state
+                this.launchMusicFromIsland();
             };
 
             // UNLOAD CLEANUP
