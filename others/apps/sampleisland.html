@@ -5,67 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Music Player</title>
     <style>
+        /* --- PRO STYLING --- */
         body {
             margin: 0; padding: 0;
-            background: linear-gradient(180deg, #1c1c1e 0%, #000000 100%);
+            background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
             color: white; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none;
         }
-        .player-container { padding: 0 32px; display: flex; flex-direction: column; height: 100%; justify-content: center;}
+        .player-container { 
+            padding: 0 32px; display: flex; flex-direction: column; 
+            height: 100%; justify-content: center; position: relative; z-index: 2;
+        }
+        .artwork-wrapper {
+            width: 100%; aspect-ratio: 1/1; margin-bottom: 40px; position: relative;
+        }
         .artwork {
-            width: 100%; aspect-ratio: 1/1;
+            width: 100%; height: 100%;
             background-image: url('https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600');
             background-size: cover; background-position: center; border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-bottom: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
         }
         .track-info { margin-bottom: 30px; }
-        .track-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
-        .track-artist { font-size: 18px; color: rgba(255, 255, 255, 0.6); }
-        .controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
-        .btn-control { background: none; border: none; color: white; cursor: pointer; }
+        .track-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.5px;}
+        .track-artist { font-size: 18px; color: rgba(255, 255, 255, 0.6); font-weight: 500;}
+        
         .status-pill {
-            margin-top: 10px; padding: 4px 12px; border-radius: 20px;
-            background: rgba(255,255,255,0.1); font-size: 12px; font-weight: 600;
-            color: #8E8E93; text-align: center; width: fit-content;
+            margin-top: 12px; padding: 6px 12px; border-radius: 20px;
+            background: rgba(255,255,255,0.08); font-size: 11px; font-weight: 700;
+            color: #8E8E93; text-transform: uppercase; letter-spacing: 0.5px;
+            width: fit-content; display: flex; align-items: center; gap: 6px;
         }
-        .status-pill.active { color: #30D158; background: rgba(48, 209, 88, 0.1); }
+        .status-indicator { width: 6px; height: 6px; border-radius: 50%; background-color: #555; }
+        .status-pill.active .status-indicator { background-color: #30D158; box-shadow: 0 0 8px #30D158; }
+        .status-pill.active { color: #fff; background: rgba(255,255,255,0.15); }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        .btn-control { background: none; border: none; color: white; cursor: pointer; opacity: 1; transition: transform 0.1s; }
+        .btn-control:active { transform: scale(0.9); opacity: 0.7; }
     </style>
 </head>
 <body>
 
     <div class="player-container">
-        <div class="artwork"></div>
+        <div class="artwork-wrapper">
+            <div class="artwork"></div>
+        </div>
         
         <div class="track-info">
             <div class="track-title">Dynamic Island Override</div>
             <div class="track-artist">System Connected</div>
-            <div id="status" class="status-pill">Initializing...</div>
+            <div id="status" class="status-pill">
+                <div class="status-indicator"></div>
+                <span id="status-text">Linking...</span>
+            </div>
         </div>
 
         <div class="controls">
-            <button class="btn-control"><svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
-            <button class="btn-control"><svg width="60" height="60" fill="white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
-            <button class="btn-control"><svg width="30" height="30" fill="white" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
+            <button class="btn-control"><svg width="28" height="28" fill="white" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
+            <button class="btn-control"><svg width="64" height="64" fill="white" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+            <button class="btn-control"><svg width="28" height="28" fill="white" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
         </div>
     </div>
 
-    <!-- INJECTION LOGIC -->
+    <!-- INJECTION SCRIPT -->
     <script>
     (function() {
+        // --- 1. CONFIGURATION ---
         const CONFIG = {
-            appName: "My Custom Music", // MUST MATCH APP BUILDER NAME
+            appName: "My Custom Music", // Must match App Builder Name
             islandTitle: "Now Playing",
-            islandSub: "Pro Audio",
+            islandSub: "Custom Audio",
             islandIcon: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100"
         };
 
-        const statusEl = document.getElementById('status');
-        let myAppID = null;
+        const statusText = document.getElementById('status-text');
+        const statusPill = document.getElementById('status');
+        let REAL_APP_ID = null;
 
+        // --- 2. ENGINE ACCESS & ID HUNTER ---
         function getEngine() {
             try {
                 if (window.parent === window) return null;
-                const iOS = window.parent.eval('iOS');
+                const iOS = window.parent.eval('iOS'); 
                 const doc = window.parent.document;
                 return (iOS && doc) ? { iOS, doc } : null;
             } catch (e) {
@@ -73,74 +94,95 @@
             }
         }
 
-        // --- 1. FIND REAL APP ID FROM LOCAL STORAGE ---
-        function findMyAppID(parentWindow) {
+        function findRealAppID(parentWindow) {
             try {
-                const installed = JSON.parse(parentWindow.localStorage.getItem('ios_installed_apps') || '[]');
-                const app = installed.find(a => a.name === CONFIG.appName);
-                if (app) {
-                    console.log(`[Injector] Found Real ID: ${app.id}`);
-                    return app.id;
-                }
-            } catch(e) { console.error(e); }
-            console.warn("[Injector] ID not found. Using name fallback.");
-            return CONFIG.appName;
+                const rawData = parentWindow.localStorage.getItem('ios_installed_apps');
+                if (!rawData) return null;
+                const installedApps = JSON.parse(rawData);
+                const myApp = installedApps.find(app => app.name === CONFIG.appName);
+                return myApp ? myApp.id : null;
+            } catch(e) { return null; }
         }
 
+        // --- 3. UI HELPER ---
+        function forceIslandText(doc) {
+            const title = doc.querySelector('.island-title');
+            const sub = doc.querySelector('.island-sub');
+            const icon = doc.querySelector('.island-icon');
+            
+            // Only update if elements exist
+            if (title) title.innerText = CONFIG.islandTitle;
+            if (sub) sub.innerText = CONFIG.islandSub;
+            if (icon) icon.style.backgroundImage = `url('${CONFIG.islandIcon}')`;
+        }
+
+        // --- 4. MAIN INJECTION LOGIC ---
         function init() {
             const engine = getEngine();
             if (!engine) {
-                statusEl.innerText = "CORS Blocked. Use URL Embed.";
-                statusEl.style.color = "red";
+                statusText.innerText = "CORS Failed";
+                statusPill.style.color = "#FF453A";
                 return;
             }
             const { iOS, doc } = engine;
-            
-            // Get correct ID
-            myAppID = findMyAppID(window.parent);
 
-            statusEl.innerText = "Injection Active";
-            statusEl.classList.add('active');
+            REAL_APP_ID = findRealAppID(window.parent);
+            if (!REAL_APP_ID) {
+                statusText.innerText = "ID Not Found";
+                REAL_APP_ID = CONFIG.appName; // Fallback
+            } else {
+                statusText.innerText = `Synced: ${REAL_APP_ID.substring(0,6)}...`;
+                statusPill.classList.add('active');
+            }
 
-            // --- 2. OVERRIDE: LAUNCH FROM ISLAND ---
+            // Update Island Appearance Immediately
+            forceIslandText(doc);
+
+            // --------------------------------------------------------
+            // ROBUST OVERRIDES (WITH FALLBACKS)
+            // --------------------------------------------------------
+
+            // Save Originals if they haven't been saved yet
+            if (!iOS._original_launchMusicFromIsland) iOS._original_launchMusicFromIsland = iOS.launchMusicFromIsland;
+            if (!iOS._original_toggleIsland) iOS._original_toggleIsland = iOS.toggleIsland;
+            if (!iOS._original_closeApp) iOS._original_closeApp = iOS.closeApp;
+
+            // --- A. LAUNCH OVERRIDE ---
             iOS.launchMusicFromIsland = function() {
-                // A. Smart Check: If we are already open, bounce instead of reloading
-                if (this.activeWindow === this.mainWindow && this.activeWindow.getAttribute('data-app') === myAppID) {
-                    this.toggleIsland(true);
+                // Check: Are we already open?
+                if (this.activeWindow === this.mainWindow && this.activeWindow.getAttribute('data-app') === REAL_APP_ID) {
+                    this.toggleIsland(true); // Just bounce
                     return;
                 }
 
-                // B. Visual Prep
-                if (this.state === 'ACTIVE' && this.activeWindow) {
-                    this.activeWindow.classList.add('receded');
-                }
-
+                // Setup State
+                if (this.state === 'ACTIVE' && this.activeWindow) this.activeWindow.classList.add('receded');
                 this.state = 'OPENING';
                 this.openedFromIsland = true;
 
-                // C. Reset Island
+                // UI Cleanup
                 clearTimeout(this.autoCollapseTimer);
-                this.toggleIsland(false);
+                this.toggleIsland(false); 
                 this.statusBar.classList.remove('blurred', 'squished');
                 this.gestureBar.classList.remove('on-home');
-
-                // D. ACTIVATE MAIN WINDOW WITH CORRECT ID
-                this.activeWindow = this.mainWindow;
-                
-                // IMPORTANT: Use the REAL ID found from localStorage
-                this.routeContent(myAppID); 
-                this.activeWindow.setAttribute('data-app', myAppID);
-
-                // E. Styling
                 this.statusBar.classList.remove('dark-text');
                 this.gestureBar.classList.remove('dark-bar');
 
-                // F. Time Warp Animation
+                // *** CORE LOGIC: Route to REAL ID ***
+                this.activeWindow = this.mainWindow; 
+                this.routeContent(REAL_APP_ID); 
+                this.activeWindow.setAttribute('data-app', REAL_APP_ID);
+
+                // *** TEXT FORCE ***
+                forceIslandText(doc);
+
+                // Animation Math
                 const islandRect = this.island.getBoundingClientRect();
                 const screenRect = this.screen.getBoundingClientRect();
                 const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
                 const dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
 
+                // Apply Animation
                 this.activeWindow.style.display = 'flex';
                 this.activeWindow.style.transition = 'none';
                 this.activeWindow.style.opacity = '1';
@@ -148,57 +190,67 @@
                 this.activeWindow.style.borderRadius = '50px';
                 this.activeWindow.style.setProperty('--tx', `${dx}px`);
                 this.activeWindow.style.setProperty('--ty', `${dy}px`);
+                this.activeWindow.offsetHeight; // Reflow
                 
-                this.activeWindow.offsetHeight; // Force reflow
                 this.activeWindow.classList.add('launching-timewarp');
                 this.wallpaper.classList.add('active-app');
                 this.homescreenGroup.classList.add('minimized');
 
+                // *** CRITICAL FIX FOR FREEZING ***
+                // We MUST manually set state to ACTIVE after animation, 
+                // otherwise gestures won't work.
                 setTimeout(() => {
                     this.island.style.transition = '';
-                    if (this.state === 'ACTIVE') this.activeWindow.style.borderRadius = '0px';
+                    if (this.state === 'OPENING') {
+                        this.state = 'ACTIVE'; // Unlock Gestures
+                        this.activeWindow.style.borderRadius = '0px';
+                    }
                 }, 750);
             };
 
-            // --- 3. OVERRIDE: TOGGLE ISLAND (BOUNCE CHECK) ---
-            const originalToggle = iOS.toggleIsland.bind(iOS);
+            // --- B. TOGGLE OVERRIDE (Collision Detection) ---
             iOS.toggleIsland = function(forceState) {
-                const currentApp = this.activeWindow ? this.activeWindow.getAttribute('data-app') : null;
+                const currentID = this.activeWindow ? this.activeWindow.getAttribute('data-app') : null;
                 
-                // Compare using the REAL ID
-                if (this.state === 'ACTIVE' && currentApp === myAppID) {
+                // ONLY hijack if WE are the active app
+                if (this.state === 'ACTIVE' && currentID === REAL_APP_ID) {
                     this.island.classList.remove('island-bounce');
                     void this.island.offsetWidth;
                     this.island.classList.add('island-bounce');
                     return;
                 }
-                originalToggle(forceState);
+
+                // Otherwise, respect other apps
+                if (iOS._original_toggleIsland) {
+                    iOS._original_toggleIsland.apply(this, arguments);
+                }
             };
 
-            // --- 4. OVERRIDE: CLOSE APP (VACUUM ANIMATION) ---
+            // --- C. CLOSE OVERRIDE (Vacuum) ---
             iOS.closeApp = function() {
                 if (this.state === 'IDLE' || this.state === 'CLOSING') return;
-                this.state = 'CLOSING';
+                
+                const currentID = this.activeWindow.getAttribute('data-app');
 
-                const currentApp = this.activeWindow.getAttribute('data-app');
+                // ONLY hijack if WE are the active app AND opened from island
+                if (this.openedFromIsland && currentID === REAL_APP_ID) {
+                    this.state = 'CLOSING';
 
-                // 4.1 Reset UI
-                this.statusBar.classList.remove('dark-text');
-                this.gestureBar.classList.remove('dark-bar');
-                this.gestureBar.classList.add('on-home');
-                this.mainWindow.classList.remove('receded');
-                this.storeWindow.classList.remove('receded');
+                    // Standard UI Reset
+                    this.statusBar.classList.remove('dark-text');
+                    this.gestureBar.classList.remove('dark-bar');
+                    this.gestureBar.classList.add('on-home');
+                    this.mainWindow.classList.remove('receded');
+                    this.storeWindow.classList.remove('receded');
 
-                // 4.2 IF OPENED FROM ISLAND -> SUCK INTO ISLAND
-                if (this.openedFromIsland && currentApp === myAppID) {
-                    
+                    // Vacuum Math
                     const islandRect = this.island.getBoundingClientRect();
                     const screenRect = this.screen.getBoundingClientRect();
                     const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
                     let dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
-                    dy += 28;
+                    dy += 28; // Center offset
 
-                    // Apply Vacuum Styles (Matches iOS Simulator CSS)
+                    // Apply Vacuum Animation
                     this.activeWindow.classList.add('vacuum-active');
                     this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.1)`;
                     this.activeWindow.style.borderRadius = '50px';
@@ -211,12 +263,13 @@
                         this.activeAppIcon.style.transform = 'scale(1)';
                     }
 
-                    // Island Impact Effect
+                    // Island Impact
                     setTimeout(() => {
                         this.island.classList.add('compact', 'island-impact');
                         setTimeout(() => this.island.classList.remove('island-impact'), 600);
                         this.statusBar.classList.add('squished');
 
+                        // Reset Island Text & State
                         clearTimeout(this.autoCollapseTimer);
                         this.autoCollapseTimer = setTimeout(() => {
                             if (this.islandContent) this.islandContent.classList.add('blur-out');
@@ -231,50 +284,49 @@
                     }, 280);
 
                     this.openedFromIsland = false;
-                    
-                    // ANTI-FREEZE FAILSAFE
-                    // Explicitly call finishClosing after animation time to ensure state resets
+
+                    // *** SAFETY NET ***
+                    // Force clean state after animation in case events fail
                     setTimeout(() => {
-                        if (this.state === 'CLOSING') this.finishClosing();
-                    }, 500);
+                        if (this.state === 'CLOSING') {
+                           this.finishClosing();
+                           // Ensure text is reset on close
+                           forceIslandText(doc); 
+                        }
+                    }, 700);
 
                 } else {
-                    // 4.3 FALLBACK: STANDARD CLOSE (Copy of original to ensure reliability)
-                    this.homescreenGroup.classList.remove('minimized');
-                    this.wallpaper.classList.remove('active-app');
-                    doc.querySelectorAll('.app-icon').forEach(icon => icon.classList.remove('hidden-source'));
-
-                    if (!this.activeAppIcon || !this.activeAppIcon.isConnected) {
-                        this.activeAppIcon = this.getVisibleIconElement(currentApp);
-                    }
-
-                    if (this.activeAppIcon) {
-                        const tf = this.getIconTransform(this.activeAppIcon);
-                        this.activeAppIcon.classList.remove('hidden-source');
-                        this.activeAppIcon.style.transition = 'none';
-                        this.activeAppIcon.style.transform = `scale(${1/tf.scaleX})`;
-                        this.activeAppIcon.style.opacity = '0';
-                        this.activeAppIcon.offsetHeight;
-                        this.activeWindow.style.transformOrigin = 'center center';
-                        
-                        this.activeAppIcon.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
-                        this.activeAppIcon.style.transform = 'scale(1)';
-                        this.activeAppIcon.style.opacity = '1';
-
-                        this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), border-radius 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
-                        this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
-                        this.activeWindow.style.borderRadius = `${16/tf.scaleX}px`;
-                        this.activeWindow.style.opacity = '0';
-                    } else {
-                        this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease';
-                        this.activeWindow.style.transform = 'scale(0.5)';
-                        this.activeWindow.style.opacity = '0';
+                    // Pass through to original for all other apps
+                    if (iOS._original_closeApp) {
+                        iOS._original_closeApp.apply(this, arguments);
                     }
                 }
             };
+            
+            // --- D. CLICK OVERRIDE ---
+            iOS.handleIslandClick = function() {
+                // If we are active, always bounce
+                if (this.state === 'ACTIVE' && this.activeWindow && this.activeWindow.getAttribute('data-app') === REAL_APP_ID) {
+                    this.toggleIsland(true);
+                    return;
+                }
+                
+                // If island is ready to expand, launch us
+                // NOTE: This assumes we want to hijack the island entry point globally
+                // if we are the "Music" replacement.
+                if (this.isIslandExpanded || this.island.classList.contains('compact')) {
+                    this.launchMusicFromIsland();
+                } else {
+                    // Use original toggle for generic expansion
+                    if (iOS._original_toggleIsland) iOS._original_toggleIsland.apply(this, arguments);
+                }
+            };
+
         }
 
+        // Initialize with a slight delay to ensure DOM is ready
         setTimeout(init, 500);
+
     })();
     </script>
 </body>
