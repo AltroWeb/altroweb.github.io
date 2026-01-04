@@ -581,10 +581,49 @@
                 }
             }
 
+            /**
+             * Returns a safe URL for the icon preview, or a default if the input is unsafe.
+             * This prevents use of dangerous schemes such as javascript: or data:.
+             */
+            getSafeIconUrl(url) {
+                const DEFAULT_ICON = 'grey.png';
+                if (!url) {
+                    return DEFAULT_ICON;
+                }
+
+                const trimmed = String(url).trim();
+                if (!trimmed) {
+                    return DEFAULT_ICON;
+                }
+
+                // Reject obviously dangerous schemes
+                const lower = trimmed.toLowerCase();
+                if (lower.startsWith('javascript:') || lower.startsWith('data:')) {
+                    return DEFAULT_ICON;
+                }
+
+                // Allow only http/https for absolute URLs
+                try {
+                    const parsed = new URL(trimmed, window.location.origin);
+                    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                        return parsed.href;
+                    }
+                    return DEFAULT_ICON;
+                } catch (e) {
+                    // If URL constructor fails, treat as relative path if it does not contain a colon before any slash
+                    const colonIndex = trimmed.indexOf(':');
+                    const slashIndex = trimmed.indexOf('/');
+                    if (colonIndex === -1 || (slashIndex !== -1 && colonIndex > slashIndex)) {
+                        return trimmed;
+                    }
+                    return DEFAULT_ICON;
+                }
+            }
+
             setupInputs() {
                 document.getElementById('edit-icon').addEventListener('input', (e) => {
                     const val = e.target.value;
-                    document.getElementById('icon-preview').src = val || 'grey.png';
+                    document.getElementById('icon-preview').src = this.getSafeIconUrl(val);
                 });
             }
             
