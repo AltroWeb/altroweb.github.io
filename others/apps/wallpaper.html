@@ -154,6 +154,15 @@
                 if (!allowedProtocols.includes(url.protocol)) {
                     return null;
                 }
+
+                // Basic heuristic: only accept URLs that look like image resources.
+                // This is intentionally conservative to reduce XSS/abuse risk.
+                const pathname = url.pathname || '';
+                const imageExtPattern = /\.(?:png|jpe?g|gif|webp|bmp|svg)$/i;
+                if (!imageExtPattern.test(pathname)) {
+                    return null;
+                }
+
                 return url.toString();
             } catch (e) {
                 // Invalid URL
@@ -196,11 +205,13 @@
                 const parentDoc = window.parent.document;
                 const wallpaperEl = parentDoc.getElementById('wallpaper');
                 if (wallpaperEl) {
-                    wallpaperEl.style.backgroundImage = "url(" + selectedImage + ")";
-                    
+                    // Safely quote and escape the URL when embedding into CSS.
+                    const cssSafeUrl = String(selectedImage).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    wallpaperEl.style.backgroundImage = 'url("' + cssSafeUrl + '")';
+
                     // 2. PERMANENT SAVE to Parent Storage
                     window.parent.localStorage.setItem('ios_wallpaper_url', selectedImage);
-                    
+
                     showToast();
                 } else {
                     alert("Simulator not found. Are you running this app inside the iOS Simulator?");
