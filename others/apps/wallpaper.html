@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wallpapers</title>
+    <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --accent: #007AFF;
+            --radius: 12px;
+            --safe-area-top: 50px; /* Accounts for Simulator Status Bar */
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-user-select: none;
+            user-select: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 60px 20px 15px 20px;
+            background: rgba(28, 28, 30, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 0.5px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 100px; /* Space for bottom actions */
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            margin-top: 10px;
+            color: var(--text-primary);
+        }
+
+        /* --- PREVIEW BOX --- */
+        .preview-box {
+            width: 100%;
+            height: 200px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .preview-box.has-image {
+            border: none;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .preview-placeholder {
+            color: var(--text-secondary);
+            font-size: 15px;
+            pointer-events: none;
+        }
+
+        /* --- CONTROLS --- */
+        .input-group {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .url-input {
+            width: 100%;
+            background: rgba(118, 118, 128, 0.24);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-size: 17px;
+            box-sizing: border-box;
+            outline: none;
+            margin-bottom: 10px;
+            font-family: inherit;
+        }
+
+        .url-input::placeholder { color: var(--text-secondary); }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.7; }
+
+        .btn-upload {
+            background: rgba(118, 118, 128, 0.24);
+            color: var(--accent);
+        }
+        
+        .btn-load {
+            background: var(--accent);
+            color: white;
+            flex: 0 0 80px;
+        }
+
+        /* --- GRID --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .wall-item {
+            aspect-ratio: 9 / 19.5; /* Mobile Aspect Ratio */
+            background: #333;
+            border-radius: var(--radius);
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .wall-item:active { transform: scale(0.96); }
+
+        .wall-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- SET BUTTON (Floating) --- */
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,1) 50%, rgba(0,0,0,0));
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            pointer-events: none; /* Let clicks pass through transparent part */
+        }
+
+        .set-btn {
+            background: var(--text-primary);
+            color: black;
+            font-size: 17px;
+            font-weight: 600;
+            padding: 16px 40px;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 4px 20px rgba(255,255,255,0.15);
+            cursor: pointer;
+            pointer-events: auto;
+            transition: transform 0.2s, opacity 0.2s;
+            opacity: 0.5; /* Disabled state initially */
+			font-family: "SF Pro Display";
+        }
+        .set-btn.active { opacity: 1; }
+        .set-btn:active { transform: scale(0.95); }
+
+        /* File Input Hidden */
+        #file-input { display: none; }
+
+        .success-toast {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 16px;
+            color: black;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .success-toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Wallpapers</h1>
+    </header>
+
+    <div class="scroll-container">
+        
+        <div class="section-title">Preview</div>
+        <div class="preview-box" id="preview-box">
+            <span class="preview-placeholder">Select or Upload Image</span>
+            <img id="preview-img" class="preview-img">
+        </div>
+
+        <div class="input-group">
+            <input type="text" class="url-input" id="url-input" placeholder="Paste Image URL...">
+            <div class="btn-row">
+                <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">
+                    Upload Photo
+                </button>
+                <button class="btn btn-load" onclick="loadFromUrl()">Go</button>
+            </div>
+            <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(this)">
+        </div>
+
+        <div class="section-title">Collections</div>
+        <div class="grid">
+            <!-- Preset 1 -->
+            <div class="wall-item" onclick="selectWallpaper('https://images.unsplash.com/photo-1696429175928-793a1cdef1d3?q=80&w=1000&auto=format&fit=crop')">
+                <img src="https://images.unsplash.com/photo-1696429175928-793a1cdef1d3?q=80&w=400&auto=format&fit=crop" class="wall-img">
+            </div>
+            <!-- Preset 2 -->
+            <div class="wall-item" onclick="selectWallpaper('https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1000&auto=format&fit=crop')">
+                <img src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=400&auto=format&fit=crop" class="wall-img">
+            </div>
+            <!-- Preset 3 -->
+            <div class="wall-item" onclick="selectWallpaper('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1000&auto=format&fit=crop')">
+                <img src="https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=400&auto=format&fit=crop" class="wall-img">
+            </div>
+            <!-- Preset 4 -->
+            <div class="wall-item" onclick="selectWallpaper('https://images.unsplash.com/photo-1605106702734-205df224ecce?q=80&w=1000&auto=format&fit=crop')">
+                <img src="https://images.unsplash.com/photo-1605106702734-205df224ecce?q=80&w=400&auto=format&fit=crop" class="wall-img">
+            </div>
+             <!-- Preset 5 -->
+            <div class="wall-item" onclick="selectWallpaper('https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=1000&auto=format&fit=crop')">
+                <img src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=400&auto=format&fit=crop" class="wall-img">
+            </div>
+             <!-- Preset 6 -->
+            <div class="wall-item" onclick="selectWallpaper('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop')">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" class="wall-img">
+            </div>
+        </div>
+
+    </div>
+
+    <div class="action-bar">
+        <button class="set-btn" id="set-btn" onclick="applyWallpaper()">Set as Wallpaper</button>
+    </div>
+
+    <div class="success-toast" id="toast">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="#34C759"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <span>Wallpaper Set</span>
+    </div>
+
+    <script>
+        let selectedImage = null;
+        const setBtn = document.getElementById('set-btn');
+        const previewBox = document.getElementById('preview-box');
+        const previewImg = document.getElementById('preview-img');
+
+        // 1. Select from Grid
+        function selectWallpaper(url) {
+            selectedImage = url;
+            updatePreview();
+        }
+
+        // 2. Load from URL Input
+        function loadFromUrl() {
+            const val = document.getElementById('url-input').value.trim();
+            if(val) {
+                selectedImage = val;
+                updatePreview();
+            }
+        }
+
+        // 3. Handle File Upload (Convert to Data URI)
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedImage = e.target.result;
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+            // Reset input so same file can be selected again
+            input.value = '';
+        }
+
+        function updatePreview() {
+            if(selectedImage) {
+                previewImg.src = selectedImage;
+                previewImg.style.display = 'block';
+                previewBox.classList.add('has-image');
+                setBtn.classList.add('active');
+            }
+        }
+
+        // 4. INJECT CODE INTO PARENT (SIMULATOR)
+        function applyWallpaper() {
+            if (!selectedImage) return;
+
+            try {
+                // Access the Parent Document (The Simulator)
+                // 'wallpaper' is the ID of the div in ios-simu-appstore.html
+                const parentDoc = window.parent.document;
+                const wallpaperEl = parentDoc.getElementById('wallpaper');
+
+                if (wallpaperEl) {
+                    // Update the simulator wallpaper
+                    wallpaperEl.style.backgroundImage = `url('${selectedImage}')`;
+                    
+                    // Show success animation
+                    showToast();
+                } else {
+                    alert("Error: Cannot find Simulator Home Screen. Are you running this inside the OS?");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Permission Denied: Browser blocked access to the Main OS.\n\nTry running the simulator in the same tab context if possible.");
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
