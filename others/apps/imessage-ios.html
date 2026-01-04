@@ -607,6 +607,15 @@
         };
 
         /* --- MESSAGING & ACTIONS --- */
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function createMessageElement(m, animate = false) {
             const div = document.createElement('div');
             div.className = 'message-group' + (animate ? ' animate' : '');
@@ -621,13 +630,15 @@
             let contentHtml = '';
             let data = m.content.data || m.content;
             let name = m.content.name || 'Image';
+            const safeText = escapeHtml(m.content != null ? String(m.content) : '');
+            const safeName = escapeHtml(String(name));
 
             if (m.format === 'image') {
                 contentHtml = `<div class="img-wrapper"><img src="${data}"><a href="${data}" download="${name}" class="img-dl-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>`;
             } else if (m.format === 'file') {
-                contentHtml = `<div class="file-attach"><div class="file-icon">DOC</div><div class="file-details"><div class="file-name">${name}</div><div class="file-size">Attachment</div></div><a href="${data}" download="${name}" class="download-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>`;
+                contentHtml = `<div class="file-attach"><div class="file-icon">DOC</div><div class="file-details"><div class="file-name">${safeName}</div><div class="file-size">Attachment</div></div><a href="${data}" download="${safeName}" class="download-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>`;
             } else {
-                contentHtml = `<span class="msg-text">${m.content}</span>`;
+                contentHtml = `<span class="msg-text">${safeText}</span>`;
             }
 
             const statusHtml = m.sender === 'me' ? `<div class="tick-container ${m.seen ? 'seen' : ''}"><svg class="tick-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>` : '';
