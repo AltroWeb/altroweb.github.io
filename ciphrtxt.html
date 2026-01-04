@@ -501,30 +501,52 @@ toggleButton.addEventListener('click', () => {
 
            if (mode === 'base64') {
                const secretCode = generateSecretCode(inputText);
-               
-               // Display the generated secret code
-               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + formatOutput(secretCode) + '<br><br>';
+                   
+               // Display the generated secret code safely
+               const outputEl = document.getElementById('output');
+               outputEl.innerHTML = 'Generated Secret Code:<br><br>';
+               const chunksBase64 = formatOutput(secretCode);
+               chunksBase64.forEach((chunk, index) => {
+                   const textNode = document.createTextNode(chunk);
+                   outputEl.appendChild(textNode);
+                   if (index < chunksBase64.length - 1) {
+                       outputEl.appendChild(document.createElement('br'));
+                   }
+               });
+               outputEl.appendChild(document.createElement('br'));
+               outputEl.appendChild(document.createElement('br'));
 
                // Show the copy button for the secret code
                document.getElementById('copy-secret-btn').style.display = 'inline-block';
 
                // Clear the decode output
                document.getElementById('decoded-output').innerText = '';
-               
+                   
                // Hide the copy button for decoded input
                document.getElementById('copy-decoded-btn').style.display = 'none';
            } else if (mode === 'custom') {
                const secretCode = encode(inputText);
-               
-               // Display the generated secret code
-               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + formatOutput(secretCode) + '<br><br>';
+                   
+               // Display the generated secret code safely
+               const outputEl = document.getElementById('output');
+               outputEl.innerHTML = 'Generated Secret Code:<br><br>';
+               const chunksCustom = formatOutput(secretCode);
+               chunksCustom.forEach((chunk, index) => {
+                   const textNode = document.createTextNode(chunk);
+                   outputEl.appendChild(textNode);
+                   if (index < chunksCustom.length - 1) {
+                       outputEl.appendChild(document.createElement('br'));
+                   }
+               });
+               outputEl.appendChild(document.createElement('br'));
+               outputEl.appendChild(document.createElement('br'));
 
                // Show the copy button for the secret code
                document.getElementById('copy-secret-btn').style.display = 'inline-block';
 
                // Clear the decode output
                document.getElementById('decoded-output').innerText = '';
-               
+                   
                // Hide the copy button for decoded input
                document.getElementById('copy-decoded-btn').style.display = 'none';
            }
