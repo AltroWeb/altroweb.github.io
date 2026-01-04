@@ -329,20 +329,52 @@
         }
 
         /**
+         * Validates that a given URL string is a safe Google Fonts CSS URL.
+         * Only allows HTTPS URLs pointing to fonts.googleapis.com/css2...
+         * @param {string} fontUrl
+         * @returns {string|null} A sanitized URL string if valid, otherwise null.
+         */
+        function sanitizeGoogleFontUrl(fontUrl) {
+            if (typeof fontUrl !== 'string') {
+                return null;
+            }
+            try {
+                // Use URL API to safely parse user-controlled strings
+                const parsed = new URL(fontUrl, window.location.origin);
+                if (
+                    parsed.protocol === 'https:' &&
+                    parsed.hostname === 'fonts.googleapis.com' &&
+                    parsed.pathname.startsWith('/css2')
+                ) {
+                    return parsed.toString();
+                }
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /**
          * Dynamically imports a Google Font by adding a <link> tag to the document head.
          * @param {string} fontUrl - The URL of the Google Font.
          */
         function importGoogleFont(fontUrl) {
-            if (importedGoogleFonts.has(fontUrl)) {
+            const safeFontUrl = sanitizeGoogleFontUrl(fontUrl);
+            if (!safeFontUrl) {
+                logToConsole(`Error: Rejected unsafe font URL: ${fontUrl}`, true);
+                return;
+            }
+
+            if (importedGoogleFonts.has(safeFontUrl)) {
                 return; // Already imported
             }
 
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = fontUrl;
+            link.href = safeFontUrl;
             document.head.appendChild(link);
-            importedGoogleFonts.add(fontUrl);
-            logToConsole(`Imported Google Font: ${fontUrl}`);
+            importedGoogleFonts.add(safeFontUrl);
+            logToConsole(`Imported Google Font: ${safeFontUrl}`);
         }
 
         /**
