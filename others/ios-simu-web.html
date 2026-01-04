@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iOS Web Ecosystem</title>
+    <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #F5F5F7;
+            --bg-card: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --accent: #0066CC;
+            --accent-hover: #004499;
+            --nav-height: 48px;
+            --radius-lg: 24px;
+            --shadow-lg: 0 18px 40px rgba(0,0,0,0.08);
+            --code-bg: #1C1C1E;
+            --transition: cubic-bezier(0.165, 0.84, 0.44, 1);
+            
+            /* Dark Mode Variables (Default Light) */
+            --bg-nav: rgba(255, 255, 255, 0.85);
+            --border-color: rgba(0,0,0,0.05);
+        }
+
+        /* --- DARK MODE OVERRIDES --- */
+        body.dark-mode {
+            --bg-body: #000000;
+            --bg-card: #1C1C1E;
+            --text-primary: #F5F5F7;
+            --text-secondary: #A1A1A6;
+            --accent: #0A84FF;
+            --accent-hover: #0077ED;
+            --bg-nav: rgba(28, 28, 30, 0.85);
+            --border-color: rgba(255,255,255,0.1);
+            --shadow-lg: 0 18px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Dark Mode Specific Tweaks */
+        body.dark-mode .nav-logo { color: #fff; }
+        body.dark-mode .nav-links-desktop { color: #ccc; }
+        body.dark-mode .hamburger .line { background: #fff; }
+        body.dark-mode .mobile-menu { background: rgba(28, 28, 30, 0.98); }
+        body.dark-mode .mobile-menu a { color: #fff; }
+        body.dark-mode .hero { background: #000; border-bottom: 1px solid #333; }
+        body.dark-mode .hero h1 { color: #fff; }
+        
+        
+
+        body.dark-mode .text-page li { color: #ccc; }
+        body.dark-mode .text-page p { color: #ccc; }
+        body.dark-mode footer { background: #000; border-top: 1px solid #333; }
+        body.dark-mode .mock-phone { border-color: #333; }
+        body.dark-mode .doc-block h3 { border-bottom: 1px solid #333; }
+        body.dark-mode .text-page h2 { border-bottom: 1px solid #333; }
+
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        
+        html { overflow-x: hidden; } /* Prevent horizontal scroll on root */
+
+        body, button, input, select, textarea {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex; flex-direction: column;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        a { text-decoration: none; color: inherit; transition: color 0.2s; cursor: pointer; }
+        
+        /* --- VIEW MANAGEMENT --- */
+        .view-section {
+            display: none; animation: fadeIn 0.5s var(--transition); flex: 1; width: 100%; /* Ensure full width */
+        }
+        .view-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            position: sticky; top: 0; width: 100%; height: var(--nav-height);
+            background: var(--bg-nav); backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color); 
+            z-index: 2005; transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .nav-content {
+            max-width: 980px; margin: 0 auto; height: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 24px;
+        }
+
+        .nav-logo { 
+            font-weight: 600; font-size: 19px; display: flex; 
+            align-items: center; gap: 8px; color: #000; cursor: pointer;
+            font-family: "SF Pro Display"; transition: color 0.3s ease;
+            white-space: nowrap; /* Prevent logo wrap */
+        }
+
+        .nav-links-desktop {
+            display: flex; gap: 28px; font-size: 12px; color: #333; font-weight: 400; transition: color 0.3s ease;
+        }
+        .nav-links-desktop a:hover { color: var(--accent); }
+        .nav-links-desktop a.active { color: var(--accent); font-weight: 600; }
+        
+        .dm-toggle { cursor: pointer; opacity: 0.7; }
+        .dm-toggle:hover { opacity: 1; }
+
+        /* --- 2-BAR HAMBURGER --- */
+        .hamburger {
+            display: none; flex-direction: column; justify-content: center;
+            gap: 6px; width: 24px; height: 24px; cursor: pointer; z-index: 2006;
+        }
+        .line {
+            width: 20px; height: 1.5px; background: #1D1D1F;
+            border-radius: 2px; transition: transform 0.3s var(--transition), opacity 0.3s, background-color 0.3s;
+            transform-origin: center;
+        }
+        .hamburger.active .line:nth-child(1) { transform: translateY(3.75px) rotate(45deg); }
+        .hamburger.active .line:nth-child(2) { transform: translateY(-3.75px) rotate(-45deg); }
+
+        /* --- MOBILE MENU --- */
+        .mobile-menu {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background: rgba(255,255,255,0.98); backdrop-filter: blur(15px);
+            z-index: 2001; display: flex; flex-direction: column;
+            padding-top: 100px; padding-left: 40px;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease;
+        }
+        .mobile-menu.open { opacity: 1; pointer-events: auto; }
+
+        .mobile-menu a {
+            font-size: 28px; font-weight: 600; margin-bottom: 24px; color: #1D1D1F;
+            transform: translateX(-20px); transition: transform 0.4s var(--transition), opacity 0.4s, color 0.3s;
+            opacity: 0;
+        }
+        .mobile-menu.open a { transform: translateX(0); opacity: 1; }
+        .mobile-menu.open a:nth-child(1) { transition-delay: 0.05s; }
+        .mobile-menu.open a:nth-child(2) { transition-delay: 0.1s; }
+        .mobile-menu.open a:nth-child(3) { transition-delay: 0.15s; }
+        .mobile-menu.open a:nth-child(4) { transition-delay: 0.2s; }
+        .mobile-menu.open a:nth-child(5) { transition-delay: 0.25s; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            text-align: center; padding: 120px 20px 80px; background: #fff;
+            border-bottom: 1px solid #E5E5E5; transition: background-color 0.3s ease, border-color 0.3s ease;
+            width: 100%; /* Ensure full width */
+        }
+        .hero h1 {
+            font-size: 64px; font-weight: 700; letter-spacing: -1.5px;
+            margin-bottom: 15px; color: #000; line-height: 1.05; transition: color 0.3s ease;
+            word-wrap: break-word; /* Wrap long text */
+        }
+        .hero h2 {
+            font-size: 24px; font-weight: 400; color: var(--text-secondary);
+            margin-bottom: 40px; max-width: 640px; margin-left: auto; margin-right: auto;
+            word-wrap: break-word; /* Wrap long text */
+        }
+
+        .cta-group { 
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; 
+            flex-wrap: wrap; /* Allow buttons to wrap on very small screens */
+        }
+        .btn {
+            padding: 12px 26px; border-radius: 980px; font-size: 16px; font-weight: 500;
+            cursor: pointer; transition: transform 0.2s; border: none; display: flex; align-items: center; gap: 6px;
+            white-space: nowrap; /* Prevent button text breaking */
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-secondary { background: transparent; color: var(--accent); border: 1px solid rgba(0,102,204,0.3); }
+
+        /* --- BENTO GRID --- */
+        .bento-section { padding: 80px 20px; max-width: 1080px; margin: 0 auto; width: 100%; }
+        .bento-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjusted minmax for better mobile fit */
+            gap: 30px; 
+        }
+        
+        .card {
+            background: var(--bg-card); border-radius: var(--radius-lg); padding: 40px;
+            box-shadow: var(--shadow-lg); height: 500px; display: flex; flex-direction: column;
+            overflow: hidden; transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color);
+        }
+        .card:hover { transform: translateY(-8px); }
+        .card-content h3 { font-size: 32px; font-weight: 700; margin: 0 0 10px 0; word-wrap: break-word; }
+        .card-content p { font-size: 19px; color: var(--text-secondary); margin: 0; line-height: 1.4; word-wrap: break-word; }
+        
+        .card-visual { margin-top: 40px; flex-grow: 1; border-radius: 18px; position: relative; overflow: hidden; }
+        .visual-simu { background: #F5F5F7; display: flex; align-items: flex-end; justify-content: center; transition: background-color 0.3s ease; }
+        body.dark-mode .visual-simu { background: #111; }
+        
+        .mock-phone {
+            width: 220px; height: 100%; background: #000; border-radius: 35px 35px 0 0;
+            border: 8px solid #222; border-bottom: none;
+            overflow: hidden; position: relative; transition: border-color 0.3s ease;
+        }
+        .visual-build { background: linear-gradient(135deg, #0071E3, #40C4FF); display: flex; align-items: center; justify-content: center; }
+        .mock-window {
+            width: 90%; height: 80%; background: rgba(255,255,255,0.2); backdrop-filter: blur(20px);
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); padding: 20px;
+            color: white; font-family: monospace; font-size: 13px;
+            overflow: hidden; /* Prevent mock content spill */
+        }
+
+        /* --- DOCS --- */
+        .docs-container {
+            display: grid; grid-template-columns: 240px 1fr; gap: 60px;
+            max-width: 1080px; margin: 60px auto; padding: 0 20px; width: 100%;
+        }
+        /* FIXED SIDEBAR */
+        .docs-sidebar { 
+            position: sticky; 
+            top: 80px; /* Offset below navbar */
+            align-self: start; 
+            height: fit-content;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        
+        .docs-sidebar h4 {
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);
+            margin-bottom: 20px; font-weight: 600;
+        }
+        .docs-sidebar a { display: block; padding: 6px 0; color: var(--text-primary); font-size: 14px; opacity: 0.7; transition: color 0.3s ease; }
+        .docs-sidebar a:hover, .docs-sidebar a.active { opacity: 1; color: var(--accent); }
+
+        .doc-content { min-width: 0; /* Critical for grid child text wrapping */ }
+        .doc-content h1 { font-size: 44px; margin: 0 0 20px; letter-spacing: -0.5px; word-wrap: break-word; }
+        .doc-lead { font-size: 21px; color: var(--text-secondary); margin-bottom: 50px; line-height: 1.5; word-wrap: break-word; }
+        .doc-block { margin-bottom: 60px; scroll-margin-top: 100px; }
+        .doc-block h3 { font-size: 24px; margin-bottom: 15px; border-bottom: 1px solid #E5E5E5; padding-bottom: 10px; transition: border-color 0.3s ease; word-wrap: break-word; }
+        
+        .code-box {
+            background: var(--code-bg); color: #fff; padding: 20px; border-radius: 12px;
+            font-family: 'SF Mono', monospace; font-size: 13px; line-height: 1.6;
+            margin: 20px 0; overflow-x: auto; /* Allow code block horizontal scroll */
+            white-space: pre; /* Preserve formatting */
+        }
+        .hl-k { color: #FF7AB2; } 
+        .hl-f { color: #66D9EF; } 
+        .hl-s { color: #E6DB74; } 
+        .hl-c { color: #75715E; } 
+
+        /* --- VERIFIED HERO --- */
+        .verified-hero {
+            background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+            color: white; padding: 40px; border-radius: 24px; display: flex;
+            align-items: center; gap: 32px; margin-top: 30px;
+            flex-wrap: wrap; /* Allow wrapping on mobile */
+        }
+        .v-badge-large {
+            width: 80px; height: 80px; background: #007AFF; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            box-shadow: 0 0 40px rgba(0,122,255,0.4);
+        }
+        .v-content { min-width: 0; /* Allow text wrap in flex child */ }
+        .v-content h4 { font-size: 24px; font-weight: 700; margin: 0 0 10px 0; word-wrap: break-word; }
+        .v-content p { color: #a1a1a6; margin: 0 0 20px 0; font-size: 16px; word-wrap: break-word; }
+
+        /* --- FOOTER --- */
+        footer {
+            margin-top: auto; background: #F5F5F7; padding: 40px 20px;
+            text-align: center; border-top: 1px solid #D2D2D7; font-size: 12px; color: var(--text-secondary);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            width: 100%;
+        }
+        .footer-nav span { margin: 0 10px; cursor: pointer; color: var(--text-primary); transition: color 0.3s ease; display: inline-block; }
+        .footer-nav span:hover { color: var(--accent); }
+
+        /* --- TEXT PAGE --- */
+        .text-page { max-width: 760px; margin: 80px auto; padding: 0 24px; width: 100%; }
+        .text-page h1 { font-size: 40px; font-weight: 700; margin-bottom: 30px; word-wrap: break-word; }
+        .text-page h2 { font-size: 24px; font-weight: 600; margin: 40px 0 15px; border-bottom: 1px solid #E5E5E5; padding-bottom: 10px; transition: border-color 0.3s ease; word-wrap: break-word; }
+        .text-page p { font-size: 17px; line-height: 1.6; color: #333; margin-bottom: 20px; transition: color 0.3s ease; word-wrap: break-word; }
+        .text-page ul { list-style: disc; margin-left: 20px; margin-bottom: 20px; }
+        .text-page li { margin-bottom: 8px; font-size: 17px; color: #333; transition: color 0.3s ease; word-wrap: break-word; }
+        .info-box { background: #F2F2F7; padding: 20px; border-radius: 12px; font-size: 15px; color: #555; margin-bottom: 30px; transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; word-wrap: break-word; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .navbar { height: 56px; }
+            .nav-links-desktop { display: none; }
+            .hamburger { display: flex; }
+            .hero h1 { font-size: 36px; /* Smaller font for mobile */ }
+            .bento-grid, .docs-container { grid-template-columns: 1fr; }
+            .docs-sidebar { display: none; }
+            .card { height: auto; min-height: 450px; } /* Auto height for content flexibility */
+            .verified-hero { flex-direction: column; text-align: center; }
+            .v-content { width: 100%; }
+            .text-page { padding: 0 20px; margin: 40px auto; }
+            .bento-section { padding: 40px 20px; }
+        }
+		
+		
+		/* FORCE OVERRIDE for Info Box in Dark Mode */
+body.dark-mode .info-box {
+    background-color: #1C1C1E !important;
+    border: 1px solid #333 !important;
+    color: #E5E5E5 !important;
+}
+
+/* Ensure links inside the info box are visible */
+body.dark-mode .info-box a {
+    color: var(--accent) !important;
+}
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="nav-logo" onclick="switchView('home')">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.9,2.6c-0.2-0.5-0.9-0.5-1.1,0L9.4,7.8c-0.1,0.2-0.3,0.3-0.5,0.3L3.7,8.6c-0.5,0.1-0.7,0.7-0.4,1.1l3.9,3.5 c0.1,0.1,0.2,0.3,0.2,0.5l-1.1,5.3c-0.1,0.5,0.4,0.9,0.9,0.6l4.7-2.7c0.2-0.1,0.4-0.1,0.6,0l4.7,2.7c0.5,0.3,1-0.1,0.9-0.6l-1.1-5.3 c0-0.2,0-0.4,0.2-0.5l3.9-3.5c0.4-0.3,0.2-1-0.4-1.1l-5.2-0.5C14.7,7.8,14.5,7.7,14.4,7.5L12.9,2.6z"/></svg>
+                iOS Simu Ecosystem
+            </div>
+            
+            <div class="nav-links-desktop">
+                <a onclick="switchView('home')" id="link-home" class="active">Overview</a>
+                <a onclick="switchView('docs')" id="link-docs">Documentation</a>
+                <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
+                <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator ↗</a>
+                <a class="dm-toggle" onclick="toggleDarkMode()">Dark Mode</a>
+            </div>
+
+            <!-- 2-BAR HAMBURGER -->
+            <div class="hamburger" onclick="toggleMenu()">
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobile-menu">
+        <a onclick="mobileNavigate('home')">Overview</a>
+        <a onclick="mobileNavigate('docs')">Documentation</a>
+        <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
+        <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator</a>
+        <a onclick="toggleDarkMode()">Dark Mode</a>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="view-home" class="view-section active">
+        <section class="hero">
+            <h1>The Ultimate Web OS.</h1>
+            <h2>Create, simulate, and deploy powerful web apps directly in the browser. Zero install required.</h2>
+            <div class="cta-group">
+                <button class="btn btn-primary" onclick="window.open('ios-simu-appstore.html', '_blank')">Launch Simulator</button>
+                <button class="btn btn-secondary" onclick="window.open('appbuilder.html', '_blank')">Open App Builder</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-secondary);">v2.0 • HTTPS Required</p>
+        </section>
+
+        <section class="bento-section">
+            <div class="bento-grid">
+                <div class="card">
+                    <div class="card-content">
+                        <h3>iOS Simulator</h3>
+                        <p>Pixel-perfect web simulation with Dynamic Island and fluid gestures. A faithful recreation of the mobile experience.</p>
+                    </div>
+                    <div class="card-visual visual-simu">
+                        <div class="mock-phone">
+                            <div style="background:url('https://images.unsplash.com/photo-1696429175928-793a1cdef1d3?w=400') center/cover; width:100%; height:100%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-content">
+                        <h3>App Builder</h3>
+                        <p>Simple drag-and-upload platform to manage, and publish apps to the ecosystem. Support for URL embeds and direct HTML uploads.</p>
+                    </div>
+                    <div class="card-visual visual-build">
+                        <div class="mock-window">
+                            &lt;app&gt;<br>&nbsp;&nbsp;&lt;name&gt;MyApp&lt;/name&gt;<br>&nbsp;&nbsp;&lt;publish&gt;true&lt;/publish&gt;<br>&lt;/app&gt;
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- DOCS VIEW -->
+    <div id="view-docs" class="view-section">
+        <div class="docs-container">
+            <aside class="docs-sidebar">
+                <h4>Documentation</h4>
+                <a href="#doc-start" class="active">Getting Started</a>
+                <a href="#doc-deploy">Deployment</a>
+                <a href="#doc-verify">Verification</a>
+                <a href="#doc-api">System APIs</a>
+            </aside>
+            <main class="doc-content">
+                <h1>Documentation</h1>
+                <p class="doc-lead">Everything you need to integrate with the iOS Web Ecosystem.</p>
+
+                <div id="doc-start" class="doc-block">
+                    <h3>Getting Started</h3>
+                    <p>The iOS Ecosystem is built on a host-guest architecture. The Simulator acts as the Host OS, while individual apps run as Guests inside sandboxed iframes. This ensures security and isolation while allowing controlled communication via our API.</p>
+                    <p>To begin, open the <strong>App Builder</strong> and choose one of two methods:</p>
+                    <ul>
+                        <li><strong>URL Embed:</strong> Best for existing web apps (e.g., games, tools hosted on Netlify/Vercel).</li>
+                        <li><strong>HTML Upload:</strong> Best for single-file widgets or simple tools you want to host directly within the ecosystem.</li>
+                    </ul>
+                </div>
+
+                <div id="doc-deploy" class="doc-block">
+                    <h3>Deployment & Security</h3>
+                    <p>Because the ecosystem uses advanced browser features like Service Workers and cross-origin iframe communication, secure contexts are mandatory.</p>
+                    <div class="info-box">
+                        <strong>Requirement:</strong> Your Simulator and App Builder must be hosted on an <strong>HTTPS</strong> domain. Local `file://` protocols will block necessary APIs.
+                    </div>
+                </div>
+
+                <div id="doc-verify" class="doc-block">
+                    <h3>App Store Verification</h3>
+                    <div class="verified-hero">
+                        <div class="v-badge-large">
+                            <svg width="40" height="40" viewBox="0 0 12 12" fill="none">
+                                <path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="v-content">
+                            <h4>Verified Developer</h4>
+                            <p>For top-tier developers who maintain high standards. Verification grants a blue checkmark and higher visibility in the store.</p>
+                            <ul style="list-style:none; padding:0; margin:0 0 15px 0; font-size:14px; opacity:0.9;">
+                                <li>• Must have 5+ published apps with 99% uptime.</li>
+                                <li>• Original content only (no clones).</li>
+                                <li>• No malicious code or broken layouts.</li>
+                            </ul>
+                            <div style="font-size:14px; opacity:0.8;">To apply, open a GitHub issue with the tag <code>Verification</code> or email <code>verify@ios-web.com</code></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="doc-api" class="doc-block">
+                    <h3>System APIs</h3>
+                    <p>Apps can interact with the host OS to change wallpapers, update icons, or trigger alerts. Here is the standard API reference.</p>
+                    
+                    <strong>Set Persistent Wallpaper</strong>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">setWallpaper</span>(url) {
+   <span class="hl-c">// 1. Save to Parent Storage for persistence</span>
+   window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_wallpaper_url'</span>, url);
+   
+   <span class="hl-c">// 2. Apply immediately to DOM</span>
+   <span class="hl-k">const</span> el = window.parent.document.<span class="hl-f">getElementById</span>(<span class="hl-s">'wallpaper'</span>);
+   <span class="hl-k">if</span>(el) el.style.backgroundImage = <span class="hl-s">`url('${url}')`</span>;
+}
+                    </div>
+
+                    <strong>Trigger System Alert</strong>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">showAlert</span>(title, message) {
+    <span class="hl-k">if</span>(window.parent.iOS) {
+        window.parent.iOS.<span class="hl-f">showAlert</span>(title, message);
+    }
+}
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- PRIVACY VIEW -->
+    <div id="view-privacy" class="view-section">
+        <div class="text-page">
+            <h1>Privacy Policy</h1>
+            <div class="info-box">Last Updated: January 2026</div>
+
+            <h2>1. Data Collection</h2>
+            <p>We believe in privacy by design. The iOS Web Ecosystem does not collect, sell, or analyze your personal data.</p>
+            <ul>
+                <li><strong>Local Storage:</strong> All app data, settings, and installed apps are stored locally on your device's browser (LocalStorage & IndexedDB). Clearing your browser cache will reset the simulator.</li>
+                <li><strong>No Tracking:</strong> We do not use Google Analytics, Facebook Pixels, or any third-party trackers.</li>
+            </ul>
+
+            <h2>2. Authentication</h2>
+            <p>If you choose to use the App Builder to publish apps, we use Google Firebase for authentication. Your email and password are processed securely by Google. We only store your User ID and Display Name to associate you with your published apps.</p>
+
+            <h2>3. Third-Party Apps</h2>
+            <p>Apps installed from the ecosystem's App Store are created by community developers. While they run in sandboxed iframes, we cannot guarantee the privacy practices of every third-party URL you embed. Please review the privacy policies of the individual services you access within the simulator.</p>
+        </div>
+    </div>
+
+    <!-- ABOUT VIEW -->
+    <div id="view-about" class="view-section">
+        <div class="text-page">
+            <h1>About the Project</h1>
+            <p class="doc-lead">An open-source initiative to push the boundaries of what is possible in a modern web browser.</p>
+
+            <h2>The Mission</h2>
+            <p>The "iOS Web Ecosystem" started as a challenge: Could we recreate the fluid, responsive, and complex interactions of a mobile operating system using only standard web technologies (HTML, CSS, JavaScript)?</p>
+            <p>The result is a comprehensive platform that includes a pixel-perfect Simulator, a functional App Store, and a developer-friendly App Builder.</p>
+
+            <h2>Technology Stack</h2>
+            <p>We intentionally avoided heavy frameworks to ensure maximum performance and accessibility.</p>
+            <ul>
+                <li><strong>Core:</strong> Vanilla JavaScript (ES6+)</li>
+                <li><strong>Styling:</strong> Pure CSS3 with extensive use of Flexbox, Grid, and CSS Variables. No Tailwind or Bootstrap.</li>
+                <li><strong>Backend:</strong> Google Firebase (Firestore & Auth) for the App Store backend.</li>
+                <li><strong>Icons:</strong> SVG and FontAwesome.</li>
+            </ul>
+
+            <h2>Community & Contribution</h2>
+            <p>This project is open source. We welcome developers to build apps, submit pull requests, and help improve the ecosystem.</p>
+            <div class="info-box" style="background:#fff; border:1px solid #E5E5E5;">
+                <strong>Contact Us:</strong><br>
+                For support, feature requests, or bug reports, please visit our <a href="https://github.com/AltroWeb/altroweb.github.io/tree/main/others" style="color:var(--accent);">GitHub Repository</a>.
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-nav">
+            <span onclick="switchView('privacy')">Privacy Policy</span>
+            <span onclick="switchView('about')">About Us</span>
+        </div>
+        <div style="margin-top:20px;">Copyright © 2026 iOS Web Ecosystem. Not affiliated with Apple Inc.</div>
+    </footer>
+
+    <script>
+        // Init Dark Mode State
+        if (localStorage.getItem('ios_web_dark_mode') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('ios_web_dark_mode', isDark);
+            
+            // Close menu if open on mobile
+            const menu = document.getElementById('mobile-menu');
+            if (menu.classList.contains('open')) {
+                toggleMenu();
+            }
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewName).classList.add('active');
+            
+            document.querySelectorAll('.nav-links-desktop a').forEach(el => el.classList.remove('active'));
+            // Exclude DM toggle from active states
+            const navLink = document.getElementById('link-' + viewName);
+            if (navLink) navLink.classList.add('active');
+
+            window.scrollTo(0,0);
+            
+            // Close mobile menu
+            const menu = document.getElementById('mobile-menu');
+            const ham = document.querySelector('.hamburger');
+            if(menu.classList.contains('open')) {
+                menu.classList.remove('open');
+                ham.classList.remove('active');
+            }
+        }
+
+        function toggleMenu() {
+            document.getElementById('mobile-menu').classList.toggle('open');
+            document.querySelector('.hamburger').classList.toggle('active');
+        }
+
+        function mobileNavigate(view) { switchView(view); }
+    </script>
+</body>
+</html>
