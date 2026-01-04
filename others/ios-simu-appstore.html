@@ -1010,16 +1010,12 @@
             const localApp = installedApps.find(ia => ia.id === app.id);
             const isInstalled = !!localApp;
             
-            // --- UPDATE DETECTION LOGIC ---
-            // 1. App must be installed
-            // 2. Server timestamp (updatedAt) > Local timestamp
-            // Note: We use || 0 to handle legacy apps that might not have timestamps yet
+            // Version Check
             const serverTime = app.updatedAt || 0;
             const localTime = localApp ? (localApp.updatedAt || 0) : 0;
             const isUpdateAvailable = isInstalled && (serverTime > localTime);
-            // -----------------------------
-
-            // Check Verification (Existing Logic)
+            
+            // Verification Badge
             const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
             const badgeHTML = isVerified ? `
                 <span class="verified-badge" title="Verified Developer">
@@ -1029,25 +1025,26 @@
             const div = document.createElement('div');
             div.className = 'store-item';
             
-            // --- BUTTON RENDERING LOGIC ---
-            let buttonsHTML = '';
+            let actionHTML = '';
 
             if (isUpdateAvailable) {
-                // Scenario A: Update Available -> Show Update button AND Uninstall link
-                buttonsHTML = `
+                // STACKED BUTTONS: Update + Uninstall
+                // We reuse .store-get-btn for both to keep the shape identical
+                actionHTML = `
                     <div class="store-actions">
-                        <button class="store-update-btn" onclick="appStore.handleUpdateClick(this, '${app.id}')">
+                        <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')">
                             <span>UPDATE</span>
                             <div class="spinner"></div>
                         </button>
-                        <button class="store-sub-action" onclick="appStore.handleGetClick(this, '${app.id}')">
-                            Uninstall
+                        <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+                            <span>UNINSTALL</span>
+                            <div class="spinner"></div>
                         </button>
                     </div>
                 `;
             } else {
-                // Scenario B: Standard State -> Show GET or UNINSTALL
-                buttonsHTML = `
+                // STANDARD SINGLE BUTTON
+                actionHTML = `
                     <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
                         <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
                         <div class="spinner"></div>
@@ -1061,7 +1058,7 @@
                     <div class="store-name">${app.name}</div>
                     <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
                 </div>
-                ${buttonsHTML}
+                ${actionHTML}
             `;
             listEl.appendChild(div);
         });
@@ -1072,35 +1069,27 @@
         const app = this.apps.find(a => a.id === appId);
         if (!app) return;
 
-        // 1. UI Loading State
         btn.classList.add('loading');
         
-        // 2. Simulate Network Request
+        // Simulate Network
         await new Promise(r => setTimeout(r, 1500));
 
-        // 3. Perform Update Logic
+        // Logic: Remove old, Add new
         const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-        
-        // Remove old version
         const filtered = installed.filter(a => a.id !== appId);
         
-        // Add new version (from the fresh 'app' object fetched from server)
+        // Push the NEW app object (which has the newer timestamp)
         filtered.push(app);
         
-        // Save back to storage
         localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
 
-        // 4. Refresh System
-        // Remove old icon from UI to force a refresh with new data
+        // Refresh UI
         iOS.removeSingleApp(appId);
-        // Inject new icon/data
         iOS.injectSingleApp(app);
 
-        // 5. Reset UI
         btn.classList.remove('loading');
-        this.renderStore(this.apps); // Re-render store to show standard "Uninstall" state
+        this.renderStore(this.apps); 
         
-        // Optional: Notify user
         iOS.showAlert('Updated', `${app.name} has been updated.`);
     }
 
