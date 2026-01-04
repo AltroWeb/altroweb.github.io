@@ -518,6 +518,64 @@
 .verified-badge svg { width: 8px; height: 8px; fill: white; display: block; }
 
 
+
+/* --- UPDATE FEATURE STYLES --- */
+.store-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 75px; /* Ensures column width stability */
+}
+
+.store-update-btn {
+    background: #007AFF;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    border-radius: 20px;
+    padding: 6px 16px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.store-update-btn:active {
+    transform: scale(0.96);
+    opacity: 0.8;
+}
+
+.store-update-btn .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: none; /* Hidden by default */
+}
+
+.store-update-btn.loading .spinner { display: block; }
+.store-update-btn.loading span { display: none; }
+
+/* Adjust the Uninstall button when it appears below Update */
+.store-actions .store-sub-action {
+    background: transparent;
+    color: #FF3B30;
+    font-size: 11px;
+    font-weight: 500;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+}
+
+
+
+
     </style>
 </head>
 <body>
@@ -937,47 +995,121 @@
                 });
             }
 
-            renderStore(appList) {
-                const listEl = document.getElementById('store-list');
-                listEl.innerHTML = '';
-                
-                if (appList.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
-                    return;
-                }
+                renderStore(appList) {
+        const listEl = document.getElementById('store-list');
+        listEl.innerHTML = '';
+        
+        if (appList.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
+            return;
+        }
 
-                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+        const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
 
-                appList.forEach(app => {
-                    const isInstalled = installedApps.some(ia => ia.id === app.id);
-                    
-                    // --- CHECK VERIFICATION ---
-                    // Now this works because fetchVerifiedUsers() finished before fetchApps()
-                    const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
-                    
-                    const badgeHTML = isVerified ? `
-                        <span class="verified-badge" title="Verified Developer">
-                            <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
-                        </span>` : '';
-                    // --------------------------
+        appList.forEach(app => {
+            const localApp = installedApps.find(ia => ia.id === app.id);
+            const isInstalled = !!localApp;
+            
+            // --- UPDATE DETECTION LOGIC ---
+            // 1. App must be installed
+            // 2. Server timestamp (updatedAt) > Local timestamp
+            // Note: We use || 0 to handle legacy apps that might not have timestamps yet
+            const serverTime = app.updatedAt || 0;
+            const localTime = localApp ? (localApp.updatedAt || 0) : 0;
+            const isUpdateAvailable = isInstalled && (serverTime > localTime);
+            // -----------------------------
 
-                    const div = document.createElement('div');
-                    div.className = 'store-item';
-                    
-                    div.innerHTML = `
-                        <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                        <div class="store-info">
-                            <div class="store-name">${app.name}</div>
-                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
-                        </div>
-                        <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                            <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+            // Check Verification (Existing Logic)
+            const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
+            const badgeHTML = isVerified ? `
+                <span class="verified-badge" title="Verified Developer">
+                    <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+                </span>` : '';
+
+            const div = document.createElement('div');
+            div.className = 'store-item';
+            
+            // --- BUTTON RENDERING LOGIC ---
+            let buttonsHTML = '';
+
+            if (isUpdateAvailable) {
+                // Scenario A: Update Available -> Show Update button AND Uninstall link
+                buttonsHTML = `
+                    <div class="store-actions">
+                        <button class="store-update-btn" onclick="appStore.handleUpdateClick(this, '${app.id}')">
+                            <span>UPDATE</span>
                             <div class="spinner"></div>
                         </button>
-                    `;
-                    listEl.appendChild(div);
-                });
+                        <button class="store-sub-action" onclick="appStore.handleGetClick(this, '${app.id}')">
+                            Uninstall
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Scenario B: Standard State -> Show GET or UNINSTALL
+                buttonsHTML = `
+                    <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+                        <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+                        <div class="spinner"></div>
+                    </button>
+                `;
             }
+
+            div.innerHTML = `
+                <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                <div class="store-info">
+                    <div class="store-name">${app.name}</div>
+                    <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                </div>
+                ${buttonsHTML}
+            `;
+            listEl.appendChild(div);
+        });
+    }
+
+
+                async handleUpdateClick(btn, appId) {
+        const app = this.apps.find(a => a.id === appId);
+        if (!app) return;
+
+        // 1. UI Loading State
+        btn.classList.add('loading');
+        
+        // 2. Simulate Network Request
+        await new Promise(r => setTimeout(r, 1500));
+
+        // 3. Perform Update Logic
+        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+        
+        // Remove old version
+        const filtered = installed.filter(a => a.id !== appId);
+        
+        // Add new version (from the fresh 'app' object fetched from server)
+        filtered.push(app);
+        
+        // Save back to storage
+        localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
+
+        // 4. Refresh System
+        // Remove old icon from UI to force a refresh with new data
+        iOS.removeSingleApp(appId);
+        // Inject new icon/data
+        iOS.injectSingleApp(app);
+
+        // 5. Reset UI
+        btn.classList.remove('loading');
+        this.renderStore(this.apps); // Re-render store to show standard "Uninstall" state
+        
+        // Optional: Notify user
+        iOS.showAlert('Updated', `${app.name} has been updated.`);
+    }
+
+
+
+
+
+
+
             // ... (keep handleGetClick, installApp, uninstallApp as they were) ...
             
             async handleGetClick(btn, appId) {
