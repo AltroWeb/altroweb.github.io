@@ -518,62 +518,28 @@
 .verified-badge svg { width: 8px; height: 8px; fill: white; display: block; }
 
 
-
-/* --- UPDATE FEATURE STYLES --- */
+/* STACK CONTAINER */
 .store-actions {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    min-width: 75px; /* Ensures column width stability */
+    gap: 8px;
+    width: 85px; /* Fixed width to ensure buttons align perfectly */
 }
 
-.store-update-btn {
-    background: #007AFF;
-    color: white;
-    font-weight: 700;
-    font-size: 13px;
-    border-radius: 20px;
-    padding: 6px 16px;
-    border: none;
-    cursor: pointer;
+/* Force buttons inside the stack to match size */
+.store-actions .store-get-btn {
     width: 100%;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    min-width: 0;
+    padding: 0;
+    height: 28px; /* Fixed height for consistency */
+    font-size: 11px; /* Slightly smaller text to fit nicely */
 }
 
-.store-update-btn:active {
-    transform: scale(0.96);
-    opacity: 0.8;
+/* FIX: Make Spinner White for the Blue Update Button */
+.store-get-btn.update-mode .spinner {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
 }
-
-.store-update-btn .spinner {
-    width: 12px;
-    height: 12px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: none; /* Hidden by default */
-}
-
-.store-update-btn.loading .spinner { display: block; }
-.store-update-btn.loading span { display: none; }
-
-/* Adjust the Uninstall button when it appears below Update */
-.store-actions .store-sub-action {
-    background: transparent;
-    color: #FF3B30;
-    font-size: 11px;
-    font-weight: 500;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-}
-
-
 
 
     </style>
