@@ -553,7 +553,13 @@ function breakLongText() {
         if (words.length > 7) {
             const firstPart = words.slice(0, 7).join(' '); // Get first 7 words
             const remainingPart = words.slice(7).join(' '); // Get remaining words
-            paragraph.innerHTML = `${firstPart}<span class="line-break">${remainingPart}</span>`; // Insert line break
+            // Safely rebuild the paragraph without reinterpreting text as HTML
+            paragraph.textContent = '';
+            paragraph.appendChild(document.createTextNode(firstPart));
+            const span = document.createElement('span');
+            span.className = 'line-break';
+            span.textContent = remainingPart;
+            paragraph.appendChild(span);
         }
     });
 }
