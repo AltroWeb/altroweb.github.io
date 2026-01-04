@@ -133,12 +133,47 @@
         const previewBox = document.getElementById('preview-box');
         const previewImg = document.getElementById('preview-img');
 
+        // Allow only safe image URL schemes for wallpapers.
+        function sanitizeImageUrl(raw) {
+            if (!raw) return null;
+            const value = raw.trim();
+            if (!value) return null;
+
+            // Allow data: image/* URLs directly
+            if (value.startsWith('data:')) {
+                // Basic check to ensure it's an image data URL
+                if (/^data:image\//i.test(value)) {
+                    return value;
+                }
+                return null;
+            }
+
+            try {
+                const url = new URL(value, window.location.origin);
+                const allowedProtocols = ['http:', 'https:'];
+                if (!allowedProtocols.includes(url.protocol)) {
+                    return null;
+                }
+                return url.toString();
+            } catch (e) {
+                // Invalid URL
+                return null;
+            }
+        }
+
         function selectWallpaper(url) {
             selectedImage = url; updatePreview();
         }
         function loadFromUrl() {
-            const val = document.getElementById('url-input').value.trim();
-            if(val) { selectedImage = val; updatePreview(); }
+            const inputEl = document.getElementById('url-input');
+            const rawVal = inputEl ? inputEl.value : '';
+            const safeUrl = sanitizeImageUrl(rawVal);
+            if (safeUrl) {
+                selectedImage = safeUrl;
+                updatePreview();
+            } else if (rawVal && rawVal.trim()) {
+                alert('Please enter a valid image URL (http/https or data:image/...).');
+            }
         }
         function handleFileUpload(input) {
             if (input.files && input.files[0]) {
