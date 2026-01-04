@@ -37,6 +37,15 @@
            return text.match(/.{1,15}/g).join('\n'); // Split into chunks of up to 15 characters without HTML tags
        }
 
+       function escapeHtml(unsafe) {
+           return unsafe
+               .replace(/&/g, '&amp;')
+               .replace(/</g, '&lt;')
+               .replace(/>/g, '&gt;')
+               .replace(/"/g, '&quot;')
+               .replace(/'/g, '&#39;');
+       }
+
        document.getElementById('generate-btn').addEventListener('click', function() {
            const inputText = document.getElementById('input-text').value;
 
@@ -104,7 +113,7 @@
            if (mode === 'base64') {
                try {
                    const originalInput = decodeSecretCode(secretCode);
-                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + formatOutput(originalInput) + '<br><br>';
+                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + escapeHtml(formatOutput(originalInput)) + '<br><br>';
 
                    // Show the copy button for the decoded input
                    document.getElementById('copy-decoded-btn').style.display = 'inline-block';
@@ -118,7 +127,7 @@
            } else if (mode === 'custom') {
                try {
                    const originalInput = decode(secretCode);
-                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + formatOutput(originalInput) + '<br><br>';
+                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + escapeHtml(formatOutput(originalInput)) + '<br><br>';
 
                    // Show the copy button for the decoded input
                    document.getElementById('copy-decoded-btn').style.display = 'inline-block';
