@@ -1223,13 +1223,28 @@ toggleButton.addEventListener('click', () => {
                 const listItem = document.createElement('li');
                 listItem.className = `track-item ${index === currentTrackIndex ? 'active-track' : ''}`;
                 listItem.dataset.index = index;
-                listItem.innerHTML = `
-                    <div class="track-title-container">
-                        <div class="font-semibold text-base track-title-text">${track.title}</div>
-                        <div class="text-sm text-gray-300 track-title-text">${track.artist}</div>
-                    </div>
-                    <div class="text-sm text-gray-300 ml-4 flex-shrink-0">${formatTime(track.duration || 0)}</div>
-                `;
+
+                const titleContainer = document.createElement('div');
+                titleContainer.className = 'track-title-container';
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'font-semibold text-base track-title-text';
+                titleDiv.textContent = track.title;
+
+                const artistDiv = document.createElement('div');
+                artistDiv.className = 'text-sm text-gray-300 track-title-text';
+                artistDiv.textContent = track.artist;
+
+                titleContainer.appendChild(titleDiv);
+                titleContainer.appendChild(artistDiv);
+
+                const durationDiv = document.createElement('div');
+                durationDiv.className = 'text-sm text-gray-300 ml-4 flex-shrink-0';
+                durationDiv.textContent = formatTime(track.duration || 0);
+
+                listItem.appendChild(titleContainer);
+                listItem.appendChild(durationDiv);
+
                 listItem.addEventListener('click', () => loadTrack(index));
                 playlistList.appendChild(listItem);
             });
