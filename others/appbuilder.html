@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>App Store Connect</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
@@ -37,7 +37,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: "SF Pro Display", "Inter", -apple-system, sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
             margin: 0;
@@ -157,6 +157,7 @@
             cursor: pointer; transition: transform 0.1s, opacity 0.2s;
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             text-decoration: none;
+            font-family: "SF Pro Display", "Inter", -apple-system, sans-serif;
         }
         .btn:active { transform: scale(0.98); }
         .btn:hover { opacity: 0.9; }
@@ -260,6 +261,58 @@
     border-radius: 50%; margin-left: 2px; vertical-align: middle;
 }
 .verified-badge-nav svg { width: 8px; height: 8px; fill: white; display: block; }
+
+
+/* --- SETTINGS BUTTONS LAYOUT --- */
+.settings-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap; /* Allows wrapping on medium screens */
+    gap: 15px;
+}
+
+.settings-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+    /* 1. Adjust General Layout */
+    .container {
+        padding: 15px;
+    }
+    .card {
+        padding: 20px;
+    }
+    .navbar {
+        padding: 10px 15px; /* Slight adjustment only */
+    }
+
+    /* 2. Fix Settings Buttons (Stack them full width) */
+    .settings-footer {
+        flex-direction: column-reverse; /* Put Delete button at the bottom */
+        align-items: stretch;
+    }
+    .settings-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+    .settings-footer button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* 3. Prevent Zoom on Inputs */
+    input, textarea, select {
+        font-size: 16px; 
+    }
+}
+
 
     </style>
 </head>
@@ -480,13 +533,13 @@
                     </div>
                 </div>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
-                     <button class="btn danger" onclick="appBuilder.confirmDeleteAccount()">Delete Account</button>
-                     <div style="display:flex; gap:10px;">
-                         <button class="btn secondary" onclick="appBuilder.confirmLogout()">Sign Out</button>
-                         <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()">Save Changes</button>
-                     </div>
-                </div>
+                <div class="settings-footer">
+     <button class="btn danger" onclick="appBuilder.confirmDeleteAccount()">Delete Account</button>
+     <div class="settings-controls">
+         <button class="btn secondary" onclick="appBuilder.confirmLogout()">Sign Out</button>
+         <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()">Save Changes</button>
+     </div>
+</div>
                 
                 <div style="text-align: center; margin-top: 20px;">
                     <button class="btn secondary sm" onclick="appBuilder.sendPasswordReset()">Request Password Reset Email</button>
