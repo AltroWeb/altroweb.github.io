@@ -750,9 +750,8 @@ async register() {
                         displayName: name, // We use the input name directly
                         uid: userCredential.user.uid
                     };
-                    
-                    // 4. Save to Local Storage
-                    localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+
+                    // 4. Session is managed by Firebase Auth; avoid storing profile in localStorage.
 
                     // 5. [CRITICAL FIX] FORCE UPDATE UI INSTANTLY
                     // We manually update the DOM right here, so the user sees their name
