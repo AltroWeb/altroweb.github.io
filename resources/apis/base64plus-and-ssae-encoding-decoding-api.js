@@ -60,7 +60,7 @@
                const secretCode = generateSecretCode(inputText);
                
                // Display the generated secret code
-               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + formatOutput(secretCode) + '<br><br>';
+               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + escapeHtml(formatOutput(secretCode)) + '<br><br>';
 
                // Show the copy button for the secret code
                document.getElementById('copy-secret-btn').style.display = 'inline-block';
@@ -74,7 +74,7 @@
                const secretCode = encode(inputText);
                
                // Display the generated secret code
-               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + formatOutput(secretCode) + '<br><br>';
+               document.getElementById('output').innerHTML = 'Generated Secret Code:<br><br>' + escapeHtml(formatOutput(secretCode)) + '<br><br>';
 
                // Show the copy button for the secret code
                document.getElementById('copy-secret-btn').style.display = 'inline-block';
