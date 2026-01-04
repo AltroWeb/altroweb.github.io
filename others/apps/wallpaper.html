@@ -196,7 +196,7 @@
                 const parentDoc = window.parent.document;
                 const wallpaperEl = parentDoc.getElementById('wallpaper');
                 if (wallpaperEl) {
-                    wallpaperEl.style.backgroundImage = `url('${selectedImage}')`;
+                    wallpaperEl.style.backgroundImage = "url(" + selectedImage + ")";
                     
                     // 2. PERMANENT SAVE to Parent Storage
                     window.parent.localStorage.setItem('ios_wallpaper_url', selectedImage);
