@@ -485,7 +485,8 @@ toggleButton.addEventListener('click', () => {
        }
 
        function formatOutput(text) {
-           return text.match(/.{1,15}/g).join('\n'); // Split into chunks of up to 15 characters without HTML tags
+           // Split into chunks of up to 15 characters; return as an array of lines
+           return text.match(/.{1,15}/g) || [];
        }
 
        document.getElementById('generate-btn').addEventListener('click', function() {
@@ -555,7 +556,16 @@ toggleButton.addEventListener('click', () => {
            if (mode === 'base64') {
                try {
                    const originalInput = decodeSecretCode(secretCode);
-                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + formatOutput(originalInput) + '<br><br>';
+                   const decodedOutputElement = document.getElementById('decoded-output');
+                   decodedOutputElement.innerHTML = '';
+                   decodedOutputElement.appendChild(document.createTextNode('Original Input:'));
+                   decodedOutputElement.appendChild(document.createElement('br'));
+                   decodedOutputElement.appendChild(document.createElement('br'));
+                   const lines = formatOutput(originalInput);
+                   lines.forEach(function(line) {
+                       decodedOutputElement.appendChild(document.createTextNode(line));
+                       decodedOutputElement.appendChild(document.createElement('br'));
+                   });
 
                    // Show the copy button for the decoded input
                    document.getElementById('copy-decoded-btn').style.display = 'inline-block';
@@ -569,7 +579,16 @@ toggleButton.addEventListener('click', () => {
            } else if (mode === 'custom') {
                try {
                    const originalInput = decode(secretCode);
-                   document.getElementById('decoded-output').innerHTML = 'Original Input:<br><br>' + formatOutput(originalInput) + '<br><br>';
+                   const decodedOutputElement = document.getElementById('decoded-output');
+                   decodedOutputElement.innerHTML = '';
+                   decodedOutputElement.appendChild(document.createTextNode('Original Input:'));
+                   decodedOutputElement.appendChild(document.createElement('br'));
+                   decodedOutputElement.appendChild(document.createElement('br'));
+                   const lines = formatOutput(originalInput);
+                   lines.forEach(function(line) {
+                       decodedOutputElement.appendChild(document.createTextNode(line));
+                       decodedOutputElement.appendChild(document.createElement('br'));
+                   });
 
                    // Show the copy button for the decoded input
                    document.getElementById('copy-decoded-btn').style.display = 'inline-block';
