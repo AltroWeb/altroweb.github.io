@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Center</title>
+    <style>
+        :root {
+            --accent: #FF3B30; /* Red for Notifs */
+            --bg: #F2F2F7;
+            --card: #FFF;
+            --text: #000;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #000; --card: #1C1C1E; --text: #FFF; }
+        }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
+            height: 100vh;
+        }
+        .icon { font-size: 64px; margin-bottom: 20px; }
+        h1 { margin: 0 0 10px 0; font-size: 24px; }
+        p { text-align: center; color: #888; font-size: 15px; margin-bottom: 30px; max-width: 300px; }
+        
+        .card {
+            background: var(--card); width: 100%; max-width: 340px;
+            border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        
+        button {
+            background: var(--accent); color: white; border: none;
+            padding: 14px; border-radius: 12px; font-size: 17px; font-weight: 600;
+            cursor: pointer; transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.7; }
+        button.secondary { background: rgba(120,120,128,0.2); color: var(--text); }
+        
+        .status {
+            margin-top: 20px; font-size: 13px; color: #34C759; font-weight: 600;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .status.visible { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="icon">🔔</div>
+    <h1>Notification Manager</h1>
+    <p>Injects a system-wide notification service into the Simulator. Handles background events and swipe gestures.</p>
+
+    <div class="card">
+        <button onclick="injectService()">Start Service</button>
+        <button class="secondary" onclick="sendTest()">Send Test Notification</button>
+        <button class="secondary" onclick="scheduleBackground()">Test Background (5s)</button>
+    </div>
+
+    <div id="status" class="status">Service Active</div>
+
+    <script>
+        // --- THE INJECTABLE SERVICE CODE (Passed as String) ---
+        // This JS string will be sent to the Parent via postMessage.
+        // The Parent (Simulator) must eval() it or inject it as a script tag.
+        const SERVICE_CODE = `
+(function() {
+    if (window.iOS_NotificationService) return; // Prevent duplicate injection
+    window.iOS_NotificationService = true;
+
+    console.log("🔔 Notification Service Started via Injection");
+
+    // 1. INJECT CSS
+    const style = document.createElement('style');
+    style.innerHTML = \`
+        #ios-notif-layer {
+            position: absolute; top: 54px; left: 0; width: 100%;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            z-index: 9999; pointer-events: none;
+            max-height: 80vh; overflow: hidden;
+        }
+        .ios-notif-toast {
+            width: 93%; max-width: 370px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-radius: 18px; padding: 12px 14px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            pointer-events: auto; cursor: grab;
+            transform: translateY(-100%); opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+            border: 0.5px solid rgba(200,200,200,0.4);
+            flex-shrink: 0;
+        }
+        .ios-notif-toast.visible { transform: translateY(0); opacity: 1; }
+        .ios-notif-toast.swiping { transition: none; cursor: grabbing; }
+        .ios-notif-toast.dismissed { 
+            transform: translateX(120%) !important; opacity: 0 !important; 
+            transition: transform 0.3s ease, opacity 0.3s;
+        }
+        
+        .notif-icon { width: 40px; height: 40px; border-radius: 9px; background: #eee; object-fit: cover; flex-shrink:0; }
+        .notif-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+        .notif-header { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .notif-app { font-size: 13px; font-weight: 600; color: #000; opacity: 0.8; }
+        .notif-time { font-size: 11px; color: #000; opacity: 0.4; }
+        .notif-msg { font-size: 13px; color: #000; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    \`;
+    document.head.appendChild(style);
+
+    // 2. CREATE CONTAINER
+    let container = document.getElementById('ios-notif-layer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'ios-notif-layer';
+        document.body.appendChild(container); // Append to body (top level)
+    }
+
+    // 3. API FUNCTION
+    window.iOS_Notify = function(appId, title, msg, iconOverride) {
+        // Resolve Icon (Try to find from DOM or Custom)
+        let iconUrl = iconOverride || 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
+        if (!iconOverride) {
+            // Quick Lookup in Parent DOM (Simulator Context)
+            const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`);
+            if (appEl) {
+                const img = appEl.querySelector('img') || appEl.querySelector('.icon-bg-img');
+                if (img) iconUrl = img.src;
+            }
+        }
+
+        // Create Element
+        const el = document.createElement('div');
+        el.className = 'ios-notif-toast';
+        el.innerHTML = \`
+            <img src="\${iconUrl}" class="notif-icon">
+            <div class="notif-body">
+                <div class="notif-header">
+                    <span class="notif-app">\${appId}</span>
+                    <span class="notif-time">Now</span>
+                </div>
+                <div class="notif-msg"><b>\${title}</b> \${msg}</div>
+            </div>
+        \`;
+
+        // SWIPE LOGIC
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+
+        el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isDragging = true; el.classList.add('swiping'); });
+        el.addEventListener('touchmove', e => {
+            if(!isDragging) return;
+            currentX = e.touches[0].clientX;
+            const diff = currentX - startX;
+            el.style.transform = \`translateX(\${diff}px)\`;
+        });
+        el.addEventListener('touchend', e => {
+            isDragging = false; el.classList.remove('swiping');
+            if (currentX - startX > 80) { // Swipe Right Dismiss
+                el.classList.add('dismissed');
+                setTimeout(() => el.remove(), 300);
+            } else {
+                el.style.transform = ''; // Snap back
+            }
+        });
+
+        // Click to Open
+        el.addEventListener('click', e => {
+            if(Math.abs(currentX - startX) > 5) return; // Ignore drag
+            
+            // Try to open app via global iOS object if available
+            if (window.iOS && window.iOS.openApp) {
+                const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`);
+                if (appEl) {
+                    window.iOS.openApp(appEl, appId, 'light');
+                    el.classList.add('dismissed');
+                    setTimeout(() => el.remove(), 300);
+                }
+            }
+        });
+
+        container.prepend(el);
+        
+        // Animate In
+        requestAnimationFrame(() => el.classList.add('visible'));
+
+        // Auto Dismiss
+        setTimeout(() => {
+            if(el.parentElement) {
+                el.classList.add('dismissed');
+                setTimeout(() => el.remove(), 300);
+            }
+        }, 5000);
+    };
+
+    // 4. BACKGROUND WORKER (LocalStorage Queue)
+    setInterval(() => {
+        const queue = JSON.parse(localStorage.getItem('ios_notif_queue') || '[]');
+        if (queue.length > 0) {
+            const item = queue.shift(); 
+            localStorage.setItem('ios_notif_queue', JSON.stringify(queue));
+            window.iOS_Notify(item.appId, item.title, item.msg, item.icon);
+        }
+    }, 1000);
+
+})();
+        `;
+
+        // --- APP LOGIC ---
+
+        function injectService() {
+            if (window.parent === window) {
+                alert("Please run this inside the iOS Simulator.");
+                return;
+            }
+            
+            // FIX: Use postMessage instead of eval() to bypass cross-origin restrictions
+            window.parent.postMessage({
+                type: 'IOS_INJECT_SCRIPT',
+                script: SERVICE_CODE
+            }, '*');
+
+            showStatus("Service Requested...");
+        }
+
+        function sendTest() {
+            // Can't call window.parent.iOS_Notify directly if cross-origin.
+            // We use the queue system which works via Storage (if same origin) OR postMessage
+            
+            // If same origin is allowed for storage:
+            try {
+                const queue = JSON.parse(localStorage.getItem('ios_notif_queue') || '[]');
+                queue.push({ appId: 'Messages', title: 'Test', msg: 'Hello from Notification Manager!' });
+                localStorage.setItem('ios_notif_queue', JSON.stringify(queue));
+            } catch(e) {
+                // Fallback for cross-origin: Send message to parent to handle queue
+                window.parent.postMessage({
+                    type: 'IOS_NOTIFICATION',
+                    payload: { appId: 'Messages', title: 'Test', msg: 'Hello from Notification Manager!' }
+                }, '*');
+            }
+        }
+
+        function scheduleBackground() {
+            const payload = {
+                appId: 'Calendar',
+                title: 'Meeting',
+                msg: 'Team Sync in 5 minutes',
+                icon: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?q=80&w=200'
+            };
+
+            // Use the Queue via LocalStorage (Simulated Background)
+            try {
+                const queue = JSON.parse(localStorage.getItem('ios_notif_queue') || '[]');
+                queue.push(payload);
+                localStorage.setItem('ios_notif_queue', JSON.stringify(queue));
+                alert("Notification scheduled via Storage Queue.");
+            } catch (e) {
+                // Fallback via postMessage
+                window.parent.postMessage({
+                    type: 'IOS_NOTIFICATION_QUEUE',
+                    payload: payload
+                }, '*');
+                alert("Notification scheduled via Message Bridge.");
+            }
+        }
+
+        function showStatus(msg) {
+            const el = document.getElementById('status');
+            el.innerText = msg;
+            el.classList.add('visible');
+            setTimeout(() => el.classList.remove('visible'), 3000);
+        }
+
+        // Auto-inject on load
+        window.onload = () => {
+            setTimeout(injectService, 500);
+        }
+
+    </script>
+</body>
+</html>
