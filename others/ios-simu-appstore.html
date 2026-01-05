@@ -572,159 +572,6 @@
 
 
 
-/* --- PRO NOTIFICATION SYSTEM (Final) --- */
-.notification-zone {
-    position: absolute;
-    top: 54px;
-    left: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column; 
-    align-items: center;
-    gap: 10px;
-    z-index: 3000;
-    pointer-events: none; /* Clicks pass through empty areas */
-    
-    /* SCROLLABLE LOGIC */
-    max-height: 80vh; /* Don't cover entire screen */
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-bottom: 20px;
-    
-    /* Hide scrollbar */
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-.notification-zone::-webkit-scrollbar { display: none; }
-
-.notification-banner {
-    width: 93%;
-    max-width: 370px;
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(25px) saturate(180%);
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-    border-radius: 18px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    pointer-events: auto; /* Clickable */
-    
-    /* INITIAL STATE */
-    transform: translateY(-20px) scale(0.95);
-    opacity: 0;
-    animation: notif-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    
-    border: 0.5px solid rgba(200,200,200,0.3);
-    cursor: grab;
-    flex-shrink: 0;
-    touch-action: none; /* Critical for custom swipe handling */
-    user-select: none;
-
-    /* SMOOTH COLLAPSE TRANSITIONS */
-    /* This ensures siblings slide up smoothly when one is removed */
-    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                opacity 0.2s ease,
-                max-height 0.3s ease, 
-                margin-bottom 0.3s ease, 
-                padding 0.3s ease,
-                border 0.3s ease;
-                
-    max-height: 100px; /* Prepare for collapse */
-}
-
-/* INTERACTION STATES */
-.notification-banner.swiping {
-    transition: none !important; /* Immediate follow finger */
-    cursor: grabbing;
-}
-
-.notification-banner.dismiss-left {
-    transform: translateX(-120%) !important;
-    opacity: 0 !important;
-}
-
-.notification-banner.dismiss-right {
-    transform: translateX(120%) !important;
-    opacity: 0 !important;
-}
-
-.notification-banner.snap-back {
-    transform: translateX(0) !important;
-}
-
-/* THE MAGIC "COLLAPSE" CLASS */
-/* This is what makes the notifications below slide up smoothly */
-.notification-banner.collapsed {
-    max-height: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    border: 0 !important;
-    opacity: 0 !important;
-    overflow: hidden;
-}
-
-/* DARK MODE */
-body.dark-mode .notification-banner {
-    background: rgba(35, 35, 35, 0.75);
-    color: white;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-    border: 0.5px solid rgba(255,255,255,0.1);
-}
-
-/* INNER CONTENT */
-.notif-icon {
-    width: 38px; height: 38px;
-    border-radius: 9px;
-    object-fit: cover;
-    background: #eee;
-    flex-shrink: 0;
-}
-
-.notif-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    flex: 1;
-    min-width: 0;
-}
-
-.notif-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 2px;
-}
-
-.notif-title {
-    font-size: 13px;
-    font-weight: 600;
-    opacity: 0.9;
-}
-
-.notif-time {
-    font-size: 11px;
-    opacity: 0.5;
-}
-
-.notif-msg {
-    font-size: 13px;
-    line-height: 1.3;
-    opacity: 0.8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* ENTRY ANIMATION */
-@keyframes notif-enter {
-    to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-
-
     </style>
 </head>
 <body>
@@ -901,29 +748,6 @@ body.dark-mode .notification-banner {
                             </div>
                         </div>
 
-
-<!-- noti and sounds -->
-
-<div class="section-header">Notifications & Sounds</div>
-<div class="ios-list">
-    <div class="ios-row">
-        <span>Allow Notifications</span>
-        <!-- Note: We check local storage inline to set 'checked' attribute -->
-        <input type="checkbox" class="ios-switch" 
-               onchange="iOS.toggleGlobalNotifications(this)"
-               ${localStorage.getItem('ios_allow_notif') !== 'false' ? 'checked' : ''}>
-    </div>
-    <div class="ios-row">
-        <span>Silent Mode</span>
-        <input type="checkbox" class="ios-switch" 
-               onchange="iOS.toggleSilentMode(this)"
-               ${localStorage.getItem('ios_silent_mode') === 'true' ? 'checked' : ''}>
-    </div>
-</div>
-
-
-
-
                         <div class="section-header">Interactions</div>
                         <div class="ios-list" style="background:transparent;">
                             <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date 🚀')">Check for Updates</button>
@@ -1047,8 +871,6 @@ body.dark-mode .notification-banner {
             </div>
         </div>
 
-        <div class="notification-zone" id="notification-zone"></div>
-
         <div class="gesture-zone" id="gesture-bar">
             <div class="home-indicator"></div>
         </div>
@@ -1075,7 +897,6 @@ body.dark-mode .notification-banner {
                 this.appId = GLOBAL_APP_ID;
                 this.apps = [];
                 this.verifiedUserIds = new Set();
-                
                 
                 // FIX: Call init() here instead of individual methods
                 this.init();
@@ -1348,20 +1169,6 @@ body.dark-mode .notification-banner {
                 this.alertOkBtn = document.getElementById('sa-btn-ok');
                 this.alertCancelBtn = document.getElementById('sa-btn-cancel');
 
-
-                
-
-                // Inside IOSEngine constructor...
-this.allowNotifications = localStorage.getItem('ios_allow_notif') !== 'false'; // Default true
-this.silentMode = localStorage.getItem('ios_silent_mode') === 'true'; // Default false
-
-// Add inside constructor to sync UI toggles with Saved State
-const notifToggle = document.querySelector('input[onchange="iOS.toggleGlobalNotifications(this)"]');
-if (notifToggle) notifToggle.checked = this.allowNotifications;
-
-const silentToggle = document.querySelector('input[onchange="iOS.toggleSilentMode(this)"]');
-if (silentToggle) silentToggle.checked = this.silentMode;
-
                 this.activeAppIcon = null;
                 this.currentScale = 1; 
                 this.isIslandExpanded = false;
@@ -1412,6 +1219,19 @@ if (this.isDarkMode) {
                      this.resizeTimer = setTimeout(() => this.initPagination(), 100);
                 });
                 this.initPageSwipes();
+
+// --- FIX: SYNC DARK MODE TOGGLE ---
+// This forces the toggle switch to match the saved state
+setTimeout(() => {
+    const toggle = document.querySelector('input[onchange*="toggleDarkMode"]');
+    if (toggle) {
+        toggle.checked = this.isDarkMode;
+    }
+}, 500);
+// ---------------------------------
+
+
+
             }
 
 
@@ -1461,213 +1281,6 @@ if (this.isDarkMode) {
 
 
 
-
-/* --- ADD TO IOSEngine CLASS --- */
-
-
-/* --- REPLACE sendNotification IN IOSEngine --- */
-
-/* --- REPLACE sendNotification IN IOSEngine --- */
-
-sendNotification(targetId, title, message) {
-    if (!this.allowNotifications) return;
-    this.playNotificationSound();
-
-    const zone = document.getElementById('notification-zone');
-    const iconUrl = this.resolveAppIcon(targetId);
-
-    // Create Banner
-    const banner = document.createElement('div');
-    banner.className = 'notification-banner';
-    banner.innerHTML = `
-        <img src="${iconUrl}" class="notif-icon">
-        <div class="notif-content">
-            <div class="notif-header">
-                <span class="notif-title">${targetId}</span>
-                <span class="notif-time">Now</span>
-            </div>
-            <div class="notif-msg"><b>${title}</b> ${message}</div>
-        </div>
-    `;
-
-    // --- HELPER: Smooth Remove ---
-    const smoothRemove = () => {
-        // 1. Swipe away visually
-        banner.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-        banner.style.opacity = '0';
-        
-        // 2. Collapse layout so siblings slide up
-        setTimeout(() => {
-            banner.classList.add('collapsed');
-            // 3. Remove from DOM after collapse matches CSS transition (300ms)
-            setTimeout(() => banner.remove(), 300);
-        }, 200); 
-    };
-
-    // --- SWIPE LOGIC ---
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-
-    banner.addEventListener('mousedown', startDrag); // Desktop support
-    banner.addEventListener('touchstart', startDrag, {passive: true});
-
-    function startDrag(e) {
-        startX = (e.touches ? e.touches[0].clientX : e.clientX);
-        isDragging = true;
-        banner.classList.add('swiping');
-    }
-
-    banner.addEventListener('mousemove', moveDrag);
-    banner.addEventListener('touchmove', moveDrag, {passive: false});
-
-    function moveDrag(e) {
-        if (!isDragging) return;
-        currentX = (e.touches ? e.touches[0].clientX : e.clientX);
-        const diff = currentX - startX;
-        banner.style.transform = `translateX(${diff}px)`;
-    }
-
-    banner.addEventListener('mouseup', endDrag);
-    banner.addEventListener('touchend', endDrag);
-    banner.addEventListener('mouseleave', endDrag);
-
-    function endDrag(e) {
-        if (!isDragging) return;
-        isDragging = false;
-        banner.classList.remove('swiping');
-        
-        const diff = currentX - startX;
-        const threshold = 80;
-
-        if (diff > threshold) {
-            banner.classList.add('dismiss-right');
-            setTimeout(smoothRemove, 200);
-        } else if (diff < -threshold) {
-            banner.classList.add('dismiss-left');
-            setTimeout(smoothRemove, 200);
-        } else {
-            banner.classList.add('snap-back');
-            banner.style.transform = ''; // Reset
-            setTimeout(() => banner.classList.remove('snap-back'), 300);
-        }
-    }
-
-    // --- CLICK LOGIC (Robust App Finder) ---
-    banner.addEventListener('click', (e) => {
-        if (Math.abs(currentX - startX) > 5) return; // It was a drag, not a click
-
-        smoothRemove();
-
-        // Find the App Element
-        const allApps = document.querySelectorAll('.app-item');
-        let targetAppEl = null;
-
-        for (const el of allApps) {
-            // Check 1: data-app-id
-            if (el.getAttribute('data-app-id') === targetId) {
-                targetAppEl = el; break;
-            }
-            // Check 2: App Name text
-            const nameEl = el.querySelector('.app-name');
-            if (nameEl && nameEl.innerText.trim() === targetId) {
-                targetAppEl = el; break;
-            }
-            // Check 3: onclick string (The "Catch-All")
-            const clickAttr = el.getAttribute('onclick') || '';
-            if (clickAttr.includes(`'${targetId}'`) || clickAttr.includes(`"${targetId}"`)) {
-                targetAppEl = el; break;
-            }
-        }
-
-        if (targetAppEl) {
-            const theme = targetId === 'Music' ? 'dark' : 'light';
-            this.openApp(targetAppEl, targetId, theme);
-        } else {
-            console.log(`App "${targetId}" not found on home screen.`);
-        }
-    });
-
-    // Add to DOM
-    zone.prepend(banner);
-}
-
-    dismissNotification(banner) {
-        if(banner.classList.contains('leaving')) return;
-        banner.classList.add('leaving');
-        banner.addEventListener('animationend', () => {
-            banner.remove();
-        });
-    }
-
-/* --- ADD/REPLACE IN IOSEngine --- */
-
-/* --- ADD/REPLACE IN IOSEngine --- */
-
-resolveAppIcon(targetId) {
-    // 1. Check Custom Icons (Highest Priority)
-    const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
-    if (customIcons[targetId]) return customIcons[targetId];
-
-    // 2. Check Installed Dynamic Apps (Firestore Data)
-    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-    const dynamicApp = installed.find(a => a.id === targetId);
-    if (dynamicApp && dynamicApp.iconUrl) return dynamicApp.iconUrl;
-
-    // 3. Check System/Static Apps (Robust DOM Search)
-    const allApps = document.querySelectorAll('.app-item');
-    let foundApp = null;
-
-    for (const el of allApps) {
-        // Check A: data-app-id attribute
-        if (el.getAttribute('data-app-id') === targetId) {
-            foundApp = el; break;
-        }
-        // Check B: The App Name text (e.g. "Messages")
-        const nameEl = el.querySelector('.app-name');
-        if (nameEl && nameEl.innerText.trim() === targetId) {
-            foundApp = el; break;
-        }
-        // Check C: The onclick string (e.g. "iOS.openApp(this, 'Messages'...")
-        const clickAttr = el.getAttribute('onclick') || '';
-        if (clickAttr.includes(`'${targetId}'`) || clickAttr.includes(`"${targetId}"`)) {
-            foundApp = el; break;
-        }
-    }
-
-    if (foundApp) {
-        const img = foundApp.querySelector('img') || foundApp.querySelector('.icon-bg-img');
-        if (img && img.src) return img.src;
-    }
-
-    // 4. Fallback Generic Icon
-    return 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
-}
-
-
-/* ----------------------------- */
-
-/* --- ADD TO IOSEngine CLASS --- */
-
-toggleGlobalNotifications(toggle) {
-    this.allowNotifications = toggle.checked;
-    localStorage.setItem('ios_allow_notif', this.allowNotifications);
-}
-
-toggleSilentMode(toggle) {
-    this.silentMode = toggle.checked;
-    localStorage.setItem('ios_silent_mode', this.silentMode);
-}
-
-playNotificationSound() {
-    if (this.silentMode) return;
-    // Simple "Tri-tone" style beep
-    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
-    audio.volume = 0.5;
-    audio.play().catch(e => console.log("Audio interaction required first"));
-}
-
-/* ----------------------------- */
 
 
 
