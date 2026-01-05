@@ -572,6 +572,105 @@
 
 
 
+
+/* --- NOTIFICATIONS SYSTEM --- */
+.notification-zone {
+    position: absolute;
+    top: 54px; /* Just below Dynamic Island/Status Bar */
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 3000; /* Above apps (100-200), below Status Bar (4000) & Island (5000) */
+    pointer-events: none; /* Allow clicking through empty space */
+}
+
+.notification-banner {
+    width: 93%;
+    max-width: 370px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border-radius: 18px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    pointer-events: auto; /* Make the banner itself clickable/blocking */
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+    animation: notif-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    border: 0.5px solid rgba(200,200,200,0.3);
+    cursor: pointer;
+}
+
+.notification-banner.leaving {
+    animation: notif-exit 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+body.dark-mode .notification-banner {
+    background: rgba(35, 35, 35, 0.75);
+    color: white;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    border: 0.5px solid rgba(255,255,255,0.1);
+}
+
+.notif-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    object-fit: cover;
+    background: #eee;
+    flex-shrink: 0;
+}
+
+.notif-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+}
+
+.notif-title {
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.notif-time {
+    font-size: 11px;
+    opacity: 0.5;
+}
+
+.notif-msg {
+    font-size: 13px;
+    line-height: 1.3;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@keyframes notif-enter {
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes notif-exit {
+    to { transform: translateY(-30px) scale(0.9); opacity: 0; }
+}
+
+
+
+
     </style>
 </head>
 <body>
@@ -870,6 +969,8 @@
                 <svg width="26" height="12" viewBox="0 0 26 12" fill="currentColor"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none" /><rect x="2.5" y="2.5" width="18" height="7" rx="1" fill="currentColor"/><path d="M24.5 4V8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </div>
         </div>
+
+        <div class="notification-zone" id="notification-zone"></div>
 
         <div class="gesture-zone" id="gesture-bar">
             <div class="home-indicator"></div>
@@ -1266,6 +1367,72 @@ if (this.isDarkMode) {
     }
 }
 
+
+
+
+/* --- ADD TO IOSEngine CLASS --- */
+
+    sendNotification(appName, title, message) {
+        const zone = document.getElementById('notification-zone');
+        
+        // 1. Resolve Icon (Uses your existing getCustomIcon + fallback)
+        // Note: You might need to supply a fallback URL here if 'app.iconUrl' isn't available
+        // For system apps, we define map here, or you can pass a URL directly as appName if needed.
+        let iconUrl = this.getCustomIcon(appName, 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png'); // Default generic icon
+        
+        // Optional: Simple map for system app defaults if custom icon isn't set
+        if (iconUrl.includes('10628963.png')) { // if it returned the default
+             const sysMap = {
+                'Messages': 'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=200',
+                'Music': 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200',
+                'Photos': 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200',
+                'Settings': 'https://images.unsplash.com/photo-1458560871784-56d23406c091?q=80&w=200'
+             };
+             if (sysMap[appName]) iconUrl = this.getCustomIcon(appName, sysMap[appName]);
+        }
+
+        // 2. Create Banner
+        const banner = document.createElement('div');
+        banner.className = 'notification-banner';
+        banner.innerHTML = `
+            <img src="${iconUrl}" class="notif-icon">
+            <div class="notif-content">
+                <div class="notif-header">
+                    <span class="notif-title">${appName}</span>
+                    <span class="notif-time">Now</span>
+                </div>
+                <div class="notif-msg">${message}</div>
+            </div>
+        `;
+
+        // 3. Add to Zone
+        zone.prepend(banner); // Newest on top
+
+        // 4. Click Handler (Optional: Open the app)
+        banner.onclick = () => {
+            // Check if app element exists to open it
+            const appEl = this.allApps.find(el => el.querySelector('.app-name').innerText === appName);
+            if (appEl) {
+                // Simulate click on app icon
+                const clickEvent = new MouseEvent('click', { bubbles: true });
+                appEl.dispatchEvent(clickEvent);
+            }
+            this.dismissNotification(banner);
+        };
+
+        // 5. Auto Dismiss
+        setTimeout(() => this.dismissNotification(banner), 4000);
+    }
+
+    dismissNotification(banner) {
+        if(banner.classList.contains('leaving')) return;
+        banner.classList.add('leaving');
+        banner.addEventListener('animationend', () => {
+            banner.remove();
+        });
+    }
+
+/* ----------------------------- */
 
 
 
