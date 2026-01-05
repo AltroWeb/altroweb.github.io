@@ -574,20 +574,33 @@
 
 
 /* --- NOTIFICATIONS SYSTEM --- */
+/* --- UPDATED NOTIFICATION SYSTEM --- */
 .notification-zone {
     position: absolute;
-    top: 54px; /* Just below Dynamic Island/Status Bar */
+    top: 54px;
     left: 0;
     width: 100%;
+    /* Use flex-start so new ones push old ones down, but allow scrolling */
     display: flex;
-    flex-direction: column;
+    flex-direction: column; 
     align-items: center;
     gap: 10px;
-    z-index: 3000; /* Above apps (100-200), below Status Bar (4000) & Island (5000) */
-    pointer-events: none; /* Allow clicking through empty space */
+    z-index: 3000;
+    pointer-events: none; /* Clicks pass through empty areas */
+    
+    /* SCROLLABLE LOGIC */
+    max-height: 80vh; /* Don't cover entire screen */
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 20px;
+    /* Hide scrollbar */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
+.notification-zone::-webkit-scrollbar { display: none; }
 
 .notification-banner {
+    /* ... existing styles ... */
     width: 93%;
     max-width: 370px;
     background: rgba(255, 255, 255, 0.75);
@@ -599,13 +612,38 @@
     align-items: center;
     gap: 12px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    pointer-events: auto; /* Make the banner itself clickable/blocking */
-    transform: translateY(-20px) scale(0.95);
-    opacity: 0;
+    pointer-events: auto; /* Clickable */
+    transform: translateX(0); /* Default state for swipe */
+    opacity: 0; /* Initial state for entry anim */
     animation: notif-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     border: 0.5px solid rgba(200,200,200,0.3);
-    cursor: pointer;
+    cursor: grab;
+    flex-shrink: 0; /* Prevent shrinking in flex container */
+    touch-action: pan-y; /* Allow vertical scroll, handle horizontal manually */
+    transition: transform 0.1s linear; /* Smooth drag */
 }
+
+/* Specific animations classes */
+.notification-banner.swiping {
+    transition: none; /* Immediate follow finger */
+}
+.notification-banner.dismiss-left {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform: translateX(-100%) !important;
+    opacity: 0 !important;
+}
+.notification-banner.dismiss-right {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform: translateX(100%) !important;
+    opacity: 0 !important;
+}
+.notification-banner.snap-back {
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateX(0) !important;
+}
+
+/* ... Keep existing dark mode & inner content styles ... */
+
 
 .notification-banner.leaving {
     animation: notif-exit 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
@@ -1418,77 +1456,104 @@ if (this.isDarkMode) {
 
 /* --- ADD TO IOSEngine CLASS --- */
 
-    /* --- REPLACE sendNotification IN IOSEngine --- */
 
-sendNotification(appName, title, message) {
-    // 1. Check Permissions
+/* --- REPLACE sendNotification IN IOSEngine --- */
+
+sendNotification(targetId, title, message) {
     if (!this.allowNotifications) return;
+    this.playNotificationSound();
 
     const zone = document.getElementById('notification-zone');
 
-    // 2. Play Sound
-    this.playNotificationSound();
-    
-    // 3. Resolve Icon
-    let iconUrl = this.getCustomIcon(appName, 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png');
-    // System map fallback
-    if (iconUrl.includes('10628963.png')) { 
-         const sysMap = {
-            'Messages': 'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=200',
-            'Music': 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200',
-            'Photos': 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200',
-            'Settings': 'https://images.unsplash.com/photo-1458560871784-56d23406c091?q=80&w=200'
-         };
-         if (sysMap[appName]) iconUrl = this.getCustomIcon(appName, sysMap[appName]);
-    }
+    // 1. Resolve Icon
+    const iconUrl = this.resolveAppIcon(targetId);
 
-    // 4. Create Banner
+    // 2. Create Banner
     const banner = document.createElement('div');
     banner.className = 'notification-banner';
     banner.innerHTML = `
         <img src="${iconUrl}" class="notif-icon">
         <div class="notif-content">
             <div class="notif-header">
-                <span class="notif-title">${appName}</span>
+                <span class="notif-title">${targetId}</span>
                 <span class="notif-time">Now</span>
             </div>
             <div class="notif-msg"><b>${title}</b> ${message}</div>
         </div>
     `;
 
-    // 5. Click to Open App Logic
-    banner.onclick = () => {
-        this.dismissNotification(banner); // Remove banner immediately
+    // 3. Swipe Logic (Same as before)
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
 
-        // Find the actual app element on the home screen or dock to animate from
-        const allAppItems = document.querySelectorAll('.app-item');
+    banner.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+        banner.classList.add('swiping');
+    }, {passive: true});
+
+    banner.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+        const diff = currentX - startX;
+        banner.style.transform = `translateX(${diff}px)`;
+    }, {passive: true});
+
+    banner.addEventListener('touchend', (e) => {
+        isDragging = false;
+        banner.classList.remove('swiping');
+        const diff = currentX - startX;
+        const threshold = 100;
+        if (diff > threshold) {
+            banner.classList.add('dismiss-right');
+            setTimeout(() => banner.remove(), 300);
+        } else if (diff < -threshold) {
+            banner.classList.add('dismiss-left');
+            setTimeout(() => banner.remove(), 300);
+        } else {
+            banner.classList.add('snap-back');
+            setTimeout(() => { banner.classList.remove('snap-back'); banner.style.transform = ''; }, 300);
+        }
+    });
+
+    // 4. CLICK HANDLER - THE FIX
+    banner.addEventListener('click', (e) => {
+        if (Math.abs(currentX - startX) > 10) return; // Ignore drag
+        
+        banner.remove(); // Dismiss
+
+        // --- ROBUST FINDER LOGIC ---
+        const allApps = document.querySelectorAll('.app-item');
         let targetAppEl = null;
 
-        for (let el of allAppItems) {
+        for (const el of allApps) {
+            // Priority 1: Exact data attribute
+            if (el.getAttribute('data-app-id') === targetId) {
+                targetAppEl = el; break;
+            }
+            // Priority 2: Visual Name Match
             const nameEl = el.querySelector('.app-name');
-            // Match by Name OR ID
-            if ((nameEl && nameEl.innerText === appName) || el.getAttribute('data-app-id') === appName) {
-                targetAppEl = el;
-                break;
+            if (nameEl && nameEl.innerText.trim() === targetId) {
+                targetAppEl = el; break;
+            }
+            // Priority 3: Onclick Match (The fallback for your specific case)
+            const clickAttr = el.getAttribute('onclick') || '';
+            if (clickAttr.includes(`'${targetId}'`) || clickAttr.includes(`"${targetId}"`)) {
+                targetAppEl = el; break;
             }
         }
 
         if (targetAppEl) {
-            // Trigger the open animation
-            // Note: We assume 'light' theme unless it's Music
-            const theme = appName === 'Music' ? 'dark' : 'light';
-            this.openApp(targetAppEl, appName, theme);
+            // Determine theme (Music is dark, others light usually)
+            const theme = targetId === 'Music' ? 'dark' : 'light';
+            this.openApp(targetAppEl, targetId, theme);
         } else {
-            console.warn("App not found on home screen:", appName);
-            // Fallback: Just open the window directly if icon not found
-            // (You can add fallback logic here if needed, but usually app is installed)
+            console.warn(`Could not find app element for: ${targetId}`);
         }
-    };
+    });
 
     zone.prepend(banner);
-
-    // 6. Auto Dismiss
-    setTimeout(() => this.dismissNotification(banner), 5000);
 }
 
     dismissNotification(banner) {
@@ -1498,6 +1563,51 @@ sendNotification(appName, title, message) {
             banner.remove();
         });
     }
+
+/* --- ADD/REPLACE IN IOSEngine --- */
+
+/* --- ADD/REPLACE IN IOSEngine --- */
+
+resolveAppIcon(targetId) {
+    // 1. Check Custom Icons (Highest Priority)
+    const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+    if (customIcons[targetId]) return customIcons[targetId];
+
+    // 2. Check Installed Dynamic Apps (Firestore Data)
+    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const dynamicApp = installed.find(a => a.id === targetId);
+    if (dynamicApp && dynamicApp.iconUrl) return dynamicApp.iconUrl;
+
+    // 3. Check System/Static Apps (Robust DOM Search)
+    const allApps = document.querySelectorAll('.app-item');
+    let foundApp = null;
+
+    for (const el of allApps) {
+        // Check A: data-app-id attribute
+        if (el.getAttribute('data-app-id') === targetId) {
+            foundApp = el; break;
+        }
+        // Check B: The App Name text (e.g. "Messages")
+        const nameEl = el.querySelector('.app-name');
+        if (nameEl && nameEl.innerText.trim() === targetId) {
+            foundApp = el; break;
+        }
+        // Check C: The onclick string (e.g. "iOS.openApp(this, 'Messages'...")
+        const clickAttr = el.getAttribute('onclick') || '';
+        if (clickAttr.includes(`'${targetId}'`) || clickAttr.includes(`"${targetId}"`)) {
+            foundApp = el; break;
+        }
+    }
+
+    if (foundApp) {
+        const img = foundApp.querySelector('img') || foundApp.querySelector('.icon-bg-img');
+        if (img && img.src) return img.src;
+    }
+
+    // 4. Fallback Generic Icon
+    return 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
+}
+
 
 /* ----------------------------- */
 
