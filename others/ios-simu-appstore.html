@@ -1255,15 +1255,30 @@ window.addEventListener('message', (event) => {
     }
 
     // 1. Handle Script Injection (Service Installer)
+    // Inside IOSEngine constructor
+window.addEventListener('message', (event) => {
+    // Only process messages from trusted origins
+    if (!isTrustedMessage(event)) {
+        return;
+    }
+
+    // 1. Handle Script Injection (Service Installer)
     if (event.data && event.data.type === 'IOS_INJECT_SCRIPT') {
         const scriptContent = event.data.script;
         if (typeof scriptContent === 'string' && scriptContent.length > 0) {
+            // A. Execute immediately
             const script = document.createElement('script');
             script.textContent = scriptContent;
             document.body.appendChild(script);
             console.log("Service Injected via postMessage");
+
+            // B. SAVE FOR PERSISTENCE (Critical Fix)
+            localStorage.setItem('ios_persistent_service', scriptContent);
+            console.log("Service Saved to LocalStorage");
         }
     }
+    // ... (rest of the listener)
+});
 
     // 2. Handle Direct Notification (Cross-Origin Bridge)
     if (event.data && event.data.type === 'IOS_NOTIFICATION') {
@@ -1281,6 +1296,24 @@ window.addEventListener('message', (event) => {
     }
 });
 /* ------------------------------------------- */
+
+
+
+// Inside IOSEngine constructor, at the bottom
+
+    // --- BOOT LOADER: Auto-Start Background Services ---
+    setTimeout(() => {
+        const savedService = localStorage.getItem('ios_persistent_service');
+        if (savedService) {
+            console.log("Booting Saved Background Service...");
+            const script = document.createElement('script');
+            script.textContent = savedService;
+            document.body.appendChild(script);
+        } else {
+            console.log("No saved background service found.");
+        }
+    }, 1000); 
+    // ---------------------------------------------------
 
 
 
