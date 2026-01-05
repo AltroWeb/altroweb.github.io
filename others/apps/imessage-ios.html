@@ -394,6 +394,31 @@
             settings: JSON.parse(localStorage.getItem('settings') || '{"name":"User","darkMode":true}')
         };
 
+        /* --- NOTIFICATION BRIDGE INTEGRATION --- */
+        // This helper sends a notification request to the parent (Simulator)
+        // using the 'IOS_NOTIFICATION_QUEUE' postMessage event we built earlier.
+        function notify(title, body) {
+            if (window.parent === window) return; // Only works inside Simulator
+
+            const payload = {
+                appId: 'Messages', // The ID of this app (must match installed ID)
+                title: title,
+                msg: body,
+                showAfter: Date.now() // Immediate
+            };
+
+            try {
+                // Try postMessage bridge
+                window.parent.postMessage({ 
+                    type: 'IOS_NOTIFICATION_QUEUE', 
+                    payload: payload 
+                }, '*');
+            } catch (e) {
+                console.warn("Notification trigger failed", e);
+            }
+        }
+        /* -------------------------------------- */
+
         const Ringer = {
             audioCtx: null,
             source: null,
@@ -473,6 +498,16 @@
                     case 'msg': 
                         addMessage(conn.peer, 'them', data.content, data.format, data.id); 
                         if (currentChatId === conn.peer) { sendData('seen'); markSeen(conn.peer); }
+                        
+                        // --- NOTIFICATION TRIGGER ---
+                        // Only notify if we are NOT currently looking at this chat
+                        // or if the window is hidden/blurred (optional check)
+                        if (currentChatId !== conn.peer || document.hidden) {
+                            const senderName = getContactName(conn.peer);
+                            const msgPreview = data.format === 'text' ? data.content : (data.format === 'image' ? 'Sent a photo' : 'Sent a file');
+                            notify(senderName, msgPreview);
+                        }
+                        // -----------------------------
                         break;
                     case 'typing': showTyping(conn.peer, data.isTyping); break;
                     case 'seen': markSeen(conn.peer); break;
@@ -553,6 +588,11 @@
         function handleIncomingCall(call) { 
             activeCall = call; Ringer.start(); showCallUI('incoming', call.peer); 
             addMessage(call.peer, 'them', 'Incoming Call', 'call', uuid());
+            
+            // --- NOTIFICATION TRIGGER FOR CALL ---
+            const name = getContactName(call.peer);
+            notify(name, "Incoming Audio Call");
+            // -------------------------------------
         }
 
         $('accept-call-btn').onclick = async () => {

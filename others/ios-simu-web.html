@@ -549,6 +549,54 @@ body.dark-mode .info-box a {
     window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_compiled_css'</span>, css);
 }
                     </div>
+
+                    <strong>4. Advanced Notification System</strong>
+                    <p>The simulator includes a powerful, service-based notification engine that apps can hook into. This system supports custom sounds, background queuing (notifications fire even if app is closed), and swipe gestures.</p>
+                    
+                    <h4> Architecture</h4>
+                    <p>Because apps run in sandboxed iframes, they cannot access the parent DOM directly. We solve this using a <code>postMessage</code> bridge.</p>
+                    <ul>
+                        <li><strong>Notification Service:</strong> A script that must be injected <em>once</em> into the parent (Simulator) context. This service listens for messages and manages the notification UI queue.</li>
+                        <li><strong>Bridge:</strong> Apps send messages to the parent using `window.parent.postMessage`.</li>
+                    </ul>
+
+                    <h4> Triggering a Notification</h4>
+                    <p>Any installed app can request a notification by sending a specific payload to the message queue. If the service is running, it will display immediately. If not, or if the app is closed, the queue persists in <code>localStorage</code>.</p>
+                    
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">notify</span>(title, body, soundUrl = null) {
+    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span>; <span class="hl-c">// Only works inside Simulator</span>
+
+    <span class="hl-k">const</span> payload = {
+        appId: <span class="hl-s">'MyApp'</span>, <span class="hl-c">// Your App Name or ID</span>
+        title: title,
+        msg: body,
+        icon: <span class="hl-s">'https://...'</span>, <span class="hl-c">// Optional Custom Icon URL</span>
+        sound: soundUrl, <span class="hl-c">// Optional MP3 URL</span>
+        showAfter: <span class="hl-f">Date</span>.now() <span class="hl-c">// Timestamp for delay (optional)</span>
+    };
+
+    <span class="hl-c">// Send to Bridge</span>
+    window.parent.<span class="hl-f">postMessage</span>({ 
+        type: <span class="hl-s">'IOS_NOTIFICATION_QUEUE'</span>, 
+        payload: payload 
+    }, <span class="hl-s">'*'</span>);
+}
+
+<span class="hl-c">// Usage</span>
+<span class="hl-f">notify</span>(<span class="hl-s">'New Message'</span>, <span class="hl-s">'Hello World!'</span>);
+                    </div>
+
+                    <h4> Injecting the Service (For System Apps)</h4>
+                    <p>If you are building a "System Manager" app (like the Notification Manager), you can inject the entire logic engine into the host. This code runs in the parent context and creates the actual DOM elements for banners.</p>
+                    <div class="code-box">
+<span class="hl-k">const</span> SERVICE_CODE = <span class="hl-s">`(function() { ... full service logic ... })();`</span>;
+
+window.parent.<span class="hl-f">postMessage</span>({
+    type: <span class="hl-s">'IOS_INJECT_SCRIPT'</span>,
+    script: SERVICE_CODE
+}, <span class="hl-s">'*'</span>);
+                    </div>
                 </div>
 
             </main>
