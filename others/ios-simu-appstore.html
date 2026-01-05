@@ -992,73 +992,72 @@
             }
 
                 renderStore(appList) {
-        const listEl = document.getElementById('store-list');
-        listEl.innerHTML = '';
+    const listEl = document.getElementById('store-list');
+    listEl.innerHTML = '';
+    
+    if (appList.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
+        return;
+    }
+
+    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const verifiedUsers = this.verifiedUserIds || new Set();
+
+    appList.forEach(app => {
+        const localApp = installedApps.find(ia => ia.id === app.id);
+        const isInstalled = !!localApp;
         
-        if (appList.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
-            return;
-        }
+        // Version Check
+        const serverTime = app.updatedAt || 0;
+        const localTime = localApp ? (localApp.updatedAt || 0) : 0;
+        const isUpdateAvailable = isInstalled && (serverTime > localTime);
+        
+        // Verification Badge
+        const isVerified = verifiedUsers.has(app.authorId);
+        const badgeHTML = isVerified ? `
+            <span class="verified-badge" title="Verified Developer">
+                <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+            </span>` : '';
 
-        const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+        const div = document.createElement('div');
+        div.className = 'store-item';
+        
+        let actionHTML = '';
 
-        appList.forEach(app => {
-            const localApp = installedApps.find(ia => ia.id === app.id);
-            const isInstalled = !!localApp;
-            
-            // Version Check
-            const serverTime = app.updatedAt || 0;
-            const localTime = localApp ? (localApp.updatedAt || 0) : 0;
-            const isUpdateAvailable = isInstalled && (serverTime > localTime);
-            
-            // Verification Badge
-            const isVerified = this.verifiedUserIds && this.verifiedUserIds.has(app.authorId);
-            const badgeHTML = isVerified ? `
-                <span class="verified-badge" title="Verified Developer">
-                    <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
-                </span>` : '';
-
-            const div = document.createElement('div');
-            div.className = 'store-item';
-            
-            let actionHTML = '';
-
-            if (isUpdateAvailable) {
-                // STACKED BUTTONS: Update + Uninstall
-                // We reuse .store-get-btn for both to keep the shape identical
-                actionHTML = `
-                    <div class="store-actions">
-                        <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')">
-                            <span>UPDATE</span>
-                            <div class="spinner"></div>
-                        </button>
-                        <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
-                            <span>UNINSTALL</span>
-                            <div class="spinner"></div>
-                        </button>
-                    </div>
-                `;
-            } else {
-                // STANDARD SINGLE BUTTON
-                actionHTML = `
-                    <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                        <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+        if (isUpdateAvailable) {
+            actionHTML = `
+                <div class="store-actions">
+                    <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')">
+                        <span>UPDATE</span>
                         <div class="spinner"></div>
                     </button>
-                `;
-            }
-
-            div.innerHTML = `
-                <img src="${this.getCustomIcon(app.id, app.iconUrl)}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                <div class="store-info">
-                    <div class="store-name">${app.name}</div>
-                    <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                    <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+                        <span>UNINSTALL</span>
+                        <div class="spinner"></div>
+                    </button>
                 </div>
-                ${actionHTML}
             `;
-            listEl.appendChild(div);
-        });
-    }
+        } else {
+            actionHTML = `
+                <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+                    <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+                    <div class="spinner"></div>
+                </button>
+            `;
+        }
+
+        // ORIGINAL LINE RESTORED BELOW (Uses app.iconUrl directly)
+        div.innerHTML = `
+            <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+            <div class="store-info">
+                <div class="store-name">${app.name}</div>
+                <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+            </div>
+            ${actionHTML}
+        `;
+        listEl.appendChild(div);
+    });
+}
 
 
                 async handleUpdateClick(btn, appId) {
@@ -1172,9 +1171,7 @@ this.isDarkMode = localStorage.getItem('ios_dark_mode') === 'true';
 if (this.isDarkMode) {
     document.body.classList.add('dark-mode');
 }
-// Apply custom icons on boot
-this.applyCustomIconsGlobal();
-/* --------------------------------------------------- */
+
 
 
                 this.resizeTimer = null;
@@ -1202,6 +1199,10 @@ this.applyCustomIconsGlobal();
                 // Load installed apps first
                 this.restoreInstalledApps();
                 this.loadApps();
+
+                this.applyCustomIcons();
+
+
                 this.initPagination();
                 window.addEventListener('resize', () => {
                      clearTimeout(this.resizeTimer);
@@ -1214,35 +1215,31 @@ this.applyCustomIconsGlobal();
 /* --- INSERT THIS INSIDE IOSEngine Class --- */
 
     getCustomIcon(appNameOrId, defaultUrl) {
-        // 1. Load the map
-        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
-        // 2. Return custom if exists, otherwise default
-        return customIcons[appNameOrId] || defaultUrl;
-    }
+    const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+    return customIcons[appNameOrId] || defaultUrl;
+}
 
-    applyCustomIconsGlobal() {
-        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+    applyCustomIcons() {
+    const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+    
+    // SELECTOR TARGETS ONLY HOME SCREEN & DOCK
+    const selectors = '.homescreen-group .app-item, .dock-container .app-item, #app-source .app-item';
+    
+    document.querySelectorAll(selectors).forEach(el => {
+        const nameEl = el.querySelector('.app-name');
+        const imgEl = el.querySelector('.icon-bg-img');
         
-        // 1. Update Static Apps (Home & Dock)
-        document.querySelectorAll('.app-item').forEach(el => {
-            const nameEl = el.querySelector('.app-name');
-            const imgEl = el.querySelector('.icon-bg-img');
-            
-            // Try matching by data-app-id attribute first, then by text name
-            const appId = el.getAttribute('data-app-id');
-            const appName = nameEl ? nameEl.innerText.trim() : null;
+        const appId = el.getAttribute('data-app-id');
+        const appName = nameEl ? nameEl.innerText.trim() : null;
 
-            if (appId && customIcons[appId]) {
-                if (imgEl) imgEl.src = customIcons[appId];
-            } else if (appName && customIcons[appName]) {
-                if (imgEl) imgEl.src = customIcons[appName];
-            }
-        });
-
-        // 2. Update Window Icons (Dynamic Island or internal app headers)
-        // (Optional: Logic can be extended here if needed)
-    }
-/* ------------------------------------------ */
+        // Check ID first, then Name
+        if (appId && customIcons[appId]) {
+            if (imgEl) imgEl.src = customIcons[appId];
+        } else if (appName && customIcons[appName]) {
+            if (imgEl) imgEl.src = customIcons[appName];
+        }
+    });
+}
 
 
 
@@ -1286,27 +1283,31 @@ this.applyCustomIconsGlobal();
             }
 
             injectSingleApp(app, refresh = true) {
-                const source = document.getElementById('app-source');
-                const exists = Array.from(source.children).some(el => el.getAttribute('data-app-id') === app.id);
-                if (exists) return;
+    const source = document.getElementById('app-source');
+    const exists = Array.from(source.children).some(el => el.getAttribute('data-app-id') === app.id);
+    if (exists) return;
 
-                const item = document.createElement('div');
-                item.className = 'app-item';
-                item.setAttribute('data-app-id', app.id);
-                item.setAttribute('onclick', `iOS.openApp(this, '${app.id}', 'light')`);
-                item.innerHTML = `
-                    <div class="app-icon">
-                        <img src="${this.getCustomIcon(app.id, app.iconUrl)}" class="icon-bg-img" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                    </div>
-                    <div class="app-name">${app.name}</div>
-                `;
-                source.appendChild(item);
-                
-                if (refresh) {
-                    this.loadApps();
-                    this.initPagination();
-                }
-            }
+    const item = document.createElement('div');
+    item.className = 'app-item';
+    item.setAttribute('data-app-id', app.id);
+    item.setAttribute('onclick', `iOS.openApp(this, '${app.id}', 'light')`);
+    
+    // USE CUSTOM ICON HERE
+    const finalIcon = this.getCustomIcon(app.id, app.iconUrl);
+
+    item.innerHTML = `
+        <div class="app-icon">
+            <img src="${finalIcon}" class="icon-bg-img" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+        </div>
+        <div class="app-name">${app.name}</div>
+    `;
+    source.appendChild(item);
+    
+    if (refresh) {
+        this.loadApps();
+        this.initPagination();
+    }
+}
 
             removeSingleApp(appId) {
                 const source = document.getElementById('app-source');
