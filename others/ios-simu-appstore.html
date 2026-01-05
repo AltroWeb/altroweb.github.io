@@ -1200,6 +1200,7 @@ if (this.isDarkMode) {
                 this.restoreInstalledApps();
                 this.loadApps();
 
+                this.applyGlobalTheme();
                 this.applyCustomIcons();
 
 
@@ -1240,6 +1241,22 @@ if (this.isDarkMode) {
         }
     });
 }
+
+
+        applyGlobalTheme() {
+    const css = localStorage.getItem('ios_compiled_css');
+    if (css) {
+        const styleId = 'icon-studio-global-styles';
+        let styleTag = document.getElementById(styleId);
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = styleId;
+            document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = css;
+    }
+}
+
 
 
 
