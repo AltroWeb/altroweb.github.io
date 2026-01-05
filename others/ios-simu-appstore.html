@@ -1061,32 +1061,41 @@
 
 
                 async handleUpdateClick(btn, appId) {
-        const app = this.apps.find(a => a.id === appId);
-        if (!app) return;
+                const app = this.apps.find(a => a.id === appId);
+                if (!app) return;
 
-        btn.classList.add('loading');
-        
-        // Simulate Network
-        await new Promise(r => setTimeout(r, 1500));
+                btn.classList.add('loading');
+                
+                // Simulate Network
+                await new Promise(r => setTimeout(r, 1500));
 
-        // Logic: Remove old, Add new
-        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-        const filtered = installed.filter(a => a.id !== appId);
-        
-        // Push the NEW app object (which has the newer timestamp)
-        filtered.push(app);
-        
-        localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
+                // Logic: Remove old, Add new
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const filtered = installed.filter(a => a.id !== appId);
+                
+                // Push the NEW app object
+                filtered.push(app);
+                
+                localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
 
-        // Refresh UI
-        iOS.removeSingleApp(appId);
-        iOS.injectSingleApp(app);
+                // --- icon update START --- 
+                // Fix: Remove custom icon override so update takes effect
+                const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+                if (customIcons[appId]) {
+                    delete customIcons[appId];
+                    localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
+                }
+                // --- icon update END ---
 
-        btn.classList.remove('loading');
-        this.renderStore(this.apps); 
-        
-        iOS.showAlert('Updated', `${app.name} has been updated.`);
-    }
+                // Refresh UI
+                iOS.removeSingleApp(appId);
+                iOS.injectSingleApp(app);
+
+                btn.classList.remove('loading');
+                this.renderStore(this.apps); 
+                
+                iOS.showAlert('Updated', `${app.name} has been updated.`);
+            }
 
 
 
