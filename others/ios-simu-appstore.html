@@ -668,7 +668,15 @@ body.dark-mode .notification-banner {
     to { transform: translateY(-30px) scale(0.9); opacity: 0; }
 }
 
+/* Add this to your CSS */
+@keyframes notif-exit {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-50px) scale(0.8); opacity: 0; }
+}
 
+.notification-banner.leaving {
+    animation: notif-exit 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
 
 
     </style>
@@ -847,6 +855,29 @@ body.dark-mode .notification-banner {
                             </div>
                         </div>
 
+
+<!-- noti and sounds -->
+
+<div class="section-header">Notifications & Sounds</div>
+<div class="ios-list">
+    <div class="ios-row">
+        <span>Allow Notifications</span>
+        <!-- Note: We check local storage inline to set 'checked' attribute -->
+        <input type="checkbox" class="ios-switch" 
+               onchange="iOS.toggleGlobalNotifications(this)"
+               ${localStorage.getItem('ios_allow_notif') !== 'false' ? 'checked' : ''}>
+    </div>
+    <div class="ios-row">
+        <span>Silent Mode</span>
+        <input type="checkbox" class="ios-switch" 
+               onchange="iOS.toggleSilentMode(this)"
+               ${localStorage.getItem('ios_silent_mode') === 'true' ? 'checked' : ''}>
+    </div>
+</div>
+
+
+
+
                         <div class="section-header">Interactions</div>
                         <div class="ios-list" style="background:transparent;">
                             <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date 🚀')">Check for Updates</button>
@@ -998,6 +1029,7 @@ body.dark-mode .notification-banner {
                 this.appId = GLOBAL_APP_ID;
                 this.apps = [];
                 this.verifiedUserIds = new Set();
+                
                 
                 // FIX: Call init() here instead of individual methods
                 this.init();
@@ -1270,6 +1302,20 @@ body.dark-mode .notification-banner {
                 this.alertOkBtn = document.getElementById('sa-btn-ok');
                 this.alertCancelBtn = document.getElementById('sa-btn-cancel');
 
+
+                
+
+                // Inside IOSEngine constructor...
+this.allowNotifications = localStorage.getItem('ios_allow_notif') !== 'false'; // Default true
+this.silentMode = localStorage.getItem('ios_silent_mode') === 'true'; // Default false
+
+// Add inside constructor to sync UI toggles with Saved State
+const notifToggle = document.querySelector('input[onchange="iOS.toggleGlobalNotifications(this)"]');
+if (notifToggle) notifToggle.checked = this.allowNotifications;
+
+const silentToggle = document.querySelector('input[onchange="iOS.toggleSilentMode(this)"]');
+if (silentToggle) silentToggle.checked = this.silentMode;
+
                 this.activeAppIcon = null;
                 this.currentScale = 1; 
                 this.isIslandExpanded = false;
@@ -1372,57 +1418,78 @@ if (this.isDarkMode) {
 
 /* --- ADD TO IOSEngine CLASS --- */
 
-    sendNotification(appName, title, message) {
-        const zone = document.getElementById('notification-zone');
-        
-        // 1. Resolve Icon (Uses your existing getCustomIcon + fallback)
-        // Note: You might need to supply a fallback URL here if 'app.iconUrl' isn't available
-        // For system apps, we define map here, or you can pass a URL directly as appName if needed.
-        let iconUrl = this.getCustomIcon(appName, 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png'); // Default generic icon
-        
-        // Optional: Simple map for system app defaults if custom icon isn't set
-        if (iconUrl.includes('10628963.png')) { // if it returned the default
-             const sysMap = {
-                'Messages': 'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=200',
-                'Music': 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200',
-                'Photos': 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200',
-                'Settings': 'https://images.unsplash.com/photo-1458560871784-56d23406c091?q=80&w=200'
-             };
-             if (sysMap[appName]) iconUrl = this.getCustomIcon(appName, sysMap[appName]);
+    /* --- REPLACE sendNotification IN IOSEngine --- */
+
+sendNotification(appName, title, message) {
+    // 1. Check Permissions
+    if (!this.allowNotifications) return;
+
+    const zone = document.getElementById('notification-zone');
+
+    // 2. Play Sound
+    this.playNotificationSound();
+    
+    // 3. Resolve Icon
+    let iconUrl = this.getCustomIcon(appName, 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png');
+    // System map fallback
+    if (iconUrl.includes('10628963.png')) { 
+         const sysMap = {
+            'Messages': 'https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=200',
+            'Music': 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=200',
+            'Photos': 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=200',
+            'Settings': 'https://images.unsplash.com/photo-1458560871784-56d23406c091?q=80&w=200'
+         };
+         if (sysMap[appName]) iconUrl = this.getCustomIcon(appName, sysMap[appName]);
+    }
+
+    // 4. Create Banner
+    const banner = document.createElement('div');
+    banner.className = 'notification-banner';
+    banner.innerHTML = `
+        <img src="${iconUrl}" class="notif-icon">
+        <div class="notif-content">
+            <div class="notif-header">
+                <span class="notif-title">${appName}</span>
+                <span class="notif-time">Now</span>
+            </div>
+            <div class="notif-msg"><b>${title}</b> ${message}</div>
+        </div>
+    `;
+
+    // 5. Click to Open App Logic
+    banner.onclick = () => {
+        this.dismissNotification(banner); // Remove banner immediately
+
+        // Find the actual app element on the home screen or dock to animate from
+        const allAppItems = document.querySelectorAll('.app-item');
+        let targetAppEl = null;
+
+        for (let el of allAppItems) {
+            const nameEl = el.querySelector('.app-name');
+            // Match by Name OR ID
+            if ((nameEl && nameEl.innerText === appName) || el.getAttribute('data-app-id') === appName) {
+                targetAppEl = el;
+                break;
+            }
         }
 
-        // 2. Create Banner
-        const banner = document.createElement('div');
-        banner.className = 'notification-banner';
-        banner.innerHTML = `
-            <img src="${iconUrl}" class="notif-icon">
-            <div class="notif-content">
-                <div class="notif-header">
-                    <span class="notif-title">${appName}</span>
-                    <span class="notif-time">Now</span>
-                </div>
-                <div class="notif-msg">${message}</div>
-            </div>
-        `;
+        if (targetAppEl) {
+            // Trigger the open animation
+            // Note: We assume 'light' theme unless it's Music
+            const theme = appName === 'Music' ? 'dark' : 'light';
+            this.openApp(targetAppEl, appName, theme);
+        } else {
+            console.warn("App not found on home screen:", appName);
+            // Fallback: Just open the window directly if icon not found
+            // (You can add fallback logic here if needed, but usually app is installed)
+        }
+    };
 
-        // 3. Add to Zone
-        zone.prepend(banner); // Newest on top
+    zone.prepend(banner);
 
-        // 4. Click Handler (Optional: Open the app)
-        banner.onclick = () => {
-            // Check if app element exists to open it
-            const appEl = this.allApps.find(el => el.querySelector('.app-name').innerText === appName);
-            if (appEl) {
-                // Simulate click on app icon
-                const clickEvent = new MouseEvent('click', { bubbles: true });
-                appEl.dispatchEvent(clickEvent);
-            }
-            this.dismissNotification(banner);
-        };
-
-        // 5. Auto Dismiss
-        setTimeout(() => this.dismissNotification(banner), 4000);
-    }
+    // 6. Auto Dismiss
+    setTimeout(() => this.dismissNotification(banner), 5000);
+}
 
     dismissNotification(banner) {
         if(banner.classList.contains('leaving')) return;
@@ -1434,7 +1501,27 @@ if (this.isDarkMode) {
 
 /* ----------------------------- */
 
+/* --- ADD TO IOSEngine CLASS --- */
 
+toggleGlobalNotifications(toggle) {
+    this.allowNotifications = toggle.checked;
+    localStorage.setItem('ios_allow_notif', this.allowNotifications);
+}
+
+toggleSilentMode(toggle) {
+    this.silentMode = toggle.checked;
+    localStorage.setItem('ios_silent_mode', this.silentMode);
+}
+
+playNotificationSound() {
+    if (this.silentMode) return;
+    // Simple "Tri-tone" style beep
+    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log("Audio interaction required first"));
+}
+
+/* ----------------------------- */
 
 
 
