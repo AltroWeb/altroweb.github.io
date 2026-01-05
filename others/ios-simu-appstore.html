@@ -1049,7 +1049,7 @@
             }
 
             div.innerHTML = `
-                <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                <img src="${this.getCustomIcon(app.id, app.iconUrl)}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                 <div class="store-info">
                     <div class="store-name">${app.name}</div>
                     <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
@@ -1166,7 +1166,17 @@
                 this.isIslandExpanded = false;
                 this.autoCollapseTimer = null;
                 this.openedFromIsland = false; 
-                this.isDarkMode = false;
+
+                /* --- REPLACE this.isDarkMode = false; WITH THIS: --- */
+this.isDarkMode = localStorage.getItem('ios_dark_mode') === 'true';
+if (this.isDarkMode) {
+    document.body.classList.add('dark-mode');
+}
+// Apply custom icons on boot
+this.applyCustomIconsGlobal();
+/* --------------------------------------------------- */
+
+
                 this.resizeTimer = null;
 
                 // Pagination State
@@ -1199,6 +1209,45 @@
                 });
                 this.initPageSwipes();
             }
+
+
+/* --- INSERT THIS INSIDE IOSEngine Class --- */
+
+    getCustomIcon(appNameOrId, defaultUrl) {
+        // 1. Load the map
+        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+        // 2. Return custom if exists, otherwise default
+        return customIcons[appNameOrId] || defaultUrl;
+    }
+
+    applyCustomIconsGlobal() {
+        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+        
+        // 1. Update Static Apps (Home & Dock)
+        document.querySelectorAll('.app-item').forEach(el => {
+            const nameEl = el.querySelector('.app-name');
+            const imgEl = el.querySelector('.icon-bg-img');
+            
+            // Try matching by data-app-id attribute first, then by text name
+            const appId = el.getAttribute('data-app-id');
+            const appName = nameEl ? nameEl.innerText.trim() : null;
+
+            if (appId && customIcons[appId]) {
+                if (imgEl) imgEl.src = customIcons[appId];
+            } else if (appName && customIcons[appName]) {
+                if (imgEl) imgEl.src = customIcons[appName];
+            }
+        });
+
+        // 2. Update Window Icons (Dynamic Island or internal app headers)
+        // (Optional: Logic can be extended here if needed)
+    }
+/* ------------------------------------------ */
+
+
+
+
+
 
             setupAlerts() {
                 this.alertCancelBtn.onclick = () => this.closeAlert();
@@ -1247,7 +1296,7 @@
                 item.setAttribute('onclick', `iOS.openApp(this, '${app.id}', 'light')`);
                 item.innerHTML = `
                     <div class="app-icon">
-                        <img src="${app.iconUrl}" class="icon-bg-img" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                        <img src="${this.getCustomIcon(app.id, app.iconUrl)}" class="icon-bg-img" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                     </div>
                     <div class="app-name">${app.name}</div>
                 `;
@@ -1372,9 +1421,14 @@
             }
 
             toggleDarkMode(toggle) {
-                this.isDarkMode = toggle.checked;
-                if (this.isDarkMode) document.body.classList.add('dark-mode');
-                else document.body.classList.remove('dark-mode');
+    this.isDarkMode = toggle.checked;
+    
+    // SAVE TO STORAGE
+    localStorage.setItem('ios_dark_mode', this.isDarkMode);
+
+    if (this.isDarkMode) document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
+    
                 
                 if (this.state === 'ACTIVE' && this.activeWindow) {
                     if (this.activeWindow.getAttribute('data-app') === 'Music') {
