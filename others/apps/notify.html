@@ -12,6 +12,8 @@
             --text: #000;
             --input-bg: #E9E9EB;
             --border: #C6C6C8;
+            --danger: #FF3B30;
+            --success: #34C759;
         }
         @media (prefers-color-scheme: dark) {
             :root { --bg: #000; --card: #1C1C1E; --text: #FFF; --input-bg: #2C2C2E; --border: #38383A; }
@@ -41,6 +43,22 @@
         }
         input:focus { border-color: var(--accent); }
 
+        .file-drop-zone {
+            border: 2px dashed var(--border); border-radius: 10px;
+            padding: 20px; text-align: center; cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            position: relative; overflow: hidden;
+        }
+        .file-drop-zone:hover { background: var(--input-bg); }
+        .file-drop-zone.dragover { border-color: var(--accent); background: rgba(0,122,255,0.1); }
+        .file-text { font-size: 13px; color: #888; pointer-events: none; }
+        .file-status { 
+            font-size: 12px; margin-top: 5px; font-weight: 600; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+        }
+        .file-status.error { color: var(--danger); }
+        .file-status.success { color: var(--success); }
+
         .row { display: flex; gap: 10px; }
         .row > * { flex: 1; }
 
@@ -54,7 +72,7 @@
 
         #status {
             margin-top: 20px; font-size: 13px; font-weight: 600;
-            opacity: 0; transition: opacity 0.3s; color: #34C759;
+            opacity: 0; transition: opacity 0.3s; color: var(--success);
         }
         #status.visible { opacity: 1; }
     </style>
@@ -68,7 +86,7 @@
 
     <div class="card">
         <div class="input-group">
-            <label>App ID (e.g. Messages, Settings)</label>
+            <label>App ID</label>
             <input type="text" id="inp-app" placeholder="Messages" value="Messages">
         </div>
         
@@ -88,9 +106,20 @@
                 <input type="number" id="inp-delay" value="0" min="0">
             </div>
             <div class="input-group">
-                <label>Icon URL (Optional)</label>
+                <label>Icon URL</label>
                 <input type="text" id="inp-icon" placeholder="https://...">
             </div>
+        </div>
+
+        <div class="input-group">
+            <label>Sound (URL or Upload)</label>
+            <input type="text" id="inp-sound-url" placeholder="https://example.com/sound.mp3" oninput="clearFile()">
+            
+            <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('inp-file').click()">
+                <div class="file-text" id="drop-text">Click or Drop Audio File (Max 20s, 1MB)</div>
+                <input type="file" id="inp-file" accept="audio/*" style="display:none" onchange="handleFileSelect(this.files)">
+            </div>
+            <div id="file-msg" class="file-status"></div>
         </div>
 
         <button onclick="scheduleNotification()">Send Notification</button>
@@ -100,51 +129,103 @@
     <div id="status">Notification Scheduled</div>
 
     <script>
-        // --- INJECTABLE SERVICE (Runs in Parent Context) ---
+        // Store base64 data here
+        let uploadedSoundData = null;
+
+        // --- FILE HANDLING LOGIC ---
+        const dropZone = document.getElementById('drop-zone');
+        const MAX_SIZE_MB = 1;
+        const MAX_DURATION_SEC = 20;
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files);
+        });
+
+        function handleFileSelect(files) {
+            if (!files || files.length === 0) return;
+            const file = files[0];
+            const msgEl = document.getElementById('file-msg');
+
+            // 1. Reset
+            uploadedSoundData = null;
+            document.getElementById('inp-sound-url').value = '';
+            
+            // 2. Validate Type
+            if (!file.type.startsWith('audio/')) {
+                showFileError("Invalid file type. Please upload audio.");
+                return;
+            }
+
+            // 3. Validate Size
+            if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+                showFileError(`File too large (Max ${MAX_SIZE_MB}MB)`);
+                return;
+            }
+
+            // 4. Read & Validate Duration
+            msgEl.innerText = "Checking audio...";
+            msgEl.className = "file-status";
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const audioData = e.target.result;
+                
+                // Create temporary audio element to check duration
+                const tempAudio = new Audio(audioData);
+                tempAudio.addEventListener('loadedmetadata', () => {
+                    if (tempAudio.duration > MAX_DURATION_SEC) {
+                        showFileError(`Audio too long (${Math.round(tempAudio.duration)}s). Max 20s.`);
+                    } else {
+                        // Success!
+                        uploadedSoundData = audioData;
+                        msgEl.innerText = `Ready: ${file.name}`;
+                        msgEl.className = "file-status success";
+                    }
+                });
+                tempAudio.addEventListener('error', () => {
+                    showFileError("Could not decode audio file.");
+                });
+            };
+            reader.onerror = () => showFileError("Error reading file.");
+            reader.readAsDataURL(file);
+        }
+
+        function showFileError(msg) {
+            const el = document.getElementById('file-msg');
+            el.innerText = msg;
+            el.className = "file-status error";
+            uploadedSoundData = null;
+        }
+
+        function clearFile() {
+            if (uploadedSoundData) {
+                uploadedSoundData = null;
+                document.getElementById('file-msg').innerText = "";
+                document.getElementById('inp-file').value = ""; // Reset file input
+            }
+        }
+
+        // --- INJECTABLE SERVICE (Unchanged Logic, just needs to be here) ---
         const SERVICE_CODE = `
 (function() {
     if (window.iOS_NotificationService) return;
     window.iOS_NotificationService = true;
     console.log("🔔 Notification Service Started");
 
-    // 1. INJECT STYLES (Supports Dark Mode auto-detection)
     const style = document.createElement('style');
     style.innerHTML = \`
-        #ios-notif-layer {
-            position: absolute; top: 54px; left: 0; width: 100%;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            z-index: 9000; pointer-events: none;
-            max-height: 80vh; overflow: hidden;
-        }
-        .ios-notif-toast {
-            width: 93%; max-width: 370px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            border-radius: 18px; padding: 12px 14px;
-            display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-            pointer-events: auto; cursor: grab;
-            transform: translateY(-100%); opacity: 0;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
-            border: 0.5px solid rgba(200,200,200,0.4);
-            flex-shrink: 0;
-        }
-        /* DARK MODE SUPPORT (Checks parent body class) */
-        body.dark-mode .ios-notif-toast {
-            background: rgba(28, 28, 30, 0.85);
-            border-color: rgba(255,255,255,0.1);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-        }
+        #ios-notif-layer { position: absolute; top: 54px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 9000; pointer-events: none; max-height: 80vh; overflow: hidden; }
+        .ios-notif-toast { width: 93%; max-width: 370px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 18px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); pointer-events: auto; cursor: grab; transform: translateY(-100%); opacity: 0; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s; border: 0.5px solid rgba(200,200,200,0.4); flex-shrink: 0; }
+        body.dark-mode .ios-notif-toast { background: rgba(28, 28, 30, 0.85); border-color: rgba(255,255,255,0.1); box-shadow: 0 5px 20px rgba(0,0,0,0.4); }
         body.dark-mode .notif-app, body.dark-mode .notif-msg { color: #fff !important; }
         body.dark-mode .notif-time { color: rgba(255,255,255,0.5) !important; }
-
         .ios-notif-toast.visible { transform: translateY(0); opacity: 1; }
         .ios-notif-toast.swiping { transition: none; cursor: grabbing; }
-        .ios-notif-toast.dismissed { 
-            transform: translateX(120%); opacity: 0; 
-            transition: transform 0.3s ease, opacity 0.3s;
-        }
-        
+        .ios-notif-toast.dismissed { transform: translateX(120%); opacity: 0; transition: transform 0.3s ease, opacity 0.3s; }
         .notif-icon { width: 40px; height: 40px; border-radius: 9px; background: #eee; object-fit: cover; flex-shrink:0; }
         .notif-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
         .notif-header { display: flex; justify-content: space-between; margin-bottom: 2px; }
@@ -154,110 +235,44 @@
     \`;
     document.head.appendChild(style);
 
-    // 2. CREATE CONTAINER
     let container = document.getElementById('ios-notif-layer');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'ios-notif-layer';
-        document.body.appendChild(container);
-    }
+    if (!container) { container = document.createElement('div'); container.id = 'ios-notif-layer'; document.body.appendChild(container); }
 
-    // 3. API
-    window.iOS_Notify = function(appId, title, msg, iconOverride) {
-        // Resolve Icon
+    window.iOS_Notify = function(appId, title, msg, iconOverride, soundUrl) {
         let iconUrl = iconOverride || 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
         if (!iconOverride) {
             const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`);
-            if (appEl) {
-                const img = appEl.querySelector('img') || appEl.querySelector('.icon-bg-img');
-                if (img) iconUrl = img.src;
-            }
+            if (appEl) { const img = appEl.querySelector('img') || appEl.querySelector('.icon-bg-img'); if (img) iconUrl = img.src; }
         }
-
-        const el = document.createElement('div');
-        el.className = 'ios-notif-toast';
-        el.innerHTML = \`
-            <img src="\${iconUrl}" class="notif-icon">
-            <div class="notif-body">
-                <div class="notif-header">
-                    <span class="notif-app">\${appId}</span>
-                    <span class="notif-time">Now</span>
-                </div>
-                <div class="notif-msg"><b>\${title}</b> \${msg}</div>
-            </div>
-        \`;
-
-        // SWIPE LOGIC
+        const el = document.createElement('div'); el.className = 'ios-notif-toast';
+        el.innerHTML = \`<img src="\${iconUrl}" class="notif-icon"><div class="notif-body"><div class="notif-header"><span class="notif-app">\${appId}</span><span class="notif-time">Now</span></div><div class="notif-msg"><b>\${title}</b> \${msg}</div></div>\`;
+        
         let startX = 0; let currentX = 0; let isDragging = false;
         el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isDragging = true; el.classList.add('swiping'); });
-        el.addEventListener('touchmove', e => {
-            if(!isDragging) return;
-            currentX = e.touches[0].clientX;
-            el.style.transform = \`translateX(\${currentX - startX}px)\`;
-        });
-        el.addEventListener('touchend', e => {
-            isDragging = false; el.classList.remove('swiping');
-            if (currentX - startX > 80) {
-                el.classList.add('dismissed'); setTimeout(() => el.remove(), 300);
-            } else { el.style.transform = ''; }
-        });
+        el.addEventListener('touchmove', e => { if(!isDragging) return; currentX = e.touches[0].clientX; el.style.transform = \`translateX(\${currentX - startX}px)\`; });
+        el.addEventListener('touchend', e => { isDragging = false; el.classList.remove('swiping'); if (currentX - startX > 80) { el.classList.add('dismissed'); setTimeout(() => el.remove(), 300); } else { el.style.transform = ''; } });
+        el.addEventListener('click', e => { if(Math.abs(currentX - startX) > 5) return; if (window.iOS && window.iOS.openApp) { const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`); if (appEl) { window.iOS.openApp(appEl, appId, 'light'); el.classList.add('dismissed'); setTimeout(() => el.remove(), 300); } } });
 
-        // CLICK
-        el.addEventListener('click', e => {
-            if(Math.abs(currentX - startX) > 5) return;
-            if (window.iOS && window.iOS.openApp) {
-                const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`);
-                if (appEl) {
-                    window.iOS.openApp(appEl, appId, 'light');
-                    el.classList.add('dismissed'); setTimeout(() => el.remove(), 300);
-                }
-            }
-        });
-
-        container.prepend(el);
-        requestAnimationFrame(() => el.classList.add('visible'));
+        container.prepend(el); requestAnimationFrame(() => el.classList.add('visible'));
         
-        // Sound
-        const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(()=>{});
-
+        if (soundUrl && typeof soundUrl === 'string' && soundUrl.trim() !== '') {
+            const audio = new Audio(soundUrl); audio.volume = 0.5;
+            audio.play().catch(e => console.warn('Sound play failed:', e));
+        }
         setTimeout(() => { if(el.parentElement) { el.classList.add('dismissed'); setTimeout(() => el.remove(), 300); } }, 5000);
     };
 
-    // 4. BACKGROUND WORKER (LocalStorage Queue with Timestamps)
     setInterval(() => {
-        const queueStr = localStorage.getItem('ios_notif_queue');
-        if (!queueStr) return;
-        
-        const queue = JSON.parse(queueStr);
-        const now = Date.now();
-        const readyItems = [];
-        const futureItems = [];
-
-        queue.forEach(item => {
-            if (!item.showAfter || now >= item.showAfter) {
-                readyItems.push(item);
-            } else {
-                futureItems.push(item);
-            }
-        });
-
-        if (readyItems.length > 0) {
-            localStorage.setItem('ios_notif_queue', JSON.stringify(futureItems));
-            readyItems.forEach(item => {
-                window.iOS_Notify(item.appId, item.title, item.msg, item.icon);
-            });
-        }
+        const queueStr = localStorage.getItem('ios_notif_queue'); if (!queueStr) return;
+        const queue = JSON.parse(queueStr); const now = Date.now(); const readyItems = []; const futureItems = [];
+        queue.forEach(item => { if (!item.showAfter || now >= item.showAfter) { readyItems.push(item); } else { futureItems.push(item); } });
+        if (readyItems.length > 0) { localStorage.setItem('ios_notif_queue', JSON.stringify(futureItems)); readyItems.forEach(item => { window.iOS_Notify(item.appId, item.title, item.msg, item.icon, item.sound); }); }
     }, 1000);
-
 })();
         `;
 
-        // --- APP LOGIC ---
-
         function injectService() {
-            if (window.parent === window) return; // Not embedded
+            if (window.parent === window) return;
             window.parent.postMessage({ type: 'IOS_INJECT_SCRIPT', script: SERVICE_CODE }, '*');
         }
 
@@ -267,15 +282,16 @@
             const msg = document.getElementById('inp-msg').value;
             const delaySec = parseInt(document.getElementById('inp-delay').value) || 0;
             const icon = document.getElementById('inp-icon').value;
+            
+            // Priority: Uploaded File -> URL Input -> Empty (Silent)
+            const sound = uploadedSoundData || document.getElementById('inp-sound-url').value;
 
             const payload = {
-                appId, title, msg, icon,
+                appId, title, msg, icon, sound,
                 showAfter: Date.now() + (delaySec * 1000)
             };
 
-            // Push to Queue (Try Direct Storage first, fallback to PostMessage)
             try {
-                // Try reading parent storage directly (Same Origin)
                 if (window.parent.localStorage) {
                     const queue = JSON.parse(window.parent.localStorage.getItem('ios_notif_queue') || '[]');
                     queue.push(payload);
@@ -283,7 +299,6 @@
                     showStatus("Scheduled (Direct)");
                 }
             } catch (e) {
-                // Cross Origin Fallback
                 window.parent.postMessage({ type: 'IOS_NOTIFICATION_QUEUE', payload: payload }, '*');
                 showStatus("Scheduled (Bridge)");
             }
