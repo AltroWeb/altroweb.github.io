@@ -46,8 +46,6 @@
         body.dark-mode .hero { background: #000; border-bottom: 1px solid #333; }
         body.dark-mode .hero h1 { color: #fff; }
         
-        
-
         body.dark-mode .text-page li { color: #ccc; }
         body.dark-mode .text-page p { color: #ccc; }
         body.dark-mode footer { background: #000; border-top: 1px solid #333; }
@@ -401,6 +399,7 @@ body.dark-mode .info-box a {
                 <a href="#doc-deploy">Deployment</a>
                 <a href="#doc-verify">Verification</a>
                 <a href="#doc-api">System APIs</a>
+                <a href="#doc-advanced">Advanced Config</a>
             </aside>
             <main class="doc-content">
                 <h1>Documentation</h1>
@@ -470,6 +469,88 @@ body.dark-mode .info-box a {
 }
                     </div>
                 </div>
+
+                <div id="doc-advanced" class="doc-block">
+                    <h3>Advanced Configuration</h3>
+                    <p>Developers can programmatically modify the core appearance and behavior of the Simulator by injecting configuration JSON directly into the host's <code>localStorage</code>. This allows for powerful customizations like icon packs, system fonts, and UI tweaks.</p>
+
+                    <strong>1. Fetching Installed Apps</strong>
+                    <p>To retrieve a list of all currently installed apps (system and dynamic) from the parent context:</p>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">fetchAllApps</span>() {
+    <span class="hl-c">// Only works when embedded in the Simulator</span>
+    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span> [];
+
+    <span class="hl-k">const</span> parentDoc = window.parent.document;
+    <span class="hl-k">const</span> apps = [];
+    <span class="hl-k">const</span> seen = <span class="hl-k">new</span> <span class="hl-f">Set</span>();
+
+    <span class="hl-c">// Scrape DOM for System & Installed Apps</span>
+    parentDoc.<span class="hl-f">querySelectorAll</span>(<span class="hl-s">'.app-item'</span>).<span class="hl-f">forEach</span>(el => {
+        <span class="hl-k">const</span> name = el.<span class="hl-f">querySelector</span>(<span class="hl-s">'.app-name'</span>)?.innerText.trim();
+        <span class="hl-c">// Prefer Data Attribute ID, fallback to Name</span>
+        <span class="hl-k">const</span> id = el.<span class="hl-f">getAttribute</span>(<span class="hl-s">'data-app-id'</span>) || name;
+        <span class="hl-k">const</span> img = el.<span class="hl-f">querySelector</span>(<span class="hl-s">'img'</span>)?.src;
+
+        <span class="hl-k">if</span> (id && !seen.<span class="hl-f">has</span>(id)) {
+            seen.<span class="hl-f">add</span>(id);
+            apps.<span class="hl-f">push</span>({ id, url: img || <span class="hl-s">''</span> });
+        }
+    });
+    <span class="hl-k">return</span> apps;
+}
+                    </div>
+
+                    <strong>2. Applying Custom Icons</strong>
+                    <p>Inject a JSON map of <code>AppID -> IconURL</code> into <code>ios_custom_icons</code>. The simulator reads this on startup/refresh to override default icons.</p>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">injectIcons</span>(iconMap) {
+    <span class="hl-c">// iconMap example: { "Settings": "https://...", "com.myapp.id": "https://..." }</span>
+    window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_custom_icons'</span>, <span class="hl-f">JSON.stringify</span>(iconMap));
+    
+    <span class="hl-c">// Optional: Force Reload to apply immediately</span>
+    setTimeout(() => window.parent.location.<span class="hl-f">reload</span>(), 1000);
+}
+                    </div>
+
+                    <strong>3. Global Theming (CSS Injection)</strong>
+                    <p>You can inject raw CSS to modify system fonts, hide labels, or change corner radii by writing to <code>ios_compiled_css</code>. The Simulator injects this style block on boot.</p>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">applyTheme</span>(settings) {
+    <span class="hl-k">let</span> css = <span class="hl-s">''</span>;
+
+    <span class="hl-c">// 1. Hide App Names</span>
+    <span class="hl-k">if</span> (settings.hideNames) {
+        css += <span class="hl-s">`.homescreen-group .app-name, .dock-container .app-name { display: none !important; } `</span>;
+    }
+
+    <span class="hl-c">// 2. Icon Roundness (0px to 50%)</span>
+    <span class="hl-k">if</span> (settings.roundness !== undefined) {
+        css += <span class="hl-s">`.app-icon { border-radius: ${settings.roundness}px !important; } `</span>;
+    }
+
+    <span class="hl-c">// 3. Custom Font (Google Fonts URL)</span>
+    <span class="hl-k">if</span> (settings.fontUrl) {
+        <span class="hl-c">// Inject Link Tag into Parent Head</span>
+        <span class="hl-k">const</span> linkId = <span class="hl-s">'sim-custom-font-link'</span>;
+        <span class="hl-k">let</span> link = window.parent.document.<span class="hl-f">getElementById</span>(linkId);
+        <span class="hl-k">if</span> (!link) {
+            link = window.parent.document.<span class="hl-f">createElement</span>(<span class="hl-s">'link'</span>);
+            link.id = linkId; link.rel = <span class="hl-s">'stylesheet'</span>;
+            window.parent.document.head.<span class="hl-f">appendChild</span>(link);
+        }
+        link.href = settings.fontUrl;
+        
+        <span class="hl-c">// Apply to all text elements</span>
+        css += <span class="hl-s">`body, .app-name, .nav-title, .store-name { font-family: inherit, -apple-system, sans-serif !important; }`</span>;
+    }
+
+    <span class="hl-c">// Save to Storage</span>
+    window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_compiled_css'</span>, css);
+}
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>

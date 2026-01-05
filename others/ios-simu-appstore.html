@@ -1231,6 +1231,35 @@ setTimeout(() => {
 // ---------------------------------
 
 
+/* --- added THIS TO IOSEngine constructor() --- */
+window.addEventListener('message', (event) => {
+    // 1. Handle Script Injection (Service Installer)
+    if (event.data && event.data.type === 'IOS_INJECT_SCRIPT') {
+        const scriptContent = event.data.script;
+        const script = document.createElement('script');
+        script.textContent = scriptContent;
+        document.body.appendChild(script);
+        console.log("Service Injected via postMessage");
+    }
+
+    // 2. Handle Direct Notification (Cross-Origin Bridge)
+    if (event.data && event.data.type === 'IOS_NOTIFICATION') {
+        const p = event.data.payload;
+        if (window.iOS_Notify) {
+            window.iOS_Notify(p.appId, p.title, p.msg, p.icon);
+        }
+    }
+    
+    // 3. Handle Queue Push (Cross-Origin Bridge)
+    if (event.data && event.data.type === 'IOS_NOTIFICATION_QUEUE') {
+        const queue = JSON.parse(localStorage.getItem('ios_notif_queue') || '[]');
+        queue.push(event.data.payload);
+        localStorage.setItem('ios_notif_queue', JSON.stringify(queue));
+    }
+});
+/* ------------------------------------------- */
+
+
 
             }
 
