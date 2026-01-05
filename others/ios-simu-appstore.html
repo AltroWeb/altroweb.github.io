@@ -572,15 +572,12 @@
 
 
 
-
-/* --- NOTIFICATIONS SYSTEM --- */
-/* --- UPDATED NOTIFICATION SYSTEM --- */
+/* --- PRO NOTIFICATION SYSTEM (Final) --- */
 .notification-zone {
     position: absolute;
     top: 54px;
     left: 0;
     width: 100%;
-    /* Use flex-start so new ones push old ones down, but allow scrolling */
     display: flex;
     flex-direction: column; 
     align-items: center;
@@ -593,14 +590,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding-bottom: 20px;
+    
     /* Hide scrollbar */
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 .notification-zone::-webkit-scrollbar { display: none; }
 
 .notification-banner {
-    /* ... existing styles ... */
     width: 93%;
     max-width: 370px;
     background: rgba(255, 255, 255, 0.75);
@@ -613,42 +610,63 @@
     gap: 12px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.15);
     pointer-events: auto; /* Clickable */
-    transform: translateX(0); /* Default state for swipe */
-    opacity: 0; /* Initial state for entry anim */
+    
+    /* INITIAL STATE */
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
     animation: notif-enter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    
     border: 0.5px solid rgba(200,200,200,0.3);
     cursor: grab;
-    flex-shrink: 0; /* Prevent shrinking in flex container */
-    touch-action: pan-y; /* Allow vertical scroll, handle horizontal manually */
-    transition: transform 0.1s linear; /* Smooth drag */
+    flex-shrink: 0;
+    touch-action: none; /* Critical for custom swipe handling */
+    user-select: none;
+
+    /* SMOOTH COLLAPSE TRANSITIONS */
+    /* This ensures siblings slide up smoothly when one is removed */
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                opacity 0.2s ease,
+                max-height 0.3s ease, 
+                margin-bottom 0.3s ease, 
+                padding 0.3s ease,
+                border 0.3s ease;
+                
+    max-height: 100px; /* Prepare for collapse */
 }
 
-/* Specific animations classes */
+/* INTERACTION STATES */
 .notification-banner.swiping {
-    transition: none; /* Immediate follow finger */
+    transition: none !important; /* Immediate follow finger */
+    cursor: grabbing;
 }
+
 .notification-banner.dismiss-left {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    transform: translateX(-100%) !important;
+    transform: translateX(-120%) !important;
     opacity: 0 !important;
 }
+
 .notification-banner.dismiss-right {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    transform: translateX(100%) !important;
+    transform: translateX(120%) !important;
     opacity: 0 !important;
 }
+
 .notification-banner.snap-back {
-    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     transform: translateX(0) !important;
 }
 
-/* ... Keep existing dark mode & inner content styles ... */
-
-
-.notification-banner.leaving {
-    animation: notif-exit 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+/* THE MAGIC "COLLAPSE" CLASS */
+/* This is what makes the notifications below slide up smoothly */
+.notification-banner.collapsed {
+    max-height: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden;
 }
 
+/* DARK MODE */
 body.dark-mode .notification-banner {
     background: rgba(35, 35, 35, 0.75);
     color: white;
@@ -656,6 +674,7 @@ body.dark-mode .notification-banner {
     border: 0.5px solid rgba(255,255,255,0.1);
 }
 
+/* INNER CONTENT */
 .notif-icon {
     width: 38px; height: 38px;
     border-radius: 9px;
@@ -699,22 +718,11 @@ body.dark-mode .notification-banner {
     text-overflow: ellipsis;
 }
 
+/* ENTRY ANIMATION */
 @keyframes notif-enter {
     to { transform: translateY(0) scale(1); opacity: 1; }
 }
-@keyframes notif-exit {
-    to { transform: translateY(-30px) scale(0.9); opacity: 0; }
-}
 
-/* Add this to your CSS */
-@keyframes notif-exit {
-    0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-50px) scale(0.8); opacity: 0; }
-}
-
-.notification-banner.leaving {
-    animation: notif-exit 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
 
 
     </style>
@@ -1459,16 +1467,16 @@ if (this.isDarkMode) {
 
 /* --- REPLACE sendNotification IN IOSEngine --- */
 
+/* --- REPLACE sendNotification IN IOSEngine --- */
+
 sendNotification(targetId, title, message) {
     if (!this.allowNotifications) return;
     this.playNotificationSound();
 
     const zone = document.getElementById('notification-zone');
-
-    // 1. Resolve Icon
     const iconUrl = this.resolveAppIcon(targetId);
 
-    // 2. Create Banner
+    // Create Banner
     const banner = document.createElement('div');
     banner.className = 'notification-banner';
     banner.innerHTML = `
@@ -1482,62 +1490,90 @@ sendNotification(targetId, title, message) {
         </div>
     `;
 
-    // 3. Swipe Logic (Same as before)
+    // --- HELPER: Smooth Remove ---
+    const smoothRemove = () => {
+        // 1. Swipe away visually
+        banner.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        banner.style.opacity = '0';
+        
+        // 2. Collapse layout so siblings slide up
+        setTimeout(() => {
+            banner.classList.add('collapsed');
+            // 3. Remove from DOM after collapse matches CSS transition (300ms)
+            setTimeout(() => banner.remove(), 300);
+        }, 200); 
+    };
+
+    // --- SWIPE LOGIC ---
     let startX = 0;
     let currentX = 0;
     let isDragging = false;
 
-    banner.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
+    banner.addEventListener('mousedown', startDrag); // Desktop support
+    banner.addEventListener('touchstart', startDrag, {passive: true});
+
+    function startDrag(e) {
+        startX = (e.touches ? e.touches[0].clientX : e.clientX);
         isDragging = true;
         banner.classList.add('swiping');
-    }, {passive: true});
+    }
 
-    banner.addEventListener('touchmove', (e) => {
+    banner.addEventListener('mousemove', moveDrag);
+    banner.addEventListener('touchmove', moveDrag, {passive: false});
+
+    function moveDrag(e) {
         if (!isDragging) return;
-        currentX = e.touches[0].clientX;
+        currentX = (e.touches ? e.touches[0].clientX : e.clientX);
         const diff = currentX - startX;
         banner.style.transform = `translateX(${diff}px)`;
-    }, {passive: true});
+    }
 
-    banner.addEventListener('touchend', (e) => {
+    banner.addEventListener('mouseup', endDrag);
+    banner.addEventListener('touchend', endDrag);
+    banner.addEventListener('mouseleave', endDrag);
+
+    function endDrag(e) {
+        if (!isDragging) return;
         isDragging = false;
         banner.classList.remove('swiping');
+        
         const diff = currentX - startX;
-        const threshold = 100;
+        const threshold = 80;
+
         if (diff > threshold) {
             banner.classList.add('dismiss-right');
-            setTimeout(() => banner.remove(), 300);
+            setTimeout(smoothRemove, 200);
         } else if (diff < -threshold) {
             banner.classList.add('dismiss-left');
-            setTimeout(() => banner.remove(), 300);
+            setTimeout(smoothRemove, 200);
         } else {
             banner.classList.add('snap-back');
-            setTimeout(() => { banner.classList.remove('snap-back'); banner.style.transform = ''; }, 300);
+            banner.style.transform = ''; // Reset
+            setTimeout(() => banner.classList.remove('snap-back'), 300);
         }
-    });
+    }
 
-    // 4. CLICK HANDLER - THE FIX
+    // --- CLICK LOGIC (Robust App Finder) ---
     banner.addEventListener('click', (e) => {
-        if (Math.abs(currentX - startX) > 10) return; // Ignore drag
-        
-        banner.remove(); // Dismiss
+        if (Math.abs(currentX - startX) > 5) return; // It was a drag, not a click
 
-        // --- ROBUST FINDER LOGIC ---
+        smoothRemove();
+
+        // Find the App Element
         const allApps = document.querySelectorAll('.app-item');
         let targetAppEl = null;
 
         for (const el of allApps) {
-            // Priority 1: Exact data attribute
+            // Check 1: data-app-id
             if (el.getAttribute('data-app-id') === targetId) {
                 targetAppEl = el; break;
             }
-            // Priority 2: Visual Name Match
+            // Check 2: App Name text
             const nameEl = el.querySelector('.app-name');
             if (nameEl && nameEl.innerText.trim() === targetId) {
                 targetAppEl = el; break;
             }
-            // Priority 3: Onclick Match (The fallback for your specific case)
+            // Check 3: onclick string (The "Catch-All")
             const clickAttr = el.getAttribute('onclick') || '';
             if (clickAttr.includes(`'${targetId}'`) || clickAttr.includes(`"${targetId}"`)) {
                 targetAppEl = el; break;
@@ -1545,14 +1581,14 @@ sendNotification(targetId, title, message) {
         }
 
         if (targetAppEl) {
-            // Determine theme (Music is dark, others light usually)
             const theme = targetId === 'Music' ? 'dark' : 'light';
             this.openApp(targetAppEl, targetId, theme);
         } else {
-            console.warn(`Could not find app element for: ${targetId}`);
+            console.log(`App "${targetId}" not found on home screen.`);
         }
     });
 
+    // Add to DOM
     zone.prepend(banner);
 }
 
