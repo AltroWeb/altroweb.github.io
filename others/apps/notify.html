@@ -209,7 +209,7 @@
             }
         }
 
-        // --- INJECTABLE SERVICE (Unchanged Logic, just needs to be here) ---
+        // --- INJECTABLE SERVICE (Fixed Animations) ---
         const SERVICE_CODE = `
 (function() {
     if (window.iOS_NotificationService) return;
@@ -225,7 +225,7 @@
         body.dark-mode .notif-time { color: rgba(255,255,255,0.5) !important; }
         .ios-notif-toast.visible { transform: translateY(0); opacity: 1; }
         .ios-notif-toast.swiping { transition: none; cursor: grabbing; }
-        .ios-notif-toast.dismissed { transform: translateX(120%); opacity: 0; transition: transform 0.3s ease, opacity 0.3s; }
+        /* Dismissed style removed - controlled by JS for reliability */
         .notif-icon { width: 40px; height: 40px; border-radius: 9px; background: #eee; object-fit: cover; flex-shrink:0; }
         .notif-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
         .notif-header { display: flex; justify-content: space-between; margin-bottom: 2px; }
@@ -248,10 +248,38 @@
         el.innerHTML = \`<img src="\${iconUrl}" class="notif-icon"><div class="notif-body"><div class="notif-header"><span class="notif-app">\${appId}</span><span class="notif-time">Now</span></div><div class="notif-msg"><b>\${title}</b> \${msg}</div></div>\`;
         
         let startX = 0; let currentX = 0; let isDragging = false;
-        el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isDragging = true; el.classList.add('swiping'); });
-        el.addEventListener('touchmove', e => { if(!isDragging) return; currentX = e.touches[0].clientX; el.style.transform = \`translateX(\${currentX - startX}px)\`; });
-        el.addEventListener('touchend', e => { isDragging = false; el.classList.remove('swiping'); if (currentX - startX > 80) { el.classList.add('dismissed'); setTimeout(() => el.remove(), 300); } else { el.style.transform = ''; } });
-        el.addEventListener('click', e => { if(Math.abs(currentX - startX) > 5) return; if (window.iOS && window.iOS.openApp) { const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`); if (appEl) { window.iOS.openApp(appEl, appId, 'light'); el.classList.add('dismissed'); setTimeout(() => el.remove(), 300); } } });
+        
+        el.addEventListener('touchstart', e => { 
+            startX = e.touches[0].clientX; 
+            isDragging = true; 
+            el.style.transition = 'none'; /* Critical Fix: Instant follow */
+            el.classList.add('swiping'); 
+        });
+        
+        el.addEventListener('touchmove', e => { 
+            if(!isDragging) return; 
+            currentX = e.touches[0].clientX; 
+            el.style.transform = \`translateX(\${currentX - startX}px)\`; 
+        });
+        
+        el.addEventListener('touchend', e => { 
+            isDragging = false; 
+            el.classList.remove('swiping'); 
+            
+            /* Critical Fix: Manual Exit Physics */
+            if (currentX - startX > 80) { 
+                el.style.transition = 'transform 0.3s ease, opacity 0.3s';
+                el.style.transform = 'translateX(120%)'; // Force slide off screen
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300); 
+            } else { 
+                el.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; 
+                el.style.transform = 'translateX(0px)'; // Snap back
+                setTimeout(() => { if(!isDragging) el.style.transition = ''; }, 400);
+            } 
+        });
+
+        el.addEventListener('click', e => { if(Math.abs(currentX - startX) > 5) return; if (window.iOS && window.iOS.openApp) { const appEl = document.querySelector(\`.app-item[data-app-id="\${appId}"]\`); if (appEl) { window.iOS.openApp(appEl, appId, 'light'); el.style.opacity = '0'; setTimeout(() => el.remove(), 300); } } });
 
         container.prepend(el); requestAnimationFrame(() => el.classList.add('visible'));
         
@@ -259,7 +287,16 @@
             const audio = new Audio(soundUrl); audio.volume = 0.5;
             audio.play().catch(e => console.warn('Sound play failed:', e));
         }
-        setTimeout(() => { if(el.parentElement) { el.classList.add('dismissed'); setTimeout(() => el.remove(), 300); } }, 5000);
+        
+        /* Critical Fix: Smooth Auto-Dismiss */
+        setTimeout(() => { 
+            if(el.parentElement && !isDragging) { 
+                el.style.transition = 'transform 0.5s ease, opacity 0.5s';
+                el.style.transform = 'translateY(-20px)';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500); 
+            } 
+        }, 5000);
     };
 
     setInterval(() => {
