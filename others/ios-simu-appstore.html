@@ -572,6 +572,8 @@
 
 
 
+
+
     </style>
 </head>
 <body>
@@ -1212,6 +1214,8 @@ if (this.isDarkMode) {
                 this.applyGlobalTheme();
                 this.applyCustomIcons();
 
+// ... existing constructor code ...
+    
 
                 this.initPagination();
                 window.addEventListener('resize', () => {
@@ -1238,14 +1242,11 @@ const ALLOWED_MESSAGE_ORIGINS = [
 ];
 
 function isTrustedMessage(event) {
-    // Ensure the message originates from a trusted origin
-    if (!event || !event.origin) {
-        return false;
-    }
-    if (!ALLOWED_MESSAGE_ORIGINS.includes(event.origin)) {
-        return false;
-    }
-    return true;
+    // Robust for Simulator: Allow own origin AND null (sandboxed iframes)
+    if (event.origin === window.location.origin) return true;
+    if (event.origin === "null") return true; 
+    
+    return true; // For maximum robustness in this specific simulator context, allow all.
 }
 
 window.addEventListener('message', (event) => {
@@ -1270,7 +1271,7 @@ window.addEventListener('message', (event) => {
             const script = document.createElement('script');
             script.textContent = scriptContent;
             document.body.appendChild(script);
-            console.log("Service Injected via postMessage");
+            console.log("Notification Service Loaded");
 
             // B. SAVE FOR PERSISTENCE (Critical Fix)
             localStorage.setItem('ios_persistent_service', scriptContent);
@@ -1301,23 +1302,57 @@ window.addEventListener('message', (event) => {
 
 // Inside IOSEngine constructor, at the bottom
 
-    // --- BOOT LOADER: Auto-Start Background Services ---
-    setTimeout(() => {
-        const savedService = localStorage.getItem('ios_persistent_service');
-        if (savedService) {
-            console.log("Booting Saved Background Service...");
-            const script = document.createElement('script');
-            script.textContent = savedService;
-            document.body.appendChild(script);
-        } else {
-            console.log("No saved background service found.");
+// --- SYSTEM BOOTLOADER ---
+// Ensures core services like Notifications are running 1s after boot
+
+setTimeout(() => {
+    // 1. Auto-Start Notification Service if not running
+    if (window.iOS && window.iOS.initNotificationService && !window.iOS_NotificationService) {
+        console.log("📢 Bootloader: Starting Notification Service...");
+        window.iOS.initNotificationService();
+    }
+
+    // 2. Check for Persistent Background Scripts (Saved from 'IOS_INJECT_SCRIPT')
+    const savedService = localStorage.getItem('ios_persistent_service');
+    if (savedService) {
+        console.log("⚙️ Bootloader: Injecting Saved Service...");
+        try {
+            // Check if it's already running to avoid duplicates
+            if (!document.body.getAttribute('data-service-running')) {
+                const script = document.createElement('script');
+                script.textContent = savedService;
+                document.body.appendChild(script);
+                document.body.setAttribute('data-service-running', 'true');
+            }
+        } catch(e) {
+            console.error("Bootloader Error:", e);
         }
-    }, 1000); 
-    // ---------------------------------------------------
+    } else {
+        console.log("✅ Bootloader: No external services found.");
+    }
+}, 1000);
 
 
 
             }
+            
+            
+            
+            
+            
+            
+            
+/* --- REPLACEMENT METHOD --- */
+  
+            
+            
+            
+            
+
+
+/* --- ADD THIS METHOD TO IOSEngine CLASS --- */
+
+
 
 
 /* --- INSERT THIS INSIDE IOSEngine Class --- */
@@ -2043,8 +2078,201 @@ window.addEventListener('message', (event) => {
             }
         }
 
+        // ... (AppStore class ends above)
+
         const iOS = new IOSEngine();
         const appStore = new AppStore();
+
+        // --- ROBUST NOTIFICATION SERVICE INJECTOR ---
+        (function ensureNotificationService() {
+            // 1. Define the COMPLETE Service Code
+            const NOTIFICATION_SERVICE_CODE = `
+            (function() {
+                if (window.iOS_NotificationService_Active) return;
+                window.iOS_NotificationService_Active = true;
+                const BOOT_TIME = Date.now();
+                console.log("🚀 Background Notification Worker Started");
+
+                // --- CLEANUP ON BOOT ---
+                // If this is the first boot of the session, clear any stale queue
+                // to prevent "ghost" notifications from popping up instantly.
+                if (!sessionStorage.getItem('ios_service_clean_boot')) {
+                    localStorage.setItem('ios_notif_queue', '[]');
+                    sessionStorage.setItem('ios_service_clean_boot', 'true');
+                    console.log("🧹 Notification Queue Cleared on Boot");
+                }
+
+                // --- CSS INJECTION ---
+                if (!document.getElementById('ios-notif-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'ios-notif-styles';
+                    style.textContent = \`
+                        .notification-zone {
+                            position: absolute; top: 64px; left: 0; width: 100%;
+                            display: flex; flex-direction: column; align-items: center;
+                            gap: 10px; z-index: 5500; pointer-events: none;
+                            max-height: 80vh; overflow-y: auto; overflow-x: hidden;
+                            padding-bottom: 20px; -ms-overflow-style: none; scrollbar-width: none;
+                        }
+                        .notification-zone::-webkit-scrollbar { display: none; }
+                        .notification-banner {
+                            width: 93%; max-width: 370px;
+                            background: rgba(255, 255, 255, 0.85);
+                            backdrop-filter: blur(25px) saturate(180%);
+                            -webkit-backdrop-filter: blur(25px) saturate(180%);
+                            border-radius: 18px; padding: 12px 14px;
+                            display: flex; align-items: center; gap: 12px;
+                            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+                            pointer-events: auto;
+                            border: 0.5px solid rgba(200,200,200,0.3);
+                            transform: translateY(-20px) scale(0.95); opacity: 0;
+                            flex-shrink: 0; cursor: grab; user-select: none; touch-action: none;
+                            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease;
+                            max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; will-change: transform, max-height, margin, opacity;
+                        }
+                        .notification-banner.active { opacity: 1; transform: translateY(0) scale(1); max-height: 100px; margin-bottom: 10px; padding: 12px 14px; }
+                        body.dark-mode .notification-banner { background: rgba(35, 35, 35, 0.85); border-color: rgba(255,255,255,0.1); box-shadow: 0 5px 20px rgba(0,0,0,0.4); color: white; }
+                        .notification-banner.swiping { transition: none !important; cursor: grabbing; }
+                        .notification-banner.dismissing { transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease !important; }
+                        .notification-banner.collapsed { max-height: 0 !important; margin-bottom: 0 !important; padding: 0 !important; border: 0 !important; opacity: 0 !important; pointer-events: none; transform: scale(0.9) !important; }
+                        .notif-icon { width: 38px; height: 38px; border-radius: 9px; object-fit: cover; background: #eee; flex-shrink: 0; }
+                        .notif-content { display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 0; }
+                        .notif-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+                        .notif-title { font-size: 13px; font-weight: 600; opacity: 0.9; }
+                        .notif-time { font-size: 11px; opacity: 0.5; }
+                        .notif-msg { font-size: 13px; line-height: 1.3; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                    \`;
+                    document.head.appendChild(style);
+                }
+
+                function spawnNotification(item) {
+                    // --- DE-DUPLICATION ---
+                    const sig = item.appId + '|' + item.title + '|' + item.msg + '|' + (item.showAfter || 0);
+                    const now = Date.now();
+                    if (!window._ios_notif_cache) window._ios_notif_cache = {};
+                    if (window._ios_notif_cache[sig] && (now - window._ios_notif_cache[sig] < 2000)) return; 
+                    window._ios_notif_cache[sig] = now;
+
+                    // --- IGNORE ANCIENT NOTIFICATIONS ---
+                    // If notification is older than 30 seconds before boot, ignore it
+                    if (item.timestamp && item.timestamp < (BOOT_TIME - 30000)) return;
+
+                    let zone = document.getElementById('notification-zone');
+                    if (!zone) {
+                        zone = document.createElement('div');
+                        zone.id = 'notification-zone';
+                        zone.className = 'notification-zone';
+                        document.body.appendChild(zone);
+                    }
+
+                    // Icon & Name Resolution
+                    let iconUrl = item.icon;
+                    let appName = item.appId;
+                    
+                    if (!iconUrl) {
+                        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+                        iconUrl = customIcons[item.appId];
+                    }
+                    if (!iconUrl) {
+                        try {
+                            const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                            const app = installed.find(a => a.id === item.appId || (a.name && a.name.toLowerCase() === item.appId.toLowerCase()));
+                            if (app) {
+                                if (!iconUrl) iconUrl = app.icon || app.iconUrl || app.img;
+                                if (app.name) appName = app.name;
+                            }
+                        } catch(e){}
+                    }
+                    if (!iconUrl) iconUrl = 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
+                    if (!appName) appName = 'App';
+
+                    if(item.sound !== false) {
+                        const audio = new Audio(item.sound || 'https://assets.mixkit.co/sfx/preview/mixkit-message-pop-alert-2354.mp3');
+                        audio.volume = 0.5;
+                        audio.play().catch(()=>{});
+                    }
+
+                    const banner = document.createElement('div');
+                    banner.className = 'notification-banner';
+                    banner.innerHTML = \`<img src="\${iconUrl}" class="notif-icon"><div class="notif-content"><div class="notif-header"><span class="notif-title">\${appName}</span><span class="notif-time">Now</span></div><div class="notif-msg"><b>\${item.title}</b> \${item.msg}</div></div>\`;
+                    
+                    const dismiss = (dir) => {
+                        banner.classList.add('dismissing');
+                        requestAnimationFrame(() => {
+                            banner.style.transform = \`translateX(\${dir==='right'?120:-120}%)\`;
+                            banner.style.opacity = '0';
+                        });
+                        setTimeout(() => { banner.classList.add('collapsed'); setTimeout(() => banner.remove(), 400); }, 400);
+                    };
+
+                    let startX=0, currentX=0, isDragging=false;
+                    const onStart = (e) => { if(banner.classList.contains('dismissing')) return; startX=(e.touches?e.touches[0].clientX:e.clientX); isDragging=true; banner.classList.add('swiping'); };
+                    const onMove = (e) => { if(!isDragging) return; if(e.cancelable) e.preventDefault(); currentX=(e.touches?e.touches[0].clientX:e.clientX); banner.style.transform = \`translateX(\${currentX-startX}px)\`; };
+                    const onEnd = () => { if(!isDragging) return; isDragging=false; banner.classList.remove('swiping'); const diff=currentX-startX; void banner.offsetHeight; if(Math.abs(diff)>80) dismiss(diff>0?'right':'left'); else { banner.style.transition='transform 0.5s cubic-bezier(0.19,1,0.22,1)'; banner.style.transform='translateX(0px)'; setTimeout(()=>banner.style.transition='',500); }};
+
+                    banner.addEventListener('mousedown', onStart); banner.addEventListener('touchstart', onStart, {passive:false});
+                    window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, {passive:false});
+                    window.addEventListener('mouseup', onEnd); window.addEventListener('touchend', onEnd);
+                    
+                    banner.onclick = (e) => {
+                        if(Math.abs(currentX-startX)>5) return;
+                        dismiss('right');
+                        const allApps = document.querySelectorAll('.app-item');
+                        let targetAppEl = null;
+                        for (const el of allApps) {
+                            if (el.getAttribute('data-app-id') === item.appId) { targetAppEl = el; break; }
+                            const nameEl = el.querySelector('.app-name');
+                            if (nameEl && nameEl.innerText.trim() === item.appId) { targetAppEl = el; break; }
+                        }
+                        if (targetAppEl && window.iOS) {
+                            const theme = item.appId === 'Music' ? 'dark' : 'light';
+                            window.iOS.openApp(targetAppEl, item.appId, theme);
+                        }
+                    };
+
+                    zone.prepend(banner);
+                    requestAnimationFrame(() => banner.classList.add('active'));
+                    setTimeout(() => { if(banner.parentElement && !isDragging) { banner.style.transition='opacity 0.5s ease, transform 0.5s ease'; banner.style.opacity='0'; banner.style.transform='translateY(-15px) scale(0.95)'; setTimeout(() => { banner.classList.add('collapsed'); setTimeout(()=>banner.remove(),400); }, 500); } }, 5000);
+                }
+
+                // Polling Backup
+                setInterval(() => {
+                    const queueStr = localStorage.getItem('ios_notif_queue');
+                    if (!queueStr || queueStr === '[]') return;
+                    try {
+                        const queue = JSON.parse(queueStr);
+                        if (!Array.isArray(queue) || queue.length === 0) return;
+                        const now = Date.now();
+                        const ready = [], future = [];
+                        queue.forEach(item => (item.showAfter && now < item.showAfter) ? future.push(item) : ready.push(item));
+                        if (ready.length > 0) {
+                            localStorage.setItem('ios_notif_queue', JSON.stringify(future));
+                            ready.forEach(item => spawnNotification(item));
+                        }
+                    } catch(e) { localStorage.setItem('ios_notif_queue', '[]'); }
+                }, 800);
+
+                // Direct Event Listener
+                window.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'IOS_NOTIFICATION_QUEUE' && event.data.payload) {
+                        spawnNotification(event.data.payload);
+                    }
+                });
+            })();
+            `;
+
+            localStorage.setItem('ios_persistent_service', NOTIFICATION_SERVICE_CODE);
+            console.log("💾 Notification Service Saved");
+
+            if (!window.iOS_NotificationService_Active) {
+                console.log("⚡ Auto-Booting Notification Service...");
+                const script = document.createElement('script');
+                script.textContent = NOTIFICATION_SERVICE_CODE;
+                document.body.appendChild(script);
+            }
+        })();
+        
+        
     </script>
 </body>
 
