@@ -2094,12 +2094,9 @@ setTimeout(() => {
                 console.log("🚀 Background Notification Worker Started");
 
                 // --- CLEANUP ON BOOT ---
-                // If this is the first boot of the session, clear any stale queue
-                // to prevent "ghost" notifications from popping up instantly.
                 if (!sessionStorage.getItem('ios_service_clean_boot')) {
                     localStorage.setItem('ios_notif_queue', '[]');
                     sessionStorage.setItem('ios_service_clean_boot', 'true');
-                    console.log("🧹 Notification Queue Cleared on Boot");
                 }
 
                 // --- CSS INJECTION ---
@@ -2108,7 +2105,7 @@ setTimeout(() => {
                     style.id = 'ios-notif-styles';
                     style.textContent = \`
                         .notification-zone {
-                            position: absolute; top: 64px; left: 0; width: 100%;
+                            position: absolute; top: 54px; left: 0; width: 100%;
                             display: flex; flex-direction: column; align-items: center;
                             gap: 10px; z-index: 5500; pointer-events: none;
                             max-height: 80vh; overflow-y: auto; overflow-x: hidden;
@@ -2152,9 +2149,6 @@ setTimeout(() => {
                     if (!window._ios_notif_cache) window._ios_notif_cache = {};
                     if (window._ios_notif_cache[sig] && (now - window._ios_notif_cache[sig] < 2000)) return; 
                     window._ios_notif_cache[sig] = now;
-
-                    // --- IGNORE ANCIENT NOTIFICATIONS ---
-                    // If notification is older than 30 seconds before boot, ignore it
                     if (item.timestamp && item.timestamp < (BOOT_TIME - 30000)) return;
 
                     let zone = document.getElementById('notification-zone');
@@ -2165,36 +2159,53 @@ setTimeout(() => {
                         document.body.appendChild(zone);
                     }
 
-                    // Icon & Name Resolution
-                    let iconUrl = item.icon;
-                    let appName = item.appId;
+                    // --- CRITICAL IDENTITY RESOLUTION ---
+                    // item.appId might be "Messages" OR "VAVKvVcXcJYpnQncSN3f"
                     
-                    if (!iconUrl) {
-                        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
-                        iconUrl = customIcons[item.appId];
-                    }
-                    if (!iconUrl) {
-                        try {
-                            const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                            const app = installed.find(a => a.id === item.appId || (a.name && a.name.toLowerCase() === item.appId.toLowerCase()));
-                            if (app) {
-                                if (!iconUrl) iconUrl = app.icon || app.iconUrl || app.img;
-                                if (app.name) appName = app.name;
-                            }
-                        } catch(e){}
-                    }
-                    if (!iconUrl) iconUrl = 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
-                    if (!appName) appName = 'App';
+                    let iconUrl = item.icon;
+                    let displayTitle = item.appId; // Default to what was sent
+                    let launchId = item.appId;     // The ID used to open the app
+                    
+                    try {
+                        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                        const searchStr = String(item.appId).trim().toLowerCase();
 
+                        // Robust Find: Check ID, Name, or if ID contains the search string
+                        const match = installed.find(a => {
+                            const aId = String(a.id || '').toLowerCase();
+                            const aName = String(a.name || '').toLowerCase();
+                            return aId === searchStr || aName === searchStr;
+                        });
+
+                        if (match) {
+                            // FOUND IT! Switch to the Real details
+                            launchId = match.id; // Switch to Firestore ID
+                            displayTitle = match.name; // Use Official Name
+                            if (!iconUrl) iconUrl = match.icon || match.iconUrl || match.img;
+                        }
+                    } catch(e) { console.error("Identity Resolve Error", e); }
+
+                    // Fallback to Custom Icons if still no icon
+                    if (!iconUrl) {
+                         const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+                         if (customIcons[item.appId]) iconUrl = customIcons[item.appId];
+                    }
+
+                    // Final Defaults
+                    if (!iconUrl) iconUrl = 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
+                    if (!displayTitle) displayTitle = 'Notification';
+
+                    // Audio
                     if(item.sound !== false) {
                         const audio = new Audio(item.sound || 'https://assets.mixkit.co/sfx/preview/mixkit-message-pop-alert-2354.mp3');
                         audio.volume = 0.5;
                         audio.play().catch(()=>{});
                     }
 
+                    // DOM Creation
                     const banner = document.createElement('div');
                     banner.className = 'notification-banner';
-                    banner.innerHTML = \`<img src="\${iconUrl}" class="notif-icon"><div class="notif-content"><div class="notif-header"><span class="notif-title">\${appName}</span><span class="notif-time">Now</span></div><div class="notif-msg"><b>\${item.title}</b> \${item.msg}</div></div>\`;
+                    banner.innerHTML = \`<img src="\${iconUrl}" class="notif-icon"><div class="notif-content"><div class="notif-header"><span class="notif-title">\${displayTitle}</span><span class="notif-time">Now</span></div><div class="notif-msg"><b>\${item.title}</b> \${item.msg}</div></div>\`;
                     
                     const dismiss = (dir) => {
                         banner.classList.add('dismissing');
@@ -2217,16 +2228,30 @@ setTimeout(() => {
                     banner.onclick = (e) => {
                         if(Math.abs(currentX-startX)>5) return;
                         dismiss('right');
+                        
+                        // OPEN APP LOGIC - Uses the resolved launchId (Firestore ID)
                         const allApps = document.querySelectorAll('.app-item');
                         let targetAppEl = null;
+                        
+                        // 1. Exact ID Match (Best)
                         for (const el of allApps) {
-                            if (el.getAttribute('data-app-id') === item.appId) { targetAppEl = el; break; }
-                            const nameEl = el.querySelector('.app-name');
-                            if (nameEl && nameEl.innerText.trim() === item.appId) { targetAppEl = el; break; }
+                            if (el.getAttribute('data-app-id') === launchId) { targetAppEl = el; break; }
                         }
+                        
+                        // 2. Name Match (Fallback)
+                        if (!targetAppEl) {
+                            for (const el of allApps) {
+                                const nameEl = el.querySelector('.app-name');
+                                if (nameEl && nameEl.innerText.trim().toLowerCase() === String(displayTitle).toLowerCase()) { 
+                                    targetAppEl = el; break; 
+                                }
+                            }
+                        }
+
                         if (targetAppEl && window.iOS) {
-                            const theme = item.appId === 'Music' ? 'dark' : 'light';
-                            window.iOS.openApp(targetAppEl, item.appId, theme);
+                            // Smart Theme based on Name
+                            const theme = String(displayTitle).toLowerCase() === 'music' ? 'dark' : 'light';
+                            window.iOS.openApp(targetAppEl, launchId, theme);
                         }
                     };
 
