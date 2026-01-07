@@ -471,24 +471,21 @@ body.dark-mode .info-box a {
                 </div>
 
                 <div id="doc-advanced" class="doc-block">
-                    <h3>Advanced Configuration</h3>
-                    <p>Developers can programmatically modify the core appearance and behavior of the Simulator by injecting configuration JSON directly into the host's <code>localStorage</code>. This allows for powerful customizations like icon packs, system fonts, and UI tweaks.</p>
+                    <h3>Advanced Config & Notifications</h3>
+                    <p>Developers can programmatically modify the core appearance and behavior of the Simulator, as well as trigger rich notifications that work even when the app is minimized.</p>
 
-                    <strong>1. Fetching Installed Apps</strong>
-                    <p>To retrieve a list of all currently installed apps (system and dynamic) from the parent context:</p>
+                    <h4>1. Fetching Installed Apps</h4>
+                    <p>Retrieve a list of all currently installed apps from the parent context:</p>
                     <div class="code-box">
 <span class="hl-k">function</span> <span class="hl-f">fetchAllApps</span>() {
-    <span class="hl-c">// Only works when embedded in the Simulator</span>
-    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span> [];
+    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span> []; <span class="hl-c">// Only works in simulator</span>
 
     <span class="hl-k">const</span> parentDoc = window.parent.document;
     <span class="hl-k">const</span> apps = [];
     <span class="hl-k">const</span> seen = <span class="hl-k">new</span> <span class="hl-f">Set</span>();
 
-    <span class="hl-c">// Scrape DOM for System & Installed Apps</span>
     parentDoc.<span class="hl-f">querySelectorAll</span>(<span class="hl-s">'.app-item'</span>).<span class="hl-f">forEach</span>(el => {
         <span class="hl-k">const</span> name = el.<span class="hl-f">querySelector</span>(<span class="hl-s">'.app-name'</span>)?.innerText.trim();
-        <span class="hl-c">// Prefer Data Attribute ID, fallback to Name</span>
         <span class="hl-k">const</span> id = el.<span class="hl-f">getAttribute</span>(<span class="hl-s">'data-app-id'</span>) || name;
         <span class="hl-k">const</span> img = el.<span class="hl-f">querySelector</span>(<span class="hl-s">'img'</span>)?.src;
 
@@ -501,102 +498,47 @@ body.dark-mode .info-box a {
 }
                     </div>
 
-                    <strong>2. Applying Custom Icons</strong>
-                    <p>Inject a JSON map of <code>AppID -> IconURL</code> into <code>ios_custom_icons</code>. The simulator reads this on startup/refresh to override default icons.</p>
-                    <div class="code-box">
-<span class="hl-k">function</span> <span class="hl-f">injectIcons</span>(iconMap) {
-    <span class="hl-c">// iconMap example: { "Settings": "https://...", "com.myapp.id": "https://..." }</span>
-    window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_custom_icons'</span>, <span class="hl-f">JSON.stringify</span>(iconMap));
-    
-    <span class="hl-c">// Optional: Force Reload to apply immediately</span>
-    setTimeout(() => window.parent.location.<span class="hl-f">reload</span>(), 1000);
-}
-                    </div>
-
-                    <strong>3. Global Theming (CSS Injection)</strong>
-                    <p>You can inject raw CSS to modify system fonts, hide labels, or change corner radii by writing to <code>ios_compiled_css</code>. The Simulator injects this style block on boot.</p>
-                    <div class="code-box">
-<span class="hl-k">function</span> <span class="hl-f">applyTheme</span>(settings) {
-    <span class="hl-k">let</span> css = <span class="hl-s">''</span>;
-
-    <span class="hl-c">// 1. Hide App Names</span>
-    <span class="hl-k">if</span> (settings.hideNames) {
-        css += <span class="hl-s">`.homescreen-group .app-name, .dock-container .app-name { display: none !important; } `</span>;
-    }
-
-    <span class="hl-c">// 2. Icon Roundness (0px to 50%)</span>
-    <span class="hl-k">if</span> (settings.roundness !== undefined) {
-        css += <span class="hl-s">`.app-icon { border-radius: ${settings.roundness}px !important; } `</span>;
-    }
-
-    <span class="hl-c">// 3. Custom Font (Google Fonts URL)</span>
-    <span class="hl-k">if</span> (settings.fontUrl) {
-        <span class="hl-c">// Inject Link Tag into Parent Head</span>
-        <span class="hl-k">const</span> linkId = <span class="hl-s">'sim-custom-font-link'</span>;
-        <span class="hl-k">let</span> link = window.parent.document.<span class="hl-f">getElementById</span>(linkId);
-        <span class="hl-k">if</span> (!link) {
-            link = window.parent.document.<span class="hl-f">createElement</span>(<span class="hl-s">'link'</span>);
-            link.id = linkId; link.rel = <span class="hl-s">'stylesheet'</span>;
-            window.parent.document.head.<span class="hl-f">appendChild</span>(link);
-        }
-        link.href = settings.fontUrl;
-        
-        <span class="hl-c">// Apply to all text elements</span>
-        css += <span class="hl-s">`body, .app-name, .nav-title, .store-name { font-family: inherit, -apple-system, sans-serif !important; }`</span>;
-    }
-
-    <span class="hl-c">// Save to Storage</span>
-    window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_compiled_css'</span>, css);
-}
-                    </div>
-
-                    <strong>4. Advanced Notification System</strong>
-                    <p>The simulator includes a powerful, service-based notification engine that apps can hook into. This system supports custom sounds, background queuing (notifications fire even if app is closed), and swipe gestures.</p>
-                    
-                    <h4> Architecture</h4>
-                    <p>Because apps run in sandboxed iframes, they cannot access the parent DOM directly. We solve this using a <code>postMessage</code> bridge.</p>
-                    <ul>
-                        <li><strong>Notification Service:</strong> A script that must be injected <em>once</em> into the parent (Simulator) context. This service listens for messages and manages the notification UI queue.</li>
-                        <li><strong>Bridge:</strong> Apps send messages to the parent using `window.parent.postMessage`.</li>
-                    </ul>
-
-                    <h4> Triggering a Notification</h4>
-                    <p>Any installed app can request a notification by sending a specific payload to the message queue. If the service is running, it will display immediately. If not, or if the app is closed, the queue persists in <code>localStorage</code>.</p>
+                    <h4>2. Triggering Notifications (The Bridge)</h4>
+                    <p>Apps run in sandboxes (iframes), so they cannot directly access the notification UI. Instead, we use a <strong>Bridge</strong> system. You construct a payload and send it via `postMessage`. The simulator listens for this and adds it to the queue.</p>
                     
                     <div class="code-box">
-<span class="hl-k">function</span> <span class="hl-f">notify</span>(title, body, soundUrl = null) {
-    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span>; <span class="hl-c">// Only works inside Simulator</span>
-
+<span class="hl-c">/**
+ * Schedule a notification.
+ * @param {string} appId - Your App ID (must match installation)
+ * @param {string} title - Notification Header
+ * @param {string} msg - Body text
+ * @param {string} icon - Optional custom icon URL
+ * @param {string|null} sound - Optional sound URL or base64
+ * @param {number} delaySec - Seconds to wait before showing
+ */</span>
+<span class="hl-k">function</span> <span class="hl-f">scheduleNotification</span>(appId, title, msg, icon, sound = null, delaySec = 0) {
     <span class="hl-k">const</span> payload = {
-        appId: <span class="hl-s">'MyApp'</span>, <span class="hl-c">// Your App Name or ID</span>
+        appId: appId,
         title: title,
-        msg: body,
-        icon: <span class="hl-s">'https://...'</span>, <span class="hl-c">// Optional Custom Icon URL</span>
-        sound: soundUrl, <span class="hl-c">// Optional MP3 URL</span>
-        showAfter: <span class="hl-f">Date</span>.now() <span class="hl-c">// Timestamp for delay (optional)</span>
+        msg: msg,
+        icon: icon,
+        sound: sound,
+        showAfter: <span class="hl-f">Date</span>.now() + (delaySec * 1000)
     };
 
-    <span class="hl-c">// Send to Bridge</span>
-    window.parent.<span class="hl-f">postMessage</span>({ 
-        type: <span class="hl-s">'IOS_NOTIFICATION_QUEUE'</span>, 
-        payload: payload 
-    }, <span class="hl-s">'*'</span>);
+    <span class="hl-k">try</span> {
+        <span class="hl-c">// Method A: Direct Access (If on same domain)</span>
+        <span class="hl-k">if</span> (window.parent && window.parent.localStorage) {
+            <span class="hl-k">const</span> queue = <span class="hl-f">JSON</span>.parse(window.parent.localStorage.<span class="hl-f">getItem</span>(<span class="hl-s">'ios_notif_queue'</span>) || <span class="hl-s">'[]'</span>);
+            queue.<span class="hl-f">push</span>(payload);
+            window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_notif_queue'</span>, <span class="hl-f">JSON</span>.stringify(queue));
+        }
+    } <span class="hl-k">catch</span> (e) {
+        <span class="hl-c">// Method B: Bridge (Cross-Origin Fallback)</span>
+        window.parent.<span class="hl-f">postMessage</span>({ 
+            type: <span class="hl-s">'IOS_NOTIFICATION_QUEUE'</span>, 
+            payload: payload 
+        }, <span class="hl-s">'*'</span>);
+    }
 }
-
-<span class="hl-c">// Usage</span>
-<span class="hl-f">notify</span>(<span class="hl-s">'New Message'</span>, <span class="hl-s">'Hello World!'</span>);
                     </div>
 
-                    <h4> Injecting the Service (For System Apps)</h4>
-                    <p>If you are building a "System Manager" app (like the Notification Manager), you can inject the entire logic engine into the host. This code runs in the parent context and creates the actual DOM elements for banners.</p>
-                    <div class="code-box">
-<span class="hl-k">const</span> SERVICE_CODE = <span class="hl-s">`(function() { ... full service logic ... })();`</span>;
-
-window.parent.<span class="hl-f">postMessage</span>({
-    type: <span class="hl-s">'IOS_INJECT_SCRIPT'</span>,
-    script: SERVICE_CODE
-}, <span class="hl-s">'*'</span>);
-                    </div>
+                    <strong>NOTE: The notification API in the simu is limited and will not be supported or updated. It's aim is to just test the in-browser dynamic calls, and is restricted to foreground apps to maintain optimized performance across the simulator.</strong>
                 </div>
 
             </main>
