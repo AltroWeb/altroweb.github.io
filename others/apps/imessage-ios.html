@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
+        /* ... (Keep existing styles exactly as they are) ... */
         :root {
             --bg-color: #000000;
             --header-bg: rgba(30, 30, 30, 0.85);
@@ -221,7 +222,7 @@
         <!-- Sidebar -->
         <div id="sidebar-view" class="view active">
             <div class="header">
-                <button id="settings-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                   <button id="settings-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
                 <div class="header-title">Messages</div>
                 <button id="new-msg-btn" class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             </div>
@@ -305,7 +306,7 @@
                 </div>
                 <div class="settings-item">
                     <span>Version</span>
-                    <span style="color: var(--text-secondary);">1.0.4 Notify</span>
+                    <span style="color: var(--text-secondary);">1.0.1 Early</span>
                 </div>
             </div>
         </div>
@@ -395,22 +396,20 @@
         };
 
         /* --- NOTIFICATION BRIDGE INTEGRATION --- */
-        // This helper sends a notification request to the parent (Simulator)
-        // using the 'IOS_NOTIFICATION_QUEUE' postMessage event we built earlier.
-        
-        // Track window focus/blur
         let isWindowFocused = true;
         window.addEventListener('focus', () => isWindowFocused = true);
         window.addEventListener('blur', () => isWindowFocused = false);
 
         function notify(title, body) {
-            if (window.parent === window) return; // Only works inside Simulator
+            // Check if running in Simulator
+            if (window.parent === window) return;
 
             const payload = {
-                appId: 'Messages', // The ID of this app (must match installed ID)
+                // IMPORTANT: Use 'Messages' to match the store listing Name
+                appId: 'Messages', 
                 title: title,
                 msg: body,
-                showAfter: Date.now() // Immediate
+                showAfter: Date.now() 
             };
 
             try {
@@ -546,22 +545,17 @@
 
         function sendData(type, content = null, format = null, extra = {}) {
             const payload = { type, content, format, ...extra };
-            // Optimistic Send: Logic assumes success locally first (handled by addMessage call in UI logic)
             if (activeConn && activeConn.open) { 
                 try { activeConn.send(payload); } catch(e) { console.log('Send failed'); }
             } else if (currentChatId) {
-                // Try ephemeral connect to send
                 const conn = peer.connect(currentChatId);
                 conn.on('open', () => { conn.send(payload); setTimeout(()=>conn.close(), 500); });
-                // If this fails, message is just "sent" locally (grey tick) -> "Sent but receiver doesn't get it"
             }
         }
 
         /* --- CALL LOGIC --- */
         async function startCall() {
-            // Robust Check: Must have active connection to call
             if (!activeConn || !activeConn.open) { 
-                // Attempt one quick connect check
                 const conn = peer.connect(currentChatId);
                 conn.on('open', () => {
                     setupConnection(conn);
@@ -570,7 +564,6 @@
                 conn.on('error', () => {
                     showModal('User Offline', 'Cannot place call because the user is offline.', null, [{text:'OK'}]);
                 });
-                // If timeout after 1s
                 setTimeout(() => {
                     if(!conn.open) showModal('User Offline', 'Cannot place call because the user is offline.', null, [{text:'OK'}]);
                 }, 1000);
@@ -668,15 +661,6 @@
                 .replace(/'/g, '&#39;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
-        }
-
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
         }
 
         function createMessageElement(m, animate = false) {
