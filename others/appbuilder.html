@@ -454,6 +454,16 @@
                     <label>App Name <span style="color:var(--danger)">*</span></label>
                     <input type="text" id="edit-name" placeholder="e.g. Super Bird">
                 </div>
+                
+                
+    <div class="form-group">
+                    <label>App ID</label>
+                    <div id="display-app-id" style="padding: 14px; background: rgba(0,0,0,0.05); border-radius: 12px; color: var(--text-secondary); font-family: monospace; font-size: 13px; user-select: all; word-break: break-all;">
+                        Loading...
+                    </div>
+                    <div class="hint">This is a unique system identifier and cannot be changed.</div>
+                </div>
+                <!-- END NEW FIELD -->
 
                 <div class="form-group">
                     <label>App Icon URL (Optional)</label>
@@ -946,7 +956,13 @@ async fetchMyApps() {
                 this.currentEditingId = null;
                 document.getElementById('editor-title').innerText = "Create New App";
                 document.getElementById('publish-text').innerText = "Publish to App Store";
+                
+                // SECURE LABEL UPDATE
+                document.getElementById('display-app-id').innerText = "Auto-generated after publishing";
+                document.getElementById('display-app-id').style.fontStyle = "italic";
+
                 document.getElementById('edit-name').value = '';
+                
                 document.getElementById('edit-icon').value = '';
                 document.getElementById('edit-desc').value = '';
                 document.getElementById('edit-embed').value = '';
@@ -968,7 +984,13 @@ async fetchMyApps() {
                     this.currentEditingId = appId;
                     document.getElementById('editor-title').innerText = "Edit App";
                     document.getElementById('publish-text').innerText = "Save Changes";
+                    
+                    // SECURE LABEL UPDATE
+                    document.getElementById('display-app-id').innerText = appId;
+                    document.getElementById('display-app-id').style.fontStyle = "normal";
+                    
                     document.getElementById('edit-name').value = data.name;
+                    
                     document.getElementById('edit-icon').value = data.iconUrl || '';
                     document.getElementById('icon-preview').src = data.iconUrl || 'grey.png';
                     document.getElementById('edit-desc').value = data.description;

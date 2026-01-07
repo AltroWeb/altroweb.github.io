@@ -499,7 +499,7 @@ body.dark-mode .info-box a {
                     </div>
 
                     <h4>2. Triggering Notifications (The Bridge)</h4>
-                    <p>Apps run in sandboxes (iframes), so they cannot directly access the notification UI. Instead, we use a <strong>Bridge</strong> system. You construct a payload and send it via `postMessage`. The simulator listens for this and adds it to the queue.</p>
+                    <p>Apps run in sandboxes (iframes), so they cannot directly access the notification UI. Instead, we use a <strong>Bridge</strong> system. You construct a payload and send it via `postMessage`. The simulator listens for this and adds it to the queue.<br><br><strong>Tip:</strong> If there is a an app listed with the same name as yours, it might cause conflicts. So, you can use <strong>App IDs</strong>, which can be seen in the <strong>Edit </strong>screen of any app you have published using the App Builder. Use this to distinguish even between duplicate app names to avoid overrides.</p>
                     
                     <div class="code-box">
 <span class="hl-c">/**
@@ -538,7 +538,7 @@ body.dark-mode .info-box a {
 }
                     </div>
 
-                    <strong>NOTE: The notification API in the simu is limited and will not be supported or updated. It's aim is to just test the in-browser dynamic calls, and is restricted to foreground apps to maintain optimized performance across the simulator.</strong>
+                    <strong>NOTE: The notification API in the simu is limited and will not be supported or updated. It is buggy and may not initiate properly, especially on top of other apps. <br><br> It is used just to test the in-browser dynamic calls, and is restricted to foreground apps to maintain optimized performance across the simulator.</strong>
                 </div>
 
             </main>
