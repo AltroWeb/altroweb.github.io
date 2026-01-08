@@ -6,6 +6,7 @@
     <title>iOS Web Ecosystem</title>
     <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
     <style>
+        /* ... (Existing styles remain unchanged) ... */
         :root {
             --bg-body: #F5F5F7;
             --bg-card: #FFFFFF;
@@ -502,43 +503,52 @@ body.dark-mode .info-box a {
                     <p>Apps run in sandboxes (iframes), so they cannot directly access the notification UI. Instead, we use a <strong>Bridge</strong> system. You construct a payload and send it via `postMessage`. The simulator listens for this and adds it to the queue.<br><br><strong>Tip:</strong> If there is a an app listed with the same name as yours, it might cause conflicts. So, you can use <strong>App IDs</strong>, which can be seen in the <strong>Edit </strong>screen of any app you have published using the App Builder. Use this to distinguish even between duplicate app names to avoid overrides.</p>
                     
                     <div class="code-box">
-<span class="hl-c">/**
- * Schedule a notification.
- * @param {string} appId - Your App ID (must match installation)
- * @param {string} title - Notification Header
- * @param {string} msg - Body text
- * @param {string} icon - Optional custom icon URL
- * @param {string|null} sound - Optional sound URL or base64
- * @param {number} delaySec - Seconds to wait before showing
- */</span>
-<span class="hl-k">function</span> <span class="hl-f">scheduleNotification</span>(appId, title, msg, icon, sound = null, delaySec = 0) {
+<span class="hl-c">// --- CORE NOTIFICATION FUNCTION ---
+// This function uses the exact protocol required by your updated Simulator.</span>
+<span class="hl-k">function</span> <span class="hl-f">triggerNotification</span>(title, message) {
+    <span class="hl-c">// 1. Check if we are inside the Simulator (iframe)</span>
+    <span class="hl-k">if</span> (window.parent === window) {
+        console.warn(<span class="hl-s">"Not in simulator: Notification suppressed."</span>);
+        <span class="hl-k">return</span>;
+    }
+
+    <span class="hl-c">// 2. Construct Payload
+    // 'Timer' will be matched by the Simulator to this app's Name or ID.</span>
     <span class="hl-k">const</span> payload = {
-        appId: appId,
+        appId: <span class="hl-s">'Timer'</span>, 
         title: title,
-        msg: msg,
-        icon: icon,
-        sound: sound,
-        showAfter: <span class="hl-f">Date</span>.now() + (delaySec * 1000)
+        msg: message,
+        showAfter: <span class="hl-f">Date</span>.now(), <span class="hl-c">// Immediate</span>
+        
+        <span class="hl-c">// CRITICAL: Unique ID for De-duplication in the System Service</span>
+        uuid: <span class="hl-f">Date</span>.now() + <span class="hl-s">'-'</span> + Math.random().toString(36).substr(2, 9),
+        
+        <span class="hl-c">// Optional: Custom Sound (Base64 or URL)</span>
+        sound: <span class="hl-s">'https://download-apple-sms-ringtones-free.mobilesringtones.com/storage/2018/08/30/24645/24645.mp3'</span>
     };
 
-    <span class="hl-k">try</span> {
-        <span class="hl-c">// Method A: Direct Access (If on same domain)</span>
-        <span class="hl-k">if</span> (window.parent && window.parent.localStorage) {
-            <span class="hl-k">const</span> queue = <span class="hl-f">JSON</span>.parse(window.parent.localStorage.<span class="hl-f">getItem</span>(<span class="hl-s">'ios_notif_queue'</span>) || <span class="hl-s">'[]'</span>);
-            queue.<span class="hl-f">push</span>(payload);
-            window.parent.localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'ios_notif_queue'</span>, <span class="hl-f">JSON</span>.stringify(queue));
-        }
-    } <span class="hl-k">catch</span> (e) {
-        <span class="hl-c">// Method B: Bridge (Cross-Origin Fallback)</span>
-        window.parent.<span class="hl-f">postMessage</span>({ 
-            type: <span class="hl-s">'IOS_NOTIFICATION_QUEUE'</span>, 
-            payload: payload 
-        }, <span class="hl-s">'*'</span>);
-    }
+    <span class="hl-c">// 3. Send via Bridge
+    // The Simulator's background service listens for this specific message type.</span>
+    window.parent.<span class="hl-f">postMessage</span>({ 
+        type: <span class="hl-s">'IOS_NOTIFICATION_QUEUE'</span>, 
+        payload: payload 
+    }, <span class="hl-s">'*'</span>);
 }
+
+<span class="hl-c">// Example Usage:
+// triggerNotification('Timer', 'Timer finished!');</span>
                     </div>
 
-                    <strong>NOTE: The notification API in the simu is limited and will not be supported or updated. It is buggy and may not initiate properly, especially on top of other apps. <br><br> It is used just to test the in-browser dynamic calls, and is restricted to foreground apps to maintain optimized performance across the simulator.</strong>
+                    <h4>3. Injecting Custom Scripts (System Apps)</h4>
+                    <p>If you are building a system-level utility (like a Notification Manager), you can inject scripts directly into the host OS context using the `IOS_INJECT_SCRIPT` message type.</p>
+                    <div class="code-box">
+<span class="hl-k">const</span> SERVICE_CODE = <span class="hl-s">`(function() { console.log('I am running in the Host OS!'); })();`</span>;
+
+window.parent.<span class="hl-f">postMessage</span>({
+    type: <span class="hl-s">'IOS_INJECT_SCRIPT'</span>,
+    script: SERVICE_CODE
+}, <span class="hl-s">'*'</span>);
+                    </div>
                 </div>
 
             </main>

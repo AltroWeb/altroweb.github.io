@@ -900,6 +900,10 @@
                 this.apps = [];
                 this.verifiedUserIds = new Set();
                 
+                
+                this.backgroundApps = []; // Track IDs of apps kept alive [id1, id2]
+                this.MAX_BG_APPS = 3;     // Limit to save RAM
+                
                 // FIX: Call init() here instead of individual methods
                 this.init();
             }
@@ -1282,19 +1286,10 @@ window.addEventListener('message', (event) => {
 });
 
     // 2. Handle Direct Notification (Cross-Origin Bridge)
-    if (event.data && event.data.type === 'IOS_NOTIFICATION') {
-        const p = event.data.payload;
-        if (p && window.iOS_Notify) {
-            window.iOS_Notify(p.appId, p.title, p.msg, p.icon);
-        }
-    }
+    
     
     // 3. Handle Queue Push (Cross-Origin Bridge)
-    if (event.data && event.data.type === 'IOS_NOTIFICATION_QUEUE') {
-        const queue = JSON.parse(localStorage.getItem('ios_notif_queue') || '[]');
-        queue.push(event.data.payload);
-        localStorage.setItem('ios_notif_queue', JSON.stringify(queue));
-    }
+    
 });
 /* ------------------------------------------- */
 
@@ -1701,38 +1696,109 @@ setTimeout(() => {
                 const titleText = document.getElementById('nav-title-text');
                 const appTitle = document.getElementById('app-title');
                 
-                // Reset
+                // Hide all sections first
                 [generic, settings, notes, container].forEach(el => el.classList.remove('active'));
-                container.innerHTML = ''; // Clear dynamic content
-                titleText.innerText = appName;
+                
+                // Determine Title
+                let displayName = appName;
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const customApp = installed.find(a => a.id === appName);
+                if (customApp) displayName = customApp.name;
+                
+                titleText.innerText = displayName;
 
                 if (appName === 'Settings') {
                     settings.classList.add('active');
                 } else if (appName === 'Notes') {
                     notes.classList.add('active');
                 } else if (appName === 'AppStore') {
-                     // handled
+                     // handled separately
                 } else {
-                    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                    const customApp = installed.find(a => a.id === appName);
-
                     if (customApp) {
                         container.classList.add('active');
                         appTitle.innerText = customApp.name;
-                        titleText.innerText = customApp.name;
-                        container.innerHTML = `<embed src="${customApp.embedUrl}" style="width:100%; height:100%; border:none; border-radius:12px;">`;
+                        
+                        // --- BACKGROUND IFRAME LOGIC ---
+                        // 1. Hide ALL existing iframes in the container (don't remove them!)
+                        Array.from(container.children).forEach(child => child.style.display = 'none');
+                        
+                        // 2. Check if we already have this app running
+                        let iframe = container.querySelector(`iframe[data-app-id="${appName}"]`);
+                        
+                        if (!iframe) {
+                            // Cold Start
+                            iframe = document.createElement('iframe');
+                            iframe.src = customApp.embedUrl;
+                            iframe.style.width = '100%';
+                            iframe.style.height = '100%';
+                            iframe.style.border = 'none';
+                            iframe.style.borderRadius = '12px';
+                            iframe.setAttribute('data-app-id', appName); 
+                            container.appendChild(iframe);
+                        }
+                        
+                        // 3. Show (Resume)
+                        iframe.style.display = 'block';
+                        
                     } else {
                         generic.classList.add('active');
                         appTitle.innerText = appName;
                     }
                 }
             }
+            
+            
+            
+            manageBackgroundApps(newAppId) {
+                if (!this.backgroundApps) this.backgroundApps = [];
+                if (!this.MAX_BG_APPS) this.MAX_BG_APPS = 3; 
+
+                // Remove if exists (move to end)
+                this.backgroundApps = this.backgroundApps.filter(id => id !== newAppId);
+                this.backgroundApps.push(newAppId);
+
+                // Enforce Limit
+                if (this.backgroundApps.length > this.MAX_BG_APPS) {
+                    const appToKill = this.backgroundApps.shift(); 
+                    
+                    // Don't kill if active
+                    if (this.activeWindow && this.activeWindow.getAttribute('data-app') === appToKill) {
+                        if (this.backgroundApps.length > 0) {
+                            const secondOldest = this.backgroundApps.shift();
+                            this.killAppFrame(secondOldest);
+                        }
+                    } else {
+                        this.killAppFrame(appToKill);
+                    }
+                }
+            }
+
+            killAppFrame(appId) {
+                const container = document.getElementById('dynamic-app-container');
+                if (!container) return;
+                const frame = container.querySelector(`iframe[data-app-id="${appId}"]`);
+                if (frame) {
+                    console.log(`Killing background app: ${appId}`);
+                    frame.remove();
+                }
+            }
+            
+            
+            
 
             openApp(el, appName, theme = 'light') {
                 if (this.state !== 'IDLE') return;
                 this.openedFromIsland = false;
                 this.gestureBar.classList.remove('on-home');
 
+                // 1. Determine Real App ID
+                let appId = appName; 
+                // If opening from an icon element, grab the real ID
+                if (el && el.getAttribute('data-app-id')) {
+                    appId = el.getAttribute('data-app-id');
+                }
+
+                // 2. Select Window & Route Content
                 if (appName === 'Music') {
                     this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.musicWindow;
@@ -1744,14 +1810,21 @@ setTimeout(() => {
                 } else {
                     this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.mainWindow; 
-                    this.routeContent(appName); 
-                    this.activeWindow.setAttribute('data-app', appName);
+                    
+                    // Manage Background Lifecycle
+                    this.manageBackgroundApps(appId);
+
+                    // Route Content handles the logic of "Resume vs Create" for the internal iframe
+                    this.routeContent(appId); 
+                    
+                    this.activeWindow.setAttribute('data-app', appId);
                     document.getElementById('main-scroll').scrollTop = 0;
                     document.getElementById('main-navbar').classList.remove('scrolled');
                 }
 
                 this.state = 'OPENING';
                 
+                // Theme Logic
                 if (theme === 'light' && !this.isDarkMode) {
                     this.statusBar.classList.add('dark-text');
                     this.gestureBar.classList.add('dark-bar');
@@ -1764,6 +1837,7 @@ setTimeout(() => {
                     this.gestureBar.classList.remove('dark-bar');
                 }
 
+                // Animation Reset
                 this.activeWindow.style.display = 'flex';
                 this.activeWindow.style.transformOrigin = 'center center';
                 this.activeWindow.style.transition = 'none';
@@ -1773,9 +1847,10 @@ setTimeout(() => {
                 const tf = this.getIconTransform(this.activeAppIcon);
                 this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
                 this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
-                this.activeAppIcon.classList.add('hidden-source');
-                this.activeWindow.offsetHeight; 
+                if(this.activeAppIcon) this.activeAppIcon.classList.add('hidden-source');
+                this.activeWindow.offsetHeight; // Reflow
 
+                // Animate In
                 this.activeWindow.style.transition = 'transform 0.5s var(--ease-open), border-radius 0.5s var(--ease-open), opacity 0.3s ease';
                 this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
                 this.activeWindow.style.borderRadius = '0px';
@@ -1950,10 +2025,19 @@ setTimeout(() => {
                 }
             }
 
+            /* --- UPDATED FINISH CLOSING (Background Support) --- */
             finishClosing() {
                 if(this.state !== 'CLOSING') return;
                 
                 this.activeWindow.classList.remove('vacuum-active'); 
+                
+                // BACKGROUND LOGIC:
+                // We do NOT remove the iframe from DOM here.
+                // We just hide the main container window.
+                // Because we use routeContent() in openApp, it will automatically hide
+                // non-active iframes when a different app opens, keeping only the 
+                // relevant ones in the DOM based on manageBackgroundApps logic.
+                
                 this.activeWindow.style.display = 'none';
                 this.activeWindow.style.transform = 'none';
                 this.activeWindow.style.opacity = '1';
@@ -2142,9 +2226,42 @@ setTimeout(() => {
                     document.head.appendChild(style);
                 }
 
-                function spawnNotification(item) {
-                    // --- DE-DUPLICATION ---
-                    const sig = item.appId + '|' + item.title + '|' + item.msg + '|' + (item.showAfter || 0);
+                // --- HELPER: Find Real App ID from Iframe Source ---
+                function resolveAppIdFromSource(sourceWindow) {
+                    if (!sourceWindow) return null;
+                    // Scan all iframes to find which one sent the message
+                    const iframes = document.querySelectorAll('iframe');
+                    for (let i = 0; i < iframes.length; i++) {
+                        if (iframes[i].contentWindow === sourceWindow) {
+                            // Found the iframe! Now find its container's App ID.
+                            // Assuming iframe is inside a .app-window or similar, 
+                            // OR the iframe itself has the ID.
+                            
+                            // Check 1: data-app-id on iframe
+                            if (iframes[i].getAttribute('data-app-id')) return iframes[i].getAttribute('data-app-id');
+                            
+                            // Check 2: Walk up DOM to find .app-window
+                            let parent = iframes[i].parentElement;
+                            while(parent) {
+                                if (parent.getAttribute('data-app-id')) return parent.getAttribute('data-app-id');
+                                if (parent.classList.contains('app-window')) break; 
+                                parent = parent.parentElement;
+                            }
+                        }
+                    }
+                    return null;
+                }
+
+                function spawnNotification(item, sourceWindow = null) {
+                    // --- 1. RESOLVE REAL IDENTITY ---
+                    // Try to identify the caller via the window source first (Most Robust)
+                    let realAppId = resolveAppIdFromSource(sourceWindow);
+                    
+                    // If source resolution failed (e.g. via localStorage polling), use the provided ID
+                    if (!realAppId) realAppId = item.appId;
+
+                    // --- 2. DE-DUPLICATION ---
+                    const sig = realAppId + '|' + item.title + '|' + item.msg + '|' + (item.showAfter || 0);
                     const now = Date.now();
                     if (!window._ios_notif_cache) window._ios_notif_cache = {};
                     if (window._ios_notif_cache[sig] && (now - window._ios_notif_cache[sig] < 2000)) return; 
@@ -2159,41 +2276,40 @@ setTimeout(() => {
                         document.body.appendChild(zone);
                     }
 
-                    // --- CRITICAL IDENTITY RESOLUTION ---
-                    // item.appId might be "Messages" OR "VAVKvVcXcJYpnQncSN3f"
-                    
+                    // --- 3. FETCH METADATA FROM STORAGE ---
                     let iconUrl = item.icon;
-                    let displayTitle = item.appId; // Default to what was sent
-                    let launchId = item.appId;     // The ID used to open the app
-                    
+                    let displayTitle = item.title === realAppId ? item.title : (item.appId || 'Notification'); // Default
+                    let launchId = realAppId;
+
                     try {
                         const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                        const searchStr = String(item.appId).trim().toLowerCase();
+                        // Search by our Resolved Real ID first
+                        let app = installed.find(a => a.id === realAppId);
+                        
+                        // If not found, try fuzzy search by Name/ID
+                        if (!app) {
+                            const searchStr = String(realAppId).trim().toLowerCase();
+                            app = installed.find(a => {
+                                const aId = String(a.id || '').toLowerCase();
+                                const aName = String(a.name || '').toLowerCase();
+                                return aId === searchStr || aName === searchStr; 
+                            });
+                        }
 
-                        // Robust Find: Check ID, Name, or if ID contains the search string
-                        const match = installed.find(a => {
-                            const aId = String(a.id || '').toLowerCase();
-                            const aName = String(a.name || '').toLowerCase();
-                            return aId === searchStr || aName === searchStr;
-                        });
-
-                        if (match) {
-                            // FOUND IT! Switch to the Real details
-                            launchId = match.id; // Switch to Firestore ID
-                            displayTitle = match.name; // Use Official Name
-                            if (!iconUrl) iconUrl = match.icon || match.iconUrl || match.img;
+                        if (app) {
+                            launchId = app.id; // Ensure we have the correct Firestore ID
+                            displayTitle = app.name; // Use Official Name (e.g. "Messages")
+                            if (!iconUrl) iconUrl = app.icon || app.iconUrl || app.img;
+                        } else {
+                            // Fallback: Check Custom Icons Override
+                            const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+                            if (customIcons[realAppId]) iconUrl = customIcons[realAppId];
                         }
                     } catch(e) { console.error("Identity Resolve Error", e); }
 
-                    // Fallback to Custom Icons if still no icon
-                    if (!iconUrl) {
-                         const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
-                         if (customIcons[item.appId]) iconUrl = customIcons[item.appId];
-                    }
-
                     // Final Defaults
                     if (!iconUrl) iconUrl = 'https://cdn-icons-png.flaticon.com/512/10628/10628963.png';
-                    if (!displayTitle) displayTitle = 'Notification';
+                    if (!displayTitle) displayTitle = 'App';
 
                     // Audio
                     if(item.sound !== false) {
@@ -2229,27 +2345,21 @@ setTimeout(() => {
                         if(Math.abs(currentX-startX)>5) return;
                         dismiss('right');
                         
-                        // OPEN APP LOGIC - Uses the resolved launchId (Firestore ID)
+                        // OPEN APP LOGIC - Uses Resolved Launch ID
                         const allApps = document.querySelectorAll('.app-item');
                         let targetAppEl = null;
-                        
-                        // 1. Exact ID Match (Best)
                         for (const el of allApps) {
                             if (el.getAttribute('data-app-id') === launchId) { targetAppEl = el; break; }
                         }
-                        
-                        // 2. Name Match (Fallback)
+                        // Fallback Name Match
                         if (!targetAppEl) {
                             for (const el of allApps) {
                                 const nameEl = el.querySelector('.app-name');
-                                if (nameEl && nameEl.innerText.trim().toLowerCase() === String(displayTitle).toLowerCase()) { 
-                                    targetAppEl = el; break; 
-                                }
+                                if (nameEl && nameEl.innerText.trim().toLowerCase() === String(displayTitle).toLowerCase()) { targetAppEl = el; break; }
                             }
                         }
 
                         if (targetAppEl && window.iOS) {
-                            // Smart Theme based on Name
                             const theme = String(displayTitle).toLowerCase() === 'music' ? 'dark' : 'light';
                             window.iOS.openApp(targetAppEl, launchId, theme);
                         }
@@ -2277,10 +2387,10 @@ setTimeout(() => {
                     } catch(e) { localStorage.setItem('ios_notif_queue', '[]'); }
                 }, 800);
 
-                // Direct Event Listener
+                // Direct Event Listener - PASS THE SOURCE WINDOW
                 window.addEventListener('message', (event) => {
                     if (event.data && event.data.type === 'IOS_NOTIFICATION_QUEUE' && event.data.payload) {
-                        spawnNotification(event.data.payload);
+                        spawnNotification(event.data.payload, event.source);
                     }
                 });
             })();
