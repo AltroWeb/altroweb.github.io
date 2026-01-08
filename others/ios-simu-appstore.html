@@ -1527,41 +1527,70 @@ setTimeout(() => {
                 let startX = 0;
                 let currentX = 0;
                 let isDragging = false;
+                let isRealSwipe = false; // New flag to track if threshold passed
                 const wrapper = this.pagesWrapper;
+
                 const start = (e) => {
-                    if (this.state !== 'IDLE') return; 
+                    if (this.state !== 'IDLE') return;
                     isDragging = true;
+                    isRealSwipe = false; 
+                    this.isSwipingPage = false; // Global flag for openApp check
                     startX = e.touches ? e.touches[0].clientX : e.clientX;
-                    wrapper.style.transition = 'none'; 
+                    // Do NOT set transition to none yet. Wait for movement.
                 };
+
                 const move = (e) => {
                     if (!isDragging) return;
                     currentX = e.touches ? e.touches[0].clientX : e.clientX;
                     const diff = currentX - startX;
-                    const offset = -this.currentPage * 100; 
-                    const pxOffset = (diff / window.innerWidth) * 100;
-                    if ((this.currentPage === 0 && diff > 0) || (this.currentPage === this.totalPages - 1 && diff < 0)) {
-                         wrapper.style.transform = `translateX(calc(${offset}% + ${pxOffset * 0.3}%))`;
-                    } else {
-                         wrapper.style.transform = `translateX(calc(${offset}% + ${pxOffset}%))`;
+
+                    // Threshold check: Only start moving wrapper if moved > 5px
+                    if (Math.abs(diff) > 5) {
+                        isRealSwipe = true;
+                        this.isSwipingPage = true;
+                        
+                        // Now we can disable transition for direct control
+                        wrapper.style.transition = 'none';
+                        
+                        const offset = -this.currentPage * 100;
+                        const pxOffset = (diff / window.innerWidth) * 100;
+                        
+                        // Resistance at edges
+                        if ((this.currentPage === 0 && diff > 0) || (this.currentPage === this.totalPages - 1 && diff < 0)) {
+                            wrapper.style.transform = `translateX(calc(${offset}% + ${pxOffset * 0.3}%))`;
+                        } else {
+                            wrapper.style.transform = `translateX(calc(${offset}% + ${pxOffset}%))`;
+                        }
                     }
                 };
+
                 const end = (e) => {
                     if (!isDragging) return;
                     isDragging = false;
-                    wrapper.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                    const diff = currentX - startX;
-                    const threshold = window.innerWidth * 0.2; 
-                    if (Math.abs(diff) > threshold) {
-                        if (diff > 0 && this.currentPage > 0) this.currentPage--;
-                        else if (diff < 0 && this.currentPage < this.totalPages - 1) this.currentPage++;
+
+                    // Only handle page snap if it was a real swipe
+                    if (isRealSwipe) {
+                        wrapper.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                        const diff = currentX - startX;
+                        const threshold = window.innerWidth * 0.2;
+
+                        if (Math.abs(diff) > threshold) {
+                            if (diff > 0 && this.currentPage > 0) this.currentPage--;
+                            else if (diff < 0 && this.currentPage < this.totalPages - 1) this.currentPage++;
+                        }
+                        this.updatePageScroll();
+                        
+                        // Clear flag after animation
+                        setTimeout(() => { this.isSwipingPage = false; }, 100);
                     }
-                    this.updatePageScroll();
+                    // If !isRealSwipe, we do nothing. The click event will propagate naturally to the app icon.
                 };
-                wrapper.addEventListener('mousedown', start);
-                wrapper.addEventListener('touchstart', start);
+
+                const target = document.getElementById('homescreen-group');
+                target.addEventListener('mousedown', start);
+                target.addEventListener('touchstart', start, {passive: true});
                 window.addEventListener('mousemove', move);
-                window.addEventListener('touchmove', move);
+                window.addEventListener('touchmove', move, {passive: false});
                 window.addEventListener('mouseup', end);
                 window.addEventListener('touchend', end);
             }
@@ -1787,18 +1816,20 @@ setTimeout(() => {
             
 
             openApp(el, appName, theme = 'light') {
+                // BLOCK OPEN IF JUST SWIPED
+                if (this.isSwipingPage) {
+                    return;
+                }
+
                 if (this.state !== 'IDLE') return;
                 this.openedFromIsland = false;
                 this.gestureBar.classList.remove('on-home');
 
-                // 1. Determine Real App ID
                 let appId = appName; 
-                // If opening from an icon element, grab the real ID
                 if (el && el.getAttribute('data-app-id')) {
                     appId = el.getAttribute('data-app-id');
                 }
 
-                // 2. Select Window & Route Content
                 if (appName === 'Music') {
                     this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.musicWindow;
@@ -1810,13 +1841,8 @@ setTimeout(() => {
                 } else {
                     this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.mainWindow; 
-                    
-                    // Manage Background Lifecycle
                     this.manageBackgroundApps(appId);
-
-                    // Route Content handles the logic of "Resume vs Create" for the internal iframe
                     this.routeContent(appId); 
-                    
                     this.activeWindow.setAttribute('data-app', appId);
                     document.getElementById('main-scroll').scrollTop = 0;
                     document.getElementById('main-navbar').classList.remove('scrolled');
@@ -1837,7 +1863,6 @@ setTimeout(() => {
                     this.gestureBar.classList.remove('dark-bar');
                 }
 
-                // Animation Reset
                 this.activeWindow.style.display = 'flex';
                 this.activeWindow.style.transformOrigin = 'center center';
                 this.activeWindow.style.transition = 'none';
@@ -1848,9 +1873,8 @@ setTimeout(() => {
                 this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
                 this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
                 if(this.activeAppIcon) this.activeAppIcon.classList.add('hidden-source');
-                this.activeWindow.offsetHeight; // Reflow
+                this.activeWindow.offsetHeight; 
 
-                // Animate In
                 this.activeWindow.style.transition = 'transform 0.5s var(--ease-open), border-radius 0.5s var(--ease-open), opacity 0.3s ease';
                 this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
                 this.activeWindow.style.borderRadius = '0px';
@@ -1866,7 +1890,8 @@ setTimeout(() => {
                     }, 300);
                 }, 500);
             }
-
+            
+            
             launchMusicFromIsland() {
                 if (this.activeWindow === this.musicWindow) return;
                 
