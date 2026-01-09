@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Island Dev</title>
+    <style>
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: #1c1c1e; padding: 15px; border-radius: 16px; display: flex; flex-direction: column; gap: 10px; }
+        label { color: #8e8e93; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        input[type="text"] { background: #2c2c2e; border: none; color: #fff; padding: 12px; border-radius: 10px; font-size: 16px; width: 100%; box-sizing: border-box; outline: none; }
+        button { background: #0A84FF; color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button.stop { background: #FF453A; }
+        .row { display: flex; gap: 10px; }
+        .dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+        .dot.active { border-color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="row">
+            <div style="flex:1"><label>Icon</label><input type="text" id="icon" value="🔥" oninput="update()"></div>
+            <div>
+                <label>Color</label>
+                <div class="row">
+                    <div class="dot active" style="background:#fff" onclick="setColor('#fff', this)"></div>
+                    <div class="dot" style="background:#0A84FF" onclick="setColor('#0A84FF', this)"></div>
+                    <div class="dot" style="background:#32D74B" onclick="setColor('#32D74B', this)"></div>
+                    <div class="dot" style="background:#FF453A" onclick="setColor('#FF453A', this)"></div>
+                </div>
+            </div>
+        </div>
+        <label>Title</label><input type="text" id="title" value="Island Dev" oninput="update()">
+        <label>Description (Expanded)</label><input type="text" id="desc" value="Testing mode..." oninput="update()">
+    </div>
+
+    <div class="card">
+        <label>Mode</label>
+        <div class="row">
+            <button style="flex:1; background:#3a3a3c;" onclick="setMode('compact')">Compact</button>
+            <button style="flex:1; background:#3a3a3c;" onclick="setMode('expanded')">Expanded</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <button onclick="trigger()">Trigger (3s)</button>
+        <button class="stop" onclick="stop()">Dismiss</button>
+    </div>
+
+    <script>
+        let color = '#fff';
+        let mode = 'compact';
+
+        function setColor(c, el) { color = c; document.querySelectorAll('.dot').forEach(d=>d.classList.remove('active')); el.classList.add('active'); update(); }
+        function setMode(m) { mode = m; update(); }
+        
+        function getSVG(char) { return `<svg width="24" height="24" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-size="20">${char}</text></svg>`; }
+
+        function update() {
+            // "PERSISTENT" allows live typing without closing
+            send('PERSISTENT');
+        }
+
+        function trigger() { send(3000); }
+        function stop() { window.parent.postMessage({ type: 'IOS_ISLAND_DISMISS' }, '*'); }
+
+        function send(duration) {
+            window.parent.postMessage({
+                type: 'IOS_ISLAND_TRIGGER',
+                icon: getSVG(document.getElementById('icon').value),
+                title: document.getElementById('title').value,
+                text: document.getElementById('desc').value,
+                color: color,
+                mode: mode,
+                duration: duration
+            }, '*');
+        }
+    </script>
+</body>
+</html>
