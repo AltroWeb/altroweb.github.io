@@ -3,78 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Dev</title>
+    <title>Island Dev Pro</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: #1c1c1e; padding: 15px; border-radius: 16px; display: flex; flex-direction: column; gap: 10px; }
-        label { color: #8e8e93; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        input[type="text"] { background: #2c2c2e; border: none; color: #fff; padding: 12px; border-radius: 10px; font-size: 16px; width: 100%; box-sizing: border-box; outline: none; }
-        button { background: #0A84FF; color: #fff; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button.stop { background: #FF453A; }
-        .row { display: flex; gap: 10px; }
-        .dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
-        .dot.active { border-color: #fff; }
+        :root {
+            --bg: #000;
+            --card: #1c1c1e;
+            --input: #2c2c2e;
+            --text: #fff;
+            --text-sec: #8e8e93;
+            --accent: #0A84FF;
+            --danger: #FF453A;
+            --border: #38383a;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 20px;
+            background: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            display: flex; flex-direction: column; gap: 16px;
+            min-height: 100vh;
+        }
+
+        /* --- CARDS --- */
+        .card {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 18px;
+            display: flex; flex-direction: column; gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-sec);
+            letter-spacing: 0.5px;
+            margin-left: 4px;
+        }
+
+        /* --- INPUTS --- */
+        input[type="text"], input[type="number"], textarea {
+            background: var(--input);
+            border: 1px solid transparent;
+            color: var(--text);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            width: 100%;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+        input:focus, textarea:focus { border-color: var(--accent); }
+
+        /* --- TABS --- */
+        .tabs {
+            display: flex;
+            background: var(--input);
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 7px;
+            cursor: pointer;
+            color: var(--text-sec);
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #636366;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* --- COLORS --- */
+        .row { display: flex; gap: 10px; align-items: center; }
+        .color-row { display: flex; gap: 12px; padding: 4px; }
+        .dot {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+        }
+        .dot.active::after {
+            content: ''; position: absolute;
+            inset: -4px; border-radius: 50%;
+            border: 2px solid var(--text);
+        }
+
+        /* --- BUTTONS --- */
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            width: 100%;
+        }
+        button:active { transform: scale(0.97); opacity: 0.9; }
+        button.stop { background: var(--danger); }
+        button.secondary { background: var(--input); color: var(--accent); }
+
+        /* --- FILE UPLOAD --- */
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-upload input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0; top: 0; opacity: 0;
+            cursor: pointer;
+        }
+        .file-btn {
+            background: var(--input);
+            color: var(--text);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            border: 1px dashed var(--text-sec);
+        }
+
+        /* --- PREVIEW --- */
+        .preview-box {
+            width: 40px; height: 40px;
+            background: #000;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
+
+    <!-- ICON SETTINGS -->
     <div class="card">
-        <div class="row">
-            <div style="flex:1"><label>Icon</label><input type="text" id="icon" value="🔥" oninput="update()"></div>
-            <div>
-                <label>Color</label>
-                <div class="row">
-                    <div class="dot active" style="background:#fff" onclick="setColor('#fff', this)"></div>
-                    <div class="dot" style="background:#0A84FF" onclick="setColor('#0A84FF', this)"></div>
-                    <div class="dot" style="background:#32D74B" onclick="setColor('#32D74B', this)"></div>
-                    <div class="dot" style="background:#FF453A" onclick="setColor('#FF453A', this)"></div>
-                </div>
+        <span class="label">Icon Source</span>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="setTab('emoji')">Emoji / Text</div>
+            <div class="tab" onclick="setTab('svg')">Custom SVG</div>
+        </div>
+
+        <!-- Emoji Panel -->
+        <div id="panel-emoji">
+            <div class="row">
+                <input type="text" id="icon-emoji" value="🔔" placeholder="Paste emoji..." oninput="updatePreview()">
+                <div class="preview-box" id="preview-emoji"></div>
             </div>
         </div>
-        <label>Title</label><input type="text" id="title" value="Island Dev" oninput="update()">
-        <label>Description (Expanded)</label><input type="text" id="desc" value="Testing mode..." oninput="update()">
-    </div>
 
-    <div class="card">
-        <label>Mode</label>
-        <div class="row">
-            <button style="flex:1; background:#3a3a3c;" onclick="setMode('compact')">Compact</button>
-            <button style="flex:1; background:#3a3a3c;" onclick="setMode('expanded')">Expanded</button>
+        <!-- SVG Panel -->
+        <div id="panel-svg" style="display:none;">
+            <div class="file-upload" style="margin-bottom:8px;">
+                <div class="file-btn">📂 Upload .svg file</div>
+                <input type="file" id="icon-file" accept=".svg" onchange="handleFile(this)">
+            </div>
+            <textarea id="icon-svg-code" rows="3" placeholder="Or paste <svg> code here..." oninput="updatePreview()"></textarea>
+            <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+                <div class="preview-box" id="preview-svg"></div>
+            </div>
+        </div>
+
+        <!-- Color Picker -->
+        <span class="label" style="margin-top:8px;">Icon Color</span>
+        <div class="color-row">
+            <div class="dot active" style="background:#fff" onclick="setColor('#fff', this)"></div>
+            <div class="dot" style="background:#0A84FF" onclick="setColor('#0A84FF', this)"></div>
+            <div class="dot" style="background:#32D74B" onclick="setColor('#32D74B', this)"></div>
+            <div class="dot" style="background:#FF9500" onclick="setColor('#FF9500', this)"></div>
+            <div class="dot" style="background:#FF453A" onclick="setColor('#FF453A', this)"></div>
         </div>
     </div>
 
+    <!-- CONTENT -->
     <div class="card">
-        <button onclick="trigger()">Trigger (3s)</button>
-        <button class="stop" onclick="stop()">Dismiss</button>
+        <span class="label">Notification Content</span>
+        <input type="text" id="title" value="Pro Notification" placeholder="Title" oninput="liveUpdate()">
+        <input type="text" id="desc" value="This is a long description to test truncation robustness." placeholder="Description (Expanded Mode)" oninput="liveUpdate()">
+        
+        <div class="row" style="background:var(--input); padding:8px 12px; border-radius:10px; justify-content:space-between;">
+            <span style="font-size:14px; font-weight:500;">Expanded Mode</span>
+            <input type="checkbox" id="mode-switch" onchange="liveUpdate()" style="width:20px; height:20px;">
+        </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="card">
+        <span class="label">Triggers</span>
+        
+        <div class="row">
+            <button onclick="triggerNow()">Trigger Now (3s)</button>
+            <button class="secondary" onclick="liveUpdate()">Hold Open</button>
+        </div>
+
+        <!-- Timer -->
+        <div class="row" style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
+            <input type="number" id="timer-sec" value="5" style="width:60px; text-align:center;" placeholder="Sec">
+            <button class="secondary" id="btn-timer" onclick="startTimer()">Start Timer</button>
+        </div>
+        
+        <button class="stop" onclick="dismiss()">Dismiss Island</button>
     </div>
 
     <script>
-        let color = '#fff';
-        let mode = 'compact';
+        let activeTab = 'emoji';
+        let selectedColor = '#fff';
+        let timerInterval = null;
 
-        function setColor(c, el) { color = c; document.querySelectorAll('.dot').forEach(d=>d.classList.remove('active')); el.classList.add('active'); update(); }
-        function setMode(m) { mode = m; update(); }
-        
-        function getSVG(char) { return `<svg width="24" height="24" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-size="20">${char}</text></svg>`; }
-
-        function update() {
-            // "PERSISTENT" allows live typing without closing
-            send('PERSISTENT');
+        // --- TABS & UI ---
+        function setTab(mode) {
+            activeTab = mode;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('panel-emoji').style.display = mode === 'emoji' ? 'block' : 'none';
+            document.getElementById('panel-svg').style.display = mode === 'svg' ? 'block' : 'none';
+            
+            updatePreview();
+            liveUpdate();
         }
 
-        function trigger() { send(3000); }
-        function stop() { window.parent.postMessage({ type: 'IOS_ISLAND_DISMISS' }, '*'); }
+        function setColor(hex, el) {
+            selectedColor = hex;
+            document.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+            el.classList.add('active');
+            updatePreview();
+            liveUpdate();
+        }
 
+        // --- SVG HANDLING ---
+        function handleFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('icon-svg-code').value = e.target.result;
+                updatePreview();
+                liveUpdate();
+            };
+            reader.readAsText(file);
+        }
+
+        function getFinalIcon() {
+            if (activeTab === 'emoji') {
+                const val = document.getElementById('icon-emoji').value || '🔔';
+                // Wrap emoji in SVG for consistent sizing
+                return `<svg width="24" height="24" viewBox="0 0 24 24"><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-size="20">${val}</text></svg>`;
+            } else {
+                let raw = document.getElementById('icon-svg-code').value.trim();
+                // Basic validation: ensure it has <svg> tag, if not, wrap it or warn
+                if (!raw.includes('<svg')) {
+                    return `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`; // Error icon
+                }
+                return raw; // Trust the user pasted valid SVG
+            }
+        }
+
+        function updatePreview() {
+            const svg = getFinalIcon();
+            // Update preview boxes
+            const box = activeTab === 'emoji' ? document.getElementById('preview-emoji') : document.getElementById('preview-svg');
+            box.innerHTML = svg;
+            box.style.color = selectedColor;
+            
+            // Fix SVG sizing in preview
+            const svgEl = box.querySelector('svg');
+            if(svgEl) {
+                svgEl.setAttribute('width', '24');
+                svgEl.setAttribute('height', '24');
+            }
+        }
+
+        // --- ACTIONS ---
         function send(duration) {
+            const title = document.getElementById('title').value;
+            const desc = document.getElementById('desc').value;
+            const isExpanded = document.getElementById('mode-switch').checked;
+
             window.parent.postMessage({
                 type: 'IOS_ISLAND_TRIGGER',
-                icon: getSVG(document.getElementById('icon').value),
-                title: document.getElementById('title').value,
-                text: document.getElementById('desc').value,
-                color: color,
-                mode: mode,
+                icon: getFinalIcon(),
+                title: title,
+                text: desc,
+                color: selectedColor,
+                mode: isExpanded ? 'expanded' : 'compact',
                 duration: duration
             }, '*');
         }
+
+        function triggerNow() { send(3000); }
+        function liveUpdate() { send('PERSISTENT'); }
+        function dismiss() { window.parent.postMessage({ type: 'IOS_ISLAND_DISMISS' }, '*'); }
+
+        // --- TIMER ---
+        function startTimer() {
+            let seconds = parseInt(document.getElementById('timer-sec').value) || 5;
+            const btn = document.getElementById('btn-timer');
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            btn.innerText = `Triggering in ${seconds}s...`;
+            btn.style.background = '#FF9500'; // Orange
+            
+            timerInterval = setInterval(() => {
+                seconds--;
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    btn.innerText = 'Start Timer';
+                    btn.style.background = ''; // Reset
+                    triggerNow(); // FIRE!
+                } else {
+                    btn.innerText = `Triggering in ${seconds}s...`;
+                }
+            }, 1000);
+        }
+
+        // Initialize
+        updatePreview();
     </script>
 </body>
 </html>
