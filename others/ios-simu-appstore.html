@@ -790,6 +790,17 @@
                         </div>
 
                         <div class="section-header">Interactions</div>
+                        
+                        
+                        <!-- Insert inside id="settings-content" below "Interactions" header -->
+
+<div class="ios-list">
+    <div class="ios-row">
+        <span>Dynamic Island Updates</span>
+        <input type="checkbox" class="ios-switch" id="setting-island" onchange="iOS.toggleIslandEvents(this)">
+    </div>
+</div>
+                        
                         <div class="ios-list" style="background:transparent;">
                             <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date 🚀')">Check for Updates</button>
                             <div style="height:10px;"></div>
@@ -1567,13 +1578,28 @@ initNetworkListeners() {
                 }
 
                 if (save) localStorage.setItem('ios_airplane_mode', isActive);
+                
+                // Add this inside initSettings() method
+
+// 4. Load Island Preference (Default: true)
+const savedIsland = localStorage.getItem('ios_island_enabled') !== 'false';
+this.islandEventsEnabled = savedIsland;
+const islandSwitch = document.getElementById('setting-island');
+if (islandSwitch) islandSwitch.checked = savedIsland;
+                
+                
+                
             } 
             
 
 
 /* --- ADD THIS METHOD TO IOSEngine CLASS --- */
 
-
+// Add this new method to IOSEngine class
+toggleIslandEvents(el) {
+    this.islandEventsEnabled = el.checked;
+    localStorage.setItem('ios_island_enabled', el.checked);
+}
 
 
 
@@ -1593,6 +1619,13 @@ initNetworkListeners() {
 
             // 2. TRIGGER: Handles Animation & Live Updates
             triggerSystemNotification(iconSVG, title, text, iconColor = '#fff', duration = 3000, mode = 'compact') {
+            	
+            
+            
+            if (!this.islandEventsEnabled) return;
+            
+            
+            
                 const island = document.getElementById('island');
                 const islandContent = island.querySelector('.island-content');
                 const statusBar = document.getElementById('status-bar');
@@ -2170,70 +2203,81 @@ initBattery() {
                     }
 
                     // --- DYNAMIC ISLAND TRIGGER ---
-                    if (isCharging && !island.classList.contains('charging-active')) {
-                        
-                        // PLAY SOUND (Only if valid and unlocked)
-                        if (audioUnlocked && chargingAudio) {
-                            chargingAudio.currentTime = 0;
-                            // The catch block here ensures NO CRASH even if playback fails at runtime
-                            chargingAudio.play().catch(e => {
-                                // Silent fail. Do not alert user.
-                            });
-                        }
+                    // Find this section inside initBattery() -> updateBatteryUI()
 
-                        // --- ISLAND ANIMATION LOGIC ---
-                        clearTimeout(this.autoCollapseTimer);
-                        this.isIslandExpanded = false; 
+// ... (Status Bar Logic remains above) ...
 
-                        island.classList.add('charging-active');
-                        
-                        let originalHtml = islandContent.innerHTML;
-                        statusBar.classList.add('blurred');
-                        islandContent.style.opacity = '0';
-                        
-                        setTimeout(() => {
-                            islandContent.innerHTML = `
-                                <div style="display:flex; align-items:center; width:100%; justify-content:space-between; padding:0 12px; height:100%; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;">
-                                    <div style="display:flex; align-items:center; color:#34C759;">
-                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="filter: drop-shadow(0 0 8px rgba(52,199,89,0.4));">
-                                            <path d="M16 4h-1V2.5C15 2.22 14.78 2 14.5 2h-5C9.22 2 9 2.22 9 2.5V4H8C6.9 4 6 4.9 6 6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1.5 10.5l-4 4V14H9v-4.5l4-4V10h1.5v4.5z"/>
-                                        </svg>
-                                        <span style="font-weight:600; font-size:15px; margin-left:8px; color:#fff; letter-spacing:0.5px;">${percentage}%</span>
-                                    </div>
-                                    <span style="color:#8E8E93; font-size:14px; font-weight:500; letter-spacing:0.3px;">Charging</span>
-                                </div>
-                            `;
-                            
-                            island.classList.remove('expanded'); 
-                            void island.offsetWidth; 
-                            island.classList.add('compact');
-                            islandContent.style.opacity = '1';
-                            
-                            clearTimeout(chargingTimeout);
-                            chargingTimeout = setTimeout(() => {
-                                islandContent.style.opacity = '0';
-                                
-                                setTimeout(() => {
-                                    statusBar.classList.remove('blurred');
-                                    island.classList.remove('compact');
-                                    
-                                    setTimeout(() => {
-                                        if (originalHtml && originalHtml.trim().length > 0) {
-                                            islandContent.innerHTML = originalHtml;
-                                            islandContent.style.display = ''; 
-                                            islandContent.style.alignItems = '';
-                                            islandContent.style.justifyContent = '';
-                                            islandContent.style.opacity = ''; 
-                                        } else {
-                                            islandContent.innerHTML = '';
-                                            islandContent.style.opacity = '';
-                                        }
-                                        island.classList.remove('charging-active');
-                                    }, 500); 
-                                }, 200); 
-                            }, 4000);
-                        }, 200);
+// --- DYNAMIC ISLAND TRIGGER ---
+// 1. Get the last known state from storage
+const wasLastCharging = localStorage.getItem('ios_last_charging_state') === 'true';
+
+// 2. Add '!wasLastCharging' to the condition
+// This ensures it ONLY runs if we weren't charging before (i.e., just plugged in)
+if (isCharging && !island.classList.contains('charging-active') && !wasLastCharging && this.islandEventsEnabled) {
+    
+    // PLAY SOUND (Only if valid and unlocked)
+    if (audioUnlocked && chargingAudio) {
+        chargingAudio.currentTime = 0;
+        chargingAudio.play().catch(e => {});
+    }
+
+    // --- ISLAND ANIMATION LOGIC ---
+    clearTimeout(this.autoCollapseTimer);
+    this.isIslandExpanded = false; 
+
+    island.classList.add('charging-active');
+    
+    let originalHtml = islandContent.innerHTML;
+    statusBar.classList.add('blurred');
+    islandContent.style.opacity = '0';
+    
+    setTimeout(() => {
+        islandContent.innerHTML = `
+            <div style="display:flex; align-items:center; width:100%; justify-content:space-between; padding:0 12px; height:100%; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;">
+                <div style="display:flex; align-items:center; color:#34C759;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="filter: drop-shadow(0 0 8px rgba(52,199,89,0.4));">
+                        <path d="M16 4h-1V2.5C15 2.22 14.78 2 14.5 2h-5C9.22 2 9 2.22 9 2.5V4H8C6.9 4 6 4.9 6 6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1.5 10.5l-4 4V14H9v-4.5l4-4V10h1.5v4.5z"/>
+                    </svg>
+                    <span style="font-weight:600; font-size:15px; margin-left:8px; color:#fff; letter-spacing:0.5px;">${percentage}%</span>
+                </div>
+                <span style="color:#8E8E93; font-size:14px; font-weight:500; letter-spacing:0.3px;">Charging</span>
+            </div>
+        `;
+        
+        island.classList.remove('expanded'); 
+        void island.offsetWidth; 
+        island.classList.add('compact');
+        islandContent.style.opacity = '1';
+        
+        clearTimeout(chargingTimeout);
+        chargingTimeout = setTimeout(() => {
+            islandContent.style.opacity = '0';
+            
+            setTimeout(() => {
+                statusBar.classList.remove('blurred');
+                island.classList.remove('compact');
+                
+                setTimeout(() => {
+                    if (originalHtml && originalHtml.trim().length > 0) {
+                        islandContent.innerHTML = originalHtml;
+                        islandContent.style.display = ''; 
+                        islandContent.style.alignItems = '';
+                        islandContent.style.justifyContent = '';
+                        islandContent.style.opacity = ''; 
+                    } else {
+                        islandContent.innerHTML = '';
+                        islandContent.style.opacity = '';
                     }
+                    island.classList.remove('charging-active');
+                }, 500); 
+            }, 200); 
+        }, 4000);
+    }, 200);
+}
+
+// 3. IMPORTANT: Save the current state at the end of the function
+localStorage.setItem('ios_last_charging_state', isCharging);
+
                 };
 
                 if ('getBattery' in navigator) {
