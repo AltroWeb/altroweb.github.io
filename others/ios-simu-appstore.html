@@ -466,7 +466,7 @@
         .island-camera {
             position: absolute; right: 25%; top: 50%; transform: translateY(-50%);
             width: 10px; height: 10px; background: #101010; border-radius: 50%; opacity: 0.6; pointer-events: none; z-index: 5002;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s; display: none;
         }
         .island-capsule.expanded .island-camera { opacity: 0; }
         .island-content {
@@ -533,12 +533,37 @@
             .app-item { transform: scale(1); }
         }
 
+/* --- BADGE SYSTEM --- */
 .verified-badge {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 12px; height: 12px; background: #007AFF;
-    border-radius: 50%; margin-left: 2px; vertical-align: text-bottom; position: relative; top: -1px;
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    margin-left: 2px; /* Reduced from 4px */
+    vertical-align: middle; 
+    position: relative; 
+    top: -1px;
 }
-.verified-badge svg { width: 8px; height: 8px; fill: white; display: block; }
+
+/* 1. VERIFIED: Filled Blue Circle + White Tick */
+.verified-badge.verified {
+    width: 14px; height: 14px; 
+    background: #007AFF; border-radius: 50%;
+}
+.verified-badge.verified svg { 
+    width: 8px; height: 8px; fill: white; display: block; 
+}
+
+/* 2. MEMBER: Blue Line Checkmark (No Background) */
+.verified-badge.member {
+    width: auto; height: auto; /* Allow SVG to define size */
+    background: transparent;
+}
+/* Update this specific block in your <style> */
+.verified-badge.member svg {
+    display: block;
+    width: 14px; /* Match the HTML attribute */
+    height: 14px;
+}
 
 
 /* STACK CONTAINER */
@@ -571,6 +596,14 @@
 }
 
 
+/* Add this new class for generic system alerts */
+.island.system-notification {
+    width: 200px; /* Adjust if your charging width is different */
+    height: 36px;
+    border-radius: 20px;
+}
+
+
 
 
 
@@ -579,6 +612,12 @@
 <body>
 
     <div class="screen-container" id="screen">
+    	
+    
+    <div id="truetone-layer" style="position:absolute; inset:0; background:rgba(255, 220, 150, 0.15); mix-blend-mode:multiply; z-index:9000; pointer-events:none; opacity:0; transition:opacity 0.5s ease;"></div>
+<div id="brightness-layer" style="position:absolute; inset:0; background:black; z-index:9001; pointer-events:none; opacity:0; transition:opacity 0.1s linear;"></div>
+    
+    
         
         <div class="wallpaper-layer" id="wallpaper"></div>
 
@@ -709,7 +748,7 @@
                     </div>
 
                     <!-- Settings Content -->
-                                        <div class="content-section" id="settings-content">
+                                   <div class="content-section" id="settings-content">
                         <h1 class="app-header-large">Settings</h1>
                         
                         <div class="section-header">Appearance</div>
@@ -722,10 +761,10 @@
 
                         <div class="section-header">Connectivity</div>
                         <div class="ios-list">
-                            <div class="ios-row">
-                                <span>Airplane Mode</span>
-                                <input type="checkbox" class="ios-switch">
-                            </div>
+                       <div class="ios-row">
+    <span>Airplane Mode</span>
+    <input type="checkbox" class="ios-switch" id="setting-airplane" onchange="iOS.toggleAirplaneMode(this)">
+</div>
                             <div class="ios-row">
                                 <span>Wi-Fi</span>
                                 <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">HomeNetwork <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
@@ -741,13 +780,13 @@
                             <div class="ios-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
                                 <span style="font-size:13px; color:#8E8E93; text-transform:uppercase;">Brightness</span>
                                 <div class="ios-slider-container">
-                                    <input type="range" class="ios-slider">
+                                <input type="range" class="ios-slider" id="setting-brightness" min="0" max="100" value="100" oninput="iOS.setBrightness(this.value)">
                                 </div>
                             </div>
                             <div class="ios-row">
-                                <span>True Tone</span>
-                                <input type="checkbox" class="ios-switch" checked>
-                            </div>
+    <span>True Tone</span>
+    <input type="checkbox" class="ios-switch" id="setting-truetone" onchange="iOS.toggleTrueTone(this)">
+</div>
                         </div>
 
                         <div class="section-header">Interactions</div>
@@ -898,8 +937,7 @@
                 this.db = null;
                 this.appId = GLOBAL_APP_ID;
                 this.apps = [];
-                this.verifiedUserIds = new Set();
-                
+                this.userBadges = new Map(); // verify badge
                 
                 this.backgroundApps = []; // Track IDs of apps kept alive [id1, id2]
                 this.MAX_BG_APPS = 3;     // Limit to save RAM
@@ -941,25 +979,76 @@
             }
 
             async fetchVerifiedUsers() {
-                this.verifiedUserIds = new Set();
-                if (!this.db) return; // Guard against DB failure
+                // Ensure map is initialized
+                if (this.userBadges) this.userBadges.clear();
+                else this.userBadges = new Map();
+
+                if (!this.db) return;
 
                 try {
                     const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('users').get();
+                    
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Check for 'verified' OR 'authorVerified'
-                        if (data.verified === true || data.authorVerified === true) {
-                            this.verifiedUserIds.add(doc.id);
+                        const uid = doc.id;
+                        
+                        // --- ROBUST PRIORITY LOGIC ---
+                        // 1. Check MEMBER first (Highest Priority - Blue Line)
+                        if (data.member === true) {
+                            this.userBadges.set(uid, 'member');
+                        } 
+                        // 2. Fallback to VERIFIED only if not a member (Filled Blue)
+                        else if (data.verified === true || data.authorVerified === true) {
+                            this.userBadges.set(uid, 'verified');
                         }
                     });
-                    console.log("Verified Users:", this.verifiedUserIds.size);
+                    console.log("User Badges Loaded:", this.userBadges.size);
                 } catch(e) {
-                    console.log("Could not fetch verified users", e);
+                    console.log("Could not fetch user badges", e);
                 }
             }
 
             async fetchApps() {
+                // --- ROBUST CONNECTIVITY GUARD (Simulated + REAL) ---
+                const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+                const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
+                const isRealNetwork = navigator.onLine; // CHECK REAL SYSTEM INTERNET
+
+                // Logic: Must have (No Airplane) + (Simulated Wifi) + (Real Internet)
+                const isConnected = !isAirplane && isWifiOn && isRealNetwork;
+
+                if (!isConnected) {
+                    const listEl = document.getElementById('store-list');
+                    if (listEl) {
+                        let title = 'Cannot Connect';
+                        let msg = 'Retry to connect.';
+
+                        // Determine specific error message
+                        if (isAirplane) {
+                            title = 'Airplane Mode';
+                            msg = 'Turn off Airplane Mode<br>to access the App Store.';
+                        } else if (!isWifiOn) {
+                            title = 'Wi-Fi Off';
+                            msg = 'Turn on Wi-Fi<br>to access the App Store.';
+                        } else if (!isRealNetwork) {
+                            title = 'No Internet';
+                            msg = 'Check your system connection<br>and try again.';
+                        }
+
+                        listEl.innerHTML = `
+                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:300px; color:#8E8E93; text-align:center;">
+                                <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.2; margin-bottom:20px;">
+                                    <path d="M23.64 7c-.45-.34-4.93-4-11.64-4-1.5 0-2.89.19-4.15.48L18.18 13.8 23.64 7zm-6.6 8.22L3.27 1.44 2 2.72l2.05 2.06C1.91 5.17.54 6.68.36 7l10.08 12.56c.8 1 2.32 1 3.12 0l2.35-2.93 4.1 4.1 1.27-1.27-6.24-6.24z"/>
+                                </svg>
+                                <span style="font-size:20px; font-weight:600; color:#000;">${title}</span>
+                                <span style="font-size:15px; margin-top:8px; line-height:1.4;">${msg}</span>
+                                <button onclick="appStore.fetchApps()" style="margin-top:25px; background:transparent; border:1px solid #007AFF; color:#007AFF; font-size:15px; font-weight:600; padding:8px 24px; border-radius:20px; cursor:pointer;">Retry</button>
+                            </div>`;
+                    }
+                    return; 
+                }
+                // ----------------------------------
+
                 if (!this.db) return;
                 try {
                     const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
@@ -968,7 +1057,6 @@
                         this.apps.push({ id: doc.id, ...doc.data() });
                     });
 
-                    // Merge Unlisted Installed Apps
                     const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                     installed.forEach(localApp => {
                         if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
@@ -998,72 +1086,80 @@
             }
 
                 renderStore(appList) {
-    const listEl = document.getElementById('store-list');
-    listEl.innerHTML = '';
-    
-    if (appList.length === 0) {
-        listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
-        return;
-    }
+                const listEl = document.getElementById('store-list');
+                listEl.innerHTML = '';
+                
+                if (appList.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
+                    return;
+                }
 
-    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-    const verifiedUsers = this.verifiedUserIds || new Set();
+                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
 
-    appList.forEach(app => {
-        const localApp = installedApps.find(ia => ia.id === app.id);
-        const isInstalled = !!localApp;
-        
-        // Version Check
-        const serverTime = app.updatedAt || 0;
-        const localTime = localApp ? (localApp.updatedAt || 0) : 0;
-        const isUpdateAvailable = isInstalled && (serverTime > localTime);
-        
-        // Verification Badge
-        const isVerified = verifiedUsers.has(app.authorId);
-        const badgeHTML = isVerified ? `
-            <span class="verified-badge" title="Verified Developer">
-                <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
-            </span>` : '';
+                appList.forEach(app => {
+                    const localApp = installedApps.find(ia => ia.id === app.id);
+                    const isInstalled = !!localApp;
+                    const serverTime = app.updatedAt || 0;
+                    const localTime = localApp ? (localApp.updatedAt || 0) : 0;
+                    const isUpdateAvailable = isInstalled && (serverTime > localTime);
+                    
+                    // --- BADGE RENDERER ---
+                    // Get badge type from Map (safely)
+                    const badgeType = this.userBadges ? this.userBadges.get(app.authorId) : undefined;
+                    let badgeHTML = '';
 
-        const div = document.createElement('div');
-        div.className = 'store-item';
-        
-        let actionHTML = '';
+                    if (badgeType === 'member') {
+                        // Blue Line Checkmark (Member) - Sharp, Larger
+                        badgeHTML = `
+                            <span class="verified-badge member" title="Member">
+                                <svg width="14" height="14" viewBox="0 0 12 12" style="display:block;">
+                                    <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/>
+                                </svg>
+                            </span>`;
+                    } else if (badgeType === 'verified') {
+                        // Filled Blue Checkmark (Verified)
+                        badgeHTML = `
+                            <span class="verified-badge verified" title="Verified Developer">
+                                <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+                            </span>`;
+                    }
+                    // ----------------------
 
-        if (isUpdateAvailable) {
-            actionHTML = `
-                <div class="store-actions">
-                    <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')">
-                        <span>UPDATE</span>
-                        <div class="spinner"></div>
-                    </button>
-                    <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
-                        <span>UNINSTALL</span>
-                        <div class="spinner"></div>
-                    </button>
-                </div>
-            `;
-        } else {
-            actionHTML = `
-                <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                    <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
-                    <div class="spinner"></div>
-                </button>
-            `;
-        }
+                    const div = document.createElement('div');
+                    div.className = 'store-item';
+                    
+                    let actionHTML = '';
+                    if (isUpdateAvailable) {
+                        actionHTML = `
+                            <div class="store-actions">
+                                <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')">
+                                    <span>UPDATE</span>
+                                    <div class="spinner"></div>
+                                </button>
+                                <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+                                    <span>UNINSTALL</span>
+                                    <div class="spinner"></div>
+                                </button>
+                            </div>`;
+                    } else {
+                        actionHTML = `
+                            <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+                                <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+                                <div class="spinner"></div>
+                            </button>`;
+                    }
 
-        // ORIGINAL LINE RESTORED BELOW (Uses app.iconUrl directly)
-        div.innerHTML = `
-            <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-            <div class="store-info">
-                <div class="store-name">${app.name}</div>
-                <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
-            </div>
-            ${actionHTML}
-        `;
-        listEl.appendChild(div);
-    });
-}
+                    div.innerHTML = `
+                        <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                        <div class="store-info">
+                            <div class="store-name">${app.name}</div>
+                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                        </div>
+                        ${actionHTML}
+                    `;
+                    listEl.appendChild(div);
+                });
+            }
 
 
                 async handleUpdateClick(btn, appId) {
@@ -1199,6 +1295,14 @@ if (this.isDarkMode) {
                 this.gestureBar.classList.add('on-home');
 
                 this.initClock();
+                
+                this.lowPowerAlertShown = false;
+                
+                
+                this.initBattery();
+                
+                
+                
                 // --- loads wallpaper ---
                 const savedWallpaper = localStorage.getItem('ios_wallpaper_url');
                 if (savedWallpaper && this.wallpaper) {
@@ -1327,6 +1431,12 @@ setTimeout(() => {
     }
 }, 1000);
 
+this.initNetworkListeners();
+
+this.initMessageListeners();
+
+this.initSettings();
+
 
 
             }
@@ -1341,11 +1451,276 @@ setTimeout(() => {
   
             
             
-            
+            initSettings() {
+        // 1. Load Brightness
+        const savedBright = localStorage.getItem('ios_brightness');
+        const brightVal = savedBright !== null ? parseInt(savedBright) : 100;
+        this.setBrightness(brightVal);
+        const brightSlider = document.getElementById('setting-brightness');
+        if (brightSlider) brightSlider.value = brightVal;
+
+        // 2. Load True Tone
+        const savedTT = localStorage.getItem('ios_truetone') === 'true';
+        this.toggleTrueTone({ checked: savedTT }, false);
+        const ttSwitch = document.getElementById('setting-truetone');
+        if (ttSwitch) ttSwitch.checked = savedTT;
+
+        // 3. Load Airplane Mode
+        const savedAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+        // IMPORTANT: Set the class property so other functions can check it
+        this.isAirplaneMode = savedAirplane; 
+        this.toggleAirplaneMode({ checked: savedAirplane }, false);
+        const apSwitch = document.getElementById('setting-airplane');
+        if (apSwitch) apSwitch.checked = savedAirplane;
+    }
+
+
+initNetworkListeners() {
+        window.addEventListener('offline', () => {
+            const wifiOffIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M23.64 7c-.45-.34-4.93-4-11.64-4-1.5 0-2.89.19-4.15.48L18.18 13.8 23.64 7zm-6.6 8.22L3.27 1.44 2 2.72l2.05 2.06C1.91 5.17.54 6.68.36 7l10.08 12.56c.8 1 2.32 1 3.12 0l2.35-2.93 4.1 4.1 1.27-1.27-6.24-6.24z"/></svg>';
+            this.triggerSystemNotification(wifiOffIcon, 'No Connection', '#8E8E93'); // Grey
+        });
+
+        // Optional: Notify when back online
+        window.addEventListener('online', () => {
+             const wifiIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+             this.triggerSystemNotification(wifiIcon, 'Connected', '#34C759'); // Green
+        });
+    }
+
+
+
+
+
+
+    setBrightness(value) {
+        // Calculate opacity: 100% brightness = 0% opacity (invisible black layer)
+        // 0% brightness = 0.7 opacity (dark, but not pitch black)
+        const opacity = (100 - value) / 100 * 0.7;
+        
+        const layer = document.getElementById('brightness-layer');
+        if (layer) layer.style.opacity = opacity;
+
+        localStorage.setItem('ios_brightness', value);
+    }
+
+    toggleTrueTone(el, save = true) {
+        const layer = document.getElementById('truetone-layer');
+        const isActive = el.checked;
+        
+        if (layer) layer.style.opacity = isActive ? '1' : '0';
+        
+        if (save) localStorage.setItem('ios_truetone', isActive);
+    }
+
+    toggleAirplaneMode(el, save = true) {
+                const isActive = el.checked;
+                this.isAirplaneMode = isActive; 
+                
+                const statusBar = document.getElementById('status-bar');
+                // Target the right-side container explicitly
+                const rightSide = statusBar.querySelector('.sb-side:last-child');
+                // Target the existing signal/wifi icons
+                const signalIcons = rightSide.querySelectorAll('svg:not(#sb-airplane-icon-svg)');
+                
+                // 1. CLEANUP FIRST: Always remove existing plane icon to avoid duplicates/stale state
+                const existingPlane = document.getElementById('sb-airplane-icon');
+                if (existingPlane) existingPlane.remove();
+
+                if (isActive) {
+                    // UI: Hide Signals
+                    signalIcons.forEach(icon => icon.style.display = 'none');
+                    
+                    // UI: Create & Inject New Plane Icon
+                    const plane = document.createElement('div'); // Wrapper to ensure correct positioning
+                    plane.id = 'sb-airplane-icon';
+                    plane.style.display = 'flex';
+                    plane.style.alignItems = 'center';
+                    plane.innerHTML = '<svg id="sb-airplane-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px;"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
+                    
+                    // Prepend makes it the first item in the right side
+                    rightSide.prepend(plane);
+
+                    // FUNCTIONALITY: Disconnect App Store
+                    if (this.activeWindow && this.activeWindow.getAttribute('data-app') === 'AppStore') {
+                        if (typeof appStore !== 'undefined') appStore.fetchApps();
+                    }
+                    
+                    
+                    // TRIGGER ISLAND
+                const planeIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
+                this.triggerSystemNotification(planeIcon, 'Airplane Mode', '#FF9500'); // Orange
+                
+
+                } else {
+                    // UI: Show Signals
+                    signalIcons.forEach(icon => icon.style.display = '');
+
+                    // FUNCTIONALITY: Reconnect App Store
+                    if (this.activeWindow && this.activeWindow.getAttribute('data-app') === 'AppStore') {
+                        const list = document.getElementById('store-list');
+                        if (list) list.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">Connecting...</div>';
+                        setTimeout(() => {
+                            if (typeof appStore !== 'undefined') appStore.fetchApps();
+                        }, 800);
+                    }
+                }
+
+                if (save) localStorage.setItem('ios_airplane_mode', isActive);
+            } 
             
 
 
 /* --- ADD THIS METHOD TO IOSEngine CLASS --- */
+
+
+
+
+
+/* --- MASTER DYNAMIC ISLAND NOTIFICATION --- */
+    // 1. LISTENER: Receives commands from Custom Apps
+            initMessageListeners() {
+                window.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'IOS_ISLAND_TRIGGER') {
+                        const { icon, title, text, color, duration, mode } = event.data;
+                        this.triggerSystemNotification(icon, title, text, color, duration, mode);
+                    }
+                    if (event.data && event.data.type === 'IOS_ISLAND_DISMISS') {
+                        this.dismissSystemNotification();
+                    }
+                });
+            }
+
+            // 2. TRIGGER: Handles Animation & Live Updates
+            triggerSystemNotification(iconSVG, title, text, iconColor = '#fff', duration = 3000, mode = 'compact') {
+                const island = document.getElementById('island');
+                const islandContent = island.querySelector('.island-content');
+                const statusBar = document.getElementById('status-bar');
+
+                // --- CASE A: HOT UPDATE (Already Active) ---
+                if (island.classList.contains('system-notification')) {
+                    if (this.systemNotificationTimer) clearTimeout(this.systemNotificationTimer);
+                    
+                    const iconEl = islandContent.querySelector('.sys-icon-container');
+                    const titleEl = islandContent.querySelector('.sys-title');
+                    const textEl = islandContent.querySelector('.sys-text');
+                    
+                    if (iconEl) { iconEl.innerHTML = iconSVG; iconEl.style.color = iconColor; }
+                    if (titleEl) titleEl.innerText = title;
+                    if (textEl) textEl.innerText = text;
+
+                    // Mode Switch
+                    island.classList.remove('compact', 'expanded');
+                    void island.offsetWidth; // Force Reflow
+                    island.classList.add(mode);
+                    
+                    // Description Visibility
+                    if(textEl) textEl.style.display = (mode === 'expanded') ? 'block' : 'none';
+
+                    if (duration !== 'PERSISTENT') {
+                        this.systemNotificationTimer = setTimeout(() => this.dismissSystemNotification(), duration);
+                    }
+                    return; 
+                }
+
+                // --- CASE B: COLD START ---
+                
+                // 1. Reset Environment
+                clearTimeout(this.autoCollapseTimer);
+                this.isIslandExpanded = false; 
+
+                // 2. Capture Original Content (Safe Guard)
+                // Only capture if we aren't already transitioning, to avoid saving a blank state
+                if (!island.classList.contains('system-notification') && islandContent.innerHTML.trim() !== "") {
+                     this.tempOriginalHtml = islandContent.innerHTML;
+                }
+
+                // 3. Set Active State
+                island.classList.add('system-notification');
+                statusBar.classList.add('blurred'); // Recede Status Bar
+
+                // 4. Fade Out Old Content
+                islandContent.style.opacity = '0';
+
+                // 5. Build UI (Wait 200ms)
+                setTimeout(() => {
+                    const descDisplay = (mode === 'expanded') ? 'block' : 'none';
+
+                    islandContent.innerHTML = `
+                        <div style="display:flex; flex-direction:column; justify-content:center; width:100%; height:100%; padding:0 14px; font-family: 'SF Pro Display', sans-serif; box-sizing:border-box;">
+                            <div style="display:flex; align-items:center; width:100%; height:100%;">
+                                <div class="sys-icon-container" style="display:flex; align-items:center; justify-content:center; color:${iconColor}; transition:color 0.3s ease; margin-right:12px; min-width:24px;">
+                                    ${iconSVG}
+                                </div>
+                                <div style="display:flex; flex-direction:column; justify-content:center; flex:1; min-width:0;">
+                                    <span class="sys-title" style="color:#fff; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2;">${title}</span>
+                                    <span class="sys-text" style="color:rgba(255,255,255,0.6); font-size:13px; margin-top:1px; display:${descDisplay}; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; line-height:1.3;">${text}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    island.classList.remove('expanded', 'compact');
+                    void island.offsetWidth; 
+                    island.classList.add(mode);
+                    islandContent.style.opacity = '1';
+
+                    if (duration !== 'PERSISTENT') {
+                        this.systemNotificationTimer = setTimeout(() => this.dismissSystemNotification(), duration);
+                    }
+                }, 200);
+            }
+
+            // 3. DISMISS: Closes and Restores Music
+            dismissSystemNotification() {
+                const island = document.getElementById('island');
+                const statusBar = document.getElementById('status-bar');
+                
+                // Safety Check
+                if (!island || !statusBar) return;
+                
+                const islandContent = island.querySelector('.island-content');
+
+                // 1. KILL TIMER: Prevent the auto-dismiss from firing if we are already closing
+                if (this.systemNotificationTimer) {
+                    clearTimeout(this.systemNotificationTimer);
+                    this.systemNotificationTimer = null;
+                }
+
+                // 2. Fade Out Text
+                islandContent.style.opacity = '0';
+                
+                setTimeout(() => {
+                    // 3. FORCE STATUS BAR RESTORATION
+                    // We remove the class AND manually clear inline styles to be 100% sure
+                    statusBar.classList.remove('blurred');
+                    statusBar.style.filter = ''; 
+                    statusBar.style.opacity = '';
+                    statusBar.style.transform = '';
+
+                    // 4. Shrink Island
+                    island.classList.remove('compact');
+                    island.classList.remove('expanded');
+                    island.classList.remove('system-notification');
+                    
+                    // 5. Restore Original Content (Music/Idle)
+                    setTimeout(() => {
+                        if (this.tempOriginalHtml && this.tempOriginalHtml.trim().length > 0) {
+                            islandContent.innerHTML = this.tempOriginalHtml;
+                            this.tempOriginalHtml = null; // Clear buffer
+                            
+                            // Clear styles so CSS takes over for Music/Idle state
+                            islandContent.style.display = ''; 
+                            islandContent.style.opacity = '';
+                            islandContent.style.alignItems = '';
+                            islandContent.style.justifyContent = '';
+                        } else {
+                            islandContent.innerHTML = '';
+                            islandContent.style.opacity = '';
+                        }
+                    }, 500); // Wait for shrink transition
+                }, 200); // Wait for text fade
+            }
 
 
 
@@ -1701,6 +2076,181 @@ setTimeout(() => {
                 return { scaleX, scaleY, transX, transY };
             }
 
+
+
+initBattery() {
+                const batteryIcon = document.querySelector('.sb-side svg:last-child');
+                const island = document.getElementById('island');
+                const islandContent = island.querySelector('.island-content');
+                const statusBar = document.getElementById('status-bar');
+                
+                // CONFIG: Sound URL
+                const CHARGING_SOUND_URL = 'https://altroweb.github.io/others/apps/charging.mp3';
+
+                // --- 1. SILENT & ROBUST AUDIO SETUP ---
+                let chargingAudio = null;
+                let audioUnlocked = false;
+
+                if (CHARGING_SOUND_URL && CHARGING_SOUND_URL.trim() !== '') {
+                    try {
+                        chargingAudio = new Audio(CHARGING_SOUND_URL);
+                        chargingAudio.preload = 'auto';
+                        chargingAudio.volume = 0; // Start silent
+
+                        // ROBUSTNESS: Catch 404 or Decode Errors immediately
+                        chargingAudio.addEventListener('error', (e) => {
+                            console.warn("Charging sound failed to load. Audio disabled.", e);
+                            chargingAudio = null; // Kill the engine to prevent future errors
+                        });
+
+                    } catch (e) {
+                        console.warn("Invalid Audio URL");
+                        chargingAudio = null;
+                    }
+                }
+
+                // --- 2. SILENT UNLOCK STRATEGY ---
+                const unlockSound = () => {
+                    // Only try if audio exists and loaded successfully
+                    if (audioUnlocked || !chargingAudio) return;
+
+                    const playPromise = chargingAudio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            chargingAudio.pause();
+                            chargingAudio.currentTime = 0;
+                            chargingAudio.volume = 0.6; // Set real volume
+                            audioUnlocked = true;
+                            
+                            // Cleanup listeners
+                            document.removeEventListener('click', unlockSound, true);
+                            document.removeEventListener('touchstart', unlockSound, true);
+                            document.removeEventListener('keydown', unlockSound, true);
+                        }).catch(e => {
+                            // If play() fails here (e.g. invalid source), we just ignore it.
+                            // The 'error' listener above handles the logging.
+                        });
+                    }
+                };
+
+                document.addEventListener('click', unlockSound, true);
+                document.addEventListener('touchstart', unlockSound, true);
+                document.addEventListener('keydown', unlockSound, true);
+                // -----------------------------
+
+                let chargingTimeout = null;
+
+                if (!batteryIcon) return;
+                const fillRect = batteryIcon.querySelector('rect[width="18"]');
+                if (!fillRect) return;
+
+                const updateBatteryUI = (battery) => {
+                    const level = battery.level; 
+                    const isCharging = battery.charging;
+                    const percentage = Math.round(level * 100);
+
+                    // --- STATUS BAR UPDATE ---
+                    const width = Math.max(2, 18 * level);
+                    fillRect.setAttribute('width', width);
+
+                    if (isCharging) {
+                        fillRect.style.fill = '#34C759'; // Green
+                        this.lowPowerAlertShown = false; 
+                    } else {
+                        if (level <= 0.2) {
+                            fillRect.style.fill = '#FF3B30'; // Red
+                            if (!this.lowPowerAlertShown) {
+                                this.lowPowerAlertShown = true;
+                                this.showAlert('Low Battery', `${percentage}% Battery Remaining`, () => {}, false);
+                            }
+                        } else {
+                            fillRect.style.fill = 'currentColor'; 
+                        }
+                    }
+
+                    // --- DYNAMIC ISLAND TRIGGER ---
+                    if (isCharging && !island.classList.contains('charging-active')) {
+                        
+                        // PLAY SOUND (Only if valid and unlocked)
+                        if (audioUnlocked && chargingAudio) {
+                            chargingAudio.currentTime = 0;
+                            // The catch block here ensures NO CRASH even if playback fails at runtime
+                            chargingAudio.play().catch(e => {
+                                // Silent fail. Do not alert user.
+                            });
+                        }
+
+                        // --- ISLAND ANIMATION LOGIC ---
+                        clearTimeout(this.autoCollapseTimer);
+                        this.isIslandExpanded = false; 
+
+                        island.classList.add('charging-active');
+                        
+                        let originalHtml = islandContent.innerHTML;
+                        statusBar.classList.add('blurred');
+                        islandContent.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            islandContent.innerHTML = `
+                                <div style="display:flex; align-items:center; width:100%; justify-content:space-between; padding:0 12px; height:100%; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;">
+                                    <div style="display:flex; align-items:center; color:#34C759;">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="filter: drop-shadow(0 0 8px rgba(52,199,89,0.4));">
+                                            <path d="M16 4h-1V2.5C15 2.22 14.78 2 14.5 2h-5C9.22 2 9 2.22 9 2.5V4H8C6.9 4 6 4.9 6 6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1.5 10.5l-4 4V14H9v-4.5l4-4V10h1.5v4.5z"/>
+                                        </svg>
+                                        <span style="font-weight:600; font-size:15px; margin-left:8px; color:#fff; letter-spacing:0.5px;">${percentage}%</span>
+                                    </div>
+                                    <span style="color:#8E8E93; font-size:14px; font-weight:500; letter-spacing:0.3px;">Charging</span>
+                                </div>
+                            `;
+                            
+                            island.classList.remove('expanded'); 
+                            void island.offsetWidth; 
+                            island.classList.add('compact');
+                            islandContent.style.opacity = '1';
+                            
+                            clearTimeout(chargingTimeout);
+                            chargingTimeout = setTimeout(() => {
+                                islandContent.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    statusBar.classList.remove('blurred');
+                                    island.classList.remove('compact');
+                                    
+                                    setTimeout(() => {
+                                        if (originalHtml && originalHtml.trim().length > 0) {
+                                            islandContent.innerHTML = originalHtml;
+                                            islandContent.style.display = ''; 
+                                            islandContent.style.alignItems = '';
+                                            islandContent.style.justifyContent = '';
+                                            islandContent.style.opacity = ''; 
+                                        } else {
+                                            islandContent.innerHTML = '';
+                                            islandContent.style.opacity = '';
+                                        }
+                                        island.classList.remove('charging-active');
+                                    }, 500); 
+                                }, 200); 
+                            }, 4000);
+                        }, 200);
+                    }
+                };
+
+                if ('getBattery' in navigator) {
+                    navigator.getBattery().then(battery => {
+                        updateBatteryUI(battery);
+                        battery.addEventListener('levelchange', () => updateBatteryUI(battery));
+                        battery.addEventListener('chargingchange', () => updateBatteryUI(battery));
+                    });
+                } else {
+                    console.log("Battery Status API not supported.");
+                }
+            }    
+
+
+
+
+
             getVisibleIconElement(appName) {
                 const apps = document.querySelectorAll('.homescreen-page .app-item');
                 for (let app of apps) {
@@ -1747,15 +2297,38 @@ setTimeout(() => {
                         container.classList.add('active');
                         appTitle.innerText = customApp.name;
                         
-                        // --- BACKGROUND IFRAME LOGIC ---
-                        // 1. Hide ALL existing iframes in the container (don't remove them!)
+                        // 1. Hide ALL existing content
                         Array.from(container.children).forEach(child => child.style.display = 'none');
                         
-                        // 2. Check if we already have this app running
+                        // --- ROBUST CONNECTIVITY CHECK (Airplane Mode + Real Network) ---
+                        const isOfflineCapable = customApp.embedUrl && customApp.embedUrl.trim().startsWith('data:');
+                        const isRealNetwork = navigator.onLine;
+
+                        // BLOCK IF: (Airplane Mode OR No Real Internet) AND (Not a Data URI)
+                        if ((this.isAirplaneMode || !isRealNetwork) && !isOfflineCapable) {
+                            
+                            let errorMsg = document.getElementById('app-offline-msg');
+                            if (!errorMsg) {
+                                errorMsg = document.createElement('div');
+                                errorMsg.id = 'app-offline-msg';
+                                errorMsg.style.cssText = 'height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#8E8E93; text-align:center;';
+                                errorMsg.innerHTML = `
+                                    <svg width="50" height="50" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.3; margin-bottom:15px;">
+                                        <path d="M23.64 7c-.45-.34-4.93-4-11.64-4-1.5 0-2.89.19-4.15.48L18.18 13.8 23.64 7zm-6.6 8.22L3.27 1.44 2 2.72l2.05 2.06C1.91 5.17.54 6.68.36 7l10.08 12.56c.8 1 2.32 1 3.12 0l2.35-2.93 4.1 4.1 1.27-1.27-6.24-6.24z"/>
+                                    </svg>
+                                    <span style="font-size:17px; font-weight:600;">No Internet Connection</span>
+                                `;
+                                container.appendChild(errorMsg);
+                            }
+                            errorMsg.style.display = 'flex';
+                            return; // STOP EXECUTION
+                        }
+                        // -----------------------------------
+
+                        // 2. LOAD APP (It's either Online OR it's a Data URI)
                         let iframe = container.querySelector(`iframe[data-app-id="${appName}"]`);
                         
                         if (!iframe) {
-                            // Cold Start
                             iframe = document.createElement('iframe');
                             iframe.src = customApp.embedUrl;
                             iframe.style.width = '100%';
@@ -1766,7 +2339,6 @@ setTimeout(() => {
                             container.appendChild(iframe);
                         }
                         
-                        // 3. Show (Resume)
                         iframe.style.display = 'block';
                         
                     } else {
@@ -1817,29 +2389,42 @@ setTimeout(() => {
 
             openApp(el, appName, theme = 'light') {
                 // BLOCK OPEN IF JUST SWIPED
-                if (this.isSwipingPage) {
-                    return;
-                }
-
+                if (this.isSwipingPage) return;
                 if (this.state !== 'IDLE') return;
+                
                 this.openedFromIsland = false;
                 this.gestureBar.classList.remove('on-home');
+
+                // 1. CAPTURE EXACT ICON REFERENCE (Robust Check)
+                if (el) {
+                    this.activeAppIcon = el.querySelector('.app-icon');
+                } else {
+                    // Fallback if opened programmatically (e.g. from Notification/Search)
+                    this.activeAppIcon = this.getVisibleIconElement(appName);
+                }
 
                 let appId = appName; 
                 if (el && el.getAttribute('data-app-id')) {
                     appId = el.getAttribute('data-app-id');
                 }
 
+                // 2. ROUTING LOGIC
                 if (appName === 'Music') {
-                    this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.musicWindow;
                     this.activeWindow.setAttribute('data-app', 'Music');
                 } else if (appName === 'AppStore') {
-                    this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.storeWindow;
                     this.activeWindow.setAttribute('data-app', 'AppStore');
+                    
+                    // --- REFRESH STORE ON OPEN ---
+                    const list = document.getElementById('store-list');
+                    // Reset UI to Loading State so user sees activity
+                    if(list) list.innerHTML = '<div style="text-align:center; color:#8E8E93; padding:40px;">Loading...</div>';
+                    // Trigger Fetch
+                    if (typeof appStore !== 'undefined') appStore.fetchApps();
+                    // -----------------------------
+
                 } else {
-                    this.activeAppIcon = el.querySelector('.app-icon');
                     this.activeWindow = this.mainWindow; 
                     this.manageBackgroundApps(appId);
                     this.routeContent(appId); 
@@ -1850,7 +2435,7 @@ setTimeout(() => {
 
                 this.state = 'OPENING';
                 
-                // Theme Logic
+                // 3. THEME LOGIC
                 if (theme === 'light' && !this.isDarkMode) {
                     this.statusBar.classList.add('dark-text');
                     this.gestureBar.classList.add('dark-bar');
@@ -1858,11 +2443,13 @@ setTimeout(() => {
                     this.statusBar.classList.remove('dark-text');
                     this.gestureBar.classList.remove('dark-bar');
                 }
+                // Music always needs light status bar (dark background)
                 if (appName === 'Music') {
                     this.statusBar.classList.remove('dark-text');
                     this.gestureBar.classList.remove('dark-bar');
                 }
 
+                // 4. ANIMATION EXECUTION
                 this.activeWindow.style.display = 'flex';
                 this.activeWindow.style.transformOrigin = 'center center';
                 this.activeWindow.style.transition = 'none';
@@ -1872,8 +2459,10 @@ setTimeout(() => {
                 const tf = this.getIconTransform(this.activeAppIcon);
                 this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
                 this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
+                
                 if(this.activeAppIcon) this.activeAppIcon.classList.add('hidden-source');
-                this.activeWindow.offsetHeight; 
+                
+                this.activeWindow.offsetHeight; // Force Reflow
 
                 this.activeWindow.style.transition = 'transform 0.5s var(--ease-open), border-radius 0.5s var(--ease-open), opacity 0.3s ease';
                 this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1, 1)';
@@ -1889,7 +2478,7 @@ setTimeout(() => {
                          if (this.state === 'ACTIVE') this.activeWindow.style.transition = ''; 
                     }, 300);
                 }, 500);
-            }
+            } 
             
             
             launchMusicFromIsland() {
@@ -2080,6 +2669,18 @@ setTimeout(() => {
             }
 
             handleIslandClick() {
+                // --- FIX: BLOCK INTERACTION FOR ALERTS ---
+                // If Charging OR System Notification (Airplane/No Wifi) is active:
+                if (this.island.classList.contains('charging-active') || this.island.classList.contains('system-notification')) {
+                    // Trigger Bounce Animation
+                    this.island.classList.remove('island-bounce');
+                    void this.island.offsetWidth; // Force Reflow
+                    this.island.classList.add('island-bounce');
+                    
+                    return; // STOP HERE. Do not open apps.
+                }
+
+                // --- Standard Music/Expand Logic ---
                 if (this.state === 'ACTIVE' && this.activeWindow?.getAttribute('data-app') === 'Music') {
                      this.toggleIsland(true);
                      return;
@@ -2197,6 +2798,21 @@ setTimeout(() => {
             // 1. Define the COMPLETE Service Code
             const NOTIFICATION_SERVICE_CODE = `
             (function() {
+            	
+            // --- ADD THIS HELPER ---
+                window.triggerIsland = (icon, title, text, color) => {
+                    if (window.iOS && window.iOS.triggerSystemNotification) {
+                        window.iOS.triggerSystemNotification(icon, title, text, color);
+                    }
+                };
+                // ----------
+            
+            
+            
+            
+            
+            
+            
                 if (window.iOS_NotificationService_Active) return;
                 window.iOS_NotificationService_Active = true;
                 const BOOT_TIME = Date.now();

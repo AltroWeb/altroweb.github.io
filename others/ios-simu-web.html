@@ -401,6 +401,8 @@ body.dark-mode .info-box a {
                 <a href="#doc-verify">Verification</a>
                 <a href="#doc-api">System APIs</a>
                 <a href="#doc-advanced">Advanced Config</a>
+                <a href="#doc-island">Dynamic Island</a>
+                <a href="#doc-settings">System Settings</a>
             </aside>
             <main class="doc-content">
                 <h1>Documentation</h1>
@@ -424,24 +426,72 @@ body.dark-mode .info-box a {
                     </div>
                 </div>
 
-                <div id="doc-verify" class="doc-block">
+        <div id="doc-verify" class="doc-block">
                     <h3>App Store Verification</h3>
-                    <div class="verified-hero">
-                        <div class="v-badge-large">
-                            <svg width="40" height="40" viewBox="0 0 12 12" fill="none">
-                                <path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z" fill="white"/>
-                            </svg>
-                        </div>
-                        <div class="v-content">
-                            <h4>Verified Developer</h4>
-                            <p>For top-tier developers who maintain high standards. Verification grants a blue checkmark and higher visibility in the store.</p>
-                            <ul style="list-style:none; padding:0; margin:0 0 15px 0; font-size:14px; opacity:0.9;">
-                                <li>• Must have 5+ published apps with 99% uptime.</li>
-                                <li>• Original content only (no clones).</li>
-                                <li>• No malicious code or broken layouts.</li>
+                    <p style="margin-bottom:30px;">Stand out in the App Store with our verification badges. These badges signify trust, reliability, and quality to users.</p>
+
+                    <!-- TWO-COLUMN BADGE GRID -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        
+                        <!-- 1. MEMBER BADGE (Blue Line) -->
+                        <div style="background: var(--bg-body); padding: 24px; border-radius: 18px; border: 1px solid var(--border-color); transition: background 0.3s;">
+                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px;">
+                                <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(0,122,255,0.1); border-radius: 10px;">
+                                    <svg width="24" height="24" viewBox="0 0 12 12" style="display:block;">
+                                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"></path>
+                                    </svg>
+                                </div>
+                                <h4 style="margin:0; font-size:19px; font-weight:600; color:var(--text-primary);">Trusted Member</h4>
+                            </div>
+                            <p style="font-size:15px; color:var(--text-secondary); line-height:1.5; margin-bottom:15px;">
+                                Awarded to active developers who maintain high-quality applications.
+                            </p>
+                            <ul style="list-style:none; padding:0; margin:0; font-size:14px; color:var(--text-primary);">
+                                <li style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                                    <span style="color:#34C759;">✓</span> 5+ Published Apps
+                                </li>
+                                <li style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                                    <span style="color:#34C759;">✓</span> Reliable & Usable Code
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <span style="color:#34C759;">✓</span> Actively Maintained
+                                </li>
                             </ul>
-                            <div style="font-size:14px; opacity:0.8;">To apply, open a GitHub issue with the tag <code>Verification.</code><code></code></div>
                         </div>
+
+                        <!-- 2. OFFICIAL BADGE (Filled Blue) -->
+                        <div style="background: linear-gradient(135deg, #007AFF, #0055b3); padding: 24px; border-radius: 18px; color: white; box-shadow: 0 10px 30px rgba(0,122,255,0.25);">
+                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:15px;">
+                                <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.2); border-radius: 50%;">
+                                    <svg width="20" height="20" viewBox="0 0 12 12" fill="white" style="display:block;">
+                                        <path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"></path>
+                                    </svg>
+                                </div>
+                                <h4 style="margin:0; font-size:19px; font-weight:700;">Official Partner</h4>
+                            </div>
+                            <p style="font-size:15px; opacity:0.9; line-height:1.5; margin-bottom:15px;">
+                                The highest tier for ecosystem leaders and core contributors.
+                            </p>
+                            <ul style="list-style:none; padding:0; margin:0; font-size:14px; opacity:0.95;">
+                                <li style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                                    <span>★</span> 10+ Apps with 99% Uptime
+                                </li>
+                                <li style="margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                                    <span>★</span> Project Contributor
+                                </li>
+                                <li style="display:flex; align-items:center; gap:8px;">
+                                    <span>★</span> Trusted Friend ;)
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+                    
+                    <div style="margin-top:25px; font-size:14px; color:var(--text-secondary); text-align:center;">
+                        To apply, open a GitHub issue with the tag <code style="background:var(--bg-body); border:1px solid var(--border-color); padding:2px 6px; border-radius:4px; font-family:monospace;">Verification Request</code>.
+                        <br><br>
+                        	NOTE: Criteria for being verified may change without notice. Violation of our App Store terms of use or developer responsibilities agreement can result in denial or complete removal of verification respectively.
+                      
                     </div>
                 </div>
 
@@ -551,6 +601,103 @@ window.parent.<span class="hl-f">postMessage</span>({
                     </div>
                 </div>
 
+<div id="doc-island" class="doc-block">
+                    <h3>Dynamic Island API</h3>
+                    <p>Apps can trigger rich notifications on the Dynamic Island. The Island supports compact and expanded modes, live updates, and persistent states (e.g., for timers or music).</p>
+                    
+                    <strong>Basic Trigger (Compact)</strong>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">notifyIsland</span>() {
+    <span class="hl-k">const</span> iconSVG = <span class="hl-s">`&lt;svg ...&gt;&lt;/svg&gt;`</span>; <span class="hl-c">// Your SVG string</span>
+    
+    window.parent.<span class="hl-f">postMessage</span>({
+        type: <span class="hl-s">'IOS_ISLAND_TRIGGER'</span>,
+        icon: iconSVG,
+        title: <span class="hl-s">'Pizza Tracker'</span>,
+        text: <span class="hl-s">'Order #4552 is preparing...'</span>,
+        color: <span class="hl-s">'#FF9500'</span>, <span class="hl-c">// Icon color</span>
+        mode: <span class="hl-s">'compact'</span>,
+        duration: <span class="hl-c">3000</span> <span class="hl-c">// ms</span>
+    }, <span class="hl-s">'*'</span>);
+}
+                    </div>
+
+                    <strong>Persistent Live Activity (Expanded)</strong>
+                    <p>Use `duration: 'PERSISTENT'` to keep the island open. You can send subsequent messages to update the text or progress bar live without the island closing.</p>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">startTimer</span>() {
+    window.parent.<span class="hl-f">postMessage</span>({
+        type: <span class="hl-s">'IOS_ISLAND_TRIGGER'</span>,
+        icon: <span class="hl-s">`&lt;svg...&gt;`</span>,
+        title: <span class="hl-s">'Timer'</span>,
+        text: <span class="hl-s">'14:59 remaining'</span>,
+        color: <span class="hl-s">'#FF3B30'</span>,
+        mode: <span class="hl-s">'expanded'</span>, <span class="hl-c">// Shows the 'text' field</span>
+        duration: <span class="hl-s">'PERSISTENT'</span>
+    }, <span class="hl-s">'*'</span>);
+}
+                    </div>
+
+                    <strong>Dismiss Island</strong>
+                    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">stopActivity</span>() {
+    window.parent.<span class="hl-f">postMessage</span>({
+        type: <span class="hl-s">'IOS_ISLAND_DISMISS'</span>
+    }, <span class="hl-s">'*'</span>);
+}
+                    </div>
+                </div>
+
+                <div id="doc-settings" class="doc-block">
+                    <h3>System Settings Injection</h3>
+                    <p>Standard apps are sandboxed. To modify core OS settings (Brightness, Dark Mode, etc.), you must use the <strong>Script Injection Bridge</strong> (`IOS_INJECT_SCRIPT`). This executes code directly in the Host OS context.</p>
+
+                    <strong>Toggle Dark Mode</strong>
+                    <div class="code-box">
+<span class="hl-k">const</span> SCRIPT = <span class="hl-s">`
+    // Execute on Host
+    if (window.iOS) {
+        // Toggle needs an object with a 'checked' property
+        const currentState = window.iOS.isDarkMode;
+        window.iOS.toggleDarkMode({ checked: !currentState });
+    }
+`</span>;
+
+window.parent.<span class="hl-f">postMessage</span>({
+    type: <span class="hl-s">'IOS_INJECT_SCRIPT'</span>,
+    script: SCRIPT
+}, <span class="hl-s">'*'</span>);
+                    </div>
+
+                    <strong>Set Brightness</strong>
+                    <div class="code-box">
+<span class="hl-k">const</span> SCRIPT = <span class="hl-s">`
+    if (window.iOS) {
+        window.iOS.setBrightness(50); // Value 0-100
+    }
+`</span>;
+
+window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'IOS_INJECT_SCRIPT'</span>, script: SCRIPT }, <span class="hl-s">'*'</span>);
+                    </div>
+
+                    <strong>Toggle Connectivity</strong>
+                    <p>Available methods: `toggleAirplaneMode`, `toggleWiFi`, `toggleBluetooth`, `toggleTrueTone`.</p>
+                    <div class="code-box">
+<span class="hl-k">const</span> SCRIPT = <span class="hl-s">`
+    if (window.iOS) {
+        // Toggle Airplane Mode
+        const current = window.iOS.isAirplaneMode;
+        window.iOS.toggleAirplaneMode({ checked: !current });
+        
+        // Toggle Wi-Fi
+        window.iOS.toggleWiFi();
+    }
+`</span>;
+                    </div>
+                </div>
+
+
+
             </main>
         </div>
     </div>
@@ -575,6 +722,50 @@ window.parent.<span class="hl-f">postMessage</span>({
             <p>Apps installed from the ecosystem's App Store are created by community developers. While they run in sandboxed iframes, we cannot guarantee the privacy practices of every third-party URL you embed. Please review the privacy policies of the individual services you access within the simulator.</p>
         </div>
     </div>
+    
+    
+    
+    <!-- TERMS VIEW -->
+    <div id="view-terms" class="view-section">
+        <div class="text-page">
+            <h1>Terms of Service</h1>
+            <div class="info-box">Last Updated: January 2026</div>
+
+            <p>By accessing or using the iOS Web Ecosystem ("Platform"), you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the Platform.</p>
+
+            <h2>1. Acceptable Use Policy</h2>
+            <p>The Platform allows users to simulate, build, and distribute web applications. You agree not to misuse the Platform or help anyone else do so.</p>
+            <ul>
+                <li><strong>Prohibited Content:</strong> You must not publish apps containing hate speech, violence, nudity, illegal activities, or malicious code (malware, phishing).</li>
+                <li><strong>Impersonation:</strong> You must not impersonate legitimate entities or misleadingly use trademarks.</li>
+                <li><strong>System Abuse:</strong> Do not attempt to bypass sandbox restrictions, exploit API vulnerabilities, or disrupt the Simulator's stability.</li>
+            </ul>
+
+            <h2>2. Developer Responsibilities</h2>
+            <p>As a developer on the App Store, you are responsible for the content and behavior of your applications.</p>
+            <ul>
+                <li><strong>Uptime & Quality:</strong> Apps must be functional and perform as described. Broken or deceptive apps may be removed.</li>
+                <li><strong>User Privacy:</strong> You must not collect sensitive user data without explicit consent within your app's interface.</li>
+            </ul>
+
+            <h2>3. Enforcement & Termination</h2>
+            <p>We reserve the right to take action against accounts that violate these terms. Consequences are determined by the severity of the violation:</p>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:20px; margin:20px 0;">
+                <ul style="margin:0; padding-left:20px;">
+                    <li style="margin-bottom:10px;"><strong>Tier 1 (Warning):</strong> App delisting or temporary suspension of publishing rights.</li>
+                    <li style="margin-bottom:10px;"><strong>Tier 2 (Verification Removal):</strong> Loss of "Trusted" or "Official" badges for breach of trust.</li>
+                    <li><strong>Tier 3 (Account Ban):</strong> Permanent removal of all apps and immediate termination of the developer account.</li>
+                </ul>
+            </div>
+            <p>We may remove any app at any time, for any reason, without prior notice.</p>
+
+            <h2>4. Disclaimer of Warranties</h2>
+            <p>The Platform is provided "AS IS" and "AS AVAILABLE" without warranties of any kind. We do not guarantee that the Platform will function uninterrupted or be error-free. You use the Simulator at your own risk.</p>
+        </div>
+    </div>
+
+    
+    
 
     <!-- ABOUT VIEW -->
     <div id="view-about" class="view-section">
@@ -607,6 +798,8 @@ window.parent.<span class="hl-f">postMessage</span>({
     <footer>
         <div class="footer-nav">
             <span onclick="switchView('privacy')">Privacy Policy</span>
+            <span onclick="switchView('terms')">Terms</span> <!-- terms -->
+             
             <span onclick="switchView('about')">About Us</span>
         </div>
         <div style="margin-top:20px;">Copyright © 2026 iOS Web Ecosystem. Not affiliated with Apple Inc.</div>
