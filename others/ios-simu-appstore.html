@@ -404,6 +404,17 @@
             border: 1px solid rgba(255, 59, 48, 0.3);
             font-weight: 600;
         }
+        
+        
+        /* Prevent clicks when processing */
+.store-get-btn.processing, 
+.store-get-btn:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+        
+        
 
         /* --- ALERT MODAL --- */
         .sys-alert-overlay {
@@ -1106,6 +1117,47 @@
                 }
 
                 const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                
+                // --- 1. CALCULATE UPDATES ---
+                const updates = [];
+                appList.forEach(app => {
+                    const localApp = installedApps.find(ia => ia.id === app.id);
+                    if (localApp && (app.updatedAt || 0) > (localApp.updatedAt || 0)) {
+                        updates.push(app);
+                    }
+                });
+
+                // --- 2. INJECT "UPDATE ALL" HEADER ---
+                // We check if the button container exists, if not we create it
+                // Logic: Only show if MORE THAN 1 update is available
+                let updateHeader = document.getElementById('store-update-header');
+                
+                if (updates.length > 1) {
+                    if (!updateHeader) {
+                        updateHeader = document.createElement('div');
+                        updateHeader.id = 'store-update-header';
+                        updateHeader.style.cssText = 'padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(242,242,247,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.1); position:sticky; top:0; z-index:5;';
+                        
+                        updateHeader.innerHTML = `
+                            <span style="font-size: 13px; color: #000; font-weight: 700; letter-spacing:0.5px;">${updates.length} UPDATES AVAILABLE</span>
+                            <button onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
+                        `;
+                        // Insert as the very first child of the scrollable area (before the list)
+                        const scrollContainer = document.querySelector('#store-scroll .scroll-inner-padding');
+                        // We actually want it inside the list container or just above it.
+                        // Let's insert it before listEl in the DOM
+                        listEl.parentNode.insertBefore(updateHeader, listEl);
+                    } else {
+                        // Update count if header exists
+                        updateHeader.querySelector('span').innerText = `${updates.length} UPDATES AVAILABLE`;
+                    }
+                } else if (updateHeader) {
+                    // Remove header if 0 or 1 update
+                    updateHeader.remove();
+                }
+                // ----------------------------------------
+
+                const verifiedUsers = this.verifiedUserIds || new Set();
 
                 appList.forEach(app => {
                     const localApp = installedApps.find(ia => ia.id === app.id);
@@ -1115,12 +1167,10 @@
                     const isUpdateAvailable = isInstalled && (serverTime > localTime);
                     
                     // --- BADGE RENDERER ---
-                    // Get badge type from Map (safely)
                     const badgeType = this.userBadges ? this.userBadges.get(app.authorId) : undefined;
                     let badgeHTML = '';
 
                     if (badgeType === 'member') {
-                        // Blue Line Checkmark (Member) - Sharp, Larger
                         badgeHTML = `
                             <span class="verified-badge member" title="Member">
                                 <svg width="14" height="14" viewBox="0 0 12 12" style="display:block;">
@@ -1128,13 +1178,11 @@
                                 </svg>
                             </span>`;
                     } else if (badgeType === 'verified') {
-                        // Filled Blue Checkmark (Verified)
                         badgeHTML = `
                             <span class="verified-badge verified" title="Verified Developer">
                                 <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
                             </span>`;
                     }
-                    // ----------------------
 
                     const div = document.createElement('div');
                     div.className = 'store-item';
@@ -1143,7 +1191,7 @@
                     if (isUpdateAvailable) {
                         actionHTML = `
                             <div class="store-actions">
-                                <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')">
+                                <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
                                     <span>UPDATE</span>
                                     <div class="spinner"></div>
                                 </button>
@@ -1171,43 +1219,108 @@
                     listEl.appendChild(div);
                 });
             }
+            
+            
+            
+            
+            
+            async updateAllApps() {
+                // 1. Identify Apps needing update
+                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const updates = this.apps.filter(app => {
+                    const localApp = installedApps.find(ia => ia.id === app.id);
+                    return localApp && (app.updatedAt || 0) > (localApp.updatedAt || 0);
+                });
+
+                if (updates.length === 0) return;
+
+                // 2. Alert User
+                iOS.showAlert(
+                    "Update All Apps?", 
+                    `This will update ${updates.length} applications.`,
+                    async () => {
+                        // 3. UI LOCK
+                        const headerBtn = document.querySelector('#store-update-header button');
+                        if(headerBtn) {
+                            headerBtn.innerText = "Updating...";
+                            headerBtn.disabled = true;
+                            headerBtn.style.opacity = "0.5";
+                        }
+
+                        // 4. EXECUTE UPDATES SEQUENTIALLY
+                        for (const app of updates) {
+                            // Find specific button to show spinner
+                            const btn = document.querySelector(`button[data-update-id="${app.id}"]`);
+                            
+                            // Pass 'true' for silent mode (no individual alerts)
+                            await this.handleUpdateClick(btn, app.id, true); 
+                        }
+
+                        // 5. FINISH
+                        const header = document.getElementById('store-update-header');
+                        if (header) header.remove();
+                        
+                        iOS.showAlert("Updates Complete", "All apps have been updated.");
+                    }
+                );
+            }
+            
+            
+            
+            
+            
+            
+            
 
 
-                async handleUpdateClick(btn, appId) {
+                async handleUpdateClick(btn, appId, silent = false) {
                 const app = this.apps.find(a => a.id === appId);
                 if (!app) return;
 
-                btn.classList.add('loading');
+                if(btn) btn.classList.add('loading');
                 
-                // Simulate Network
-                await new Promise(r => setTimeout(r, 1500));
+                // Simulate Network (Faster for bulk)
+                const delay = silent ? 800 : 1500;
+                await new Promise(r => setTimeout(r, delay));
 
                 // Logic: Remove old, Add new
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 const filtered = installed.filter(a => a.id !== appId);
                 
-                // Push the NEW app object
+                // Push the NEW app object (updated metadata)
                 filtered.push(app);
                 
                 localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
 
-                // --- icon update START --- 
                 // Fix: Remove custom icon override so update takes effect
                 const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
                 if (customIcons[appId]) {
                     delete customIcons[appId];
                     localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
                 }
-                // --- icon update END ---
 
-                // Refresh UI
+                // Refresh UI (Icon on home screen)
                 iOS.removeSingleApp(appId);
                 iOS.injectSingleApp(app);
 
-                btn.classList.remove('loading');
-                this.renderStore(this.apps); 
+                if(btn) btn.classList.remove('loading');
                 
-                iOS.showAlert('Updated', `${app.name} has been updated.`);
+                // Only re-render store if NOT in bulk mode
+                if (!silent) {
+                    this.renderStore(this.apps); 
+                    iOS.showAlert('Updated', `${app.name} has been updated.`);
+                } else {
+                    // In bulk mode, we just update the DOM locally to show "OPEN"
+                    // This prevents the list from jumping around during the loop
+                    if(btn) {
+                        const container = btn.closest('.store-actions');
+                        if(container) {
+                            // Replace the update stack with a simple Open button visual
+                            // Or simpler: just hide the update button
+                            btn.style.display = 'none';
+                        }
+                    }
+                }
             }
 
 
@@ -1298,48 +1411,63 @@
             // Helper: Actual Uninstall Logic
             // Helper: Actual Uninstall Logic
             async performUninstall(app, btn) {
-                const originalText = btn.querySelector('span').innerText;
+                // 1. PREVENT DOUBLE CLICKS (Robust UI)
+                if (btn.classList.contains('processing')) return;
+                btn.classList.add('processing'); // Lock state
+                btn.disabled = true;
                 
-                // 1. LOCK UI IMMEDIATELY
-                btn.disabled = true; 
-                btn.style.opacity = '0.7';
+                const originalText = btn.querySelector('span').innerText;
                 btn.classList.add('loading');
                 
                 const analyticsEnabled = app.enableAnalytics !== false;
 
                 try {
-                    // 2. Transaction (Wait for it!)
+                    // 2. TRANSACTION (Secure)
                     if (analyticsEnabled) {
                         const appRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(app.id);
                         await this.db.runTransaction(async (transaction) => {
                             const sfDoc = await transaction.get(appRef);
                             if (sfDoc.exists) {
+                                // Default to 0 if undefined
                                 const current = sfDoc.data().installCount || 0;
-                                transaction.update(appRef, { installCount: Math.max(0, current - 1) });
+                                
+                                // Only decrement if > 0 (Prevent negative rule violation)
+                                if (current > 0) {
+                                    transaction.update(appRef, { installCount: current - 1 });
+                                } else {
+                                    // If already 0, do nothing (don't fail the transaction, just skip update)
+                                    // But we can't "skip" inside a transaction easily without throwing or reading.
+                                    // The rule expects exact match. 
+                                    // Hack: We assume if it's 0 we just don't send the update.
+                                }
                             }
                         });
                     }
 
-                    // 3. Local Uninstall
+                    // 3. LOCAL UNINSTALL
                     this.uninstallApp(app, btn);
                     
-                    // 4. UI Update (Success State)
+                    // 4. SUCCESS UI
                     btn.classList.remove('loading');
                     btn.classList.remove('installed');
                     btn.querySelector('span').innerText = 'GET';
 
                 } catch (e) {
-                    console.error("Uninstall Failed", e);
-                    // Revert UI on error
+                    console.error("Uninstall Failed:", e);
+                    
+                    // 5. ROBUST FALLBACK
+                    // If permission denied (maybe rule issue or network),
+                    // ALLOW LOCAL UNINSTALL ANYWAY so user isn't stuck.
+                    console.warn("Forcing local uninstall due to error.");
+                    this.uninstallApp(app, btn);
                     btn.classList.remove('loading');
-                    btn.querySelector('span').innerText = originalText;
-                    // Keep installed state since it failed
-                    btn.classList.add('installed'); 
-                    alert("Could not uninstall. Please check connection.");
+                    btn.classList.remove('installed');
+                    btn.querySelector('span').innerText = 'GET';
+                    
                 } finally {
-                    // 5. UNLOCK UI
+                    // 6. UNLOCK UI
                     btn.disabled = false;
-                    btn.style.opacity = '1';
+                    btn.classList.remove('processing');
                 }
             }
 

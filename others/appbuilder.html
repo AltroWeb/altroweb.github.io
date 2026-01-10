@@ -457,11 +457,26 @@
                            style="padding-left: 36px; height: 42px; width: 100%; font-size: 15px;">
                 </div>
 
-                <button class="btn" onclick="appBuilder.createNewApp()" style="height: 42px; white-space: nowrap;">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                    New App
-                </button>
+          <!-- Inside #dashboard-view .header-row -->
+<div style="display: flex; gap: 10px;">
+    <!-- NEW: Global Analytics Button -->
+    <button class="btn secondary" onclick="appBuilder.openGlobalAnalytics()" style="height: 42px; white-space: nowrap;">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        Overview
+    </button>
+    
+    <button class="btn" onclick="appBuilder.createNewApp()" style="height: 42px; white-space: nowrap;">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New App
+    </button>
+</div>
+                
+                
+                
             </div>
+            
+            
+            
             
             <div class="card" style="padding: 0; overflow: hidden;">
                 <ul class="app-list" id="my-apps-list">
@@ -525,6 +540,65 @@
             </div>
         </div>
 
+        
+        <!-- GLOBAL ANALYTICS VIEW -->
+        <div id="global-analytics-view" class="view">
+            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button class="btn secondary sm icon-only" onclick="appBuilder.showDashboard()" style="border-radius:12px;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    </button>
+                    <h1 style="margin: 0; font-size:24px;">Global Overview</h1>
+                </div>
+                <button class="btn secondary sm" onclick="appBuilder.openGlobalAnalytics()">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:4px;"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-8 3.58-8 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    Refresh
+                </button>
+            </div>
+
+            <div class="card">
+                <!-- KPI CARDS -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center;">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">Total Ecosystem Downloads</div>
+                        <div id="glob-total" style="font-size:48px; font-weight:700; color:var(--text-primary); margin-top:8px;">0</div>
+                    </div>
+                    <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center;">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">Total Active Installs</div>
+                        <div id="glob-active" style="font-size:48px; font-weight:700; color:var(--success); margin-top:8px;">0</div>
+                    </div>
+                </div>
+
+                <!-- TOP APPS CHART -->
+                <h3 style="font-size:16px; margin-bottom:15px; display:flex; justify-content:space-between;">
+                    Top Performing Apps
+                    <span style="font-size:12px; font-weight:400; color:var(--text-secondary);">By Downloads</span>
+                </h3>
+                <div id="glob-chart" style="display:flex; flex-direction:column; gap:12px; margin-bottom:30px;">
+                    <!-- Injected Bars -->
+                    <div style="width:100%; text-align:center; color:var(--text-secondary); padding:20px;">Loading data...</div>
+                </div>
+
+                <!-- BULK ACTIONS -->
+                <div style="border-top:1px solid var(--border); padding-top:25px; margin-top:10px;">
+                    <h4 style="font-size:14px; text-transform:uppercase; color:var(--text-secondary); margin-bottom:15px;">Bulk Actions</h4>
+                    
+                    <div style="display:flex; gap:15px; align-items:center; margin-bottom:20px;">
+                        <div class="toggle-switch checked" id="glob-toggle-analytics" onclick="appBuilder.toggleGlobalAnalytics(this)"></div>
+                        <div>
+                            <span style="font-weight:600; display:block;">Enable Analytics for All Apps</span>
+                            <span style="font-size:12px; color:var(--text-secondary);">Toggle off to disable tracking and remove buttons from all your apps.</span>
+                        </div>
+                    </div>
+
+                    <button class="btn danger block" onclick="appBuilder.resetAllStats()" style="background:transparent; border:1px solid var(--danger); color:var(--danger);">
+                        Reset Statistics for ALL Apps
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        
         
 
         <!-- EDITOR VIEW -->
@@ -1225,6 +1299,206 @@ async fetchMyApps() {
                 }
             }
             
+            
+            
+            
+            
+            
+            
+            
+  renderTopAppsChart(apps) {
+                const container = document.getElementById('glob-chart');
+                container.innerHTML = '';
+
+                if (apps.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:var(--text-secondary);">No apps published yet.</div>';
+                    return;
+                }
+
+                // Sort by Downloads DESC
+                const sorted = [...apps].sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0)).slice(0, 5);
+                const maxVal = sorted[0].downloadCount || 1; // Avoid divide by zero
+
+                sorted.forEach((app, index) => {
+                    const count = app.downloadCount || 0;
+                    const percent = Math.max(1, (count / maxVal) * 100);
+                    
+                    // Pro Color Palette for Top 3
+                    let color = '#E5E5EA'; // Default Grey
+                    if (index === 0) color = 'var(--accent)'; // Blue
+                    if (index === 1) color = 'var(--success)'; // Green
+                    if (index === 2) color = '#FF9500'; // Orange
+
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex; align-items:center; gap:12px;';
+                    
+                    row.innerHTML = `
+                        <div style="width:30px; font-weight:700; color:var(--text-secondary); text-align:right;">#${index+1}</div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px;">
+                                <span style="font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;">
+                                    ${app.name} <span style="font-weight:400; color:var(--text-secondary); font-family:monospace; margin-left:4px; font-size:11px;">${app.id}</span>
+                                </span>
+                                <span style="font-weight:700; color:var(--text-primary);">${count.toLocaleString()}</span>
+                            </div>
+                            <div style="width:100%; height:8px; background:var(--input-bg); border-radius:4px; overflow:hidden;">
+                                <div style="width:0%; height:100%; background:${color}; border-radius:4px; transition:width 1s cubic-bezier(0.2, 0.8, 0.2, 1);" id="glob-bar-${app.id}"></div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(row);
+
+                    // Animate
+                    setTimeout(() => {
+                        const bar = document.getElementById(`glob-bar-${app.id}`);
+                        if(bar) bar.style.width = `${percent}%`;
+                    }, 50 * index);
+                });
+            }          
+            
+            
+            
+            
+            
+            
+            async resetAllStats() {
+                const confirmed = await this.showConfirm(
+                    "Reset ALL Ecosystem Stats?", 
+                    "This will zero out downloads for EVERY app you own. This is catastrophic and irreversible.",
+                    "NUKE EVERYTHING"
+                );
+                
+                if (!confirmed) return;
+
+                // UI Feedback
+                const btn = document.querySelector('#global-analytics-view .btn.danger');
+                if(btn) { btn.innerText = "Nuking..."; btn.disabled = true; }
+
+                try {
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                    const batch = this.db.batch();
+                    let count = 0;
+
+                    snapshot.forEach(doc => {
+                        if (doc.data().authorId === this.devProfile.uid) {
+                            batch.update(doc.ref, { downloadCount: 0, installCount: 0 });
+                            count++;
+                        }
+                    });
+
+                    if (count > 0) {
+                        await batch.commit();
+                        alert(`Successfully reset stats for ${count} apps.`);
+                        this.fetchMyApps(); // Refresh cache
+                        this.openGlobalAnalytics(); // Refresh view
+                    } else {
+                        alert("No apps found to reset.");
+                    }
+
+                } catch(e) {
+                    console.error(e);
+                    alert("Batch Reset Failed: " + e.message);
+                } finally {
+                    if(btn) { btn.innerText = "Reset Statistics for ALL Apps"; btn.disabled = false; }
+                }
+            }
+            
+  
+
+async toggleGlobalAnalytics(toggleEl) {
+                const newState = !toggleEl.classList.contains('checked'); // Toggle visually first
+                if(newState) toggleEl.classList.add('checked');
+                else toggleEl.classList.remove('checked');
+
+                // Visual Feedback
+                const label = toggleEl.nextElementSibling.querySelector('span');
+                const originalText = label.innerText;
+                label.innerText = "Updating...";
+
+                try {
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                    const batch = this.db.batch();
+                    let count = 0;
+
+                    snapshot.forEach(doc => {
+                        if (doc.data().authorId === this.devProfile.uid) {
+                            batch.update(doc.ref, { enableAnalytics: newState });
+                            count++;
+                        }
+                    });
+
+                    if (count > 0) {
+                        await batch.commit();
+                        // Update Local Cache manually to avoid refetch
+                        this.myAppsCache.forEach(app => app.enableAnalytics = newState);
+                    }
+                    
+                    label.innerText = originalText;
+
+                } catch(e) {
+                    console.error(e);
+                    alert("Bulk Update Failed: " + e.message);
+                    // Revert UI
+                    if(newState) toggleEl.classList.remove('checked');
+                    else toggleEl.classList.add('checked');
+                    label.innerText = originalText;
+                }
+            }          
+            
+            
+            
+            async openGlobalAnalytics() {
+                this.updateUIState('none');
+                document.getElementById('global-analytics-view').classList.add('active');
+                
+                const totalEl = document.getElementById('glob-total');
+                const activeEl = document.getElementById('glob-active');
+                totalEl.innerText = '...';
+                activeEl.innerText = '...';
+
+                try {
+                    // Reuse cache if available, or fetch fresh
+                    // We need ALL apps for this calculation
+                    if (!this.myAppsCache || this.myAppsCache.length === 0) {
+                        await this.fetchMyApps(); // Populate cache
+                    }
+
+                    const apps = this.myAppsCache;
+                    
+                    let totalDownloads = 0;
+                    let totalInstalls = 0;
+                    
+                    apps.forEach(app => {
+                        totalDownloads += (app.downloadCount || 0);
+                        totalInstalls += (app.installCount || 0);
+                    });
+
+                    // Animate Totals
+                    this.animateNum(totalEl, totalDownloads);
+                    this.animateNum(activeEl, totalInstalls);
+
+                    // Render Top 5 Chart
+                    this.renderTopAppsChart(apps);
+
+                    // Set Bulk Toggle State (If any app is disabled, show as off, or logic based on majority)
+                    // Let's simpler: If ALL are enabled, show ON. If ANY are disabled, show OFF logic?
+                    // Better: Just check the first app or default to ON.
+                    const anyDisabled = apps.some(a => a.enableAnalytics === false);
+                    const toggle = document.getElementById('glob-toggle-analytics');
+                    if(anyDisabled) toggle.classList.remove('checked');
+                    else toggle.classList.add('checked');
+
+                } catch(e) {
+                    console.error(e);
+                    alert("Error loading global stats.");
+                }
+            }
+            
+           
+           
+           
+           
+           
             
             
                         async openAnalytics(appId) {
