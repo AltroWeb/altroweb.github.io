@@ -469,6 +469,63 @@
                 </ul>
             </div>
         </div>
+        
+        
+        <!-- ANALYTICS VIEW -->
+        <div id="analytics-view" class="view">
+            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <!-- BACK BUTTON (Left Arrow) -->
+                    <button class="btn secondary sm icon-only" onclick="appBuilder.showDashboard()" style="border-radius:12px;" title="Back to Dashboard">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                    </button>
+                    <h1 style="margin: 0; font-size:24px;">Analytics</h1>
+                </div>
+                
+                <!-- REFRESH BUTTON (Rotate Icon) -->
+                <button class="btn secondary sm" onclick="appBuilder.openAnalytics(appBuilder.currentAnalyticsId)">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:4px;"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-8 3.58-8 8s3.58 8 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    Refresh
+                </button>
+            </div>
+
+            <div class="card">
+                <div style="display:flex; gap:15px; align-items:center; margin-bottom:30px; padding-bottom:20px; border-bottom:1px solid var(--border);">
+                    <img id="ana-icon" src="" style="width:64px; height:64px; border-radius:14px; background:#eee; object-fit:cover;">
+                    <div>
+                        <h2 id="ana-title" style="margin:0; font-size:22px; font-weight:700;">App Name</h2>
+                        <span id="ana-id" style="color:var(--text-secondary); font-size:13px; font-family:monospace;">ID: ...</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center;">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">All Time Downloads</div>
+                        <div id="ana-total" style="font-size:42px; font-weight:700; color:var(--text-primary); margin-top:8px;">0</div>
+                    </div>
+                    <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center;">
+                        <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">Active Installs</div>
+                        <div id="ana-active" style="font-size:42px; font-weight:700; color:var(--success); margin-top:8px;">0</div>
+                    </div>
+                </div>
+
+                <h3 style="font-size:16px; margin-bottom:15px;">Live Performance</h3>
+                
+                <!-- PRO VISUALIZER CONTAINER -->
+                <div id="ana-chart" style="height: auto; min-height:160px; display:flex; flex-direction:column; justify-content:center; padding:20px 0; border-bottom:1px solid var(--border);">
+                    <div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center; font-size:14px;">Loading data...</div>
+                </div>
+                
+                <!-- RESET BUTTON AREA -->
+                <div style="margin-top:20px; text-align:center;">
+                    <button class="btn danger sm" onclick="appBuilder.resetAnalytics()" style="background:transparent; color:var(--danger); border:1px solid var(--danger);">
+                        Reset Statistics
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        
 
         <!-- EDITOR VIEW -->
         <div id="editor-view" class="view">
@@ -533,6 +590,19 @@
                         <input type="hidden" id="edit-file-data">
                     </div>
                 </div>
+                
+                
+                                <!-- ANALYTICS TOGGLE -->
+                <div class="form-group" style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <label style="margin:0; cursor:pointer;" for="edit-analytics">Enable Analytics</label>
+                        <div class="hint" style="margin-top:2px;">Track downloads and active installs.</div>
+                    </div>
+                    <div class="toggle-switch checked" id="toggle-analytics-ui" onclick="this.classList.toggle('checked')"></div>
+                </div>
+                
+                
+                
 
                 <div style="margin-top: 30px; display: flex; gap: 10px;">
                     <button class="btn block" id="btn-publish" onclick="appBuilder.publishApp()">
@@ -975,22 +1045,33 @@ async fetchMyApps() {
                 }
 
                 apps.forEach(app => {
-                    const li = document.createElement('li');
-                    li.className = 'app-list-item';
-                    li.innerHTML = `
-                        <img src="${app.iconUrl || ''}" class="list-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                        <div class="list-info">
-                            <div class="list-name">${app.name} <span class="tag">Live</span></div>
-                            <div class="list-meta">v1.0${badgeHTML} • ${new Date(app.createdAt).toLocaleDateString()}</div>
-                        </div>
-                        <div class="list-actions">
-                            <button class="btn secondary sm" onclick="appBuilder.editApp('${app.id}')">Edit</button>
-                            <button class="btn danger sm icon-only" onclick="appBuilder.deleteApp('${app.id}', '${app.name}')">
-                                <svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    const isAnalyticsOn = app.enableAnalytics !== false;
+
+                        // 2. GENERATE ANALYTICS BUTTON HTML (Only if enabled)
+                        const analyticsBtnHTML = isAnalyticsOn ? `
+                            <button class="btn secondary sm icon-only" onclick="appBuilder.openAnalytics('${app.id}')" title="Analytics" style="color:var(--accent);">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
                             </button>
-                        </div>
-                    `;
-                    list.appendChild(li);
+                        ` : ''; 
+
+                        // 3. GENERATE LIST ITEM
+                        const li = document.createElement('li');
+                        li.className = 'app-list-item';
+                        li.innerHTML = `
+                            <img src="${app.iconUrl || ''}" class="list-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                            <div class="list-info">
+                                <div class="list-name">${app.name} <span class="tag">Live</span></div>
+                                <div class="list-meta">v1.0${badgeHTML} • ${new Date(app.createdAt).toLocaleDateString()}</div>
+                            </div>
+                            <div class="list-actions">
+                                ${analyticsBtnHTML} <!-- Button is injected here or empty string -->
+                                <button class="btn secondary sm" onclick="appBuilder.editApp('${app.id}')">Edit</button>
+                                <button class="btn danger sm icon-only" onclick="appBuilder.deleteApp('${app.id}', '${app.name}')">
+                                    <svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        `;
+                        list.appendChild(li);
                 });
             }
 
@@ -1010,30 +1091,29 @@ async fetchMyApps() {
                 }
             }
 
-            createNewApp() {
+                        createNewApp() {
                 this.currentEditingId = null;
                 document.getElementById('editor-title').innerText = "Create New App";
                 document.getElementById('publish-text').innerText = "Publish to App Store";
-                
-                // SECURE LABEL UPDATE
                 document.getElementById('display-app-id').innerText = "Auto-generated after publishing";
                 document.getElementById('display-app-id').style.fontStyle = "italic";
-
                 document.getElementById('edit-name').value = '';
-                
                 document.getElementById('edit-icon').value = '';
                 document.getElementById('edit-desc').value = '';
                 document.getElementById('edit-embed').value = '';
                 document.getElementById('icon-preview').src = 'grey.png';
                 document.getElementById('edit-file-data').value = '';
                 document.getElementById('file-name-display').innerText = 'Click to select .html file';
+                
+                // NEW: Default Analytics to ON
+                document.getElementById('toggle-analytics-ui').classList.add('checked');
+
                 this.switchSourceTab('url');
-                // When opening the editor for a new app
                 document.getElementById('html-file-input').value = '';
                 this.updateUIState('editor');
             }
 
-            async editApp(appId) {
+                        async editApp(appId) {
                 try {
                     const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
                     if (!doc.exists) return;
@@ -1042,17 +1122,19 @@ async fetchMyApps() {
                     this.currentEditingId = appId;
                     document.getElementById('editor-title').innerText = "Edit App";
                     document.getElementById('publish-text').innerText = "Save Changes";
-                    
-                    // SECURE LABEL UPDATE
                     document.getElementById('display-app-id').innerText = appId;
                     document.getElementById('display-app-id').style.fontStyle = "normal";
-                    
                     document.getElementById('edit-name').value = data.name;
-                    
                     document.getElementById('edit-icon').value = data.iconUrl || '';
                     document.getElementById('icon-preview').src = data.iconUrl || 'grey.png';
                     document.getElementById('edit-desc').value = data.description;
                     
+                    // NEW: Load Analytics Toggle
+                    const isAnalyticsEnabled = data.enableAnalytics !== false; // Default true
+                    const toggle = document.getElementById('toggle-analytics-ui');
+                    if(isAnalyticsEnabled) toggle.classList.add('checked');
+                    else toggle.classList.remove('checked');
+
                     if (data.embedUrl && data.embedUrl.startsWith('data:text/html')) {
                         this.switchSourceTab('file');
                         document.getElementById('edit-file-data').value = data.embedUrl;
@@ -1061,7 +1143,6 @@ async fetchMyApps() {
                         this.switchSourceTab('url');
                         document.getElementById('edit-embed').value = data.embedUrl;
                     }
-                    // When opening the editor for an existing app
                     document.getElementById('html-file-input').value = '';
                     this.updateUIState('editor');
                 } catch(e) {
@@ -1102,11 +1183,14 @@ async fetchMyApps() {
                 }
             }
 
-            async publishApp() {
+                        async publishApp() {
                 const name = document.getElementById('edit-name').value.trim();
                 const icon = document.getElementById('edit-icon').value.trim();
                 const desc = document.getElementById('edit-desc').value.trim();
                 let embedUrl = this.sourceMode === 'url' ? document.getElementById('edit-embed').value.trim() : document.getElementById('edit-file-data').value;
+                
+                // NEW: Get Toggle State
+                const enableAnalytics = document.getElementById('toggle-analytics-ui').classList.contains('checked');
 
                 if (!name || !desc || !embedUrl) { alert("Name, Description, and Source are required."); return; }
 
@@ -1121,7 +1205,8 @@ async fetchMyApps() {
                         embedUrl: embedUrl,
                         author: this.devProfile.displayName,
                         authorId: this.devProfile.uid,
-                        updatedAt: Date.now()
+                        updatedAt: Date.now(),
+                        enableAnalytics: enableAnalytics // Save it
                     };
 
                     if (!this.currentEditingId) {
@@ -1132,16 +1217,207 @@ async fetchMyApps() {
                     }
                     this.showDashboard();
                 } catch (e) {
+                    // ... error handling ...
                     console.error(e);
-                    if (e.code === 'permission-denied') {
-                        alert("PERMISSION DENIED: You cannot save changes.\n\nCheck your Firestore Rules.");
-                    } else {
-                        alert("Error saving app: " + e.message);
-                    }
+                    alert("Error saving: " + e.message);
                 } finally {
                     btn.classList.remove('loading');
                 }
             }
+            
+            
+            
+                        async openAnalytics(appId) {
+                this.currentAnalyticsId = appId;
+                this.updateUIState('none'); 
+                document.getElementById('analytics-view').classList.add('active');
+
+                const totalEl = document.getElementById('ana-total');
+                const activeEl = document.getElementById('ana-active');
+                
+                totalEl.innerText = '...';
+                activeEl.innerText = '...';
+
+                try {
+                    const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
+                    if (!doc.exists) return;
+                    
+                    const data = doc.data();
+                    document.getElementById('ana-title').innerText = data.name;
+                    document.getElementById('ana-id').innerText = "ID: " + appId;
+                    document.getElementById('ana-icon').src = data.iconUrl || 'grey.png';
+
+                    // Check if disabled
+                    if (data.enableAnalytics === false) {
+                        totalEl.innerText = "Disabled";
+                        activeEl.innerText = "Disabled";
+                        document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Analytics Disabled</div>';
+                        return;
+                    }
+
+                    const downloads = data.downloadCount || 0;
+                    const installs = data.installCount || 0;
+
+                    this.animateNum(totalEl, downloads);
+                    this.animateNum(activeEl, installs);
+                    this.renderChart(downloads, installs);
+
+                } catch(e) {
+                    console.error("Analytics Error", e);
+                }
+            }
+
+            animateNum(el, val) {
+                let start = 0; const duration = 1000; const startTime = performance.now();
+                const step = (now) => {
+                    const progress = Math.min((now - startTime) / duration, 1);
+                    const ease = 1 - Math.pow(1 - progress, 4);
+                    el.innerText = Math.floor(ease * val).toLocaleString();
+                    if (progress < 1) requestAnimationFrame(step);
+                    else el.innerText = val.toLocaleString();
+                };
+                requestAnimationFrame(step);
+            }
+
+            renderChart(downloads, installs) {
+                const chart = document.getElementById('ana-chart');
+                chart.innerHTML = '';
+                chart.style.alignItems = 'center'; // Center vertically
+                chart.style.justifyContent = 'center';
+                
+                if (downloads === 0) {
+                    chart.innerHTML = '<div style="color:var(--text-secondary); font-size:14px;">No data available yet</div>';
+                    return;
+                }
+
+                // Calculate Retention Rate
+                const retention = Math.round((installs / downloads) * 100) || 0;
+                
+                // Create Pro Comparison Visual
+                chart.innerHTML = `
+                    <div style="width:100%; max-width:400px; padding:0 20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--text-primary);">
+                            <span>Retention Rate</span>
+                            <span>${retention}%</span>
+                        </div>
+                        <div style="width:100%; height:24px; background:#E5E5EA; border-radius:12px; overflow:hidden; position:relative;">
+                            <!-- Installs Bar -->
+                            <div style="height:100%; width:0%; background:var(--success); border-radius:12px; transition:width 1s cubic-bezier(0.2, 0.8, 0.2, 1);" id="bar-retention"></div>
+                        </div>
+                        <div style="display:flex; gap:20px; margin-top:15px; justify-content:center; font-size:13px; color:var(--text-secondary);">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div style="width:10px; height:10px; background:var(--text-primary); border-radius:50%; opacity:0.2;"></div> Total Downloads
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div style="width:10px; height:10px; background:var(--success); border-radius:50%;"></div> Active Installs
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Animate Bar after small delay
+                setTimeout(() => {
+                    const bar = document.getElementById('bar-retention');
+                    if(bar) bar.style.width = `${retention}%`;
+                }, 100);
+            }
+            
+            
+  
+  
+  
+  
+  
+async resetAnalytics() {
+                if (!this.currentAnalyticsId) return;
+                
+                // 1. CUSTOM CONFIRMATION (Replaces browser alert)
+                const confirmed = await this.showConfirm(
+                    "Reset Statistics?", 
+                    "This will permanently reset download counts to zero. This action cannot be undone.",
+                    "Reset Everything"
+                );
+                
+                if (!confirmed) return; // Exit cleanly if canceled
+
+                // 2. UI UPDATE
+                const btn = document.querySelector('#analytics-view .btn.secondary'); // The refresh/action button
+                const originalHtml = btn ? btn.innerHTML : 'Refresh';
+                
+                if(btn) {
+                    btn.innerText = "Resetting...";
+                    btn.disabled = true; 
+                }
+
+                try {
+                    // 3. PERFORM RESET
+                    await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentAnalyticsId).update({
+                        downloadCount: 0,
+                        installCount: 0
+                    });
+                    
+                    // 4. REFRESH DATA
+                    await this.openAnalytics(this.currentAnalyticsId); 
+                    
+                    // Optional: Show success toast or small alert
+                    // alert("Analytics have been reset."); // You can replace this too if you want
+
+                } catch (e) {
+                    console.error(e);
+                    alert("Error resetting stats: " + e.message);
+                } finally {
+                    // 5. RESTORE BUTTON STATE
+                    if(btn) {
+                        btn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`;
+                        btn.disabled = false;
+                    }
+                }
+            }
+
+
+// Add inside AppBuilder class
+            showConfirm(title, message, okText = "Confirm") {
+                return new Promise((resolve) => {
+                    const modal = document.getElementById('confirm-modal');
+                    const content = modal.firstElementChild;
+                    const titleEl = document.getElementById('confirm-title');
+                    const msgEl = document.getElementById('confirm-msg');
+                    const okBtn = document.getElementById('confirm-ok');
+                    const cancelBtn = document.getElementById('confirm-cancel');
+
+                    titleEl.innerText = title;
+                    msgEl.innerText = message;
+                    okBtn.innerText = okText;
+
+                    modal.style.display = 'flex';
+                    // Trigger animation
+                    requestAnimationFrame(() => {
+                        content.style.opacity = '1';
+                        content.style.transform = 'scale(1)';
+                    });
+
+                    const close = (result) => {
+                        content.style.opacity = '0';
+                        content.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            modal.style.display = 'none';
+                            resolve(result);
+                        }, 200);
+                        
+                        // Cleanup listeners to prevent memory leaks or duplicate triggers
+                        okBtn.onclick = null;
+                        cancelBtn.onclick = null;
+                    };
+
+                    okBtn.onclick = () => close(true);
+                    cancelBtn.onclick = () => close(false);
+                });
+            }
+
+
+          
+            
+            
 
             loadSettings() {
                 document.getElementById('set-name').value = this.devProfile.displayName;
@@ -1285,5 +1561,24 @@ async fetchMyApps() {
 
         const appBuilder = new AppBuilder();
     </script>
+    
+    <!-- CUSTOM CONFIRM MODAL -->
+<div id="confirm-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 10000;">
+    <div style="background: var(--card-bg); width: 90%; max-width: 400px; padding: 24px; border-radius: 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center; transform: scale(0.95); opacity: 0; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <div style="width: 50px; height: 50px; background: rgba(255, 59, 48, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF3B30"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <h2 id="confirm-title" style="margin: 0 0 8px; font-size: 20px;">Confirm Action</h2>
+        <p id="confirm-msg" style="margin: 0 0 24px; color: var(--text-secondary); line-height: 1.5;">Are you sure?</p>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn secondary block" id="confirm-cancel" style="flex: 1;">Cancel</button>
+            <button class="btn danger block" id="confirm-ok" style="flex: 1;">Reset</button>
+        </div>
+    </div>
+</div>
+    
+    
+    
+    
 </body>
 </html>
