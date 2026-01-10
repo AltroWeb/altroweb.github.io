@@ -1191,10 +1191,11 @@ body.dark-mode .store-update-section span {
                         // Insert BEFORE the app list, inside the scrolling container
                         storeList.parentNode.insertBefore(updateHeader, storeList);
                         
-                        updateHeader.innerHTML = `
-                            <span>${updates.length} Updates Available</span>
-                            <button onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
-                        `;
+                        // Inside renderStore...
+updateHeader.innerHTML = `
+    <span>${updates.length} Updates Available</span>
+    <button id="update-all-btn" onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
+`;
                     } else {
                         // Update text (Standard Case)
                         updateHeader.querySelector('span').innerText = `${updates.length} Updates Available`;
@@ -1272,45 +1273,55 @@ body.dark-mode .store-update-section span {
             
             
             async updateAllApps() {
-                // 1. Identify Apps needing update
-                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                const updates = this.apps.filter(app => {
-                    const localApp = installedApps.find(ia => ia.id === app.id);
-                    return localApp && (app.updatedAt || 0) > (localApp.updatedAt || 0);
-                });
+    // 1. Identify Apps needing update
+    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const updates = this.apps.filter(app => {
+        const localApp = installedApps.find(ia => ia.id === app.id);
+        const sTime = Number(app.updatedAt) || 0;
+        const lTime = Number(localApp ? localApp.updatedAt : 0) || 0;
+        return localApp && sTime > lTime;
+    });
 
-                if (updates.length === 0) return;
+    if (updates.length === 0) return;
 
-                // 2. Alert User
-                iOS.showAlert(
-                    "Update All Apps?", 
-                    `This will update ${updates.length} applications.`,
-                    async () => {
-                        // 3. UI LOCK
-                        const headerBtn = document.querySelector('#store-update-header button');
-                        if(headerBtn) {
-                            headerBtn.innerText = "Updating...";
-                            headerBtn.disabled = true;
-                            headerBtn.style.opacity = "0.5";
-                        }
-
-                        // 4. EXECUTE UPDATES SEQUENTIALLY
-                        for (const app of updates) {
-                            // Find specific button to show spinner
-                            const btn = document.querySelector(`button[data-update-id="${app.id}"]`);
-                            
-                            // Pass 'true' for silent mode (no individual alerts)
-                            await this.handleUpdateClick(btn, app.id, true); 
-                        }
-
-                        // 5. FINISH
-                        const header = document.getElementById('store-update-header');
-                        if (header) header.remove();
-                        
-                        iOS.showAlert("Updates Complete", "All apps have been updated.");
-                    }
-                );
+    // 2. Alert User
+    iOS.showAlert(
+        "Update All Apps?", 
+        `This will update ${updates.length} applications.`,
+        async () => {
+            // 3. UI LOCK (Updated for new selectors)
+            const headerBtn = document.getElementById('update-all-btn');
+            if(headerBtn) {
+                headerBtn.innerText = "Updating...";
+                headerBtn.disabled = true;
+                headerBtn.style.opacity = "0.5";
+                headerBtn.style.cursor = "default";
             }
+
+            // 4. EXECUTE UPDATES SEQUENTIALLY
+            for (const app of updates) {
+                // Find specific button to show spinner
+                const btn = document.querySelector(`button[data-update-id="${app.id}"]`);
+                
+                // Pass 'true' for silent mode (no individual alerts)
+                await this.handleUpdateClick(btn, app.id, true); 
+            }
+
+            // 5. FINISH & CLEANUP (Updated with smooth removal)
+            const section = document.getElementById('store-update-section');
+            if (section) {
+                section.style.transition = 'all 0.3s ease';
+                section.style.opacity = '0';
+                section.style.height = '0px';
+                section.style.margin = '0px';
+                section.style.padding = '0px';
+                setTimeout(() => section.remove(), 300);
+            }
+            
+            iOS.showAlert("Updates Complete", "All apps have been updated.");
+        }
+    );
+}
             
             
             
