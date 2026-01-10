@@ -406,6 +406,52 @@
     font-size: 13px !important;  /* Standard font */
     color: #FF3B30 !important; /* Red */
 }
+
+
+
+
+
+/* --- STATIC UPDATE SECTION --- */
+.store-update-section {
+    position: relative; /* Scrolls with content */
+    margin-bottom: 24px; /* Space between this and the app list */
+    width: 100%;
+    height: 50px;
+    
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 0 16px;
+    
+    /* Light Mode Styling */
+    background: #F2F2F7; /* iOS System Gray */
+    border-radius: 12px;
+}
+
+/* Text Styling */
+.store-update-section span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #000;
+    letter-spacing: -0.2px;
+}
+
+/* Dark Mode Support */
+body.dark-mode .store-update-section {
+    background: #1c1c1e; /* Dark Gray */
+    border: 0.5px solid rgba(255,255,255,0.15);
+}
+
+body.dark-mode .store-update-section span {
+    color: #fff;
+}
+
+
+
+
+
+
+
         
         
         /* Prevent clicks when processing */
@@ -1132,29 +1178,28 @@
                 // --- 2. INJECT "UPDATE ALL" HEADER ---
                 // We check if the button container exists, if not we create it
                 // Logic: Only show if MORE THAN 1 update is available
-                let updateHeader = document.getElementById('store-update-header');
+                // --- 2. INJECT UPDATE SECTION (Static Flow) ---
+                let updateHeader = document.getElementById('store-update-section');
+                const storeList = document.getElementById('store-list');
                 
                 if (updates.length > 1) {
                     if (!updateHeader) {
                         updateHeader = document.createElement('div');
-                        updateHeader.id = 'store-update-header';
-                        updateHeader.style.cssText = 'padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(242,242,247,0.8); backdrop-filter: blur(10px); position:sticky; top:0; z-index:5;';
+                        updateHeader.id = 'store-update-section';
+                        updateHeader.className = 'store-update-section'; 
+                        
+                        // Insert BEFORE the app list, inside the scrolling container
+                        storeList.parentNode.insertBefore(updateHeader, storeList);
                         
                         updateHeader.innerHTML = `
-                            <span style="font-size: 13px; color: #000; font-weight: 700; letter-spacing:0.5px;">${updates.length} Updates Available</span>
+                            <span>${updates.length} Updates Available</span>
                             <button onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
                         `;
-                        // Insert as the very first child of the scrollable area (before the list)
-                        const scrollContainer = document.querySelector('#store-scroll .scroll-inner-padding');
-                        // We actually want it inside the list container or just above it.
-                        // Let's insert it before listEl in the DOM
-                        listEl.parentNode.insertBefore(updateHeader, listEl);
                     } else {
-                        // Update count if header exists
-                        updateHeader.querySelector('span').innerText = `${updates.length} UPDATES AVAILABLE`;
+                        // Update text (Standard Case)
+                        updateHeader.querySelector('span').innerText = `${updates.length} Updates Available`;
                     }
                 } else if (updateHeader) {
-                    // Remove header if 0 or 1 update
                     updateHeader.remove();
                 }
                 // ----------------------------------------
