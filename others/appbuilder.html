@@ -1406,14 +1406,20 @@ async fetchMyApps() {
   
 
 async toggleGlobalAnalytics(toggleEl) {
-                const newState = !toggleEl.classList.contains('checked'); // Toggle visually first
+                // 1. LOCK UI
+                if (toggleEl.classList.contains('disabled')) return;
+                toggleEl.classList.add('disabled');
+                toggleEl.style.opacity = '0.5';
+                toggleEl.style.cursor = 'not-allowed';
+
+                const newState = !toggleEl.classList.contains('checked');
                 if(newState) toggleEl.classList.add('checked');
                 else toggleEl.classList.remove('checked');
 
                 // Visual Feedback
                 const label = toggleEl.nextElementSibling.querySelector('span');
                 const originalText = label.innerText;
-                label.innerText = "Updating...";
+                label.innerText = "Processing Updates...";
 
                 try {
                     const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
@@ -1422,28 +1428,54 @@ async toggleGlobalAnalytics(toggleEl) {
 
                     snapshot.forEach(doc => {
                         if (doc.data().authorId === this.devProfile.uid) {
-                            batch.update(doc.ref, { enableAnalytics: newState });
+                            const updateData = { 
+                                enableAnalytics: newState,
+                                updatedAt: Date.now() // Always trigger update UI
+                            };
+                            
+                            // CRITICAL: Bump version ONLY if enabling analytics
+                            // This signals the Simulator to increment the count
+                            if (newState === true) {
+                                updateData.analyticsVersion = Date.now(); 
+                            }
+                            
+                            batch.update(doc.ref, updateData);
                             count++;
                         }
                     });
 
                     if (count > 0) {
                         await batch.commit();
-                        // Update Local Cache manually to avoid refetch
-                        this.myAppsCache.forEach(app => app.enableAnalytics = newState);
+                        
+                        // Update Local Cache
+                        this.myAppsCache.forEach(app => {
+                            app.enableAnalytics = newState;
+                            app.updatedAt = Date.now();
+                            if(newState) app.analyticsVersion = Date.now();
+                        });
+                        
+                        label.innerText = "Success! Reloading...";
+                    } else {
+                        label.innerText = "No apps to update.";
                     }
                     
-                    label.innerText = originalText;
+                    // 2. DELAY UNLOCK (Relax Logic)
+                    await new Promise(r => setTimeout(r, 1000));
 
                 } catch(e) {
                     console.error(e);
                     alert("Bulk Update Failed: " + e.message);
-                    // Revert UI
+                    // Revert visual state
                     if(newState) toggleEl.classList.remove('checked');
                     else toggleEl.classList.add('checked');
+                } finally {
+                    // 3. RESTORE UI
                     label.innerText = originalText;
+                    toggleEl.classList.remove('disabled');
+                    toggleEl.style.opacity = '1';
+                    toggleEl.style.cursor = 'pointer';
                 }
-            }          
+            }    
             
             
             

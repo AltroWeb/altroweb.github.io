@@ -397,13 +397,15 @@
         .store-get-btn.loading span { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Uninstall State */
-        .store-get-btn.installed { 
-            background: transparent; 
-            color: #FF3B30; /* Red */
-            border: 1px solid rgba(255, 59, 48, 0.3);
-            font-weight: 600;
-        }
+  /* FIX: Ensure installed/uninstall buttons have standard size when standalone */
+.store-get-btn.installed {
+    width: auto !important;      /* Override fixed width from stack */
+    min-width: 72px !important;  /* Standard width */
+    height: auto !important;     /* Override fixed height from stack */
+    padding: 6px 20px !important;/* Standard padding */
+    font-size: 13px !important;  /* Standard font */
+    color: #FF3B30 !important; /* Red */
+}
         
         
         /* Prevent clicks when processing */
@@ -1136,10 +1138,10 @@
                     if (!updateHeader) {
                         updateHeader = document.createElement('div');
                         updateHeader.id = 'store-update-header';
-                        updateHeader.style.cssText = 'padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(242,242,247,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.1); position:sticky; top:0; z-index:5;';
+                        updateHeader.style.cssText = 'padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(242,242,247,0.8); backdrop-filter: blur(10px); position:sticky; top:0; z-index:5;';
                         
                         updateHeader.innerHTML = `
-                            <span style="font-size: 13px; color: #000; font-weight: 700; letter-spacing:0.5px;">${updates.length} UPDATES AVAILABLE</span>
+                            <span style="font-size: 13px; color: #000; font-weight: 700; letter-spacing:0.5px;">${updates.length} Updates Available</span>
                             <button onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
                         `;
                         // Insert as the very first child of the scrollable area (before the list)
@@ -1285,41 +1287,62 @@
 
                 // Logic: Remove old, Add new
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const localApp = installed.find(a => a.id === appId);
+                
+                // --- 1. CHECK FOR ANALYTICS UPDATE SIGNAL ---
+                // Only increment stats if this specific update flag (analyticsVersion) is newer
+                const serverVer = app.analyticsVersion || 0;
+                const localVer = localApp ? (localApp.analyticsVersion || 0) : 0;
+                
+                // Condition: New version detected AND Analytics currently Enabled
+                const shouldIncrement = (serverVer > localVer) && (app.enableAnalytics === true);
+
+                if (shouldIncrement) {
+                    try {
+                        const appRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId);
+                        await this.db.runTransaction(async (transaction) => {
+                            const sfDoc = await transaction.get(appRef);
+                            if (sfDoc.exists) {
+                                const data = sfDoc.data();
+                                const dl = typeof data.downloadCount === 'number' ? data.downloadCount : 0;
+                                const ins = typeof data.installCount === 'number' ? data.installCount : 0;
+                                
+                                // Recover stats for existing user
+                                transaction.update(appRef, { 
+                                    downloadCount: dl + 1,
+                                    installCount: ins + 1 
+                                });
+                            }
+                        });
+                        console.log("Analytics recovered for existing user.");
+                    } catch(e) { console.error("Stat recovery failed", e); }
+                }
+                // --------------------------------------------
+
+                // Update Local Storage (Metadata)
                 const filtered = installed.filter(a => a.id !== appId);
-                
-                // Push the NEW app object (updated metadata)
-                filtered.push(app);
-                
+                filtered.push(app); // 'app' object contains the new timestamps
                 localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
 
-                // Fix: Remove custom icon override so update takes effect
+                // Clear Custom Icon Override
                 const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
                 if (customIcons[appId]) {
                     delete customIcons[appId];
                     localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
                 }
 
-                // Refresh UI (Icon on home screen)
+                // Refresh UI
                 iOS.removeSingleApp(appId);
                 iOS.injectSingleApp(app);
 
                 if(btn) btn.classList.remove('loading');
                 
-                // Only re-render store if NOT in bulk mode
                 if (!silent) {
                     this.renderStore(this.apps); 
                     iOS.showAlert('Updated', `${app.name} has been updated.`);
                 } else {
-                    // In bulk mode, we just update the DOM locally to show "OPEN"
-                    // This prevents the list from jumping around during the loop
-                    if(btn) {
-                        const container = btn.closest('.store-actions');
-                        if(container) {
-                            // Replace the update stack with a simple Open button visual
-                            // Or simpler: just hide the update button
-                            btn.style.display = 'none';
-                        }
-                    }
+                    // Bulk Mode: Hide button to prevent list jumping
+                    if(btn) btn.style.display = 'none';
                 }
             }
 
