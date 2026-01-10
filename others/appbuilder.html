@@ -1537,51 +1537,49 @@ async toggleGlobalAnalytics(toggleEl) {
             
             
             async openGlobalAnalytics() {
-                this.updateUIState('none');
-                document.getElementById('global-analytics-view').classList.add('active');
-                
-                const totalEl = document.getElementById('glob-total');
-                const activeEl = document.getElementById('glob-active');
-                totalEl.innerText = '...';
-                activeEl.innerText = '...';
+    this.updateUIState('none');
+    document.getElementById('global-analytics-view').classList.add('active');
+    
+    // 1. UI FEEDBACK: Show '...' so you know it is actually working
+    const totalEl = document.getElementById('glob-total');
+    const activeEl = document.getElementById('glob-active');
+    totalEl.innerText = '...';
+    activeEl.innerText = '...';
+    
+    // Clear chart area to indicate reloading
+    document.getElementById('glob-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); padding:20px;">Fetching fresh data...</div>';
 
-                try {
-                    // Reuse cache if available, or fetch fresh
-                    // We need ALL apps for this calculation
-                    if (!this.myAppsCache || this.myAppsCache.length === 0) {
-                        await this.fetchMyApps(); // Populate cache
-                    }
+    try {
+        // 2. FORCE FETCH: We call fetchMyApps() to hit the database explicitly.
+        // This bypasses any stale 'this.myAppsCache' data.
+        await this.fetchMyApps();
 
-                    const apps = this.myAppsCache;
-                    
-                    let totalDownloads = 0;
-                    let totalInstalls = 0;
-                    
-                    apps.forEach(app => {
-                        totalDownloads += (app.downloadCount || 0);
-                        totalInstalls += (app.installCount || 0);
-                    });
+        // 3. RE-CALCULATE
+        const apps = this.myAppsCache;
+        let totalDownloads = 0;
+        let totalInstalls = 0;
+        
+        apps.forEach(app => {
+            totalDownloads += (app.downloadCount || 0);
+            totalInstalls += (app.installCount || 0);
+        });
 
-                    // Animate Totals
-                    this.animateNum(totalEl, totalDownloads);
-                    this.animateNum(activeEl, totalInstalls);
+        // 4. UPDATE UI
+        this.animateNum(totalEl, totalDownloads);
+        this.animateNum(activeEl, totalInstalls);
+        this.renderTopAppsChart(apps);
 
-                    // Render Top 5 Chart
-                    this.renderTopAppsChart(apps);
+        // Sync the toggle switch
+        const anyDisabled = apps.some(a => a.enableAnalytics === false);
+        const toggle = document.getElementById('glob-toggle-analytics');
+        if(anyDisabled) toggle.classList.remove('checked');
+        else toggle.classList.add('checked');
 
-                    // Set Bulk Toggle State (If any app is disabled, show as off, or logic based on majority)
-                    // Let's simpler: If ALL are enabled, show ON. If ANY are disabled, show OFF logic?
-                    // Better: Just check the first app or default to ON.
-                    const anyDisabled = apps.some(a => a.enableAnalytics === false);
-                    const toggle = document.getElementById('glob-toggle-analytics');
-                    if(anyDisabled) toggle.classList.remove('checked');
-                    else toggle.classList.add('checked');
-
-                } catch(e) {
-                    console.error(e);
-                    alert("Error loading global stats.");
-                }
-            }
+    } catch(e) {
+        console.error(e);
+        alert("Error loading global stats.");
+    }
+}
             
            
            
@@ -1591,44 +1589,57 @@ async toggleGlobalAnalytics(toggleEl) {
             
             
                         async openAnalytics(appId) {
-                this.currentAnalyticsId = appId;
-                this.updateUIState('none'); 
-                document.getElementById('analytics-view').classList.add('active');
+    this.currentAnalyticsId = appId;
+    this.updateUIState('none'); 
+    document.getElementById('analytics-view').classList.add('active');
 
-                const totalEl = document.getElementById('ana-total');
-                const activeEl = document.getElementById('ana-active');
-                
-                totalEl.innerText = '...';
-                activeEl.innerText = '...';
+    const totalEl = document.getElementById('ana-total');
+    const activeEl = document.getElementById('ana-active');
+    
+    // 1. UI FEEDBACK: Reset numbers to '...' to prove we are refetching
+    totalEl.innerText = '...';
+    activeEl.innerText = '...';
+    
+    // Show loading in chart area
+    document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Refreshing...</div>';
 
-                try {
-                    const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
-                    if (!doc.exists) return;
-                    
-                    const data = doc.data();
-                    document.getElementById('ana-title').innerText = data.name;
-                    document.getElementById('ana-id').innerText = "ID: " + appId;
-                    document.getElementById('ana-icon').src = data.iconUrl || 'grey.png';
+    try {
+        // 2. FETCH SINGLE DOC: Hits Firebase directly for this specific app
+        const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
+        
+        if (!doc.exists) {
+            alert("App not found!");
+            this.showDashboard();
+            return;
+        }
+        
+        const data = doc.data();
+        
+        // Update Header
+        document.getElementById('ana-title').innerText = data.name;
+        document.getElementById('ana-id').innerText = "ID: " + appId;
+        document.getElementById('ana-icon').src = data.iconUrl || 'grey.png';
 
-                    // Check if disabled
-                    if (data.enableAnalytics === false) {
-                        totalEl.innerText = "Disabled";
-                        activeEl.innerText = "Disabled";
-                        document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Analytics Disabled</div>';
-                        return;
-                    }
+        // Handle Disabled State
+        if (data.enableAnalytics === false) {
+            totalEl.innerText = "Disabled";
+            activeEl.innerText = "Disabled";
+            document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Analytics Disabled</div>';
+            return;
+        }
 
-                    const downloads = data.downloadCount || 0;
-                    const installs = data.installCount || 0;
+        // 3. RENDER NEW NUMBERS
+        const downloads = data.downloadCount || 0;
+        const installs = data.installCount || 0;
 
-                    this.animateNum(totalEl, downloads);
-                    this.animateNum(activeEl, installs);
-                    this.renderChart(downloads, installs);
+        this.animateNum(totalEl, downloads);
+        this.animateNum(activeEl, installs);
+        this.renderChart(downloads, installs);
 
-                } catch(e) {
-                    console.error("Analytics Error", e);
-                }
-            }
+    } catch(e) {
+        console.error("Analytics Error", e);
+    }
+}
 
             animateNum(el, val) {
                 let start = 0; const duration = 1000; const startTime = performance.now();
