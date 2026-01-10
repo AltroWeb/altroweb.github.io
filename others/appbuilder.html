@@ -1258,46 +1258,83 @@ async fetchMyApps() {
             }
 
                         async publishApp() {
-                const name = document.getElementById('edit-name').value.trim();
-                const icon = document.getElementById('edit-icon').value.trim();
-                const desc = document.getElementById('edit-desc').value.trim();
-                let embedUrl = this.sourceMode === 'url' ? document.getElementById('edit-embed').value.trim() : document.getElementById('edit-file-data').value;
-                
-                // NEW: Get Toggle State
-                const enableAnalytics = document.getElementById('toggle-analytics-ui').classList.contains('checked');
+    const name = document.getElementById('edit-name').value.trim();
+    const icon = document.getElementById('edit-icon').value.trim();
+    const desc = document.getElementById('edit-desc').value.trim();
+    
+    // Handle Source Mode
+    let embedUrl = this.sourceMode === 'url' ? document.getElementById('edit-embed').value.trim() : document.getElementById('edit-file-data').value;
+    
+    // Get Toggle State
+    const enableAnalytics = document.getElementById('toggle-analytics-ui').classList.contains('checked');
 
-                if (!name || !desc || !embedUrl) { alert("Name, Description, and Source are required."); return; }
+    if (!name || !desc || !embedUrl) { alert("Name, Description, and Source are required."); return; }
 
-                const btn = document.getElementById('btn-publish');
-                btn.classList.add('loading');
+    const btn = document.getElementById('btn-publish');
+    btn.classList.add('loading');
+    
+    // Capture timestamp
+    const now = Date.now();
 
-                try {
-                    const appData = {
-                        name: name,
-                        iconUrl: icon,
-                        description: desc,
-                        embedUrl: embedUrl,
-                        author: this.devProfile.displayName,
-                        authorId: this.devProfile.uid,
-                        updatedAt: Date.now(),
-                        enableAnalytics: enableAnalytics // Save it
-                    };
+    try {
+        // Base Data
+        const appData = {
+            name: name,
+            iconUrl: icon,
+            description: desc,
+            embedUrl: embedUrl,
+            author: this.devProfile.displayName,
+            authorId: this.devProfile.uid,
+            updatedAt: now,
+            enableAnalytics: enableAnalytics
+        };
 
-                    if (!this.currentEditingId) {
-                        appData.createdAt = Date.now();
-                        await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').add(appData);
-                    } else {
-                        await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId).update(appData);
-                    }
-                    this.showDashboard();
-                } catch (e) {
-                    // ... error handling ...
-                    console.error(e);
-                    alert("Error saving: " + e.message);
-                } finally {
-                    btn.classList.remove('loading');
+        if (!this.currentEditingId) {
+            // --- SCENARIO 1: CREATE NEW APP ---
+            appData.createdAt = now;
+            
+            // If Analytics enabled on creation, initialize the Version Signal immediately.
+            if (enableAnalytics) {
+                appData.analyticsVersion = now;
+            }
+            
+            await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').add(appData);
+            
+        } else {
+            // --- SCENARIO 2: EDIT EXISTING APP ---
+            const docRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId);
+
+            // A. FETCH FIRST (Read-Before-Write)
+            // We must read the doc to see if 'analyticsVersion' already exists.
+            const docSnap = await docRef.get();
+            const existingData = docSnap.exists ? docSnap.data() : {};
+
+            // B. APPLY ROBUST LOGIC
+            if (enableAnalytics) {
+                // If turning ON: 
+                // Only set a new version if one is MISSING.
+                // If it exists, we leave it out of 'appData', so Firestore keeps the old value.
+                if (!existingData.analyticsVersion) {
+                    appData.analyticsVersion = now; 
                 }
             }
+            // If turning OFF: 
+            // 'appData' contains { enableAnalytics: false }.
+            // We do NOT include 'analyticsVersion' in 'appData'.
+            // Therefore, Firestore .update() will KEEP the existing timestamp in the database.
+            // This ensures the Uninstall Signal remains active for users.
+
+            await docRef.update(appData);
+        }
+        
+        this.showDashboard();
+    } catch (e) {
+        console.error(e);
+        alert("Error saving: " + e.message);
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
             
             
             
