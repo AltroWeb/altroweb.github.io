@@ -664,6 +664,64 @@ body.dark-mode .store-update-section span {
 
 
 
+/* --- SIDELOADER WINDOW STYLES --- */
+#sideloader-window { 
+    z-index: 160; /* CRITICAL: Places it above Main Window (100) and App Store (150) */
+    background: #F2F2F7; /* Default Light Mode Background */
+}
+
+/* Dark Mode Override */
+body.dark-mode #sideloader-window {
+    background: #000 !important; /* Forces Black in Dark Mode */
+    color: #fff;
+}
+
+/* Fix Input Text Color in Dark Mode */
+body.dark-mode #sideloader-window .ios-input {
+    color: #fff !important;
+    background: #1c1c1e !important;
+}
+
+/* Fix List Backgrounds in Dark Mode */
+body.dark-mode #sideloader-window .ios-list {
+    background: #1c1c1e !important;
+}
+
+/* Fix Row Text in Dark Mode */
+body.dark-mode #sideloader-window .ios-row {
+    color: #fff !important;
+    background: #1c1c1e !important;
+}
+
+
+/* --- SIDELOADER DARK MODE BUTTON FIX --- */
+body.dark-mode #sl-apps-list button {
+    background: #2C2C2E !important; /* Dark iOS System Gray */
+}
+
+
+/* --- SIDELOADER TOUCH FEEDBACK FIX --- */
+
+/* Light Mode Feedback */
+#sideloader-window .ios-row:active {
+    background: #E5E5EA !important;
+}
+
+/* Dark Mode Feedback */
+body.dark-mode #sideloader-window .ios-row:active {
+    background: #2c2c2e !important; /* Lighter grey to show press */
+}
+
+
+#sideloader-window .ios-search-bar {
+    background: #E9E9EA !important; 
+}
+
+
+body.dark-mode #sideloader-window .ios-search-bar {
+    background: #1c1c1e !important;
+    
+}
 
 
     </style>
@@ -848,6 +906,19 @@ body.dark-mode .store-update-section span {
 </div>
                         </div>
 
+
+
+<div class="section-header">Developer</div>
+<div class="ios-list">
+    <div class="ios-row">
+        <span>Enable Sideloading</span>
+        <input type="checkbox" class="ios-switch" id="setting-sideload" onchange="sideloader.toggleSystem(this)">
+    </div>
+</div>  
+
+
+
+
                         <div class="section-header">Interactions</div>
                         
                         
@@ -911,6 +982,95 @@ body.dark-mode .store-update-section span {
                 </div>
             </div>
         </div>
+        
+        
+    
+
+   <div class="app-window" id="sideloader-window">
+    <div class="app-navbar" id="sideloader-navbar">
+        <span class="nav-title">Sideloader</span>
+    </div>
+    
+    <div class="app-content-scroll" id="sideloader-scroll">
+        <div class="scroll-inner-padding">
+            <h1 class="app-header-large" id="sl-main-header">Sideloader</h1>
+            
+  <div id="sl-list-view">
+    <div class="ios-search-bar" style="margin-bottom: 10px;">
+        <svg width="16" height="16" fill="#8E8E93" viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        <input type="text" id="sl-search" placeholder="Search Apps or IDs" 
+               style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;"
+               oninput="sideloader.renderList()">
+    </div>
+
+    <div class="ios-list" style="margin-bottom: 20px;">
+        <div class="ios-row" onclick="sideloader.showForm()" style="color: #007AFF; justify-content: center; font-weight: 600;">
+            Add New App
+        </div>
+    </div>
+
+    <div class="section-header">Installed Apps</div>
+    <div class="ios-list" id="sl-apps-list">
+        <div style="padding:20px; text-align:center; color:#8E8E93;">No sideloaded apps</div>
+    </div>
+</div>
+
+            <div id="sl-form-view" style="display:none;">
+                <div class="ios-list">
+                    <div class="ios-row">
+                        <input type="text" class="ios-input" id="sl-name" placeholder="App Name" style="background:transparent; padding:0;">
+                    </div>
+                    <div class="ios-row" style="flex-direction:column; align-items:flex-start; gap:10px; padding-bottom:10px;">
+                        <input type="text" class="ios-input" id="sl-icon" placeholder="Icon URL (https://...)" style="background:transparent; padding:0; width:100%;" oninput="document.getElementById('sl-icon-preview').src = this.value || 'grey.png'">
+                        <div style="display:flex; align-items:center; gap:10px; width:100%;">
+                            <img id="sl-icon-preview" src="grey.png" style="width:40px; height:40px; border-radius:10px; background:#eee; object-fit:cover;">
+                            <span style="font-size:12px; color:#8E8E93;">Preview</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-header">Source Type</div>
+                <div class="ios-list">
+                    <div class="ios-row" onclick="sideloader.toggleSource('url')">
+                        <span>URL Embed</span>
+                        <span id="sl-check-url" style="color:#007AFF; font-weight:600;">✓</span>
+                    </div>
+                    <div class="ios-row" onclick="sideloader.toggleSource('file')">
+                        <span>HTML File Upload</span>
+                        <span id="sl-check-file" style="display:none; color:#007AFF; font-weight:600;">✓</span>
+                    </div>
+                </div>
+
+                <div class="ios-list" id="sl-input-url">
+                    <div class="ios-row">
+                        <input type="text" class="ios-input" id="sl-url" placeholder="https://example.com" style="background:transparent; padding:0;">
+                    </div>
+                </div>
+
+                <div class="ios-list" id="sl-input-file" style="display:none;">
+                    <div class="ios-row" onclick="const fi=document.getElementById('sl-file-input'); fi.value=''; fi.click();" style="color:#007AFF; justify-content:center; cursor: pointer;">
+    <span id="sl-file-name">Select HTML File (Max 800KB)</span>
+</div>
+                    <input type="file" id="sl-file-input" accept=".html" style="display:none;" onchange="sideloader.handleFile(this)">
+                    <input type="hidden" id="sl-file-data">
+                </div>
+
+                <div class="ios-list" style="background:transparent; margin-top:20px;">
+                    <button class="ios-btn" onclick="sideloader.saveApp()">Save App</button>
+                    <div style="height:10px;"></div>
+                    <button class="ios-btn secondary" onclick="sideloader.showList()">Cancel</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>    
+        
+        
+        
+        
 
         <!-- MUSIC OVERLAY WINDOW -->
         <div class="app-window" id="music-window">
@@ -1567,6 +1727,311 @@ updateHeader.innerHTML = `
                 this.fetchApps();
             }
         }
+        
+        
+        
+        
+        
+        class Sideloader {
+    constructor() {
+        this.enabled = localStorage.getItem('ios_sideloading_enabled') === 'true';
+        this.apps = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+        this.currentSourceMode = 'url';
+        this.editingId = null;
+
+        setTimeout(() => {
+            const toggle = document.getElementById('setting-sideload');
+            if(toggle) toggle.checked = this.enabled;
+            
+            // Only inject the Sideloader Icon if enabled
+            if(this.enabled) this.injectSystemIcon();
+            
+            // ALWAYS restore installed apps (even if sideloading is toggled off later)
+            this.restoreApps();
+        }, 500);
+    }
+
+    toggleSystem(el) {
+    // 1. If turning OFF: Just do it immediately
+    if (!el.checked) {
+        this.enabled = false;
+        localStorage.setItem('ios_sideloading_enabled', 'false');
+        this.removeSystemIcon();
+        if (iOS.activeWindow && iOS.activeWindow.getAttribute('data-app') === 'Sideloader') {
+            iOS.closeApp();
+        }
+        return;
+    }
+
+    // 2. If turning ON: Revert visual state first, then ask confirmation
+    el.checked = false; // Visually turn off immediately
+
+    iOS.showAlert(
+        'Enable Sideloading?', 
+        'Sideloaded apps are not verified by Apple and may be risky. Are you sure?', 
+        () => {
+            // User clicked OK
+            el.checked = true; // Visually turn ON
+            this.enabled = true;
+            localStorage.setItem('ios_sideloading_enabled', 'true');
+            this.injectSystemIcon();
+            // Double alert removed. It just enables silently now.
+        },
+        false // Changed to FALSE: This makes the button Blue "OK" instead of Red "Delete"
+    );
+}
+
+    injectSystemIcon() {
+        const source = document.getElementById('app-source');
+        if (source.querySelector('[data-app-id="Sideloader"]')) return;
+
+        const item = document.createElement('div');
+        item.className = 'app-item';
+        item.setAttribute('data-app-id', 'Sideloader');
+        item.setAttribute('onclick', "iOS.openApp(this, 'Sideloader', 'light')");
+        item.innerHTML = `
+            <div class="app-icon" style="background:#000; display:flex; align-items:center; justify-content:center; border:1px solid #333;">
+            	
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGJ_3z2d-HFRdkMlJoqjwEPHMVGgPzKJHF5-BpVjaXeA&s=10" class="icon-bg-img" onerror="this.style.display='none'"> 
+            
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </div>
+            <div class="app-name">Sideloader</div>
+        `;
+        source.appendChild(item);
+        iOS.loadApps();
+        iOS.initPagination();
+    }
+
+    removeSystemIcon() {
+        iOS.removeSingleApp('Sideloader');
+    }
+
+    restoreApps() {
+        this.apps.forEach(app => {
+            // Re-inject all sideloaded apps
+            iOS.injectSingleApp(app, false);
+        });
+        iOS.loadApps();
+        iOS.initPagination();
+    }
+
+    /* --- UI MANAGEMENT --- */
+    
+    showForm(editId = null) {
+        document.getElementById('sl-list-view').style.display = 'none';
+        document.getElementById('sl-form-view').style.display = 'block';
+        
+        // Update the Large Header, NOT the Navbar Title (keeps scrolling clean)
+        document.getElementById('sl-main-header').innerText = editId ? 'Edit App' : 'New App';
+        
+        if(editId) {
+            const app = this.apps.find(a => a.id === editId);
+            this.editingId = editId;
+            document.getElementById('sl-name').value = app.name;
+            document.getElementById('sl-icon').value = app.iconUrl;
+            document.getElementById('sl-icon-preview').src = app.iconUrl || 'grey.png';
+            
+            if(app.embedUrl.startsWith('data:')) {
+                this.toggleSource('file');
+                document.getElementById('sl-file-data').value = app.embedUrl;
+                document.getElementById('sl-file-name').innerText = "Existing File Loaded";
+            } else {
+                this.toggleSource('url');
+                document.getElementById('sl-url').value = app.embedUrl;
+            }
+        } else {
+            this.editingId = null;
+            document.getElementById('sl-name').value = '';
+            document.getElementById('sl-icon').value = '';
+            document.getElementById('sl-url').value = '';
+            document.getElementById('sl-file-data').value = '';
+            document.getElementById('sl-icon-preview').src = 'grey.png';
+            this.toggleSource('url');
+        }
+    }
+
+    showList() {
+        document.getElementById('sl-list-view').style.display = 'block';
+        document.getElementById('sl-form-view').style.display = 'none';
+        document.getElementById('sl-main-header').innerText = 'Sideloader';
+        
+        // Clear search when returning to list
+        const searchInput = document.getElementById('sl-search');
+        if(searchInput) searchInput.value = ''; 
+        
+        this.renderList();
+    }
+
+    renderList() {
+        const list = document.getElementById('sl-apps-list');
+        const searchInput = document.getElementById('sl-search');
+        
+        // 1. Get Search Term
+        const term = searchInput ? searchInput.value.trim().toLowerCase() : '';
+        
+        list.innerHTML = '';
+        
+        if (this.apps.length === 0) {
+            list.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No sideloaded apps.</div>';
+            return;
+        }
+
+        // 2. Filter Apps
+        const filtered = this.apps.filter(app => {
+            const matchName = app.name.toLowerCase().includes(term);
+            const matchId = app.id.toLowerCase().includes(term);
+            return matchName || matchId;
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No matches found</div>';
+            return;
+        }
+
+        // 3. Render
+        filtered.forEach(app => {
+            const row = document.createElement('div');
+            row.className = 'ios-row';
+            row.style.padding = '12px 16px';
+            
+            // Generate icon with fallback logic
+            const iconSrc = app.iconUrl || 'grey.png';
+            
+            row.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+                    <img src="${iconSrc}" style="width:42px; height:42px; border-radius:10px; background:#eee; object-fit:cover; flex-shrink:0;" onerror="this.src='grey.png'">
+                    <div style="display:flex; flex-direction:column; min-width:0;">
+                        <span style="font-weight:600; font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${app.name}</span>
+                        <span style="font-size:11px; color:#8E8E93; font-family: 'SF Mono', 'Monaco', 'Courier New', monospace; margin-top:2px;">${app.id}</span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-left:10px;">
+                    <button style="background:#E9E9EA; color:#007AFF; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">Edit</button>
+                    <button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Delete</button>
+                </div>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    toggleSource(mode) {
+        this.currentSourceMode = mode;
+        const urlInput = document.getElementById('sl-input-url');
+        const fileInput = document.getElementById('sl-input-file');
+        const checkUrl = document.getElementById('sl-check-url');
+        const checkFile = document.getElementById('sl-check-file');
+
+        if(mode === 'url') {
+            urlInput.style.display = 'block';
+            fileInput.style.display = 'none';
+            checkUrl.style.display = 'block';
+            checkFile.style.display = 'none';
+        } else {
+            urlInput.style.display = 'none';
+            fileInput.style.display = 'block';
+            checkUrl.style.display = 'none';
+            checkFile.style.display = 'block';
+        }
+    }
+
+    handleFile(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // 1. Validate Size
+        if (file.size > 800000) { 
+            iOS.showAlert('File Too Large', 'Max file size is 800KB.');
+            input.value = ''; // Reset on error
+            return;
+        }
+
+        // 2. Instant UI Feedback
+        const nameLabel = document.getElementById('sl-file-name');
+        nameLabel.innerText = "Reading file...";
+        nameLabel.style.color = "#8E8E93"; // Grey while loading
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // 3. Update Data & UI on Success
+            document.getElementById('sl-file-data').value = e.target.result;
+            nameLabel.innerText = file.name; // Show real filename
+            nameLabel.style.color = "#000"; // Black (or White in dark mode)
+            
+            // Dark mode support for the label text
+            if(document.body.classList.contains('dark-mode')) {
+                nameLabel.style.color = "#fff";
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+    saveApp() {
+        const name = document.getElementById('sl-name').value.trim();
+        const icon = document.getElementById('sl-icon').value.trim();
+        let embed = this.currentSourceMode === 'url' 
+            ? document.getElementById('sl-url').value.trim() 
+            : document.getElementById('sl-file-data').value;
+
+        if (!name || !embed) {
+            iOS.showAlert('Missing Info', 'App Name and Content Source are required.');
+            return;
+        }
+
+        const appData = {
+            id: this.editingId || 'sl_' + Math.random().toString(36).substr(2, 6),
+            name: name,
+            iconUrl: icon,
+            embedUrl: embed,
+            author: 'Sideloaded',
+            type: 'sideloaded',
+            updatedAt: Date.now() // Force update check if needed
+        };
+
+        if (this.editingId) {
+            // 1. Update List
+            const index = this.apps.findIndex(a => a.id === this.editingId);
+            if(index > -1) this.apps[index] = appData;
+            
+            // 2. Force Refresh Homescreen Icon
+            // Remove old icon first
+            iOS.removeSingleApp(this.editingId);
+            
+            // Update Custom Icon Storage (Engine reads this)
+            const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+            customIcons[this.editingId] = icon;
+            localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
+            
+        } else {
+            this.apps.push(appData);
+        }
+
+        // 3. Save to Storage
+        localStorage.setItem('ios_sideloaded_apps', JSON.stringify(this.apps));
+        
+        // 4. Inject New/Updated Icon
+        iOS.injectSingleApp(appData);
+        
+        this.showList();
+        iOS.showAlert(this.editingId ? 'App Updated' : 'App Installed', `${name} is ready on the Home Screen.`);
+    }
+
+    deleteApp(id) {
+        iOS.showAlert('Delete App?', 'This cannot be undone.', () => {
+            this.apps = this.apps.filter(a => a.id !== id);
+            localStorage.setItem('ios_sideloaded_apps', JSON.stringify(this.apps));
+            iOS.removeSingleApp(id);
+            this.renderList();
+        }, true);
+    }
+}
+        
+        
+        
+        
+        
+        
 
         /* --- IOS ENGINE --- */
         class IOSEngine {
@@ -1576,6 +2041,9 @@ updateHeader.innerHTML = `
                 this.mainWindow = document.getElementById('main-window');
                 this.musicWindow = document.getElementById('music-window');
                 this.storeWindow = document.getElementById('appstore-window');
+                
+               // Inside constructor()
+this.sideloaderWindow = document.getElementById('sideloader-window'); // <--- ADD THIS
                 this.activeWindow = null; 
                 this.wallpaper = document.getElementById('wallpaper');
                 this.homescreenGroup = document.getElementById('homescreen-group');
@@ -1964,13 +2432,22 @@ toggleIslandEvents(el) {
                     return; 
                 }
 
-                // --- CASE B: COLD START ---
-                
-                // 1. Reset Environment
-                clearTimeout(this.autoCollapseTimer);
-                this.isIslandExpanded = false; 
+               // --- CASE B: COLD START ---
+    
+    // 1. Reset Environment & Stop Vacuuming
+    clearTimeout(this.autoCollapseTimer);
+    this.isIslandExpanded = false; 
+    
+    // --- FIX: STOP PENDING ANIMATIONS ---
+    // If music was closing (vacuuming), kill that state immediately
+     
+    statusBar.classList.remove('squished'); 
+    island.classList.remove('island-impact');
+    islandContent.classList.remove('blur-out');
+    // ------------------------------------
 
-                // 2. Capture Original Content (Safe Guard)
+    // 2. Capture Original Content (Safe Guard)
+
                 // Only capture if we aren't already transitioning, to avoid saving a blank state
                 if (!island.classList.contains('system-notification') && islandContent.innerHTML.trim() !== "") {
                      this.tempOriginalHtml = islandContent.innerHTML;
@@ -2014,54 +2491,111 @@ toggleIslandEvents(el) {
 
             // 3. DISMISS: Closes and Restores Music
             dismissSystemNotification() {
-                const island = document.getElementById('island');
-                const statusBar = document.getElementById('status-bar');
-                
-                // Safety Check
-                if (!island || !statusBar) return;
-                
-                const islandContent = island.querySelector('.island-content');
+    const island = document.getElementById('island');
+    const statusBar = document.getElementById('status-bar');
+    
+    // Safety Check
+    if (!island || !statusBar) return;
+    
+    const islandContent = island.querySelector('.island-content');
 
-                // 1. KILL TIMER: Prevent the auto-dismiss from firing if we are already closing
-                if (this.systemNotificationTimer) {
-                    clearTimeout(this.systemNotificationTimer);
-                    this.systemNotificationTimer = null;
-                }
+    // 1. KILL TIMER: Prevent auto-dismiss conflicts
+    if (this.systemNotificationTimer) {
+        clearTimeout(this.systemNotificationTimer);
+        this.systemNotificationTimer = null;
+    }
 
-                // 2. Fade Out Text
-                islandContent.style.opacity = '0';
+    // 2. Fade Out Text
+    islandContent.style.opacity = '0';
+    
+    setTimeout(() => {
+        // --- ROBUST FIX: STATUS BAR RESET ---
+        // Explicitly remove ALL potential animation classes
+        statusBar.classList.remove('blurred', 'squished'); 
+        
+        // Force reset CSS properties to ensure it pops back up
+        statusBar.style.filter = ''; 
+        statusBar.style.opacity = '';
+        statusBar.style.transform = ''; // Removes the "receded" scale/translate
+        
+        // --- ROBUST FIX: ISLAND RESET ---
+        // Remove animation classes that might have stuck from the "vacuum" effect
+        islandContent.classList.remove('blur-out');
+        island.classList.remove('compact', 'expanded', 'system-notification', 'island-impact');
+
+        // 3. Restore Original Content (Music/Idle)
+        setTimeout(() => {
+            if (this.tempOriginalHtml && this.tempOriginalHtml.trim().length > 0) {
+                islandContent.innerHTML = this.tempOriginalHtml;
+                this.tempOriginalHtml = null; // Clear buffer
                 
-                setTimeout(() => {
-                    // 3. FORCE STATUS BAR RESTORATION
-                    // We remove the class AND manually clear inline styles to be 100% sure
-                    statusBar.classList.remove('blurred');
-                    statusBar.style.filter = ''; 
-                    statusBar.style.opacity = '';
-                    statusBar.style.transform = '';
-
-                    // 4. Shrink Island
-                    island.classList.remove('compact');
-                    island.classList.remove('expanded');
-                    island.classList.remove('system-notification');
-                    
-                    // 5. Restore Original Content (Music/Idle)
-                    setTimeout(() => {
-                        if (this.tempOriginalHtml && this.tempOriginalHtml.trim().length > 0) {
-                            islandContent.innerHTML = this.tempOriginalHtml;
-                            this.tempOriginalHtml = null; // Clear buffer
-                            
-                            // Clear styles so CSS takes over for Music/Idle state
-                            islandContent.style.display = ''; 
-                            islandContent.style.opacity = '';
-                            islandContent.style.alignItems = '';
-                            islandContent.style.justifyContent = '';
-                        } else {
-                            islandContent.innerHTML = '';
-                            islandContent.style.opacity = '';
-                        }
-                    }, 500); // Wait for shrink transition
-                }, 200); // Wait for text fade
+                // FORCE RESET STYLES so Music/Visualizer is visible
+                islandContent.style.display = ''; 
+                islandContent.style.opacity = ''; // Ensure it's visible
+                islandContent.style.alignItems = '';
+                islandContent.style.justifyContent = '';
+            } else {
+                // If nothing was there, clear it cleanly
+                islandContent.innerHTML = '';
+                islandContent.style.opacity = '';
             }
+        }, 300); // Wait for shrink transition
+    }, 200); // Wait for text fade
+}
+
+            // 3. DISMISS: Closes and Restores Music
+            dismissSystemNotification() {
+    const island = document.getElementById('island');
+    const statusBar = document.getElementById('status-bar');
+    
+    // Safety Check
+    if (!island || !statusBar) return;
+    
+    const islandContent = island.querySelector('.island-content');
+
+    // 1. KILL TIMER: Prevent auto-dismiss conflicts
+    if (this.systemNotificationTimer) {
+        clearTimeout(this.systemNotificationTimer);
+        this.systemNotificationTimer = null;
+    }
+
+    // 2. Fade Out Text
+    islandContent.style.opacity = '0';
+    
+    setTimeout(() => {
+        // --- ROBUST FIX: STATUS BAR RESET ---
+        // Explicitly remove ALL potential animation classes
+        statusBar.classList.remove('blurred', 'squished'); 
+        
+        // Force reset CSS properties to ensure it pops back up
+        statusBar.style.filter = ''; 
+        statusBar.style.opacity = '';
+        statusBar.style.transform = ''; // Removes the "receded" scale/translate
+        
+        // --- ROBUST FIX: ISLAND RESET ---
+        // Remove animation classes that might have stuck from the "vacuum" effect
+        islandContent.classList.remove('blur-out');
+        island.classList.remove('compact', 'expanded', 'system-notification', 'island-impact');
+
+        // 3. Restore Original Content (Music/Idle)
+        setTimeout(() => {
+            if (this.tempOriginalHtml && this.tempOriginalHtml.trim().length > 0) {
+                islandContent.innerHTML = this.tempOriginalHtml;
+                this.tempOriginalHtml = null; // Clear buffer
+                
+                // FORCE RESET STYLES so Music/Visualizer is visible
+                islandContent.style.display = ''; 
+                islandContent.style.opacity = ''; // Ensure it's visible
+                islandContent.style.alignItems = '';
+                islandContent.style.justifyContent = '';
+            } else {
+                // If nothing was there, clear it cleanly
+                islandContent.innerHTML = '';
+                islandContent.style.opacity = '';
+            }
+        }, 300); // Wait for shrink transition
+    }, 200); // Wait for text fade
+}
 
 
 
@@ -2347,20 +2881,34 @@ toggleIslandEvents(el) {
             }
 
             initScrollEffects() {
-                const scrollContainer = document.getElementById('main-scroll');
-                const storeScroll = document.getElementById('store-scroll');
-                const navbar = document.getElementById('main-navbar');
-                const storeNav = document.getElementById('store-navbar');
+    const scrollContainer = document.getElementById('main-scroll');
+    const storeScroll = document.getElementById('store-scroll');
+    // 1. Get Sideloader Elements
+    const slScroll = document.getElementById('sideloader-scroll');
+    
+    const navbar = document.getElementById('main-navbar');
+    const storeNav = document.getElementById('store-navbar');
+    // 2. Get Sideloader Navbar
+    const slNav = document.getElementById('sideloader-navbar');
 
-                scrollContainer.addEventListener('scroll', () => {
-                    if (scrollContainer.scrollTop > 45) navbar.classList.add('scrolled');
-                    else navbar.classList.remove('scrolled');
-                });
-                storeScroll.addEventListener('scroll', () => {
-                     if (storeScroll.scrollTop > 45) storeNav.classList.add('scrolled');
-                     else storeNav.classList.remove('scrolled');
-                });
-            }
+    scrollContainer.addEventListener('scroll', () => {
+        if (scrollContainer.scrollTop > 45) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+    });
+
+    storeScroll.addEventListener('scroll', () => {
+            if (storeScroll.scrollTop > 45) storeNav.classList.add('scrolled');
+            else storeNav.classList.remove('scrolled');
+    });
+
+    // 3. ADD THIS BLOCK
+    if (slScroll && slNav) {
+        slScroll.addEventListener('scroll', () => {
+            if (slScroll.scrollTop > 45) slNav.classList.add('scrolled');
+            else slNav.classList.remove('scrolled');
+        });
+    }
+}
 
             setupOutsideClick() {
                 this.screen.addEventListener('click', (e) => {
@@ -2371,13 +2919,14 @@ toggleIslandEvents(el) {
             }
 
             bindTransitionEvents() {
-                [this.mainWindow, this.musicWindow, this.storeWindow].forEach(win => {
-                    win.addEventListener('transitionend', (e) => {
-                        if (this.state === 'CLOSING' && e.propertyName === 'transform') {
-                            this.finishClosing();
-                        }
-                    });
-                });
+                // Inside bindTransitionEvents()
+[this.mainWindow, this.musicWindow, this.storeWindow, this.sideloaderWindow].forEach(win => { // <--- UPDATE ARRAY
+    win.addEventListener('transitionend', (e) => {
+        if (this.state === 'CLOSING' && e.propertyName === 'transform') {
+            this.finishClosing();
+        }
+    });
+});
                 this.musicWindow.addEventListener('animationend', () => {
                     if (this.musicWindow.classList.contains('launching-timewarp')) {
                         this.musicWindow.classList.remove('launching-timewarp');
@@ -2631,23 +3180,36 @@ localStorage.setItem('ios_last_charging_state', isCharging);
             }
 
             routeContent(appName) {
-                const generic = document.getElementById('generic-content');
-                const settings = document.getElementById('settings-content');
-                const notes = document.getElementById('notes-content');
-                const container = document.getElementById('dynamic-app-container');
-                const titleText = document.getElementById('nav-title-text');
-                const appTitle = document.getElementById('app-title');
-                
-                // Hide all sections first
-                [generic, settings, notes, container].forEach(el => el.classList.remove('active'));
-                
-                // Determine Title
-                let displayName = appName;
-                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                const customApp = installed.find(a => a.id === appName);
-                if (customApp) displayName = customApp.name;
-                
-                titleText.innerText = displayName;
+    const generic = document.getElementById('generic-content');
+    const settings = document.getElementById('settings-content');
+    const notes = document.getElementById('notes-content');
+    const container = document.getElementById('dynamic-app-container');
+    const titleText = document.getElementById('nav-title-text');
+    const appTitle = document.getElementById('app-title');
+    
+    // Hide all sections first
+    [generic, settings, notes, container].forEach(el => el.classList.remove('active'));
+    
+    // --- UPDATED LOGIC START ---
+    let displayName = appName;
+    let customApp = null;
+    
+    // 1. Check Store Apps
+    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    customApp = installed.find(a => a.id === appName);
+    
+    // 2. Check Sideloaded Apps (Fixes the "Generic" issue)
+    if (!customApp) {
+        const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+        customApp = sideloaded.find(a => a.id === appName);
+    }
+
+    if (customApp) displayName = customApp.name;
+    // --- UPDATED LOGIC END ---
+
+    titleText.innerText = displayName;
+
+    // ... (Keep the rest of the existing function exactly as it was: if/else blocks for Settings, Notes, etc.) ...
 
                 if (appName === 'Settings') {
                     settings.classList.add('active');
@@ -2787,7 +3349,11 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                     if (typeof appStore !== 'undefined') appStore.fetchApps();
                     // -----------------------------
 
-                } else {
+                } else if (appName === 'Sideloader') {  // <--- ADD THIS BLOCK
+    this.activeWindow = this.sideloaderWindow;
+    this.activeWindow.setAttribute('data-app', 'Sideloader');
+    sideloader.showList(); // Ensure list is shown on open
+} else {
                     this.activeWindow = this.mainWindow; 
                     this.manageBackgroundApps(appId);
                     this.routeContent(appId); 
@@ -2848,13 +3414,16 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 if (this.activeWindow === this.musicWindow) return;
                 
                 // FIX: Recede logic now handles BOTH mainWindow AND storeWindow
-                if (this.state === 'ACTIVE') {
-                    if (this.activeWindow === this.mainWindow) {
-                        this.mainWindow.classList.add('receded');
-                    } else if (this.activeWindow === this.storeWindow) {
-                        this.storeWindow.classList.add('receded');
-                    }
-                }
+                // Inside launchMusicFromIsland()
+if (this.state === 'ACTIVE') {
+    if (this.activeWindow === this.mainWindow) {
+        this.mainWindow.classList.add('receded');
+    } else if (this.activeWindow === this.storeWindow) {
+        this.storeWindow.classList.add('receded');
+    } else if (this.activeWindow === this.sideloaderWindow) { // <--- ADD THIS
+        this.sideloaderWindow.classList.add('receded');
+    }
+}
 
                 this.state = 'OPENING';
                 this.openedFromIsland = true;
@@ -2915,14 +3484,20 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 this.gestureBar.classList.add('on-home');
 
                 // FIX: Remove receded class from BOTH
-                if (this.activeWindow === this.musicWindow) {
-                    this.mainWindow.classList.remove('receded');
-                    this.storeWindow.classList.remove('receded');
-                    
+           // Inside closeApp()
+if (this.activeWindow === this.musicWindow) {
+    this.mainWindow.classList.remove('receded');
+    this.storeWindow.classList.remove('receded');
+    this.sideloaderWindow.classList.remove('receded'); // <--- ADD THIS
+
+                  
                     this.mainWindow.style.opacity = '0';
                     this.mainWindow.style.display = 'none';
                     this.mainWindow.style.transform = '';
                     this.storeWindow.style.display = 'none';
+                    
+    this.sideloaderWindow.style.display = 'none'; // <--- ADD THIS
+     
                 }
 
                 this.homescreenGroup.classList.remove('minimized');
@@ -3154,7 +3729,8 @@ localStorage.setItem('ios_last_charging_state', isCharging);
         // ... (AppStore class ends above)
 
         const iOS = new IOSEngine();
-        const appStore = new AppStore();
+const appStore = new AppStore();
+const sideloader = new Sideloader(); // <--- ADD THIS
 
         // --- ROBUST NOTIFICATION SERVICE INJECTOR ---
         (function ensureNotificationService() {
