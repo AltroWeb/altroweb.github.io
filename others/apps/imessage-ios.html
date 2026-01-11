@@ -102,6 +102,39 @@
         .message-group.animate { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
+        .date-separator {
+            align-self: center;
+            background-color: rgba(128, 128, 128, 0.15);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 10px;
+            margin: 16px 0 8px 0;
+            width: fit-content;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .encryption-notice {
+            align-self: center;
+            background-color: rgba(255, 204, 0, 0.15);
+            color: #FFD60A;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 12px;
+            margin: 16px 0;
+            width: fit-content;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            max-width: 80%;
+        }
+        .encryption-notice svg { width: 12px; height: 12px; }
+
         .message { max-width: 78%; padding: 8px 14px; border-radius: 18px; font-size: 16px; line-height: 1.35; position: relative; word-wrap: break-word; user-select: none; transition: transform 0.1s; }
         .message.me { align-self: flex-end; background-color: var(--bubble-blue); color: white; border-bottom-right-radius: 4px; }
         .message.them { align-self: flex-start; background-color: var(--bubble-gray); color: var(--text-primary); border-bottom-left-radius: 4px; }
@@ -137,6 +170,7 @@
         .message.me .time { margin-right: 14px; } 
         .tick-svg { width: 14px; height: 14px; color: rgba(255,255,255,0.5); }
         .message.me .seen .tick-svg { color: #ffffff; opacity: 1; }
+        .message.me .pending .tick-svg { color: transparent; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 50%; width: 10px; height: 10px; }
 
         .typing-bubble { margin-left: 16px; margin-bottom: 16px; background-color: var(--bubble-gray); padding: 10px 14px; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; display: none; align-items: center; gap: 3px; }
         .typing-bubble.active { display: flex; animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -164,6 +198,8 @@
         
         .call-name { font-size: 34px; font-weight: 600; color: white; text-align: center; }
         .call-status { font-size: 18px; color: #8e8e93; margin-top: 5px; }
+        .call-secure-badge { font-size: 12px; color: #32D74B; margin-top: 5px; display: flex; align-items: center; gap: 5px; opacity: 0.8; }
+        .call-secure-badge svg { width: 12px; height: 12px; }
         
         .call-controls-wrapper { width: 100%; display: flex; justify-content: center; align-items: center; padding-bottom: 60px; }
         .call-controls { display: flex; gap: 60px; align-items: center; justify-content: center; width: 100%; transition: all 0.3s ease; }
@@ -211,6 +247,9 @@
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(20px); }
+        
+        .upload-wrapper { overflow: hidden; position: relative; }
+        .upload-wrapper input { position: absolute; top:0; left:0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 
         .hidden { display: none !important; }
         svg { display: block; }
@@ -247,7 +286,9 @@
                     <button id="chat-menu-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
                 </div>
                 <div id="chat-menu" class="chat-menu">
+                    <div class="chat-menu-item" id="view-peer-id">View Peer ID</div>
                     <div class="chat-menu-item" id="rename-contact">Change Name</div>
+                    <div class="chat-menu-item danger" id="clear-history">Clear History</div>
                     <div class="chat-menu-item danger" id="block-toggle-btn">Block User</div>
                     <div class="chat-menu-item danger" id="delete-chat">Delete Chat</div>
                 </div>
@@ -292,6 +333,11 @@
                     <span>My Name</span>
                     <span id="my-name-val" style="color: var(--text-secondary);">User</span>
                 </div>
+                <div class="settings-item upload-wrapper">
+                    <span>Ringtone (Max 2MB)</span>
+                    <span id="ringtone-status" style="color: var(--text-secondary); font-size:12px;">Default</span>
+                    <input type="file" id="ringtone-upload" accept="audio/*">
+                </div>
                 <div class="settings-item" onclick="$('blocklist-view').classList.remove('hidden'); $('blocklist-view').classList.add('active'); renderBlocklist()">
                     <span>Blocked</span>
                     <span id="blocklist-count" style="color: var(--text-secondary);">0</span>
@@ -305,7 +351,7 @@
                 </div>
                 <div class="settings-item">
                     <span>Version</span>
-                    <span style="color: var(--text-secondary);">1.0.4 Notify</span>
+                    <span style="color: var(--text-secondary);">1.1.2 Encrypt</span>
                 </div>
             </div>
         </div>
@@ -327,6 +373,10 @@
                 <div class="call-avatar" id="call-avatar">?</div>
                 <div class="call-name" id="call-name">Unknown</div>
                 <div class="call-status" id="call-status-text">Calling...</div>
+                <div class="call-secure-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    End-to-End Encrypted
+                </div>
             </div>
             <div class="call-spacer"></div>
             
@@ -380,54 +430,251 @@
         let mySavedId = localStorage.getItem('my_peer_id') || generateShortId();
         localStorage.setItem('my_peer_id', mySavedId);
 
-        const CONFIG = { host: '0.peerjs.com', secure: true, port: 443, debug: 1 };
+        const CONFIG = { host: '0.peerjs.com', secure: true, port: 443, debug: 0 };
         
-        let peer = null, myId = mySavedId, currentChatId = null, activeConn = null, activeCall = null, localStream = null, typingTimeout = null, muted = false;
+        let peer = null, myId = mySavedId, currentChatId = null, activeCall = null, localStream = null, typingTimeout = null, muted = false;
+        let connections = {}; // Object to store ONE active connection per peerId
         let ctxMsgId = null; 
         let callPeerId = null;
         let heartbeatInterval = null;
+        let lastPeerHeartbeat = 0;
 
-        const state = {
-            contacts: JSON.parse(localStorage.getItem('contacts') || '[]'),
-            chats: JSON.parse(localStorage.getItem('chats') || '{}'),
-            blocklist: JSON.parse(localStorage.getItem('blocklist') || '[]'),
-            settings: JSON.parse(localStorage.getItem('settings') || '{"name":"User","darkMode":true}')
+        /* --- DATE UTILS --- */
+        function getFriendlyDate(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            const isYesterday = date.getDate() === yesterday.getDate() && date.getMonth() === yesterday.getMonth() && date.getFullYear() === yesterday.getFullYear();
+            
+            if (isToday) return 'Today';
+            if (isYesterday) return 'Yesterday';
+            return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
+        function getContactTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+            const isYesterday = date.getDate() === yesterday.getDate() && date.getMonth() === yesterday.getMonth() && date.getFullYear() === yesterday.getFullYear();
+
+            if (isToday) return date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            if (isYesterday) return 'Yesterday';
+            return date.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: '2-digit' });
+        }
+
+        /* --- CRYPTO MODULE (AES-GCM + ECDH) --- */
+        const Security = {
+            keyPair: null,
+            sharedKeys: new Map(), 
+            
+            async init() {
+                try {
+                    let keys = await IDB.get('settings', 'device_keys');
+                    if (!keys) {
+                        keys = await window.crypto.subtle.generateKey(
+                            { name: 'ECDH', namedCurve: 'P-256' },
+                            false, ['deriveKey'] 
+                        );
+                        await IDB.put('settings', keys, 'device_keys');
+                    }
+                    this.keyPair = keys;
+                } catch(e) { console.error("Crypto init failed", e); }
+            },
+
+            async deriveSecret(peerId, remotePublicKeyJwk) {
+                try {
+                    const remoteKey = await window.crypto.subtle.importKey(
+                        'jwk', remotePublicKeyJwk,
+                        { name: 'ECDH', namedCurve: 'P-256' },
+                        false, []
+                    );
+                    
+                    const sharedKey = await window.crypto.subtle.deriveKey(
+                        { name: 'ECDH', public: remoteKey },
+                        this.keyPair.privateKey,
+                        { name: 'AES-GCM', length: 256 },
+                        false, ['encrypt', 'decrypt']
+                    );
+                    
+                    this.sharedKeys.set(peerId, sharedKey);
+                    console.log(`SECURE: Channel established with ${peerId}`);
+                    return true;
+                } catch(e) {
+                    console.error("Key derivation failed", e);
+                    return false;
+                }
+            },
+
+            async encrypt(peerId, data) {
+                const key = this.sharedKeys.get(peerId);
+                if (!key) throw new Error("No secure channel");
+                try {
+                    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                    const encoded = new TextEncoder().encode(JSON.stringify(data));
+                    const ciphertext = await window.crypto.subtle.encrypt(
+                        { name: 'AES-GCM', iv: iv },
+                        key,
+                        encoded
+                    );
+                    return { 
+                        enc: ciphertext, 
+                        iv: Array.from(iv) 
+                    };
+                } catch(e) {
+                    console.error("Encryption Failed:", e);
+                    throw e;
+                }
+            },
+
+            async decrypt(peerId, wrapper) {
+                const key = this.sharedKeys.get(peerId);
+                if (!key) throw new Error("No secure channel");
+                if (!wrapper.iv || !wrapper.enc) throw new Error("Invalid cipher data");
+                try {
+                    const decrypted = await window.crypto.subtle.decrypt(
+                        { name: 'AES-GCM', iv: new Uint8Array(wrapper.iv) },
+                        key,
+                        wrapper.enc
+                    );
+                    return JSON.parse(new TextDecoder().decode(decrypted));
+                } catch(e) {
+                    console.error("Decryption Failed", e);
+                    throw e;
+                }
+            },
+            
+            async getPublicKeyJwk() {
+                return await window.crypto.subtle.exportKey('jwk', this.keyPair.publicKey);
+            }
         };
 
+        /* --- INDEXEDDB HELPER --- */
+        const DB_NAME = 'iMessageDB';
+        const DB_VERSION = 1;
+
+        const IDB = {
+            db: null,
+            init() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(DB_NAME, DB_VERSION);
+                    req.onerror = e => reject(e);
+                    req.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('contacts')) db.createObjectStore('contacts', { keyPath: 'id' });
+                        if (!db.objectStoreNames.contains('messages')) {
+                            const store = db.createObjectStore('messages', { keyPath: 'id' });
+                            store.createIndex('chatId', 'chatId', { unique: false });
+                        }
+                        if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings'); 
+                        if (!db.objectStoreNames.contains('pending')) { 
+                            const store = db.createObjectStore('pending', { keyPath: 'id' });
+                            store.createIndex('targetId', 'targetId', { unique: false });
+                        }
+                    };
+                    req.onsuccess = e => {
+                        this.db = e.target.result;
+                        resolve(this.db);
+                    };
+                });
+            },
+            get(storeName, key) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(storeName, 'readonly');
+                    const req = tx.objectStore(storeName).get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            },
+            getAll(storeName) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(storeName, 'readonly');
+                    const req = tx.objectStore(storeName).getAll();
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            },
+            getAllFromIndex(storeName, indexName, value) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(storeName, 'readonly');
+                    const req = tx.objectStore(storeName).index(indexName).getAll(value);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            },
+            put(storeName, value, key) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(storeName, 'readwrite');
+                    const req = key ? tx.objectStore(storeName).put(value, key) : tx.objectStore(storeName).put(value);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            },
+            delete(storeName, key) {
+                return new Promise((resolve, reject) => {
+                    const tx = this.db.transaction(storeName, 'readwrite');
+                    const req = tx.objectStore(storeName).delete(key);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            }
+        };
+
+        let state = {
+            contacts: [],
+            blocklist: [],
+            settings: { name: "User", darkMode: true },
+            currentMessages: []
+        };
+
+        // Initialize App
+        (async function initApp() {
+            try {
+                await IDB.init();
+                await Security.init(); 
+
+                const s = await IDB.get('settings', 'config');
+                if (s) state.settings = s;
+                
+                state.contacts = (await IDB.getAll('contacts')).sort((a,b) => b.time - a.time);
+                
+                const bl = await IDB.get('settings', 'blocklist');
+                if (bl) state.blocklist = bl;
+                
+                const ringtone = await IDB.get('settings', 'custom_ringtone');
+                if(ringtone) $('ringtone-status').textContent = "Custom Set";
+
+                applySettings();
+                renderContacts();
+                initPeer();
+            } catch (e) {
+                console.error("DB Init Failed", e);
+                alert("Database error. Please reload.");
+            }
+        })();
+
         /* --- NOTIFICATION BRIDGE INTEGRATION --- */
-        // This helper sends a notification request to the parent (Simulator)
-        // using the 'IOS_NOTIFICATION_QUEUE' postMessage event we built earlier.
-        
-        // Track window focus/blur
         let isWindowFocused = true;
         window.addEventListener('focus', () => isWindowFocused = true);
         window.addEventListener('blur', () => isWindowFocused = false);
 
         function notify(title, body) {
-            if (window.parent === window) return; // Only works inside Simulator
-
+            if (window.parent === window) return;
             const payload = {
-                appId: 'iMessage', // The ID of this app (must match installed ID)
+                appId: 'iMessage',
                 title: title,
                 msg: body,
-                showAfter: Date.now(), // Immediate
-                
+                showAfter: Date.now(),
                 uuid: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                
                 sound: 'https://download-apple-sms-ringtones-free.mobilesringtones.com/storage/2018/08/30/24645/24645.mp3'
             };
-
-            try {
-                // Try postMessage bridge
-                window.parent.postMessage({ 
-                    type: 'IOS_NOTIFICATION_QUEUE', 
-                    payload: payload 
-                }, '*');
-            } catch (e) {
-                console.warn("Notification trigger failed", e);
-            }
+            try { window.parent.postMessage({ type: 'IOS_NOTIFICATION_QUEUE', payload: payload }, '*'); } catch (e) {}
         }
-        /* -------------------------------------- */
 
         const Ringer = {
             audioCtx: null,
@@ -437,6 +684,21 @@
                 this.init();
                 if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
                 this.stop();
+
+                const customBlob = await IDB.get('settings', 'custom_ringtone');
+                if (customBlob) {
+                    try {
+                        const arrayBuffer = await customBlob.arrayBuffer();
+                        const audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+                        this.source = this.audioCtx.createBufferSource();
+                        this.source.buffer = audioBuffer;
+                        this.source.loop = true;
+                        this.source.connect(this.audioCtx.destination);
+                        this.source.start();
+                        return;
+                    } catch(e) { console.error("Custom ringtone failed", e); }
+                }
+
                 const buffer = this.audioCtx.createBuffer(1, this.audioCtx.sampleRate * 2.0, this.audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
                 for (let i = 0; i < buffer.length; i++) data[i] = (i / this.audioCtx.sampleRate < 1.5) ? Math.sin(2 * Math.PI * 440 * (i / this.audioCtx.sampleRate)) * 0.1 : 0;
@@ -450,12 +712,31 @@
         };
         document.body.addEventListener('click', () => { if (Ringer.audioCtx && Ringer.audioCtx.state === 'suspended') Ringer.audioCtx.resume(); }, { once: true });
 
-        function showModal(title, msg, inputPlaceholder, buttons) {
+        function showModal(title, msg, inputPlaceholder, buttons, inputType = 'text') {
             $('m-title').textContent = title;
             $('m-msg').textContent = msg;
-            $('m-input').classList.toggle('hidden', !inputPlaceholder);
-            $('m-input').value = '';
-            $('m-input').placeholder = inputPlaceholder || '';
+            
+            const inp = $('m-input');
+            inp.classList.toggle('hidden', !inputPlaceholder);
+            inp.value = '';
+            inp.placeholder = inputPlaceholder || '';
+            
+            if (inputType === 'numeric') {
+                inp.type = "tel";
+                inp.pattern = "[0-9]*";
+                inp.maxLength = 8;
+                inp.inputMode = "numeric";
+                inp.oninput = function() {
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8);
+                };
+            } else {
+                inp.type = "text";
+                inp.removeAttribute('pattern');
+                inp.removeAttribute('maxLength');
+                inp.removeAttribute('inputMode');
+                inp.oninput = null;
+            }
+
             const btns = $('m-btns');
             btns.innerHTML = '';
             buttons.forEach(b => {
@@ -473,50 +754,105 @@
         function initPeer() {
             peer = new Peer(myId, CONFIG);
             peer.on('open', id => { myId = id; $('my-id-val').textContent = id; });
-            peer.on('connection', conn => { setupConnection(conn); }); 
+            peer.on('connection', conn => { 
+                setupConnection(conn); 
+            }); 
             peer.on('call', call => { if (state.blocklist.includes(call.peer)) { call.close(); return; } handleIncomingCall(call); });
+            peer.on('disconnected', () => { console.log('Peer disconnected, reconnecting...'); peer.reconnect(); });
             peer.on('error', err => { if (err.type === 'unavailable-id') { myId = generateShortId(); localStorage.setItem('my_peer_id', myId); location.reload(); }});
         }
 
         function updateStatusDisplay(isOnline) {
             if (!currentChatId) return;
             const statusEl = $('chat-status');
-            if (isOnline) {
-                statusEl.textContent = 'Online';
-            } else {
-                statusEl.textContent = 'Offline';
+            statusEl.textContent = isOnline ? 'Online' : 'Offline';
+        }
+
+        async function flushPendingMessages(conn) {
+            const pending = await IDB.getAllFromIndex('pending', 'targetId', conn.peer);
+            if (pending && pending.length > 0) {
+                console.log(`Flushing ${pending.length} pending messages to ${conn.peer}`);
+                pending.sort((a,b) => a.timestamp - b.timestamp);
+                
+                for (const item of pending) {
+                    const success = await sendData(item.payload.type, item.payload.content, item.payload.format, item.payload, true);
+                    if (success) {
+                        await IDB.delete('pending', item.id);
+                    } else {
+                        break; // Stop flushing if send fails
+                    }
+                }
             }
         }
 
         function setupConnection(conn) {
-            if (activeConn && activeConn.peer === conn.peer && activeConn.open) { activeConn = conn; return; }
-            activeConn = conn;
-            ensureContact(conn.peer);
+            if (connections[conn.peer] && connections[conn.peer].open) {
+                if(conn.open) {
+                    connections[conn.peer].close();
+                    connections[conn.peer] = conn;
+                }
+            } else {
+                connections[conn.peer] = conn;
+            }
+
+            conn.on('open', async () => { 
+                connections[conn.peer] = conn; 
+                ensureContact(conn.peer);
+                
+                const pubJwk = await Security.getPublicKeyJwk();
+                conn.send({ type: 'handshake', key: pubJwk });
+                
+                if(currentChatId === conn.peer) updateStatusDisplay(true); 
+            });
+
+            conn.on('close', () => { 
+                if(connections[conn.peer] === conn) delete connections[conn.peer];
+                if(currentChatId === conn.peer) updateStatusDisplay(false);
+            });
             
-            // Connection Lifecycle Events for Status
-            conn.on('open', () => { if(currentChatId === conn.peer) updateStatusDisplay(true); });
-            conn.on('close', () => { if(activeConn === conn) { activeConn = null; if(currentChatId === conn.peer) updateStatusDisplay(false); }});
-            conn.on('error', () => { if(activeConn === conn) { activeConn = null; if(currentChatId === conn.peer) updateStatusDisplay(false); }});
+            conn.on('error', () => { 
+               if(connections[conn.peer] === conn) delete connections[conn.peer];
+               if(currentChatId === conn.peer) updateStatusDisplay(false);
+            });
 
-            // Immediate Check
-            if(conn.open && currentChatId === conn.peer) updateStatusDisplay(true);
-
-            conn.on('data', data => {
+            conn.on('data', async rawData => {
                 if (state.blocklist.includes(conn.peer)) return;
+                
+                if(currentChatId === conn.peer) {
+                    lastPeerHeartbeat = Date.now();
+                    updateStatusDisplay(true);
+                }
+
+                let data = rawData;
+                
+                if (data.type === 'handshake') {
+                    await Security.deriveSecret(conn.peer, data.key);
+                    await flushPendingMessages(conn); 
+                    return;
+                }
+
+                if (data.type === 'secure') {
+                    try {
+                        data = await Security.decrypt(conn.peer, data.payload);
+                    } catch(e) {
+                        console.error("Decryption failed", e);
+                        return; 
+                    }
+                }
+
                 switch(data.type) {
-                    case 'ping': break; // Heartbeat
+                    case 'ping': 
+                        try { conn.send({ type: 'pong' }); } catch(e){}
+                        break;
+                    case 'pong': break;
                     case 'msg': 
                         addMessage(conn.peer, 'them', data.content, data.format, data.id); 
                         if (currentChatId === conn.peer) { sendData('seen'); markSeen(conn.peer); }
-                        
-                        // --- UPDATED NOTIFICATION TRIGGER ---
-                        // Notify if we are NOT currently looking at this chat OR if window is blurred/hidden
                         if (currentChatId !== conn.peer || !isWindowFocused || document.hidden) {
                             const senderName = getContactName(conn.peer);
                             const msgPreview = data.format === 'text' ? data.content : (data.format === 'image' ? 'Sent a photo' : 'Sent a file');
                             notify(senderName, msgPreview);
                         }
-                        // -----------------------------
                         break;
                     case 'typing': showTyping(conn.peer, data.isTyping); break;
                     case 'seen': markSeen(conn.peer); break;
@@ -528,59 +864,113 @@
             });
         }
 
-        // Heartbeat Logic
         function startHeartbeat(peerId) {
             clearInterval(heartbeatInterval);
+            lastPeerHeartbeat = Date.now(); 
+            
             heartbeatInterval = setInterval(() => {
                 if(currentChatId !== peerId) return clearInterval(heartbeatInterval);
-                if (activeConn && activeConn.open) {
-                    try { activeConn.send({ type: 'ping' }); } catch(e) { updateStatusDisplay(false); }
-                } else {
-                    // Try to reconnect silently
-                    if(!activeConn) {
-                        const conn = peer.connect(peerId);
-                        conn.on('open', () => { setupConnection(conn); });
-                        conn.on('error', () => updateStatusDisplay(false));
-                    } else {
+                
+                const conn = connections[peerId];
+                
+                if (Date.now() - lastPeerHeartbeat > 4000) {
+                    updateStatusDisplay(false);
+                }
+
+                if (conn && conn.open) {
+                    try { 
+                        conn.send({ type: 'ping' }); 
+                    } catch(e) { 
                         updateStatusDisplay(false);
                     }
+                } else {
+                     connectToPeer(peerId);
                 }
             }, 2000);
         }
 
-        function sendData(type, content = null, format = null, extra = {}) {
-            const payload = { type, content, format, ...extra };
-            // Optimistic Send: Logic assumes success locally first (handled by addMessage call in UI logic)
-            if (activeConn && activeConn.open) { 
-                try { activeConn.send(payload); } catch(e) { console.log('Send failed'); }
-            } else if (currentChatId) {
-                // Try ephemeral connect to send
-                const conn = peer.connect(currentChatId);
-                conn.on('open', () => { conn.send(payload); setTimeout(()=>conn.close(), 500); });
-                // If this fails, message is just "sent" locally (grey tick) -> "Sent but receiver doesn't get it"
+        function connectToPeer(peerId) {
+            if (connections[peerId] && connections[peerId].open) return connections[peerId];
+            
+            const conn = peer.connect(peerId);
+            setupConnection(conn);
+            return conn;
+        }
+
+        async function sendData(type, content = null, format = null, extra = {}, force = false) {
+            let targetId = currentChatId || extra.targetId;
+            if(!targetId) return false;
+
+            let conn = connections[targetId];
+
+            if (!conn || !conn.open) {
+                conn = connectToPeer(targetId);
+            }
+
+            let payload = { type, content, format, ...extra };
+
+            if (conn && conn.open) {
+                if (Security.sharedKeys.has(targetId)) {
+                    try {
+                        const encryptedWrapper = await Security.encrypt(targetId, payload);
+                        const securePayload = { type: 'secure', payload: encryptedWrapper };
+                        conn.send(securePayload);
+                        return true;
+                    } catch(e) {
+                        console.error("Encryption failed", e);
+                        return false; 
+                    }
+                } else {
+                     const pubJwk = await Security.getPublicKeyJwk();
+                     conn.send({ type: 'handshake', key: pubJwk });
+                     
+                     if(type === 'handshake') {
+                         conn.send(payload);
+                         return true;
+                     }
+
+                     if (type !== 'typing' && type !== 'ping') {
+                         return await queueMessage(targetId, payload);
+                     }
+                     return false;
+                }
+            } else {
+                if (!force && type !== 'typing' && type !== 'ping') {
+                    await queueMessage(targetId, payload);
+                }
+                return false; 
+            }
+        }
+
+        async function queueMessage(targetId, payload) {
+            if(payload.type === 'typing') return true;
+
+            const item = {
+                id: uuid(),
+                targetId: targetId,
+                payload: payload,
+                timestamp: Date.now()
+            };
+            try {
+                await IDB.put('pending', item);
+                return true;
+            } catch(e) {
+                console.error("Failed to queue message", e);
+                return false;
             }
         }
 
         /* --- CALL LOGIC --- */
         async function startCall() {
-            // Robust Check: Must have active connection to call
-            if (!activeConn || !activeConn.open) { 
-                // Attempt one quick connect check
-                const conn = peer.connect(currentChatId);
-                conn.on('open', () => {
-                    setupConnection(conn);
-                    performCall(); 
-                });
-                conn.on('error', () => {
-                    showModal('User Offline', 'Cannot place call because the user is offline.', null, [{text:'OK'}]);
-                });
-                // If timeout after 1s
-                setTimeout(() => {
-                    if(!conn.open) showModal('User Offline', 'Cannot place call because the user is offline.', null, [{text:'OK'}]);
-                }, 1000);
-            } else {
-                performCall();
-            }
+            let conn = connectToPeer(currentChatId);
+            
+            setTimeout(() => {
+                if ((!conn || !conn.open) && (!connections[currentChatId] || !connections[currentChatId].open)) { 
+                    showModal('User Offline', 'Cannot place call.', null, [{text:'OK'}]);
+                } else { 
+                    performCall();
+                }
+            }, 1000);
         }
 
         async function performCall() {
@@ -589,19 +979,25 @@
                 showCallUI('outgoing', currentChatId);
                 addMessage(currentChatId, 'me', 'Outgoing Call', 'call', uuid());
                 activeCall = peer.call(currentChatId, localStream);
+                
+                activeCall.on('error', (e) => {
+                    console.error("Call error", e);
+                    endCallUI();
+                    showModal('Error', 'Call failed.', null, [{text:'OK'}]);
+                });
+
                 activeCall.on('stream', remoteStream => { $('remote-audio').srcObject = remoteStream; showCallUI('connected', currentChatId); });
-                activeCall.on('close', endCallUI); activeCall.on('error', endCallUI);
+                activeCall.on('close', endCallUI); 
             } catch (e) { showModal('Error', 'Microphone access denied.', null, [{text:'OK'}]); }
         }
 
         function handleIncomingCall(call) { 
             activeCall = call; Ringer.start(); showCallUI('incoming', call.peer); 
             addMessage(call.peer, 'them', 'Incoming Call', 'call', uuid());
-            
-            // --- NOTIFICATION TRIGGER FOR CALL ---
             const name = getContactName(call.peer);
             notify(name, "Incoming Audio Call");
-            // -------------------------------------
+            
+            connectToPeer(call.peer);
         }
 
         $('accept-call-btn').onclick = async () => {
@@ -611,11 +1007,29 @@
                 activeCall.answer(localStream);
                 activeCall.on('stream', stream => { $('remote-audio').srcObject = stream; showCallUI('connected', callPeerId); });
                 activeCall.on('close', endCallUI);
+                activeCall.on('error', endCallUI);
             } catch (e) { endCallUI(); }
         };
 
-        $('end-call-btn').onclick = () => { sendData('call-ended'); addMessage(callPeerId || currentChatId, 'me', 'Call Ended', 'call', uuid()); endCallUI(); };
-        $('decline-call-btn').onclick = () => { sendData('call-rejected'); addMessage(callPeerId || currentChatId, 'me', 'Call Declined', 'call', uuid()); endCallUI(); };
+        $('end-call-btn').onclick = () => { 
+            let t = callPeerId || currentChatId;
+            connectToPeer(t);
+            setTimeout(() => {
+                sendData('call-ended', null, null, { targetId: t });
+                addMessage(t, 'me', 'Call Ended', 'call', uuid()); 
+                endCallUI(); 
+            }, 100);
+        };
+
+        $('decline-call-btn').onclick = () => { 
+            let t = callPeerId || currentChatId;
+            connectToPeer(t);
+            setTimeout(() => {
+                sendData('call-rejected', null, null, { targetId: t });
+                addMessage(t, 'me', 'Call Declined', 'call', uuid()); 
+                endCallUI();
+            }, 100);
+        };
 
         function showCallUI(state, peerId) {
             callPeerId = peerId;
@@ -657,30 +1071,10 @@
 
         /* --- MESSAGING & ACTIONS --- */
         function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
-
         function escapeAttribute(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        }
-
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+            return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         function createMessageElement(m, animate = false) {
@@ -721,21 +1115,60 @@
             return div;
         }
 
+        // Updated Render Messages with Smart Date Separators
         function renderMessages() {
             const container = $('messages-container');
             container.innerHTML = '';
-            const msgs = state.chats[currentChatId] || [];
-            msgs.forEach(m => container.appendChild(createMessageElement(m, false)));
+            
+            const notice = document.createElement('div');
+            notice.className = 'encryption-notice';
+            notice.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> Messages and calls are end-to-end encrypted.`;
+            container.appendChild(notice);
+
+            const msgs = state.currentMessages || [];
+            let lastDate = null;
+
+            msgs.forEach(m => {
+                const dateStr = getFriendlyDate(m.time);
+                
+                if (lastDate !== dateStr) {
+                    const sep = document.createElement('div');
+                    sep.className = 'date-separator';
+                    sep.textContent = dateStr;
+                    container.appendChild(sep);
+                    lastDate = dateStr;
+                }
+                
+                container.appendChild(createMessageElement(m, false));
+            });
             container.scrollTop = container.scrollHeight;
         }
 
-        function addMessage(chatId, sender, content, format='text', id=null) {
+        async function addMessage(chatId, sender, content, format='text', id=null) {
             if (!id) id = uuid();
-            if (!state.chats[chatId]) state.chats[chatId] = [];
+            const msg = { id, chatId, sender, content, format, time: Date.now(), seen: sender === 'them' && currentChatId === chatId }; 
             
-            const msg = { id, sender, content, format, time: Date.now(), seen: sender === 'them' && currentChatId === chatId }; 
-            state.chats[chatId].push(msg);
-            
+            if (currentChatId === chatId) {
+                state.currentMessages.push(msg);
+                
+                const container = $('messages-container');
+                const dateStr = getFriendlyDate(msg.time);
+                const lastMsg = state.currentMessages[state.currentMessages.length - 2];
+                let lastDate = lastMsg ? getFriendlyDate(lastMsg.time) : null;
+
+                if (dateStr !== lastDate) {
+                     const sep = document.createElement('div');
+                     sep.className = 'date-separator';
+                     sep.textContent = dateStr;
+                     container.appendChild(sep);
+                }
+
+                container.appendChild(createMessageElement(msg, true));
+                container.scrollTop = container.scrollHeight;
+            }
+
+            await IDB.put('messages', msg);
+
             const c = state.contacts.find(x => x.id === chatId);
             if (c) {
                 if (format === 'text') c.lastMsg = content;
@@ -746,14 +1179,15 @@
                 c.time = Date.now();
                 if (sender === 'them' && currentChatId !== chatId) c.unread = (c.unread || 0) + 1;
                 state.contacts = [c, ...state.contacts.filter(x => x.id !== chatId)];
+            } else {
+                await ensureContact(chatId);
+                 const newC = state.contacts.find(x => x.id === chatId);
+                 if(newC) {
+                    newC.lastMsg = format === 'text' ? content : 'Attachment';
+                    newC.time = Date.now();
+                 }
             }
             saveState(); renderContacts();
-            
-            if (currentChatId === chatId) {
-                const container = $('messages-container');
-                container.appendChild(createMessageElement(msg, true));
-                container.scrollTop = container.scrollHeight;
-            }
         }
 
         /* --- EDIT & UNSEND --- */
@@ -789,7 +1223,7 @@
             setTimeout(() => document.addEventListener('click', closeMenu), 10);
         };
 
-        $('ctx-unsend').onclick = () => {
+        $('ctx-unsend').onclick = async () => {
             if (!ctxMsgId) return;
             handleUnsend(currentChatId, ctxMsgId);
             sendData('msg-unsend', null, null, { id: ctxMsgId });
@@ -797,7 +1231,7 @@
 
         $('ctx-edit').onclick = () => {
             if (!ctxMsgId) return;
-            const msg = state.chats[currentChatId].find(m => m.id === ctxMsgId);
+            const msg = state.currentMessages.find(m => m.id === ctxMsgId);
             if (!msg) return;
 
             showModal('Edit Message', '', msg.content, [{text:'Cancel'}, {text:'Save', bold:true, onClick: (newText) => {
@@ -808,56 +1242,59 @@
             }}]);
         };
 
-        function handleUnsend(chatId, msgId) {
-            if (!state.chats[chatId]) return;
-            state.chats[chatId] = state.chats[chatId].filter(m => m.id !== msgId);
-            
-            const c = state.contacts.find(x => x.id === chatId);
-            if (c) {
-                const last = state.chats[chatId][state.chats[chatId].length - 1];
-                c.lastMsg = last ? (last.format === 'text' ? last.content : 'Attachment') : '';
-            }
-            saveState(); renderContacts();
-
+        async function handleUnsend(chatId, msgId) {
             if (currentChatId === chatId) {
+                state.currentMessages = state.currentMessages.filter(m => m.id !== msgId);
                 const el = document.getElementById(`msg-${msgId}`);
                 if (el) el.remove();
             }
+
+            await IDB.delete('messages', msgId);
+            saveState(); renderContacts();
         }
 
-        function handleEdit(chatId, msgId, newContent) {
-            if (!state.chats[chatId]) return;
-            const msg = state.chats[chatId].find(m => m.id === msgId);
-            if (msg) {
+        async function handleEdit(chatId, msgId, newContent) {
+            const msg = await IDB.get('messages', msgId);
+            if(msg) {
                 msg.content = newContent;
-                const c = state.contacts.find(x => x.id === chatId);
-                if (c && state.chats[chatId][state.chats[chatId].length - 1].id === msgId) {
-                    c.lastMsg = newContent;
-                }
-                saveState(); renderContacts();
+                await IDB.put('messages', msg);
+            }
 
-                if (currentChatId === chatId) {
-                    const el = document.querySelector(`#msg-${msgId} .msg-text`);
-                    if (el) el.textContent = newContent;
-                }
+            if (currentChatId === chatId) {
+                 const m = state.currentMessages.find(x => x.id === msgId);
+                 if(m) m.content = newContent;
+                 const el = document.querySelector(`#msg-${msgId} .msg-text`);
+                 if (el) el.textContent = newContent;
+            }
+            
+            const c = state.contacts.find(x => x.id === chatId);
+            if (c) {
+                c.lastMsg = newContent;
+                saveState(); renderContacts();
             }
         }
 
         /* --- UTILS --- */
-        function ensureContact(id) {
+        async function ensureContact(id) {
             if (!state.contacts.find(c => c.id === id)) {
-                state.contacts.unshift({ id, name: 'User ' + id, lastMsg: '', time: Date.now(), unread: 0 });
-                saveState(); renderContacts();
+                const newC = { id, name: 'User ' + id, lastMsg: '', time: Date.now(), unread: 0 };
+                state.contacts.unshift(newC);
+                await IDB.put('contacts', newC);
+                renderContacts();
             }
         }
         function getContactName(id) { return state.contacts.find(x => x.id === id)?.name || id; }
-        function markSeen(chatId) {
-            if (state.chats[chatId]) {
-                let changed = false;
-                state.chats[chatId].forEach(m => { if (m.sender === 'me' && !m.seen) { m.seen = true; changed = true; }});
-                if (changed) { saveState(); if (currentChatId === chatId) document.querySelectorAll('.tick-container:not(.seen)').forEach(el => el.classList.add('seen')); }
+        
+        async function markSeen(chatId) {
+            if(state.currentMessages.length > 0) {
+                 let changed = false;
+                 state.currentMessages.forEach(m => { 
+                     if (m.sender === 'me' && !m.seen) { m.seen = true; changed = true; IDB.put('messages', m); }
+                 });
+                 if (changed && currentChatId === chatId) document.querySelectorAll('.tick-container:not(.seen)').forEach(el => el.classList.add('seen'));
             }
         }
+
         function showTyping(chatId, isTyping) {
             const el = document.querySelector(`[data-id="${chatId}"] .contact-preview`);
             if (el) el.style.color = isTyping ? 'var(--bubble-blue)' : '';
@@ -871,12 +1308,13 @@
                     $('typing-bubble').classList.add('active'); 
                     $('messages-container').scrollTop = $('messages-container').scrollHeight + 50; 
                 } else {
-                    updateStatusDisplay(true); // Revert to online logic
+                    updateStatusDisplay(true); 
                     statusEl.style.color = 'var(--text-secondary)';
                     $('typing-bubble').classList.remove('active');
                 }
             }
         }
+
         function renderContacts() {
             const filter = $('contact-search').value.toLowerCase();
             const list = state.contacts.filter(c => c.name.toLowerCase().includes(filter) || c.id.includes(filter));
@@ -884,7 +1322,7 @@
                 <div class="contact-item" onclick="openChat('${c.id}')" data-id="${c.id}">
                     <div class="avatar">${c.name[0]}</div>
                     <div class="contact-info">
-                        <div class="contact-top"><span class="contact-name">${c.name}</span><span class="contact-time">${new Date(c.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+                        <div class="contact-top"><span class="contact-name">${c.name}</span><span class="contact-time">${getContactTime(c.time)}</span></div>
                         <div class="contact-preview">${c.lastMsg}</div>
                     </div>
                     <div class="unread-dot" style="display:${c.unread ? 'block' : 'none'}"></div>
@@ -893,27 +1331,26 @@
             $('blocklist-count').textContent = state.blocklist.length;
         }
 
-        function openChat(id) {
+        async function openChat(id) {
             currentChatId = id;
             const c = state.contacts.find(x => x.id === id);
             if(c) { c.unread = 0; saveState(); renderContacts(); }
             $('chat-title').textContent = getContactName(id);
             
-            updateStatusDisplay(false); // Default to offline until connected
+            updateStatusDisplay(false); 
             $('chat-view').classList.remove('hidden');
             $('chat-view').classList.add('active');
+
+            state.currentMessages = await IDB.getAllFromIndex('messages', 'chatId', id);
+            state.currentMessages.sort((a,b) => a.time - b.time);
             renderMessages();
             
-            startHeartbeat(id); // START HEARTBEAT
+            startHeartbeat(id); 
             
-            if (!activeConn || activeConn.peer !== id) {
-                activeConn = peer.connect(id);
-                if(activeConn) {
-                    activeConn.on('open', () => { sendData('seen'); updateStatusDisplay(true); });
-                    setupConnection(activeConn);
-                }
-            } else if (activeConn.open) {
+            if(connections[id] && connections[id].open) {
                 updateStatusDisplay(true);
+            } else {
+                connectToPeer(id);
             }
         }
 
@@ -952,25 +1389,46 @@
             r.readAsDataURL(f);
         };
 
-        function saveState() {
-            localStorage.setItem('contacts', JSON.stringify(state.contacts));
-            localStorage.setItem('chats', JSON.stringify(state.chats));
-            localStorage.setItem('blocklist', JSON.stringify(state.blocklist));
-            localStorage.setItem('settings', JSON.stringify(state.settings));
+        $('ringtone-upload').onchange = (e) => {
+            const f = e.target.files[0];
+            if(!f) return;
+            if(f.size > 2 * 1024 * 1024) return showModal('Error', 'Max 2MB allowed.', null, [{text:'OK'}]);
+            
+            IDB.put('settings', f, 'custom_ringtone').then(() => {
+                $('ringtone-status').textContent = f.name;
+                showModal('Success', 'Ringtone updated.', null, [{text:'OK'}]);
+            }).catch(() => showModal('Error', 'Failed to save.', null, [{text:'OK'}]));
+        };
+
+        async function saveState() {
+            for (const c of state.contacts) await IDB.put('contacts', c);
+            await IDB.put('settings', state.blocklist, 'blocklist');
+            await IDB.put('settings', state.settings, 'config');
+        }
+        
+        function applySettings() {
+             document.body.classList.toggle('light-mode', !state.settings.darkMode);
+            $('dark-mode-toggle').checked = state.settings.darkMode;
+            $('my-name-val').textContent = state.settings.name;
         }
 
         $('contact-search').addEventListener('input', renderContacts);
-        $('dark-mode-toggle').onclick = (e) => { state.settings.darkMode = e.target.checked; document.body.classList.toggle('light-mode', !e.target.checked); saveState(); };
+        $('dark-mode-toggle').onclick = (e) => { state.settings.darkMode = e.target.checked; applySettings(); saveState(); };
         $('chat-back-btn').onclick = () => { 
             $('chat-view').classList.remove('active'); 
             $('chat-view').classList.add('hidden'); 
             currentChatId = null; 
+            state.currentMessages = []; 
             clearInterval(heartbeatInterval);
         };
-        $('new-msg-btn').onclick = () => showModal('New Chat', 'Enter Peer ID:', 'Peer ID', [{text:'Cancel'}, {text:'Connect', bold:true, onClick: (id) => { if(id) { ensureContact(id); openChat(id); }}}]);
+        $('new-msg-btn').onclick = () => showModal('New Chat', 'Enter 8-digit Peer ID:', 'Peer ID', [{text:'Cancel'}, {text:'Connect', bold:true, onClick: (id) => { if(id) { ensureContact(id); openChat(id); }}}], 'numeric');
         $('settings-btn').onclick = () => { $('settings-view').classList.remove('hidden'); $('settings-view').classList.add('active'); };
         $('settings-back-btn').onclick = () => { $('settings-view').classList.remove('active'); $('settings-view').classList.add('hidden'); };
-        $('reset-btn').onclick = () => showModal('Reset Data', 'This will wipe all chats.', null, [{text:'Cancel'}, {text:'Reset', danger:true, onClick: () => { localStorage.clear(); location.reload(); }}]);
+        $('reset-btn').onclick = () => showModal('Reset Data', 'This will wipe all chats.', null, [{text:'Cancel'}, {text:'Reset', danger:true, onClick: () => { 
+            localStorage.clear(); 
+            indexedDB.deleteDatabase(DB_NAME);
+            location.reload(); 
+        }}]);
         window.changeMyName = () => showModal('Change Name', 'Enter your name:', 'Name', [{text:'Cancel'}, {text:'Save', bold:true, onClick: (n) => { if(n) { state.settings.name = n; $('my-name-val').textContent = n; saveState(); }}}]);
         
         $('chat-menu-btn').onclick = (e) => { 
@@ -992,16 +1450,35 @@
                 saveState(); renderContacts(); $('chat-back-btn').click();
             }}]);
         };
+        
+        $('view-peer-id').onclick = () => {
+             showModal('Peer ID', currentChatId, null, [{text: 'Copy', bold:true, onClick: () => {
+                 navigator.clipboard.writeText(currentChatId);
+             }}, {text: 'Close'}]);
+        };
 
-        $('delete-chat').onclick = () => showModal('Delete?', 'Cannot be undone.', null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: () => { delete state.chats[currentChatId]; state.contacts = state.contacts.filter(c => c.id !== currentChatId); saveState(); renderContacts(); $('chat-back-btn').click(); }}]);
+        $('clear-history').onclick = () => {
+             showModal('Clear History?', 'This deletes messages on this device only.', null, [{text:'Cancel'}, {text:'Clear', danger:true, onClick: async () => {
+                 const msgs = await IDB.getAllFromIndex('messages', 'chatId', currentChatId);
+                 for(const m of msgs) await IDB.delete('messages', m.id);
+                 state.currentMessages = [];
+                 renderMessages();
+                 const c = state.contacts.find(x => x.id === currentChatId);
+                 if(c) { c.lastMsg = ''; IDB.put('contacts', c); renderContacts(); }
+             }}]);
+        };
+
+        $('delete-chat').onclick = () => showModal('Delete?', 'Cannot be undone.', null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: async () => { 
+             const msgs = await IDB.getAllFromIndex('messages', 'chatId', currentChatId);
+             for(const m of msgs) await IDB.delete('messages', m.id);
+             await IDB.delete('contacts', currentChatId);
+             state.contacts = state.contacts.filter(c => c.id !== currentChatId);
+             renderContacts(); 
+             $('chat-back-btn').click(); 
+        }}]);
 
         $('chat-call-btn').onclick = startCall;
-        window.renderBlocklist = () => $('blocklist-content').innerHTML = state.blocklist.map(id => `<div class="settings-item"><span>${getContactName(id)}</span><button style="color:var(--bubble-blue)" onclick="state.blocklist=state.blocklist.filter(x=>x!=='${id}');saveState();renderBlocklist();renderContacts()">Unblock</button></div>`).join('');
-
-        document.body.classList.toggle('light-mode', !state.settings.darkMode);
-        $('dark-mode-toggle').checked = state.settings.darkMode;
-        $('my-name-val').textContent = state.settings.name;
-        initPeer(); renderContacts();
+        window.renderBlocklist = () => $('blocklist-content').innerHTML = state.blocklist.map(id => `<div class=\"settings-item\"><span>${getContactName(id)}</span><button style=\"color:var(--bubble-blue)\" onclick=\"state.blocklist=state.blocklist.filter(x=>x!=='${id}');saveState();renderBlocklist();renderContacts()\">Unblock</button></div>`).join('');
     </script>
 </body>
 </html>
