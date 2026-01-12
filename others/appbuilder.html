@@ -643,10 +643,11 @@
                 <div class="form-group">
                     <label>Content Source <span style="color:var(--danger)">*</span></label>
                     
-                    <div class="tabs" style="border:none; margin-bottom:10px;">
-                        <div class="tab-item active" id="tab-url" onclick="appBuilder.switchSourceTab('url')">URL Embed</div>
-                        <div class="tab-item" id="tab-file" onclick="appBuilder.switchSourceTab('file')">Upload HTML</div>
-                    </div>
+               <div class="tabs" style="border:none; margin-bottom:10px;">
+    <div class="tab-item active" id="tab-url" onclick="appBuilder.switchSourceTab('url')">URL Embed</div>
+    <div class="tab-item" id="tab-file" onclick="appBuilder.switchSourceTab('file')">Legacy HTML</div>
+    <div class="tab-item" id="tab-native" onclick="appBuilder.switchSourceTab('native')">Native App</div>
+</div>
 
                     <!-- URL INPUT -->
                     <div id="source-url-container">
@@ -1209,16 +1210,28 @@ async fetchMyApps() {
                     if(isAnalyticsEnabled) toggle.classList.add('checked');
                     else toggle.classList.remove('checked');
 
-                    if (data.embedUrl && data.embedUrl.startsWith('data:text/html')) {
+                    // ... existing code above ...
+
+                    // LOGIC: Detect Source Type
+                    if (data.type === 'native') {
+                        this.switchSourceTab('native');
+                        document.getElementById('edit-file-data').value = data.embedUrl;
+                        document.getElementById('file-name-display').innerText = "Existing Native Package Loaded";
+                    } 
+                    else if (data.embedUrl && data.embedUrl.startsWith('data:text/html')) {
                         this.switchSourceTab('file');
                         document.getElementById('edit-file-data').value = data.embedUrl;
                         document.getElementById('file-name-display').innerText = "Existing HTML File Loaded";
-                    } else {
+                    } 
+                    else {
                         this.switchSourceTab('url');
                         document.getElementById('edit-embed').value = data.embedUrl;
                     }
+                    
                     document.getElementById('html-file-input').value = '';
                     this.updateUIState('editor');
+                    
+              
                 } catch(e) {
                     alert("Error: " + e.message);
                 }
@@ -1227,22 +1240,38 @@ async fetchMyApps() {
             switchSourceTab(mode) {
                 this.sourceMode = mode;
                 document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+                
+                // Hide all containers first
+                const urlContainer = document.getElementById('source-url-container');
+                const fileContainer = document.getElementById('source-file-container');
+                const hint = fileContainer.querySelector('.hint');
+
+                urlContainer.style.display = 'none';
+                fileContainer.style.display = 'none';
+
+                // Activate specific tab
                 if (mode === 'url') {
                     document.getElementById('tab-url').classList.add('active');
-                    document.getElementById('source-url-container').style.display = 'block';
-                    document.getElementById('source-file-container').style.display = 'none';
+                    urlContainer.style.display = 'block';
                 } else {
-                    document.getElementById('tab-file').classList.add('active');
-                    document.getElementById('source-url-container').style.display = 'none';
-                    document.getElementById('source-file-container').style.display = 'block';
+                    // Both 'file' and 'native' share the file picker, but with different Context/Hints
+                    document.getElementById('tab-' + mode).classList.add('active');
+                    fileContainer.style.display = 'block';
+                    
+                    if (mode === 'native') {
+                        hint.innerHTML = `<strong style="color:var(--success)">Native Package Mode:</strong> App will install to device storage. Full Permissions. Max 600KB.`;
+                    } else {
+                        hint.innerText = "Legacy Mode: File will be converted to a data URI. Max 600KB.";
+                    }
                 }
             }
 
             handleFileUpload(input) {
                 if (input.files && input.files[0]) {
                     const file = input.files[0];
-                    if (file.size > 800000) { 
-                        alert("File is too large. Max 800KB.");
+                    // SAFETY LIMIT: 600KB (Base64 -> ~800KB). Keeps Firestore healthy.
+                    if (file.size > 600 * 1024) { 
+                        alert("File is too large. Max 600KB for App Store sync.");
                         input.value = '';
                         return;
                     }
@@ -1252,7 +1281,6 @@ async fetchMyApps() {
                         document.getElementById('edit-file-data').value = e.target.result;
                     };
                     reader.readAsDataURL(file);
-                    // At the end of the file reader logic
                     input.value = '';
                 }
             }
@@ -1286,7 +1314,9 @@ async fetchMyApps() {
             author: this.devProfile.displayName,
             authorId: this.devProfile.uid,
             updatedAt: now,
-            enableAnalytics: enableAnalytics
+            enableAnalytics: enableAnalytics,
+            // CRITICAL: Save the Type!
+            type: this.sourceMode === 'native' ? 'native' : 'web' 
         };
 
         if (!this.currentEditingId) {
