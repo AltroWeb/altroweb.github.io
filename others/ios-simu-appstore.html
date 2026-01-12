@@ -642,6 +642,19 @@ body.dark-mode .store-update-section span {
     font-size: 11px; /* Slightly smaller text to fit nicely */
 }
 
+
+/* --- FIX: Stacked Uninstall Button Spacing --- */
+.store-actions .store-get-btn.installed {
+    width: 100% !important;       /* Force fit stack width */
+    height: 28px !important;      /* Match update button height */
+    padding: 0 6px !important;    /* Safety margin from corners */
+    font-size: 11px !important;   /* Slightly smaller to fit "UNINSTALL" cleanly */
+    min-width: 0 !important;      /* Allow shrinking */
+    line-height: 28px !important; /* Vertically center the text */
+}
+
+
+
 /* FIX: Make Spinner White for the Blue Update Button */
 .store-get-btn.update-mode .spinner {
     border-color: rgba(255, 255, 255, 0.3);
@@ -1238,67 +1251,67 @@ body.dark-mode #sideloader-window .ios-search-bar {
                 }
             }
 
-            async fetchApps() {
-                // --- ROBUST CONNECTIVITY GUARD (Simulated + REAL) ---
+          async fetchApps() {
+                // 1. ROBUST CONNECTIVITY GUARD
                 const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
                 const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
-                const isRealNetwork = navigator.onLine; // CHECK REAL SYSTEM INTERNET
+                const isRealNetwork = navigator.onLine;
 
                 // Logic: Must have (No Airplane) + (Simulated Wifi) + (Real Internet)
                 const isConnected = !isAirplane && isWifiOn && isRealNetwork;
+                this.isOfflineMode = !isConnected; 
 
-                if (!isConnected) {
-                    const listEl = document.getElementById('store-list');
-                    if (listEl) {
-                        let title = 'Cannot Connect';
-                        let msg = 'Retry to connect.';
+                // 2. OFFLINE PREP & UI CLEANUP
+                if (this.isOfflineMode) {
+                    // Force remove update header so it doesn't float over the offline screen
+                    const updateHeader = document.getElementById('store-update-section');
+                    if (updateHeader) updateHeader.remove(); 
 
-                        // Determine specific error message
-                        if (isAirplane) {
-                            title = 'Airplane Mode';
-                            msg = 'Turn off Airplane Mode<br>to access the App Store.';
-                        } else if (!isWifiOn) {
-                            title = 'Wi-Fi Off';
-                            msg = 'Turn on Wi-Fi<br>to access the App Store.';
-                        } else if (!isRealNetwork) {
-                            title = 'No Internet';
-                            msg = 'Check your system connection<br>and try again.';
-                        }
+                    // Determine specific reason for renderStore to use later
+                    if (isAirplane) this.offlineReason = 'airplane';
+                    else if (!isWifiOn) this.offlineReason = 'wifi';
+                    else this.offlineReason = 'network';
+                }
 
-                        listEl.innerHTML = `
-                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:300px; color:#8E8E93; text-align:center;">
-                                <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.2; margin-bottom:20px;">
-                                    <path d="M23.64 7c-.45-.34-4.93-4-11.64-4-1.5 0-2.89.19-4.15.48L18.18 13.8 23.64 7zm-6.6 8.22L3.27 1.44 2 2.72l2.05 2.06C1.91 5.17.54 6.68.36 7l10.08 12.56c.8 1 2.32 1 3.12 0l2.35-2.93 4.1 4.1 1.27-1.27-6.24-6.24z"/>
-                                </svg>
-                                <span style="font-size:20px; font-weight:600; color:#000;">${title}</span>
-                                <span style="font-size:15px; margin-top:8px; line-height:1.4;">${msg}</span>
-                                <button onclick="appStore.fetchApps()" style="margin-top:25px; background:transparent; border:1px solid #007AFF; color:#007AFF; font-size:15px; font-weight:600; padding:8px 24px; border-radius:20px; cursor:pointer;">Retry</button>
-                            </div>`;
+                // 3. ALWAYS LOAD LOCAL APPS FIRST (Critical Fix: Ensures content exists offline)
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                this.apps = [...installed];
+
+                // 4. ONLINE LOGIC (Only runs if connected)
+                if (isConnected && this.db) {
+                    // A. Sync Offline Data
+                    this.flushPendingDecrements();
+
+                    try {
+                        // B. Fetch Server Apps
+                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                        
+                        const serverApps = [];
+                        snapshot.forEach(doc => {
+                            serverApps.push({ id: doc.id, ...doc.data() });
+                        });
+
+                        // C. MERGE STRATEGY: Server Data is King (for updates), Local is fallback
+                        // Start with Server Apps so we have the NEWEST timestamps
+                        this.apps = [...serverApps];
+
+                        // Add Sideloaded Apps (Local apps that don't exist on server)
+                        installed.forEach(localApp => {
+                            if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
+                                this.apps.push(localApp);
+                            }
+                        });
+                        
+                    } catch (e) {
+                        console.error("Error fetching apps, using local cache:", e);
+                        // We stay with 'installed' apps loaded in Step 3
+                        this.isOfflineMode = true; // Fallback to offline mode visuals if fetch crashes
+                        this.offlineReason = 'network';
                     }
-                    return; 
                 }
-                // ----------------------------------
 
-                if (!this.db) return;
-                try {
-                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                    this.apps = [];
-                    snapshot.forEach(doc => {
-                        this.apps.push({ id: doc.id, ...doc.data() });
-                    });
-
-                    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                    installed.forEach(localApp => {
-                        if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
-                            this.apps.push(localApp);
-                        }
-                    });
-
-                    this.renderStore(this.apps);
-                } catch (e) {
-                    console.error("Error fetching apps:", e);
-                    document.getElementById('store-list').innerHTML = '<div style="text-align:center; padding:20px;">No Apps Found</div>';
-                }
+                // 5. RENDER (Passes the full list to be rendered)
+                this.renderStore(this.apps);
             }
 
             initSearch() {
@@ -1319,26 +1332,29 @@ body.dark-mode #sideloader-window .ios-search-bar {
                 const listEl = document.getElementById('store-list');
                 listEl.innerHTML = '';
                 
-                if (appList.length === 0) {
+                // --- 1. HANDLE EMPTY STATE ---
+                // If no apps AND not offline, show "No Results"
+                // If offline, we skip this so we can show the Offline Card below
+                if (appList.length === 0 && !this.isOfflineMode) {
                     listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
                     return;
                 }
 
                 const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                
-                // --- 1. CALCULATE UPDATES ---
-                const updates = [];
-                appList.forEach(app => {
-                    const localApp = installedApps.find(ia => ia.id === app.id);
-                    if (localApp && (app.updatedAt || 0) > (localApp.updatedAt || 0)) {
-                        updates.push(app);
-                    }
-                });
 
-                // --- 2. INJECT "UPDATE ALL" HEADER ---
-                // We check if the button container exists, if not we create it
-                // Logic: Only show if MORE THAN 1 update is available
-                // --- 2. INJECT UPDATE SECTION (Static Flow) ---
+                // --- 2. CALCULATE UPDATES (Only if Online) ---
+                const updates = [];
+                if (!this.isOfflineMode) {
+                    appList.forEach(app => {
+                        const localApp = installedApps.find(ia => ia.id === app.id);
+                        // Check: Is Installed AND Server Time > Local Time
+                        if (localApp && (app.updatedAt || 0) > (localApp.updatedAt || 0)) {
+                            updates.push(app);
+                        }
+                    });
+                }
+
+                // --- 3. INJECT "UPDATE ALL" HEADER ---
                 let updateHeader = document.getElementById('store-update-section');
                 const storeList = document.getElementById('store-list');
                 
@@ -1347,49 +1363,36 @@ body.dark-mode #sideloader-window .ios-search-bar {
                         updateHeader = document.createElement('div');
                         updateHeader.id = 'store-update-section';
                         updateHeader.className = 'store-update-section'; 
-                        
-                        // Insert BEFORE the app list, inside the scrolling container
                         storeList.parentNode.insertBefore(updateHeader, storeList);
-                        
-                        // Inside renderStore...
-updateHeader.innerHTML = `
-    <span>${updates.length} Updates Available</span>
-    <button id="update-all-btn" onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
-`;
+                        updateHeader.innerHTML = `
+                            <span>${updates.length} Updates Available</span>
+                            <button id="update-all-btn" onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
+                        `;
                     } else {
-                        // Update text (Standard Case)
                         updateHeader.querySelector('span').innerText = `${updates.length} Updates Available`;
                     }
                 } else if (updateHeader) {
                     updateHeader.remove();
                 }
-                // ----------------------------------------
 
-                const verifiedUsers = this.verifiedUserIds || new Set();
-
+                // --- 4. RENDER LIST ITEMS ---
                 appList.forEach(app => {
                     const localApp = installedApps.find(ia => ia.id === app.id);
                     const isInstalled = !!localApp;
+                    
                     const serverTime = app.updatedAt || 0;
                     const localTime = localApp ? (localApp.updatedAt || 0) : 0;
-                    const isUpdateAvailable = isInstalled && (serverTime > localTime);
                     
-                    // --- BADGE RENDERER ---
+                    // CRITICAL: Force updates to FALSE if offline
+                    const isUpdateAvailable = !this.isOfflineMode && isInstalled && (serverTime > localTime);
+                    
+                    // Badge Logic
                     const badgeType = this.userBadges ? this.userBadges.get(app.authorId) : undefined;
                     let badgeHTML = '';
-
                     if (badgeType === 'member') {
-                        badgeHTML = `
-                            <span class="verified-badge member" title="Member">
-                                <svg width="14" height="14" viewBox="0 0 12 12" style="display:block;">
-                                    <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/>
-                                </svg>
-                            </span>`;
+                        badgeHTML = `<span class="verified-badge member" title="Member"><svg width="14" height="14" viewBox="0 0 12 12" style="display:block;"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
                     } else if (badgeType === 'verified') {
-                        badgeHTML = `
-                            <span class="verified-badge verified" title="Verified Developer">
-                                <svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
-                            </span>`;
+                        badgeHTML = `<span class="verified-badge verified" title="Verified Developer"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
                     }
 
                     const div = document.createElement('div');
@@ -1426,62 +1429,155 @@ updateHeader.innerHTML = `
                     `;
                     listEl.appendChild(div);
                 });
+
+                // --- 5. APPEND OFFLINE CARD AT BOTTOM ---
+                // This ensures it appears AFTER any installed apps
+                if (this.isOfflineMode) {
+                    let title = 'Cannot Connect';
+                    let msg = 'Retry to connect.';
+                    let iconSVG = ''; 
+
+                    if (this.offlineReason === 'airplane') {
+                        title = 'Airplane Mode';
+                        msg = 'Turn off Airplane Mode<br>to access the App Store.';
+                        iconSVG = '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>';
+                    } else if (this.offlineReason === 'wifi') {
+                        title = 'Wi-Fi Off';
+                        msg = 'Turn on Wi-Fi<br>to access the App Store.';
+                        iconSVG = '<path d="M23.64 7c-.45-.34-4.93-4-11.64-4-1.5 0-2.89.19-4.15.48L18.18 13.8 23.64 7zm-6.6 8.22L3.27 1.44 2 2.72l2.05 2.06C1.91 5.17.54 6.68.36 7l10.08 12.56c.8 1 2.32 1 3.12 0l2.35-2.93 4.1 4.1 1.27-1.27-6.24-6.24z"/>';
+                    } else {
+                        title = 'No Internet';
+                        msg = 'Check your system connection<br>and try again.';
+                        iconSVG = '<path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/>';
+                    }
+
+                    const card = document.createElement('div');
+                    card.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; color:#8E8E93; text-align:center; border-top:0.5px solid rgba(0,0,0,0.05); margin-top:10px;';
+                    card.innerHTML = `
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.2; margin-bottom:15px;">
+                            ${iconSVG}
+                        </svg>
+                        <span style="font-size:20px; font-weight:600; color:inherit;">${title}</span>
+                        <span style="font-size:15px; margin-top:8px; line-height:1.4;">${msg}</span>
+                        <button onclick="appStore.fetchApps()" style="margin-top:25px; background:transparent; border:1px solid #007AFF; color:#007AFF; font-size:15px; font-weight:600; padding:8px 24px; border-radius:20px; cursor:pointer;">Retry</button>
+                    `;
+                    listEl.appendChild(card);
+                }
             }
+            
+            
+            
+  // --- ANALYTICS QUEUE SYSTEM ---
+            addToPendingDecrement(appId) {
+                const queue = JSON.parse(localStorage.getItem('ios_pending_decrements') || '[]');
+                if (!queue.includes(appId)) {
+                    queue.push(appId);
+                    localStorage.setItem('ios_pending_decrements', JSON.stringify(queue));
+                }
+            }
+
+            async flushPendingDecrements() {
+                // 1. SAFETY LOCK: Prevent double-execution
+                if (this.isSyncing) return; 
+                this.isSyncing = true; // Lock the door
+
+                try {
+                    const queue = JSON.parse(localStorage.getItem('ios_pending_decrements') || '[]');
+                    if (queue.length === 0 || !this.db) {
+                        this.isSyncing = false; // Unlock if nothing to do
+                        return;
+                    }
+
+                    console.log("Syncing offline uninstalls...", queue);
+                    
+                    const refCol = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps');
+                    
+                    for (const appId of queue) {
+                        try {
+                            await refCol.doc(appId).update({
+                                installCount: firebase.firestore.FieldValue.increment(-1)
+                            });
+                            console.log(`Synced decrement for: ${appId}`);
+                        } catch (e) {
+                            console.warn(`Sync skipped for ${appId}`, e);
+                        }
+                    }
+                    
+                    // Clear queue only after finishing
+                    localStorage.removeItem('ios_pending_decrements');
+                    console.log("✅ Sync Successful: All offline uninstalls processed.");
+
+                } finally {
+                    // 2. ALWAYS UNLOCK: Even if code crashes, open the door for next time
+                    this.isSyncing = false; 
+                }
+            }
+            
+            
+            
+            
+            
+            
+            
             
             
             
             
             
             async updateAllApps() {
-    // 1. Identify Apps needing update
-    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-    const updates = this.apps.filter(app => {
-        const localApp = installedApps.find(ia => ia.id === app.id);
-        const sTime = Number(app.updatedAt) || 0;
-        const lTime = Number(localApp ? localApp.updatedAt : 0) || 0;
-        return localApp && sTime > lTime;
-    });
+                // 1. CONNECTION GUARD
+                const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+                const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
+                const isRealNetwork = navigator.onLine;
 
-    if (updates.length === 0) return;
+                if (isAirplane || !isWifiOn || !isRealNetwork) {
+                    iOS.showAlert('Connection Error', 'Please check your internet connection to update apps.');
+                    return; // STOP HERE
+                }
 
-    // 2. Alert User
-    iOS.showAlert(
-        "Update All Apps?", 
-        `This will update ${updates.length} applications.`,
-        async () => {
-            // 3. UI LOCK (Updated for new selectors)
-            const headerBtn = document.getElementById('update-all-btn');
-            if(headerBtn) {
-                headerBtn.innerText = "Updating...";
-                headerBtn.disabled = true;
-                headerBtn.style.opacity = "0.5";
-                headerBtn.style.cursor = "default";
+                // ... (Existing Logic) ...
+                const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const updates = this.apps.filter(app => {
+                    const localApp = installedApps.find(ia => ia.id === app.id);
+                    const sTime = Number(app.updatedAt) || 0;
+                    const lTime = Number(localApp ? localApp.updatedAt : 0) || 0;
+                    return localApp && sTime > lTime;
+                });
+
+                if (updates.length === 0) return;
+
+                iOS.showAlert(
+                    "Update All Apps?", 
+                    `This will update ${updates.length} applications.`,
+                    async () => {
+                        const headerBtn = document.getElementById('update-all-btn');
+                        if(headerBtn) {
+                            headerBtn.innerText = "Updating...";
+                            headerBtn.disabled = true;
+                            headerBtn.style.opacity = "0.5";
+                            headerBtn.style.cursor = "default";
+                        }
+
+                        for (const app of updates) {
+                            const btn = document.querySelector(`button[data-update-id="${app.id}"]`);
+                            // Pass 'true' for silent mode
+                            await this.handleUpdateClick(btn, app.id, true); 
+                        }
+
+                        const section = document.getElementById('store-update-section');
+                        if (section) {
+                            section.style.transition = 'all 0.3s ease';
+                            section.style.opacity = '0';
+                            section.style.height = '0px';
+                            section.style.margin = '0px';
+                            section.style.padding = '0px';
+                            setTimeout(() => section.remove(), 300);
+                        }
+                        
+                        iOS.showAlert("Updates Complete", "All apps have been updated.");
+                    }
+                );
             }
-
-            // 4. EXECUTE UPDATES SEQUENTIALLY
-            for (const app of updates) {
-                // Find specific button to show spinner
-                const btn = document.querySelector(`button[data-update-id="${app.id}"]`);
-                
-                // Pass 'true' for silent mode (no individual alerts)
-                await this.handleUpdateClick(btn, app.id, true); 
-            }
-
-            // 5. FINISH & CLEANUP (Updated with smooth removal)
-            const section = document.getElementById('store-update-section');
-            if (section) {
-                section.style.transition = 'all 0.3s ease';
-                section.style.opacity = '0';
-                section.style.height = '0px';
-                section.style.margin = '0px';
-                section.style.padding = '0px';
-                setTimeout(() => section.remove(), 300);
-            }
-            
-            iOS.showAlert("Updates Complete", "All apps have been updated.");
-        }
-    );
-}
             
             
             
@@ -1492,25 +1588,31 @@ updateHeader.innerHTML = `
 
 
                 async handleUpdateClick(btn, appId, silent = false) {
+                // 1. CONNECTION GUARD
+                const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+                const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
+                const isRealNetwork = navigator.onLine;
+
+                if (isAirplane || !isWifiOn || !isRealNetwork) {
+                    if (!silent) iOS.showAlert('Connection Error', 'Cannot update app while offline.');
+                    return; // STOP HERE
+                }
+
+                // ... (Existing Logic) ...
                 const app = this.apps.find(a => a.id === appId);
                 if (!app) return;
 
                 if(btn) btn.classList.add('loading');
                 
-                // Simulate Network (Faster for bulk)
                 const delay = silent ? 800 : 1500;
                 await new Promise(r => setTimeout(r, delay));
 
-                // Logic: Remove old, Add new
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 const localApp = installed.find(a => a.id === appId);
                 
-                // --- 1. CHECK FOR ANALYTICS UPDATE SIGNAL ---
-                // Only increment stats if this specific update flag (analyticsVersion) is newer
                 const serverVer = app.analyticsVersion || 0;
                 const localVer = localApp ? (localApp.analyticsVersion || 0) : 0;
                 
-                // Condition: New version detected AND Analytics currently Enabled
                 const shouldIncrement = (serverVer > localVer) && (app.enableAnalytics === true);
 
                 if (shouldIncrement) {
@@ -1523,7 +1625,6 @@ updateHeader.innerHTML = `
                                 const dl = typeof data.downloadCount === 'number' ? data.downloadCount : 0;
                                 const ins = typeof data.installCount === 'number' ? data.installCount : 0;
                                 
-                                // Recover stats for existing user
                                 transaction.update(appRef, { 
                                     downloadCount: dl + 1,
                                     installCount: ins + 1 
@@ -1533,21 +1634,17 @@ updateHeader.innerHTML = `
                         console.log("Analytics recovered for existing user.");
                     } catch(e) { console.error("Stat recovery failed", e); }
                 }
-                // --------------------------------------------
 
-                // Update Local Storage (Metadata)
                 const filtered = installed.filter(a => a.id !== appId);
-                filtered.push(app); // 'app' object contains the new timestamps
+                filtered.push(app); 
                 localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
 
-                // Clear Custom Icon Override
                 const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
                 if (customIcons[appId]) {
                     delete customIcons[appId];
                     localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
                 }
 
-                // Refresh UI
                 iOS.removeSingleApp(appId);
                 iOS.injectSingleApp(app);
 
@@ -1557,7 +1654,6 @@ updateHeader.innerHTML = `
                     this.renderStore(this.apps); 
                     iOS.showAlert('Updated', `${app.name} has been updated.`);
                 } else {
-                    // Bulk Mode: Hide button to prevent list jumping
                     if(btn) btn.style.display = 'none';
                 }
             }
@@ -1577,15 +1673,25 @@ updateHeader.innerHTML = `
                 const isInstalled = btn.classList.contains('installed');
                 
                 if (isInstalled) {
-                    // --- UNINSTALL FLOW (With Alert) ---
+                    // UNINSTALL: Always allow (Your offline queue handles this)
                     iOS.showAlert(
                         `Delete "${app.name}"?`,
                         "Deleting this app will also delete its data.",
-                        () => this.performUninstall(app, btn), // Callback
-                        true // Is Destructive
+                        () => this.performUninstall(app, btn), 
+                        true 
                     );
                 } else {
-                    // --- INSTALL FLOW (Direct) ---
+                    // INSTALL: Check Connection First!
+                    const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+                    const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
+                    const isRealNetwork = navigator.onLine;
+
+                    if (isAirplane || !isWifiOn || !isRealNetwork) {
+                        iOS.showAlert('Connection Error', 'Please check your internet connection to install apps.');
+                        return; // STOP HERE
+                    }
+
+                    // Proceed if online
                     this.performInstall(app, btn);
                 }
             }
@@ -1720,13 +1826,31 @@ updateHeader.innerHTML = `
             }
 
             uninstallApp(app, btn) {
+                // 1. Clean Local State
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 const newInstalled = installed.filter(a => a.id !== app.id);
                 localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
+                
+                // 2. Remove Icon
                 iOS.removeSingleApp(app.id);
+
+                // 3. Analytics (Smart Queue)
+                if (this.isOfflineMode || !navigator.onLine) {
+                    this.addToPendingDecrement(app.id);
+                } else {
+                    // Try direct, if fail, queue it
+                    if(this.db) {
+                        this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(app.id).update({
+                            downloads: firebase.firestore.FieldValue.increment(-1)
+                        }).catch(e => {
+                            this.addToPendingDecrement(app.id);
+                        });
+                    }
+                }
+
+                // 4. Refresh List (Removes item from view immediately)
                 this.fetchApps();
-            }
-        }
+            } }
         
         
         
@@ -2272,6 +2396,17 @@ initNetworkListeners() {
         window.addEventListener('online', () => {
              const wifiIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
              this.triggerSystemNotification(wifiIcon, 'Connected', '#34C759'); // Green
+             
+             
+             // --- FIX: TRIGGER SYNC IMMEDIATELY ---
+                     if (typeof appStore !== 'undefined') {
+                         appStore.flushPendingDecrements();
+                         // Optional: Refresh the store UI if it happens to be open in the background
+                         appStore.fetchApps(); 
+                     }
+                     // -------------------------------------
+             
+             
         });
     }
 
