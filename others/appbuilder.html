@@ -611,6 +611,14 @@
             </div>
 
             <div class="card">
+            	
+            <div class="form-group">
+    <label>App Store Display Name (Optional)</label>
+    <input type="text" id="edit-store-name" placeholder="e.g. Flappy Bird - The Original">
+    <div class="hint">The title shown in the App Store list. If empty, uses App Name.</div>
+</div>
+            
+            
                 <div class="form-group">
                     <label>App Name <span style="color:var(--danger)">*</span></label>
                     <input type="text" id="edit-name" placeholder="e.g. Super Bird">
@@ -1173,6 +1181,9 @@ async fetchMyApps() {
                 document.getElementById('display-app-id').innerText = "Auto-generated after publishing";
                 document.getElementById('display-app-id').style.fontStyle = "italic";
                 document.getElementById('edit-name').value = '';
+                
+             document.getElementById('edit-store-name').value = '';  
+                
                 document.getElementById('edit-icon').value = '';
                 document.getElementById('edit-desc').value = '';
                 document.getElementById('edit-embed').value = '';
@@ -1200,6 +1211,9 @@ async fetchMyApps() {
                     document.getElementById('display-app-id').innerText = appId;
                     document.getElementById('display-app-id').style.fontStyle = "normal";
                     document.getElementById('edit-name').value = data.name;
+                    
+                    document.getElementById('edit-store-name').value = data.storeName || '';
+                    
                     document.getElementById('edit-icon').value = data.iconUrl || '';
                     document.getElementById('icon-preview').src = data.iconUrl || 'grey.png';
                     document.getElementById('edit-desc').value = data.description;
@@ -1287,6 +1301,9 @@ async fetchMyApps() {
 
                         async publishApp() {
     const name = document.getElementById('edit-name').value.trim();
+    
+    const storeNameInput = document.getElementById('edit-store-name').value.trim();
+    
     const icon = document.getElementById('edit-icon').value.trim();
     const desc = document.getElementById('edit-desc').value.trim();
     
@@ -1308,6 +1325,7 @@ async fetchMyApps() {
         // Base Data
         const appData = {
             name: name,
+            storeName: storeNameInput || name,
             iconUrl: icon,
             description: desc,
             embedUrl: embedUrl,

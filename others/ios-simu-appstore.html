@@ -259,6 +259,16 @@
         .nav-title {
             font-size: 17px; font-weight: 600; opacity: 0;
             transform: translateY(5px); transition: opacity 0.3s, transform 0.3s, color 0.3s; color: #000;
+            
+            /* --- TRUNCATION FIX --- */
+    white-space: nowrap;       /* Keep text on one line */
+    overflow: hidden;          /* Hide overflow */
+    text-overflow: ellipsis;   /* Add ... at the end */
+    max-width: 300px;          /* Limit width so it truncates before hitting edges */
+    text-align: center;        /* Ensure centered alignment */
+    display: block;
+            
+            
         }
         #music-window .nav-title { color: #fff; }
         .app-navbar.scrolled .nav-title { opacity: 1; transform: translateY(0); }
@@ -1035,13 +1045,30 @@ body.dark-mode #sideloader-window .ios-search-bar {
         <div class="ios-row">
             <input type="text" class="ios-input" id="sl-name" placeholder="App Name" style="background:transparent; padding:0;">
         </div>
-        <div class="ios-row" style="flex-direction:column; align-items:flex-start; gap:10px; padding-bottom:10px;">
-            <input type="text" class="ios-input" id="sl-icon" placeholder="Icon URL (https://...)" style="background:transparent; padding:0; width:100%;" oninput="document.getElementById('sl-icon-preview').src = this.value || 'grey.png'">
-            <div style="display:flex; align-items:center; gap:10px; width:100%;">
-                <img id="sl-icon-preview" src="grey.png" style="width:40px; height:40px; border-radius:10px; background:#eee; object-fit:cover;">
-                <span style="font-size:12px; color:#8E8E93;">Preview</span>
+        <div class="ios-row" style="padding: 12px 16px;">
+    <div style="display:flex; align-items:center; width:100%; gap:15px;">
+        
+        <div style="position:relative; width:54px; height:54px; flex-shrink:0;">
+            <img id="sl-icon-preview" src="grey.png" 
+                 style="width:100%; height:100%; border-radius:12px; background:#f2f2f2; object-fit:cover; border:1px solid rgba(0,0,0,0.1);"
+                 onerror="this.src='grey.png'">
+            
+            <input type="file" id="sl-icon-upload" accept="image/*" style="display:none;" onchange="sideloader.handleIconUpload(this)">
+            
+            <div onclick="document.getElementById('sl-icon-upload').click()" 
+                 style="position:absolute; bottom:-4px; right:-4px; background:#007AFF; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             </div>
         </div>
+
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+             <input type="text" class="ios-input" id="sl-icon" placeholder="Icon URL (or tap pencil)" 
+                   style="background:transparent; padding:0; width:100%; margin-bottom:4px;" 
+                   oninput="sideloader.handleUrlInput(this)">
+             <span style="font-size:12px; color:#8E8E93;">Tap pencil to upload</span>
+        </div>
+    </div>
+</div>
     </div>
 
     <div class="section-header">Source Type</div>
@@ -1201,17 +1228,19 @@ body.dark-mode #sideloader-window .ios-search-bar {
             }
 
             async init() {
-                // 1. Initialize Firebase First
                 await this.initFirebase();
-                
-                // 2. Initialize Search Listeners
                 this.initSearch();
-
-                // 3. Fetch Verified Users (Wait for this!)
                 await this.fetchVerifiedUsers(); 
-                
-                // 4. Finally Fetch Apps (Now logic can check verified status)
                 this.fetchApps();
+
+                // FIX: Auto-Refresh Store UI when Online
+                window.addEventListener('online', () => {
+                    if (this.isNetworkStrict()) {
+                        console.log("🌐 Network Restored. Refreshing Store...");
+                        this.flushPendingDecrements(); // Sync Queue
+                        this.fetchApps(); // <--- THIS UPDATES THE UI AUTOMATICALLY
+                    }
+                });
             }
 
             async initFirebase() {
@@ -1325,19 +1354,24 @@ body.dark-mode #sideloader-window .ios-search-bar {
                 this.renderStore(this.apps);
             }
 
-            initSearch() {
-                const input = document.getElementById('store-search-input');
-                if(!input) return; // Guard if element missing
-                input.addEventListener('input', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    const filtered = this.apps.filter(app => 
-                        app.name.toLowerCase().includes(term) || 
-                        app.author.toLowerCase().includes(term) ||
-                        app.description.toLowerCase().includes(term)
-                    );
-                    this.renderStore(filtered);
-                });
-            }
+            // Inside AppStore class -> initSearch()
+initSearch() {
+    const input = document.getElementById('store-search-input');
+    if(!input) return;
+    input.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        
+        // UPDATED FILTER LOGIC
+        const filtered = this.apps.filter(app => {
+            const displayName = app.storeName || app.name;
+            return displayName.toLowerCase().includes(term) || // Search Display Name
+                   app.name.toLowerCase().includes(term) ||    // Search Internal Name
+                   app.author.toLowerCase().includes(term) ||
+                   app.description.toLowerCase().includes(term);
+        });
+        this.renderStore(filtered);
+    });
+}
 
                 renderStore(appList) {
                 const listEl = document.getElementById('store-list');
@@ -1394,6 +1428,11 @@ body.dark-mode #sideloader-window .ios-search-bar {
                     const serverTime = app.updatedAt || 0;
                     const localTime = localApp ? (localApp.updatedAt || 0) : 0;
                     
+                    
+                    const displayName = app.storeName || app.name;
+                    
+                    
+                    
                     // CRITICAL: Force updates to FALSE if offline
                     const isUpdateAvailable = !this.isOfflineMode && isInstalled && (serverTime > localTime);
                     
@@ -1433,7 +1472,7 @@ body.dark-mode #sideloader-window .ios-search-bar {
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-                            <div class="store-name">${app.name}</div>
+                            <div class="store-name">${displayName}</div>
                             <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
                         </div>
                         ${actionHTML}
@@ -1494,18 +1533,20 @@ body.dark-mode #sideloader-window .ios-search-bar {
                 return new Blob([ab], {type: mimeString});
             }
 
-            // Helper: Write to Shared Database
-            async saveToNativeDB(appId, blob) {
+   async saveToNativeDB(appId, blob) {
                 return new Promise((resolve, reject) => {
                     const request = indexedDB.open('iOS_Simu_DB', 1);
+                    
                     request.onsuccess = (e) => {
                         const db = e.target.result;
                         const tx = db.transaction('native_apps', 'readwrite');
-                        const store = tx.objectStore('native_apps');
-                        store.put(blob, appId);
+                        tx.objectStore('native_apps').put(blob, appId);
+                        
                         tx.oncomplete = () => {
-                            // Refresh the Sideloader's URL cache so the app opens immediately
-                            if (typeof sideloader !== 'undefined') sideloader.hydrateNativeUrls();
+                            // FIX: Call the method we just added to Sideloader
+                            if (typeof sideloader !== 'undefined') {
+                                sideloader.hydrateSingle(appId, blob);
+                            }
                             resolve();
                         };
                         tx.onerror = () => reject(tx.error);
@@ -1515,9 +1556,7 @@ body.dark-mode #sideloader-window .ios-search-bar {
             }
             
             
-            
-            
-            
+ 
             
             
             
@@ -1536,39 +1575,41 @@ body.dark-mode #sideloader-window .ios-search-bar {
             }
 
             async flushPendingDecrements() {
-                // 1. SAFETY LOCK: Prevent double-execution
-                if (this.isSyncing) return; 
-                this.isSyncing = true; // Lock the door
+                // Silent Lock: No console logs for locking/unlocking
+                if (this.isSyncing || !this.isNetworkStrict()) return; 
+                
+                this.isSyncing = true; 
 
                 try {
                     const queue = JSON.parse(localStorage.getItem('ios_pending_decrements') || '[]');
                     if (queue.length === 0 || !this.db) {
-                        this.isSyncing = false; // Unlock if nothing to do
+                        this.isSyncing = false;
                         return;
                     }
 
-                    console.log("Syncing offline uninstalls...", queue);
+                    // Only log if there is actual work to do
+                    console.log("🔄 Processing Offline Queue:", queue);
                     
                     const refCol = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps');
+                    const remaining = [];
                     
                     for (const appId of queue) {
                         try {
                             await refCol.doc(appId).update({
                                 installCount: firebase.firestore.FieldValue.increment(-1)
                             });
-                            console.log(`Synced decrement for: ${appId}`);
+                            console.log(`✅ Synced decrement for: ${appId}`);
                         } catch (e) {
-                            console.warn(`Sync skipped for ${appId}`, e);
+                            remaining.push(appId);
                         }
                     }
                     
-                    // Clear queue only after finishing
-                    localStorage.removeItem('ios_pending_decrements');
-                    console.log("✅ Sync Successful: All offline uninstalls processed.");
+                    localStorage.setItem('ios_pending_decrements', JSON.stringify(remaining));
 
+                } catch(e) {
+                    console.error("Queue Sync Error", e);
                 } finally {
-                    // 2. ALWAYS UNLOCK: Even if code crashes, open the door for next time
-                    this.isSyncing = false; 
+                    this.isSyncing = false; // Silent Release
                 }
             }
             
@@ -1647,75 +1688,25 @@ body.dark-mode #sideloader-window .ios-search-bar {
 
 
                 async handleUpdateClick(btn, appId, silent = false) {
-                // 1. CONNECTION GUARD
-                const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
-                const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
-                const isRealNetwork = navigator.onLine;
+        // UPDATE (STRICT BLOCK)
+        if (!this.isNetworkStrict()) {
+            if (!silent) iOS.showAlert('No Connection', 'Cannot update while offline.');
+            return;
+        }
 
-                if (isAirplane || !isWifiOn || !isRealNetwork) {
-                    if (!silent) iOS.showAlert('Connection Error', 'Cannot update app while offline.');
-                    return; // STOP HERE
-                }
+        const app = this.apps.find(a => a.id === appId);
+        if (!app) return;
 
-                // ... (Existing Logic) ...
-                const app = this.apps.find(a => a.id === appId);
-                if (!app) return;
-
-                if(btn) btn.classList.add('loading');
-                
-                const delay = silent ? 800 : 1500;
-                await new Promise(r => setTimeout(r, delay));
-
-                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                const localApp = installed.find(a => a.id === appId);
-                
-                const serverVer = app.analyticsVersion || 0;
-                const localVer = localApp ? (localApp.analyticsVersion || 0) : 0;
-                
-                const shouldIncrement = (serverVer > localVer) && (app.enableAnalytics === true);
-
-                if (shouldIncrement) {
-                    try {
-                        const appRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId);
-                        await this.db.runTransaction(async (transaction) => {
-                            const sfDoc = await transaction.get(appRef);
-                            if (sfDoc.exists) {
-                                const data = sfDoc.data();
-                                const dl = typeof data.downloadCount === 'number' ? data.downloadCount : 0;
-                                const ins = typeof data.installCount === 'number' ? data.installCount : 0;
-                                
-                                transaction.update(appRef, { 
-                                    downloadCount: dl + 1,
-                                    installCount: ins + 1 
-                                });
-                            }
-                        });
-                        console.log("Analytics recovered for existing user.");
-                    } catch(e) { console.error("Stat recovery failed", e); }
-                }
-
-                const filtered = installed.filter(a => a.id !== appId);
-                filtered.push(app); 
-                localStorage.setItem('ios_installed_apps', JSON.stringify(filtered));
-
-                const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
-                if (customIcons[appId]) {
-                    delete customIcons[appId];
-                    localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
-                }
-
-                iOS.removeSingleApp(appId);
-                iOS.injectSingleApp(app);
-
-                if(btn) btn.classList.remove('loading');
-                
-                if (!silent) {
-                    this.renderStore(this.apps); 
-                    iOS.showAlert('Updated', `${app.name} has been updated.`);
-                } else {
-                    if(btn) btn.style.display = 'none';
-                }
-            }
+        if(btn) btn.classList.add('loading');
+        
+        this.uninstallApp(app, btn); // Clean old version
+        await this.performInstall(app, btn || document.createElement('div')); // Install new
+        
+        if (!silent) {
+            this.fetchApps(); 
+            iOS.showAlert('Updated', `${app.name} has been updated.`);
+        }
+    }
 
 
 
@@ -1725,52 +1716,44 @@ body.dark-mode #sideloader-window .ios-search-bar {
 
             // ... (keep handleGetClick, installApp, uninstallApp as they were) ...
             
-            async handleGetClick(btn, appId) {
-                const app = this.apps.find(a => a.id === appId);
-                if (!app) return;
-
-                const isInstalled = btn.classList.contains('installed');
-
-                if (isInstalled) {
-                    // UNINSTALL LOGIC (Unchanged)
-                    iOS.showAlert(
-                        `Delete "${app.name}"?`,
-                        "Deleting this app will also delete its data.",
-                        () => this.uninstallApp(app, btn), 
-                        true 
-                    );
-                } else {
-                    // INSTALL LOGIC
-                    const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
-                    const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
-                    const isRealNetwork = navigator.onLine;
-
-                    // Allow install if it's already a Data URI (offline compatible) 
-                    // or if we have a connection
-                    const isOfflineData = app.embedUrl && app.embedUrl.startsWith('data:');
-
-                    if ((isAirplane || !isWifiOn || !isRealNetwork) && !isOfflineData) {
-                        iOS.showAlert('Connection Error', 'Please check your internet connection to install apps.');
-                        return; 
-                    }
-
-                    // UI Feedback
-                    btn.classList.add('loading');
-                    
-                    // Artificial Delay for "Downloading" feel (optional, but nice)
-                    await new Promise(r => setTimeout(r, 1000));
-                    
-                    // --- CALL THE NEW ASYNC INSTALL ---
-                    await this.installApp(app);
-                    // ----------------------------------
-
-                    btn.classList.remove('loading');
-                    btn.classList.add('installed');
-                    btn.querySelector('span').innerText = 'UNINSTALL';
-                }
+            // Helper: Strict Network Check
+            isNetworkStrict() {
+                const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+                const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
+                const isRealNetwork = navigator.onLine;
+                
+                // MUST have: No Airplane + Wifi On + Real Internet
+                return !isAirplane && isWifiOn && isRealNetwork;
             }
 
-            // Helper: Actual Install Logic
+    async handleGetClick(btn, appId) {
+        const app = this.apps.find(a => a.id === appId);
+        if (!app) return;
+
+        const isInstalled = btn.classList.contains('installed');
+
+        if (isInstalled) {
+            // UNINSTALL (Allowed offline)
+            iOS.showAlert(
+                `Delete "${app.name}"?`,
+                "Deleting this app will also delete its data.",
+                () => this.performUninstall(app, btn), 
+                true 
+            );
+        } else {
+            // INSTALL (STRICT BLOCK)
+            if (!this.isNetworkStrict()) {
+                iOS.showAlert('No Connection', 'Turn off Airplane Mode or connect to Wi-Fi to install.');
+                return; 
+            }
+
+            btn.classList.add('loading');
+            await new Promise(r => setTimeout(r, 800)); // Visual delay
+            await this.performInstall(app, btn);
+        }
+    }
+
+            
             // Helper: Actual Install Logic
             async performInstall(app, btn) {
                 const originalText = btn.querySelector('span').innerText;
@@ -1781,7 +1764,7 @@ body.dark-mode #sideloader-window .ios-search-bar {
 
                 const lastStatTime = parseInt(localStorage.getItem(`ios_stat_cooldown_${app.id}`) || '0');
                 const now = Date.now();
-                const canCountStat = (now - lastStatTime) > 60000;
+                const canCountStat = (now - lastStatTime) > 3000;
                 const analyticsEnabled = app.enableAnalytics !== false;
 
                 try {
@@ -1830,110 +1813,66 @@ body.dark-mode #sideloader-window .ios-search-bar {
             // Helper: Actual Uninstall Logic
             // Helper: Actual Uninstall Logic
             async performUninstall(app, btn) {
-                // 1. PREVENT DOUBLE CLICKS (Robust UI)
-                if (btn.classList.contains('processing')) return;
-                btn.classList.add('processing'); // Lock state
-                btn.disabled = true;
-                
-                const originalText = btn.querySelector('span').innerText;
-                btn.classList.add('loading');
-                
-                const analyticsEnabled = app.enableAnalytics !== false;
+        if (btn.classList.contains('processing')) return;
+        btn.classList.add('processing', 'loading');
+        btn.disabled = true;
 
-                try {
-                    // 2. TRANSACTION (Secure)
-                    if (analyticsEnabled) {
-                        const appRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(app.id);
-                        await this.db.runTransaction(async (transaction) => {
-                            const sfDoc = await transaction.get(appRef);
-                            if (sfDoc.exists) {
-                                // Default to 0 if undefined
-                                const current = sfDoc.data().installCount || 0;
-                                
-                                // Only decrement if > 0 (Prevent negative rule violation)
-                                if (current > 0) {
-                                    transaction.update(appRef, { installCount: current - 1 });
-                                } else {
-                                    // If already 0, do nothing (don't fail the transaction, just skip update)
-                                    // But we can't "skip" inside a transaction easily without throwing or reading.
-                                    // The rule expects exact match. 
-                                    // Hack: We assume if it's 0 we just don't send the update.
-                                }
-                            }
-                        });
-                    }
-
-                    // 3. LOCAL UNINSTALL
-                    this.uninstallApp(app, btn);
-                    
-                    // 4. SUCCESS UI
-                    btn.classList.remove('loading');
-                    btn.classList.remove('installed');
-                    btn.querySelector('span').innerText = 'GET';
-
-                } catch (e) {
-                    console.error("Uninstall Failed:", e);
-                    
-                    // 5. ROBUST FALLBACK
-                    // If permission denied (maybe rule issue or network),
-                    // ALLOW LOCAL UNINSTALL ANYWAY so user isn't stuck.
-                    console.warn("Forcing local uninstall due to error.");
-                    this.uninstallApp(app, btn);
-                    btn.classList.remove('loading');
-                    btn.classList.remove('installed');
-                    btn.querySelector('span').innerText = 'GET';
-                    
-                } finally {
-                    // 6. UNLOCK UI
-                    btn.disabled = false;
-                    btn.classList.remove('processing');
-                }
+        try {
+            // Try Online Decrement
+            if (this.isNetworkStrict() && app.enableAnalytics !== false) {
+                await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(app.id)
+                    .update({ installCount: firebase.firestore.FieldValue.increment(-1) });
+            } else {
+                throw new Error("Offline"); // Force Queue
             }
-
+        } catch (e) {
+            // QUEUE IT
+            console.log("⚠️ Uninstall offline. Added to queue.");
+            this.addToPendingDecrement(app.id);
+        } finally {
+            // Always remove visually
+            this.uninstallApp(app, btn);
+            btn.classList.remove('loading', 'installed', 'processing');
+            btn.disabled = false;
+            btn.querySelector('span').innerText = 'GET';
+        }
+    }
             async installApp(app) {
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                
-                // Prevent duplicate installs
                 if (installed.some(a => a.id === app.id)) return;
 
-                // --- NATIVE INSTALLATION LOGIC ---
-                // Check if it's a "Heavy" app that should be native (HTML Content)
-                // We assume anything starting with 'data:text/html' is a candidate for Native acceleration
-                if (app.embedUrl && app.embedUrl.startsWith('data:text/html')) {
-                    
+                // Clone to protect original data
+                const finalApp = { ...app };
+
+                // --- STRICT NATIVE LOGIC ---
+                // Only convert if explicitly marked as 'native'
+                if (app.type === 'native') {
                     try {
-                        console.log("⚙️ Converting Store App to Native Blob...");
-                        
-                        // 1. Convert Base64 -> Blob
+                        console.log("📦 Packaging Native App...");
                         const blob = this.dataURItoBlob(app.embedUrl);
                         
-                        // 2. Save to IndexedDB (Async)
+                        // Save to DB (Async)
                         await this.saveToNativeDB(app.id, blob);
                         
-                        // 3. Create a Local Copy of the App Object
-                        // IMPORTANT: We replace the heavy 'data:...' string with 'native://...'
-                        // This keeps localStorage light and fast.
-                        const nativeApp = { ...app };
-                        nativeApp.embedUrl = `native://${app.id}`; 
-                        nativeApp.type = 'native'; // Mark as native for routeContent
-                        
-                        installed.push(nativeApp);
-                        console.log("✅ App Installed Natively");
+                        // Update Reference
+                        finalApp.embedUrl = `native://${app.id}`; 
+                        finalApp.type = 'native'; 
+                        console.log("✅ Native App Installed");
 
                     } catch (e) {
-                        console.error("Native Install Failed, falling back to legacy", e);
-                        // Fallback: Just save the heavy string if DB fails
-                        installed.push(app);
+                        console.error("Native Install Failed", e);
+                        // Stop install to prevent broken app
+                        return; 
                     }
-
                 } else {
-                    // Standard Install (URL links, etc.)
-                    installed.push(app);
+                    // LEGACY / WEB APPS
+                    // Keep them exactly as they are (Data URIs or HTTPS)
+                    finalApp.type = 'sideloaded'; 
                 }
-                // ---------------------------------
 
+                installed.push(finalApp);
                 localStorage.setItem('ios_installed_apps', JSON.stringify(installed));
-                iOS.injectSingleApp(app); // Inject visual icon
+                iOS.injectSingleApp(finalApp); 
             }
 
             uninstallApp(app, btn) {
@@ -2028,6 +1967,61 @@ body.dark-mode #sideloader-window .ios-search-bar {
         return this.nativeUrls[appId] || null;
     }
 
+
+
+
+    hydrateSingle(appId, blob) {
+        // 1. Revoke old URL to free memory
+        if (this.nativeUrls[appId]) URL.revokeObjectURL(this.nativeUrls[appId]);
+        
+        // 2. Create and store new URL immediately
+        this.nativeUrls[appId] = URL.createObjectURL(blob);
+        console.log(`💧 Hydrated single app: ${appId}`);
+    }           
+            
+            
+
+
+
+
+handleUrlInput(el) {
+        // If user types URL, clear any pending file upload
+        this.pendingIconBase64 = null; 
+        document.getElementById('sl-icon-preview').src = el.value || 'grey.png';
+    }
+
+    handleIconUpload(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                // Resize Image to 180x180 (iOS Standard) to save storage
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 180;
+                    canvas.height = 180;
+                    ctx.drawImage(img, 0, 0, 180, 180);
+                    
+                    const optimizedUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    // Update UI immediately
+                    document.getElementById('sl-icon-preview').src = optimizedUrl;
+                    document.getElementById('sl-icon').value = ''; // Clear URL field
+                    this.pendingIconBase64 = optimizedUrl; // Stage for saving
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+
+
+
+
     // --- 2. UI LOGIC ---
 
     toggleSystem(el) {
@@ -2069,7 +2063,6 @@ body.dark-mode #sideloader-window .ios-search-bar {
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGJ_3z2d-HFRdkMlJoqjwEPHMVGgPzKJHF5-BpVjaXeA&s=10" class="icon-bg-img" onerror="this.style.display='none'"> 
             
             
-            
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
             </div>
             <div class="app-name">Sideloader</div>
@@ -2096,14 +2089,34 @@ body.dark-mode #sideloader-window .ios-search-bar {
         document.getElementById('sl-form-view').style.display = 'block';
         document.getElementById('sl-main-header').innerText = editId ? 'Edit App' : 'New App';
         
+        // Reset State
+        this.pendingIconBase64 = null; 
+        document.getElementById('sl-icon').placeholder = "Icon URL (or tap pencil)";
+
         if(editId) {
             const app = this.apps.find(a => a.id === editId);
             this.editingId = editId;
             document.getElementById('sl-name').value = app.name;
-            document.getElementById('sl-icon').value = app.iconUrl;
-            document.getElementById('sl-icon-preview').src = app.iconUrl || 'grey.png';
             
-            // Mode Detection
+            // --- SMART ICON DISPLAY LOGIC ---
+            const iconInput = document.getElementById('sl-icon');
+            const iconPreview = document.getElementById('sl-icon-preview');
+
+            if (app.iconUrl && app.iconUrl.startsWith('data:')) {
+                // CASE A: Uploaded Icon (Hide the Base64 string)
+                iconInput.value = ''; 
+                iconInput.placeholder = "Using Uploaded Icon"; 
+                this.pendingIconBase64 = app.iconUrl; // Preserve existing data in background
+                iconPreview.src = app.iconUrl;
+            } else {
+                // CASE B: Standard URL (Show it)
+                iconInput.value = app.iconUrl || '';
+                this.pendingIconBase64 = null;
+                iconPreview.src = app.iconUrl || 'grey.png';
+            }
+            // -------------------------------
+            
+            // Mode Detection (Existing Logic)
             if (app.type === 'native') {
                 this.toggleSource('native');
                 document.getElementById('sl-file-name').innerText = "Native App Loaded";
@@ -2116,13 +2129,13 @@ body.dark-mode #sideloader-window .ios-search-bar {
                 document.getElementById('sl-url').value = app.embedUrl;
             }
         } else {
+            // NEW APP STATE
             this.editingId = null;
             document.getElementById('sl-name').value = '';
             document.getElementById('sl-icon').value = '';
             document.getElementById('sl-url').value = '';
             document.getElementById('sl-file-data').value = '';
             document.getElementById('sl-icon-preview').src = 'grey.png';
-            this.pendingBlob = null;
             this.toggleSource('url');
         }
     }
@@ -2276,36 +2289,31 @@ body.dark-mode #sideloader-window .ios-search-bar {
 
     saveApp() {
         const name = document.getElementById('sl-name').value.trim();
-        const icon = document.getElementById('sl-icon').value.trim();
+        const urlValue = document.getElementById('sl-icon').value.trim();
         const appId = this.editingId || 'sl_' + Math.random().toString(36).substr(2, 6);
 
-        // Validation
+        // LOGIC: Use Uploaded Base64 if exists, otherwise use URL
+        const finalIcon = this.pendingIconBase64 || urlValue;
+
         if (!name) { iOS.showAlert('Missing Info', 'App Name is required.'); return; }
 
         let embedUrl = '';
         let type = 'sideloaded';
 
-        // --- SAVE LOGIC ---
+        // --- SOURCE HANDLING (Unchanged) ---
         if (this.currentSourceMode === 'url') {
             embedUrl = document.getElementById('sl-url').value.trim();
             if (!embedUrl) { iOS.showAlert('Error', 'URL required'); return; }
-
         } else if (this.currentSourceMode === 'file') {
             embedUrl = document.getElementById('sl-file-data').value;
             if (!embedUrl) { iOS.showAlert('Error', 'File required'); return; }
-
         } else if (this.currentSourceMode === 'native') {
-            // NATIVE SAVE
             if (!this.pendingBlob && !this.editingId) { iOS.showAlert('Error', 'File required'); return; }
-            
             type = 'native';
-            embedUrl = `native://${appId}`; // Placeholder for storage
-
+            embedUrl = `native://${appId}`;
             if (this.pendingBlob && this.db) {
                 const tx = this.db.transaction('native_apps', 'readwrite');
                 tx.objectStore('native_apps').put(this.pendingBlob, appId);
-                
-                // Hot Update Runtime URL
                 if (this.nativeUrls[appId]) URL.revokeObjectURL(this.nativeUrls[appId]);
                 this.nativeUrls[appId] = URL.createObjectURL(this.pendingBlob);
             }
@@ -2314,14 +2322,14 @@ body.dark-mode #sideloader-window .ios-search-bar {
         const appData = {
             id: appId,
             name: name,
-            iconUrl: icon,
-            embedUrl: embedUrl, // Stores "native://..." for native apps
+            iconUrl: finalIcon, // <--- SAVES NEW ICON
+            embedUrl: embedUrl,
             author: type === 'native' ? 'Native Sideload' : 'Sideloaded',
             type: type,
             updatedAt: Date.now()
         };
 
-        // Update Memory
+        // Update Array
         if (this.editingId) {
             const index = this.apps.findIndex(a => a.id === this.editingId);
             if(index > -1) this.apps[index] = appData;
@@ -2330,18 +2338,22 @@ body.dark-mode #sideloader-window .ios-search-bar {
             this.apps.push(appData);
         }
 
-        // Persist Metadata
+        // SAVE TO STORAGE
         localStorage.setItem('ios_sideloaded_apps', JSON.stringify(this.apps));
         
-        // Custom Icon Storage
-        const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
-        customIcons[appId] = icon;
-        localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
+        // Update Custom Icon Cache (For Home Screen)
+        if (finalIcon) {
+            const customIcons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+            customIcons[appId] = finalIcon;
+            localStorage.setItem('ios_custom_icons', JSON.stringify(customIcons));
+        }
         
-        // Reset & Refresh
         this.pendingBlob = null;
+        this.pendingIconBase64 = null; // Clear memory
+        
         iOS.injectSingleApp(appData);
         this.showList();
+        iOS.applyCustomIcons(); // Refresh icons immediately
         iOS.showAlert(this.editingId ? 'App Updated' : 'App Installed', `${name} is ready.`);
     }
 
