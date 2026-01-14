@@ -316,6 +316,158 @@ body.dark-mode .info-box {
 body.dark-mode .info-box a {
     color: var(--accent) !important;
 }
+
+
+
+/* --- SUPPORT SECTION STYLES --- */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.feature-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    padding: 30px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-item:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+    width: 48px; height: 48px;
+    background: rgba(0,102,204,0.1); /* Accent tint */
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    margin-bottom: 20px;
+}
+body.dark-mode .feature-icon { background: rgba(10,132,255,0.15); }
+
+.feature-item h3 { font-size: 20px; font-weight: 600; margin: 0 0 10px 0; }
+.feature-item p { font-size: 15px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+
+/* --- WARNING / ALERT BOX --- */
+.alert-box {
+    background: #FFF4F4;
+    border: 1px solid #FFDCDC;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex; gap: 15px;
+    margin: 30px 0;
+}
+body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rgba(255, 59, 48, 0.2); }
+
+.alert-icon { color: #FF3B30; flex-shrink: 0; margin-top: 2px; }
+.alert-content h4 { color: #FF3B30; margin: 0 0 5px 0; font-size: 16px; font-weight: 600; }
+.alert-content p { margin: 0; font-size: 14px; color: var(--text-primary); opacity: 0.9; }
+
+/* --- PRO TIP BOX --- */
+.pro-tip {
+    background: rgba(52, 199, 89, 0.1);
+    border: 1px solid rgba(52, 199, 89, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 30px 0;
+}
+.pro-tip strong { color: #34C759; display: block; margin-bottom: 5px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+.pro-tip p { margin: 0; font-size: 15px; color: var(--text-primary); }
+
+
+/* --- MOBILE DOCS SIDEBAR --- */
+.mobile-docs-toggle {
+    display: none;
+    position: fixed; bottom: 30px; right: 25px;
+    background: var(--accent); color: white;
+    border: none; padding: 12px 24px; border-radius: 50px;
+    font-size: 15px; font-weight: 600; 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 2000; cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s;
+}
+.mobile-docs-toggle:active { transform: scale(0.95); }
+
+.mobile-sidebar-overlay {
+    display: none; position: fixed; inset: 0; 
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(3px);
+    z-index: 2009; opacity: 0; transition: opacity 0.3s;
+}
+
+/* Close Button (Default Hidden) */
+.sidebar-close-btn { display: none; }
+
+@media (max-width: 768px) {
+    /* Show Toggle Button */
+    .mobile-docs-toggle { display: flex; align-items: center; gap: 8px; }
+
+    /* CLOSE BUTTON STYLE */
+    .sidebar-close-btn {
+        display: flex;
+        position: absolute; top: 15px; right: 15px;
+        background: transparent; border: none;
+        color: var(--text-primary); cursor: pointer;
+        padding: 8px; border-radius: 50%;
+        z-index: 2012;
+    }
+    .sidebar-close-btn:active { background: rgba(0,0,0,0.1); }
+
+    /* --- MOBILE SIDEBAR (NUCLEAR FIX) --- */
+    .docs-sidebar {
+        display: block !important;
+        
+        /* 1. Force Fixed Positioning to break out of all containers */
+        position: fixed !important;
+        
+        /* 2. Anchor to ALL corners to force full stretch */
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: 100% !important; /* Fallback */
+        height: 100dvh !important; /* Modern Mobile Viewport Height */
+        
+        /* 3. RESET DESKTOP CONSTRAINTS (Crucial) */
+        width: 280px !important;
+        max-height: none !important; /* Kills the calc(100vh - 100px) limit */
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        
+        /* 4. Visuals & Layering */
+        background: var(--bg-card) !important;
+        z-index: 9999 !important; /* Sits on top of EVERYTHING */
+        box-shadow: 5px 0 30px rgba(0,0,0,0.2) !important;
+        
+        /* 5. Animation State */
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        
+        /* 6. Content Scrolling */
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 80px 24px 100px !important; /* Extra bottom padding for scrolling space */
+    }
+
+    /* Active State */
+    .docs-sidebar.active {
+        transform: translateX(0) !important;
+    }
+    
+    /* Overlay */
+    .mobile-sidebar-overlay.active {
+        display: block !important;
+        opacity: 1 !important;
+        z-index: 9998 !important; /* Just below the sidebar */
+    }
+}
+
+
     </style>
 </head>
 <body>
@@ -328,12 +480,12 @@ body.dark-mode .info-box a {
             </div>
             
             <div class="nav-links-desktop">
-                <a onclick="switchView('home')" id="link-home" class="active">Overview</a>
-                <a onclick="switchView('docs')" id="link-docs">Documentation</a>
-                <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
-                <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator ↗</a>
-                <a class="dm-toggle" onclick="toggleDarkMode()">Dark Mode</a>
-            </div>
+    <a onclick="switchView('home')" id="link-home" class="active">Overview</a>
+    <a onclick="switchView('docs')" id="link-docs">Documentation</a>
+    <a onclick="switchView('support')" id="link-support">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
+    <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator ↗</a>
+    <a class="dm-toggle" onclick="toggleDarkMode()">Dark Mode</a>
+</div>
 
             <!-- 2-BAR HAMBURGER -->
             <div class="hamburger" onclick="toggleMenu()">
@@ -343,13 +495,13 @@ body.dark-mode .info-box a {
         </div>
     </nav>
 
-    <div class="mobile-menu" id="mobile-menu">
-        <a onclick="mobileNavigate('home')">Overview</a>
-        <a onclick="mobileNavigate('docs')">Documentation</a>
-        <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
-        <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator</a>
-        <a onclick="toggleDarkMode()">Dark Mode</a>
-    </div>
+<div class="mobile-menu" id="mobile-menu">
+    <a onclick="mobileNavigate('home')">Overview</a>
+    <a onclick="mobileNavigate('docs')">Documentation</a>
+    <a onclick="mobileNavigate('support')">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
+    <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator</a>
+    <a onclick="toggleDarkMode()">Dark Mode</a>
+</div>
 
     <!-- HOME VIEW -->
     <div id="view-home" class="view-section active">
@@ -393,17 +545,34 @@ body.dark-mode .info-box a {
 
     <!-- DOCS VIEW -->
     <div id="view-docs" class="view-section">
+        
+        <button class="mobile-docs-toggle" onclick="toggleDocsSidebar()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"></path></svg>
+            Topics
+        </button>
+        <div class="mobile-sidebar-overlay" onclick="toggleDocsSidebar()"></div>
+
         <div class="docs-container">
-            <aside class="docs-sidebar">
+            <aside class="docs-sidebar" id="docs-sidebar">
+                
+                <button class="sidebar-close-btn" onclick="toggleDocsSidebar()">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                
                 <h4>Documentation</h4>
                 <a href="#doc-start" class="active">Getting Started</a>
                 <a href="#doc-deploy">Deployment</a>
                 <a href="#doc-verify">Verification</a>
+                <a href="#doc-audio">Audio Manager</a> 
                 <a href="#doc-api">System APIs</a>
                 <a href="#doc-advanced">Advanced Config</a>
                 <a href="#doc-island">Dynamic Island</a>
                 <a href="#doc-settings">System Settings</a>
+                
+                <a href="#doc-mods">System Mods (Root)</a> 
+                
             </aside>
+            
             <main class="doc-content">
                 <h1>Documentation</h1>
                 <p class="doc-lead">Everything you need to integrate with the iOS Web Ecosystem.<BR><BR>NOTE: More docs may be adding soon!</p>
@@ -494,6 +663,63 @@ body.dark-mode .info-box a {
                       
                     </div>
                 </div>
+
+
+
+
+
+
+
+<div id="doc-audio" class="doc-block">
+                    <h3>Audio Focus Manager</h3>
+                    <p>To prevent audio overlap (e.g., Spotify playing over a Game), the ecosystem uses an <strong>Audio Focus System</strong>. Apps must request focus before playing sound.</p>
+                    
+                    <div class="info-box">
+                        <strong>Rule:</strong> Only one app can hold "Media Focus" at a time. If a new app requests focus, the previous app receives a <code>REVOKED</code> signal and must pause immediately.
+                    </div>
+
+                    <strong>The Client Wrapper</strong>
+                    <p>Copy this snippet into your app to automatically handle system requests.</p>
+                    <div class="code-box">
+<span class="hl-k">const</span> AudioClient = {
+    audioElement: <span class="hl-k">null</span>,
+
+    <span class="hl-f">init</span>(audioEl) {
+        <span class="hl-k">this</span>.audioElement = audioEl;
+        
+        <span class="hl-c">// 1. Listen for System Revoke (Pause Command)</span>
+        window.<span class="hl-f">addEventListener</span>(<span class="hl-s">'message'</span>, (e) => {
+            <span class="hl-k">if</span> (e.data.type === <span class="hl-s">'IOS_AUDIO_REVOKED'</span>) {
+                console.<span class="hl-f">log</span>(<span class="hl-s">"System took focus. Pausing..."</span>);
+                <span class="hl-k">if</span>(<span class="hl-k">this</span>.audioElement) <span class="hl-k">this</span>.audioElement.<span class="hl-f">pause</span>();
+            }
+        });
+
+        <span class="hl-c">// 2. Intercept Play to Request Focus</span>
+        <span class="hl-k">if</span> (<span class="hl-k">this</span>.audioElement) {
+            <span class="hl-k">const</span> originalPlay = <span class="hl-k">this</span>.audioElement.play;
+            <span class="hl-k">this</span>.audioElement.play = () => {
+                <span class="hl-c">// Ask System permission</span>
+                window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'IOS_AUDIO_REQUEST'</span> }, <span class="hl-s">'*'</span>);
+                <span class="hl-k">return</span> originalPlay.<span class="hl-f">call</span>(<span class="hl-k">this</span>.audioElement);
+            };
+            
+            <span class="hl-c">// 3. Release Focus on Pause</span>
+            <span class="hl-k">this</span>.audioElement.onpause = () => {
+                window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'IOS_AUDIO_RELEASE'</span> }, <span class="hl-s">'*'</span>);
+            };
+        }
+    }
+};
+
+<span class="hl-c">// Usage: AudioClient.init(document.getElementById('bg-music'));</span>
+                    </div>
+                </div>
+
+
+
+
+
 
                 <div id="doc-api" class="doc-block">
                     <h3>System APIs</h3>
@@ -698,9 +924,257 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
 
 
 
+
+
+
+<div id="doc-mods" class="doc-block">
+                    <h3>System Mods & Root Access</h3>
+                    <p>The <code>injectMod()</code> API allows an app to execute arbitrary JavaScript directly in the <strong>Host Operating System</strong> context. This is the most powerful and dangerous feature in the ecosystem.</p>
+
+                    <div class="alert-box">
+                  <div class="alert-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        </div>
+                        <div class="alert-content">
+                            <h4>Root Privilege Required</h4>
+                            <p>This API is blocked by default. It only works for:</p>
+                            <ul>
+                                <li><strong>Sideloaded Apps</strong> (Development / Testing)</li>
+                                <li><strong>Trusted System Apps</strong> (Verified by Admins)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h4>1. How to use injectMod</h4>
+                    <p>You pass a string of JavaScript code. The system evaluates this code in the top-level window context, allowing you to modify CSS variables, DOM elements, or system behavior.</p>
+
+                    <strong>Example: Universal Theme Changer</strong>
+                    <p>This script injects a style tag into the Host OS to change the background color of the entire Simulator.</p>
+                    <div class="code-box">
+<span class="hl-k">const</span> THEME_MOD = <span class="hl-s">`
+    (function() {
+        // 1. Create a Style Tag
+        const style = document.createElement('style');
+        style.id = 'my-custom-theme';
+        style.innerHTML = \`
+            :root {
+                --bg-body: #1a1a1a !important; 
+                --accent: #FF2D55 !important;
+                --text-primary: #fff !important;
+            }
+            .navbar { background: rgba(0,0,0,0.8) !important; }
+        \`;
+        
+        // 2. Remove old version if exists (Prevent duplicates)
+        const old = document.getElementById('my-custom-theme');
+        if (old) old.remove();
+
+        // 3. Inject into Host Head
+        document.head.appendChild(style);
+        
+        // 4. Notify User
+        if(window.iOS) window.iOS.showAlert('Theme Applied', 'Dark Neon Red installed.');
+    })();
+`</span>;
+
+<span class="hl-c">// Execute the Mod</span>
+<span class="hl-k">if</span> (window.parent.iOS) {
+    <span class="hl-k">const</span> success = window.parent.iOS.<span class="hl-f">injectMod</span>(THEME_MOD);
+    <span class="hl-k">if</span> (!success) {
+        console.error(<span class="hl-s">"Mod failed. App may not have Root privileges."</span>);
+    }
+}
+                    </div>
+
+                    <h4>2. Getting "Trusted" Status</h4>
+                    <p>Store Apps run in a Restricted Sandbox by default. To distribute a Mod on the App Store, your App ID must be added to the <strong>Trusted List</strong>.</p>
+                    <div class="info-box">
+                        <strong>Request Process:</strong><br>
+                        1. Publish your app with the App Builder.<br>
+                        2. Test it thoroughly using the Sideloader.<br>
+                        3. Open a <strong>GitHub Issue</strong> or contact an Admin with your <strong>App ID</strong> and source code.<br>
+                        4. If approved, your App ID will be whitelisted in the Security Config.
+                    </div>
+
+                    <h4>3. Developer Safety Guidelines (Strict)</h4>
+                    <p>Violation of these rules will result in immediate <strong>Account Ban</strong> and removal of all your apps.</p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <strong>NO MALWARE:</strong> Do not inject scripts that steal data, infinite loop, or crash the browser.
+                        </li>
+                        <li style="margin-bottom: 10px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <strong>Clean Up:</strong> If your mod changes the UI, provide a way to reset it (e.g., a "Reset to Default" button).
+                        </li>
+                        <li style="padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <strong>No Persistence Abuse:</strong> Do not use <code>localStorage</code> to make your mod impossible to remove. Users must be able to fix issues by clearing data or using Safe Mode.
+                        </li>
+                    </ul>
+                </div>
+
+
+
+
+
+
+
+
+            </main>
+            
+            <br>
+                    <strong>Console Defense</strong>
+                    <p>For security, the Simulator automatically revokes <code>Root</code> privileges when the system is idle. If you try to run `iOS.injectMod()` from the browser console, it will fail. You must open a <strong>Sideloaded App</strong> (which grants temporary Root access) to execute system-level commands.</p>
+            
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+<div id="view-support" class="view-section">
+        
+        <button class="mobile-docs-toggle" onclick="toggleSupportSidebar()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7"></path></svg>
+            Topics
+        </button>
+        <div class="mobile-sidebar-overlay" onclick="toggleSupportSidebar()"></div>
+
+        <div class="docs-container">
+            
+            <aside class="docs-sidebar" id="support-sidebar">
+                <button class="sidebar-close-btn" onclick="toggleSupportSidebar()">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+
+                <h4>Support Topics</h4>
+                <a href="#sup-start" class="active">Overview</a>
+                <a href="#sup-safety">Safety & Recovery</a>
+                <a href="#sup-trust">Trust & Verification</a>
+                <a href="#sup-sideload">Sideloading</a>
+                <a href="#sup-features">Features</a>
+                <a href="#sup-report">Report System</a>
+            </aside>
+
+            <main class="doc-content">
+                <div id="sup-start">
+                    <h1>Support Center</h1>
+                    <p class="doc-lead">Master your device. Learn about security, recovery tools, and how to verify trusted applications.</p>
+                </div>
+
+                <div id="sup-safety" class="doc-block">
+                    <h3>Safety & Recovery</h3>
+                    <p>The Simulator is built with a "Sandboxed" architecture, but user-generated content can still cause crashes. We have built-in tools to help you recover.</p>
+                    <div class="alert-box">
+                        <div class="alert-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        </div>
+                        <div class="alert-content">
+                            <h4>Emergency: Safe Mode</h4>
+                            <p>If an app crashes your simulator or you encounter a "Black Screen of Death," use Safe Mode to disable all modifications.</p>
+                            <div style="margin-top:10px;">
+                                <strong>How to Activate:</strong><br>
+                                Add <code style="background:rgba(0,0,0,0.1); padding:2px 6px; border-radius:4px;">?safe=true</code> to the end of your Simulator URL.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sup-trust" class="doc-block">
+                    <h3>Trust & Verification</h3>
+                    <p>To prevent "Copycat" apps, we use a rigorous verification system.</p>
+                    <div class="feature-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon" style="color:#007AFF;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                            </div>
+                            <h3>Trusted System App</h3>
+                            <p><strong>Look for:</strong> A Green Shield <span style="color:#34C759"></span> next to the App Name. These apps have Root Privileges.</p>
+                        </div>
+
+                        <div class="feature-item">
+                            <div class="feature-icon" style="color:#007AFF;">
+                                <svg width="24" height="24" viewBox="0 0 12 12" fill="currentColor"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg>
+                            </div>
+                            <h3>Verified Developer</h3>
+                            <p><strong>Look for:</strong> A Blue Tick next to the Author Name. Confirms identity, not code safety.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sup-sideload" class="doc-block">
+                    <h3>Sideloading Responsibly</h3>
+                    <p>The <strong>Sideloader</strong> app allows you to install <code>.html</code> files directly. This is powerful but risky.</p>
+                    <div class="pro-tip">
+                        <strong>Safety Checklist</strong>
+                        <p>1. Only sideload files from developers you trust.<br>
+                        2. Sideloaded apps run with <strong>Restricted Privileges</strong> by default.<br>
+                        3. If a sideloaded app asks you to "Run a Script" or "Inject Code," <strong>DENY</strong> it unless you know exactly what the code does.</p>
+                    </div>
+                </div>
+
+                <div id="sup-features" class="doc-block">
+                    <h3>Ecosystem Features</h3>
+                    <div class="feature-grid">
+                        <div class="feature-item">
+                            <h3>Dynamic Island</h3>
+                            <p>Supports custom notifications via <code>triggerSystemNotification()</code>.</p>
+                        </div>
+                        <div class="feature-item">
+                            <h3>Settings</h3>
+                            <p>Enable dark mode, True Tone, and developer options.</p>
+                        </div>
+                        <div class="feature-item">
+                            <h3>Offline Capable</h3>
+                            <p>Native Apps (Sideloaded) are stored in IndexedDB and work without internet.</p>
+                        </div>
+                    </div>
+                </div>
+
+
+
+<div class="doc-block" id="sup-report">
+    <h3>Community Reporting System</h3>
+    <p>We use a decentralized, community-driven moderation system to keep the App Store safe. Here is how it works:</p>
+    
+    <h4>How to Report an App</h4>
+    <p>If you encounter malware, scams, or abusive content, open the app's page in the Store and tap the <strong>Report</strong> button. Your report is encrypted and sent to our secure "Black Box" database.</p>
+
+    <h4>The "Shadow Ban" Protocol</h4>
+    <p>To ensure immediate safety, our system uses an automated Tripwire:</p>
+    <ul>
+        <li>If an app receives <strong>10 or more verified reports</strong> from different users, it is automatically <strong>Shadow Banned</strong>.</li>
+        <li>A Shadow Banned app is instantly hidden from the App Store for all users to prevent further installs.</li>
+        <li>The developer is notified via the App Builder console.</li>
+    </ul>
+
+    <h4>Important Warning: Do Not Abuse</h4>
+    <p>This system is designed for safety, not for attacking developers. Please note:</p>
+    <ul>
+        <li><strong>Spam Reporting is Monitored:</strong> Abusing the report button to target honest developers will result in your device being restricted from the Store.</li>
+        <li><strong>False Positives:</strong> If your app was banned by mistake, contact the Admin immediately. We can review the logs and issue a "Pardon" to restore your app and reputation.</li>
+    </ul>
+    
+    <div class="note-box" style="background: rgba(0,113,227,0.1); padding: 15px; border-radius: 12px; margin-top: 15px;">
+        <strong>Tip for Developers:</strong> You can check your app's health status in the <a href="#sup-report" onclick="iOS.openApp('builder')">App Builder</a> dashboard at any time.
+    </div>
+</div>
+
+
+
+
             </main>
         </div>
     </div>
+
+
+
+
+
 
     <!-- PRIVACY VIEW -->
     <div id="view-privacy" class="view-section">
@@ -842,6 +1316,66 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
                 ham.classList.remove('active');
             }
         }
+        
+        
+        
+        
+        
+        function toggleDocsSidebar() {
+            // Robust Selection: Tries ID first, then Class
+            const sidebar = document.getElementById('docs-sidebar') || document.querySelector('.docs-sidebar');
+            const overlay = document.querySelector('.mobile-sidebar-overlay');
+            
+            // Check if elements exist before accessing classList
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            } else {
+                console.error("Sidebar UI elements not found. Check HTML IDs.");
+            }
+        }
+
+        // Auto-close on link click (Mobile UX)
+        document.querySelectorAll('.docs-sidebar a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    const sidebar = document.getElementById('docs-sidebar') || document.querySelector('.docs-sidebar');
+                    const overlay = document.querySelector('.mobile-sidebar-overlay');
+                    if(sidebar) sidebar.classList.remove('active');
+                    if(overlay) overlay.classList.remove('active');
+                }
+            });
+        });
+        
+        
+     // --- SUPPORT SIDEBAR LOGIC ---
+        function toggleSupportSidebar() {
+            // Target the Support Sidebar specifically
+            const sidebar = document.getElementById('support-sidebar');
+            // We can reuse the overlay class, but scope it to the support view if needed.
+            // Since only one view is active at a time, selecting the generic class is safe.
+            const overlay = document.querySelector('#view-support .mobile-sidebar-overlay');
+            
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+        }
+
+        // Auto-close Support links
+        document.querySelectorAll('#support-sidebar a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    const sidebar = document.getElementById('support-sidebar');
+                    const overlay = document.querySelector('#view-support .mobile-sidebar-overlay');
+                    if(sidebar) sidebar.classList.remove('active');
+                    if(overlay) overlay.classList.remove('active');
+                }
+            });
+        });   
+        
+        
+        
 
         function toggleMenu() {
             document.getElementById('mobile-menu').classList.toggle('open');

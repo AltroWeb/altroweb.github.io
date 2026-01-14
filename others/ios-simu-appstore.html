@@ -399,8 +399,8 @@
         
         /* Spinner */
         .spinner {
-            width: 16px; height: 16px; border: 2px solid rgba(0,122,255,0.3);
-            border-radius: 50%; border-top-color: #007AFF;
+            width: 16px; height: 16px; border: 2px solid rgba(0,122,255,0.3) !important;
+            border-radius: 50%; border-top-color: #007AFF !important;
             animation: spin 1s linear infinite; display: none;
         }
         .store-get-btn.loading .spinner { display: block; }
@@ -745,6 +745,109 @@ body.dark-mode #sideloader-window .ios-search-bar {
     background: #1c1c1e !important;
     
 }
+
+/* FORCE GAP inside Dynamic Island */
+.sys-icon-container {
+    margin-right: 10px !important; /* Pushes text away */
+}
+
+
+
+
+/* Safe Mode Styling */
+.safe-mode-group {
+    border: 1px solid rgba(255, 149, 0, 0.3) !important; /* Orange Border */
+    background: rgba(255, 149, 0, 0.05) !important; /* Slight Orange Tint */
+}
+
+/* Global Indicator (Optional: Adds a red border to screen in Safe Mode) */
+body.safe-mode-active .screen-container {
+    border: 2px solid #FF9500;
+}
+
+
+
+/* Ensure Safe Mode rows adapt to Dark Mode */
+body.dark-mode .safe-mode-group .ios-row span[style*="color:#000"] {
+    color: #fff !important;
+}
+
+/* Delete button hover effect */
+.safe-mode-group button:active {
+    background: rgba(255, 59, 48, 0.3) !important;
+}
+
+
+
+
+/* --- TRUSTED SHIELD ICON --- */
+.trusted-app-badge {
+    display: inline-flex;
+    margin-left: 4px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+.trusted-app-badge svg {
+    width: 14px;
+    height: 14px;
+    fill: #34C759; /* Apple Green */
+}
+
+
+
+/* --- REPORT BUTTON (With Icon) --- */
+.report-btn {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    background: transparent; border: none;
+    color: #8E8E93; font-size: 11px; font-weight: 500;
+    margin-top: 8px; padding: 6px; cursor: pointer; width: 100%;
+    transition: all 0.2s; opacity: 0.8;
+}
+.report-btn:active { opacity: 0.5; transform: scale(0.98); }
+.report-btn svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* --- NATIVE iOS REPORT ALERT (Centered) --- */
+.report-alert-overlay {
+    position: absolute; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.report-alert-overlay.visible { opacity: 1; pointer-events: auto; }
+
+.report-alert-box {
+    width: 270px; background: rgba(245,245,245,0.92);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 14px; overflow: hidden;
+    transform: scale(1.1); opacity: 0;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+.report-alert-overlay.visible .report-alert-box { transform: scale(1); opacity: 1; }
+body.dark-mode .report-alert-box { background: rgba(40,40,40,0.92); }
+
+.ra-header {
+    padding: 16px 16px 12px 16px; text-align: center;
+}
+.ra-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: #000; }
+.ra-msg { font-size: 13px; color: #000; }
+body.dark-mode .ra-title, body.dark-mode .ra-msg { color: #fff; }
+
+.ra-options {
+    display: flex; flex-direction: column;
+    border-top: 0.5px solid rgba(60,60,67,0.36);
+}
+
+.ra-btn {
+    background: transparent; border: none;
+    padding: 12px; font-size: 17px; color: #007AFF;
+    border-bottom: 0.5px solid rgba(60,60,67,0.36);
+    cursor: pointer; transition: background 0.2s;
+}
+.ra-btn:last-child { border-bottom: none; font-weight: 600; }
+.ra-btn:active { background: rgba(128,128,128,0.1); }
+.ra-btn.danger { color: #FF3B30; }
 
 
     </style>
@@ -1149,6 +1252,31 @@ body.dark-mode #sideloader-window .ios-search-bar {
             </div>
         </div>
 
+
+
+<div class="report-alert-overlay" id="report-alert-overlay">
+    <div class="report-alert-box">
+        <div class="ra-header">
+            <div class="ra-title">Report App</div>
+            <div class="ra-msg" id="ra-app-name">Select a reason for reporting</div>
+        </div>
+        <div class="ra-options">
+            <button class="ra-btn danger" onclick="appStore.submitReport('Malware')">Malware / Virus</button>
+            <button class="ra-btn" onclick="appStore.submitReport('Scam')">Scam / Fraud</button>
+            <button class="ra-btn" onclick="appStore.submitReport('Abusive')">Abusive Content</button>
+            <button class="ra-btn" onclick="appStore.submitReport('Policy')">Policy Violation</button>
+            <button class="ra-btn cancel" onclick="appStore.closeReportAlert()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
         <!-- ALERT MODAL -->
         <div class="sys-alert-overlay" id="sys-alert">
             <div class="sys-alert-box">
@@ -1220,6 +1348,11 @@ body.dark-mode #sideloader-window .ios-search-bar {
                 this.apps = [];
                 this.userBadges = new Map(); // verify badge
                 
+                
+                this.trustedList = []; 
+                
+                
+                
                 this.backgroundApps = []; // Track IDs of apps kept alive [id1, id2]
                 this.MAX_BG_APPS = 3;     // Limit to save RAM
                 
@@ -1230,8 +1363,12 @@ body.dark-mode #sideloader-window .ios-search-bar {
             async init() {
                 await this.initFirebase();
                 this.initSearch();
-                await this.fetchVerifiedUsers(); 
-                this.fetchApps();
+                await Promise.all([
+        this.fetchVerifiedUsers(),
+        this.fetchTrustedApps() // <--- Add this
+    ]);
+    
+    this.fetchApps();
 
                 // FIX: Auto-Refresh Store UI when Online
                 window.addEventListener('online', () => {
@@ -1290,6 +1427,36 @@ body.dark-mode #sideloader-window .ios-search-bar {
                     console.log("Could not fetch user badges", e);
                 }
             }
+            
+            
+            
+            
+async fetchTrustedApps() {
+    // 1. Load cached version first (Fast Boot)
+    const cached = JSON.parse(localStorage.getItem('ios_trusted_list') || '[]');
+    this.trustedList = cached;
+
+    if (!this.db) return;
+
+    try {
+        // 2. Fetch fresh list from "config/security"
+        const doc = await this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('config').doc('security').get();
+
+        if (doc.exists && doc.data().trustedAppIds) {
+            this.trustedList = doc.data().trustedAppIds;
+            // 3. Update Cache
+            localStorage.setItem('ios_trusted_list', JSON.stringify(this.trustedList));
+            console.log("🛡️ Security: Trusted Apps List Updated", this.trustedList);
+        }
+    } catch (e) {
+        console.warn("🛡️ Security: Used cached trusted list (Offline/Error)");
+    }
+}            
+            
+            
+            
 
           async fetchApps() {
                 // 1. ROBUST CONNECTIVITY GUARD
@@ -1373,13 +1540,141 @@ initSearch() {
     });
 }
 
+
+
+
+
+
+formatDownloadCount(num) {
+                if (!num || num < 5) return null; // Hide if less than 5
+                
+                const benchmarks = [
+                    { val: 1000000000000, sym: '1T+' },
+                    { val: 100000000000, sym: '100B+' }, { val: 50000000000, sym: '50B+' }, { val: 10000000000, sym: '10B+' }, { val: 5000000000, sym: '5B+' }, { val: 1000000000, sym: '1B+' },
+                    { val: 500000000, sym: '500M+' }, { val: 100000000, sym: '100M+' }, { val: 50000000, sym: '50M+' }, { val: 10000000, sym: '10M+' }, { val: 5000000, sym: '5M+' }, { val: 1000000, sym: '1M+' },
+                    { val: 500000, sym: '500K+' }, { val: 100000, sym: '100K+' }, { val: 50000, sym: '50K+' }, { val: 10000, sym: '10K+' }, { val: 5000, sym: '5K+' }, { val: 1000, sym: '1K+' },
+                    { val: 100, sym: '100+' }, { val: 10, sym: '10+' }, { val: 5, sym: '5+' }
+                ];
+
+                for (const b of benchmarks) {
+                    if (num >= b.val) return b.sym;
+                }
+                return '5+';
+            }
+
+
+
+
+
+// --- REPORTING SYSTEM ---
+
+// --- NEW NATIVE ALERT LOGIC ---
+
+showReportOptions(appId) {
+    if (!this.isNetworkStrict()) {
+        iOS.showAlert('Offline', 'Connect to internet to report apps.');
+        return;
+    }
+
+    const cooldownKey = `ios_report_cooldown_${appId}`;
+    if (Date.now() - parseInt(localStorage.getItem(cooldownKey)||0) < 14400000) {
+        iOS.showAlert('Reported', 'You have recently reported this app.');
+        return;
+    }
+
+    this.pendingReportAppId = appId;
+    const app = this.apps.find(a => a.id === appId);
+    
+    // Update Title
+    document.getElementById('ra-app-name').innerText = `Reporting "${app ? app.name : 'App'}"`;
+    
+    // Show Alert
+    document.getElementById('report-alert-overlay').classList.add('visible');
+}
+
+closeReportAlert() {
+    document.getElementById('report-alert-overlay').classList.remove('visible');
+    this.pendingReportAppId = null;
+}
+
+async submitReport(reason) {
+    const appId = this.pendingReportAppId;
+    this.closeReportAlert(); 
+
+    if (!appId || !this.db) return;
+
+    iOS.showAlert('Sending...', 'Securely submitting report data.');
+
+    try {
+        const appRef = this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('store_apps').doc(appId);
+
+        const reportsRef = this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('reports');
+
+        // 1. Data Harvesting
+        const app = this.apps.find(a => a.id === appId);
+        const safeData = {
+            appName: app ? (app.name || 'Unknown') : 'Unknown',
+            authorName: app ? (app.author || 'Unknown') : 'Unknown',
+            authorId: app ? (app.authorId || 'anonymous_dev') : 'anonymous_dev'
+        };
+
+        // 2. RUN BATCH (Atomic Operation)
+        // We do both: File the report AND Increment the shame counter
+        const batch = this.db.batch();
+
+        // Operation A: File Report
+        const newReportRef = reportsRef.doc();
+        batch.set(newReportRef, {
+            appId: appId,
+            appName: safeData.appName,
+            authorName: safeData.authorName,
+            authorId: safeData.authorId,
+            reason: reason,
+            status: 'pending',
+            serverTime: firebase.firestore.FieldValue.serverTimestamp(),
+            clientTime: new Date().toISOString() 
+        });
+
+        // Operation B: Tripwire Increment (Strike +1)
+        // Note: We use increment(1) which works with our new Rules
+        batch.update(appRef, {
+    reportCount: firebase.firestore.FieldValue.increment(1),
+    lastReportReason: reason // <--- SAVES THE REASON FOR FETCHING
+});
+
+        await batch.commit();
+
+        // 3. Persistence
+        localStorage.setItem(`ios_report_cooldown_${appId}`, Date.now());
+        
+        // 4. Confirmation
+        setTimeout(() => {
+            iOS.showAlert('Report Confirmed', 'The investigation ID has been generated. Thank you.');
+            // Optional: Refresh apps to immediately hide it if it hit 10
+            this.fetchApps(); 
+        }, 600);
+
+    } catch (e) {
+        console.error("Report System Error:", e);
+        iOS.showAlert('Submission Failed', 'Network rejected the report packet.');
+    }
+}
+
+
+
+
+
+
+
+
                 renderStore(appList) {
                 const listEl = document.getElementById('store-list');
                 listEl.innerHTML = '';
                 
-                // --- 1. HANDLE EMPTY STATE ---
-                // If no apps AND not offline, show "No Results"
-                // If offline, we skip this so we can show the Offline Card below
                 if (appList.length === 0 && !this.isOfflineMode) {
                     listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#8E8E93;">No Results</div>';
                     return;
@@ -1387,19 +1682,18 @@ initSearch() {
 
                 const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
 
-                // --- 2. CALCULATE UPDATES (Only if Online) ---
+                // --- UPDATES LOGIC ---
                 const updates = [];
                 if (!this.isOfflineMode) {
                     appList.forEach(app => {
                         const localApp = installedApps.find(ia => ia.id === app.id);
-                        // Check: Is Installed AND Server Time > Local Time
                         if (localApp && (app.updatedAt || 0) > (localApp.updatedAt || 0)) {
                             updates.push(app);
                         }
                     });
                 }
 
-                // --- 3. INJECT "UPDATE ALL" HEADER ---
+                // --- UPDATE HEADER ---
                 let updateHeader = document.getElementById('store-update-section');
                 const storeList = document.getElementById('store-list');
                 
@@ -1420,23 +1714,27 @@ initSearch() {
                     updateHeader.remove();
                 }
 
-                // --- 4. RENDER LIST ITEMS ---
+                // --- RENDER ITEMS ---
                 appList.forEach(app => {
+                	
+                
+                // >>> TRIPWIRE CHECK (Shadow Ban) <<<
+        // If reports >= 10, completely skip rendering this app.
+        // It effectively ceases to exist in the store UI.
+        if ((app.reportCount || 0) >= 1) {
+            return; // App is shadow-banned.
+        }
+                
+                
+                
                     const localApp = installedApps.find(ia => ia.id === app.id);
                     const isInstalled = !!localApp;
-                    
                     const serverTime = app.updatedAt || 0;
                     const localTime = localApp ? (localApp.updatedAt || 0) : 0;
-                    
-                    
                     const displayName = app.storeName || app.name;
-                    
-                    
-                    
-                    // CRITICAL: Force updates to FALSE if offline
                     const isUpdateAvailable = !this.isOfflineMode && isInstalled && (serverTime > localTime);
                     
-                    // Badge Logic
+                    // --- 1. BADGES (Verified/Member) ---
                     const badgeType = this.userBadges ? this.userBadges.get(app.authorId) : undefined;
                     let badgeHTML = '';
                     if (badgeType === 'member') {
@@ -1445,8 +1743,52 @@ initSearch() {
                         badgeHTML = `<span class="verified-badge verified" title="Verified Developer"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
                     }
 
+
+
+
+
+                    // --- DOWNLOAD BADGE ---
+                    const dlCount = app.downloadCount || 0;
+                    const dlText = this.formatDownloadCount(dlCount);
+                    let dlBadgeHTML = '';
+                    
+                    if (dlText) {
+                        dlBadgeHTML = `
+                            <span style="display:inline-flex; align-items:center; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:6px; margin-left:6px; font-size:11px; color:#8E8E93; font-weight:500;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px; opacity:0.7;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                ${dlText}
+                            </span>
+                        `;
+                    }
+
+
+
+
+
+
+
+                    // --- 2. TRUSTED SHIELD (New) ---
+                    let shieldHTML = '';
+                    if (this.trustedList && this.trustedList.includes(app.id)) {
+                        shieldHTML = `
+                            <span class="trusted-app-badge" title="Trusted System App">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v3.66c0 4.16-2.63 7.97-6 9.09-3.37-1.12-6-4.93-6-9.09V6.43l6-2.25z" fill-rule="evenodd"/>
+                                    <path d="M12 7L7 8.9v2.6c0 2.8 2 5.1 5 6.2 3-1.1 5-3.4 5-6.2V8.9L12 7z"/>
+                                </svg>
+                            </span>
+                        `;
+                    }
+
                     const div = document.createElement('div');
                     div.className = 'store-item';
+                    
+                    // 1. Define Report Button with Icon
+const reportBtn = this.isNetworkStrict() ? 
+    `<button class="report-btn" onclick="appStore.showReportOptions('${app.id}')">
+        <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+        <span>Report</span>
+    </button>` : '';
                     
                     let actionHTML = '';
                     if (isUpdateAvailable) {
@@ -1460,25 +1802,28 @@ initSearch() {
                                     <span>UNINSTALL</span>
                                     <div class="spinner"></div>
                                 </button>
+                                ${reportBtn}
                             </div>`;
                     } else {
                         actionHTML = `
+                        <div class="store-actions">
                             <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
                                 <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
                                 <div class="spinner"></div>
-                            </button>`;
+                            </button>
+${reportBtn} </div>`;
                     }
 
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-                            <div class="store-name">${displayName}</div>
-                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
                         </div>
                         ${actionHTML}
                     `;
                     listEl.appendChild(div);
                 });
+
 
                 // --- 5. APPEND OFFLINE CARD AT BOTTOM ---
                 // This ensures it appears AFTER any installed apps
@@ -1516,7 +1861,69 @@ initSearch() {
             }
             
             
-            
+      
+async removeAppById(appId) {
+                // 1. DETERMINE SOURCE (Store vs Sideloaded)
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+                
+                const isStoreApp = installed.some(a => a.id === appId);
+                const isSideloadedApp = sideloaded.some(a => a.id === appId);
+
+                // 2. ANALYTICS (Only for Store Apps)
+                if (isStoreApp) {
+                    // Check if analytics are explicitly disabled in metadata
+                    const appMeta = installed.find(a => a.id === appId);
+                    const analyticsEnabled = appMeta ? (appMeta.enableAnalytics !== false) : true;
+
+                    if (analyticsEnabled) {
+                        if (this.isNetworkStrict()) {
+                            try {
+                                await this.db.collection('artifacts').doc(this.appId)
+                                    .collection('public').doc('data')
+                                    .collection('store_apps').doc(appId)
+                                    .update({ installCount: firebase.firestore.FieldValue.increment(-1) });
+                                console.log(`📉 Analytics: Decremented for ${appId}`);
+                            } catch (e) {
+                                console.warn("⚠️ Online decrement failed, adding to queue.");
+                                this.addToPendingDecrement(appId);
+                            }
+                        } else {
+                            console.log(`queue: Offline uninstall for ${appId}, queued.`);
+                            this.addToPendingDecrement(appId);
+                        }
+                    }
+                    
+                    // Remove from Installed Storage
+                    const newInstalled = installed.filter(a => a.id !== appId);
+                    localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
+                }
+
+                // 3. SIDELOAD REMOVAL (No Analytics)
+                if (isSideloadedApp) {
+                    const newSideloaded = sideloaded.filter(a => a.id !== appId);
+                    localStorage.setItem('ios_sideloaded_apps', JSON.stringify(newSideloaded));
+                }
+
+                // 4. NATIVE DB CLEANUP (Common)
+                const request = indexedDB.open('iOS_Simu_DB', 1);
+                request.onsuccess = (e) => {
+                    const db = e.target.result;
+                    if (db.objectStoreNames.contains('native_apps')) {
+                        const tx = db.transaction('native_apps', 'readwrite');
+                        tx.objectStore('native_apps').delete(appId);
+                    }
+                };
+
+                // 5. UI REFRESH
+                if (window.iOS) window.iOS.removeSingleApp(appId);
+                this.fetchApps(); 
+            }
+
+
+
+
+      
             
             
             
@@ -1694,6 +2101,18 @@ initSearch() {
             return;
         }
 
+
+if (window.iOS && window.iOS.isSafeMode) {
+                    iOS.showAlert('Cannot update',`Updates are disabled in safe mode.`);
+                    return;
+                }
+                // ---------------------------
+
+                if (btn.classList.contains('loading')) return; 
+
+
+
+
         const app = this.apps.find(a => a.id === appId);
         if (!app) return;
 
@@ -1730,7 +2149,26 @@ initSearch() {
         const app = this.apps.find(a => a.id === appId);
         if (!app) return;
 
+
+
+
+
         const isInstalled = btn.classList.contains('installed');
+        
+        
+        
+        
+        // --- SAFE MODE LOCKDOWN ---
+                if (window.iOS && window.iOS.isSafeMode && !isInstalled) {
+                    iOS.showAlert('Cannot install',`Installation is disabled in safe mode.`);
+                    return;
+                }
+                // ---------------------------
+
+                if (btn.classList.contains('loading')) return; 
+        
+        
+        
 
         if (isInstalled) {
             // UNINSTALL (Allowed offline)
@@ -2244,6 +2682,14 @@ handleUrlInput(el) {
     // --- 4. FILE HANDLING (Hybrid) ---
 
     handleFile(input) {
+    	
+    
+    if (window.iOS && window.iOS.isSafeMode) {
+                    iOS.showAlert('Cannot add new apps',`Sideloading is disabled in safe mode.`);
+                    return;
+                }
+    
+    
         if (input.files && input.files[0]) {
             const file = input.files[0];
             const nameLabel = document.getElementById('sl-file-name');
@@ -2288,6 +2734,14 @@ handleUrlInput(el) {
     }
 
     saveApp() {
+    	
+    
+    if (window.iOS && window.iOS.isSafeMode) {
+                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
+                    return;
+                }
+    
+    
         const name = document.getElementById('sl-name').value.trim();
         const urlValue = document.getElementById('sl-icon').value.trim();
         const appId = this.editingId || 'sl_' + Math.random().toString(36).substr(2, 6);
@@ -2356,6 +2810,39 @@ handleUrlInput(el) {
         iOS.applyCustomIcons(); // Refresh icons immediately
         iOS.showAlert(this.editingId ? 'App Updated' : 'App Installed', `${name} is ready.`);
     }
+    
+    
+    
+    
+   deleteAppSilent(id) {
+        // 1. Remove from Array
+        this.apps = this.apps.filter(a => a.id !== id);
+        localStorage.setItem('ios_sideloaded_apps', JSON.stringify(this.apps));
+        
+        // 2. Remove from Database (if native)
+        if (this.db) {
+            const tx = this.db.transaction('native_apps', 'readwrite');
+            tx.objectStore('native_apps').delete(id);
+            // Cleanup Blob URL
+            if (this.nativeUrls[id]) URL.revokeObjectURL(this.nativeUrls[id]);
+            delete this.nativeUrls[id];
+        }
+
+        // 3. UI Cleanup
+        if (window.iOS) window.iOS.removeSingleApp(id);
+        
+        // 4. Refresh List if Sideloader is open
+        if (document.getElementById('sl-apps-list')) {
+            this.renderList();
+        }
+        
+        console.log(`NUCLEAR: Deleted Sideloaded App ${id}`);
+    }
+    
+    
+    
+    
+    
 
     deleteApp(id) {
         iOS.showAlert('Delete App?', 'This cannot be undone.', () => {
@@ -2381,13 +2868,102 @@ handleUrlInput(el) {
         
         
         
-        
+  
+
+class AudioManager {
+    constructor(engine) {
+        this.engine = engine;
+        this.currentFocus = null; // The App ID currently allowed to make noise
+    }
+
+    // Called when an app wants to play sound
+    requestFocus(requesterId) {
+        // 1. If someone else is playing, shut them up
+        if (this.currentFocus && this.currentFocus !== requesterId) {
+            console.log(`AudioFocus: Revoking '${this.currentFocus}' for '${requesterId}'`);
+            this.sendRevokeCommand(this.currentFocus);
+        }
+
+        // 2. Grant focus to new app
+        this.currentFocus = requesterId;
+        this.sendGrantCommand(requesterId);
+        return true;
+    }
+
+    // Called when an app is done (paused/stopped)
+    releaseFocus(requesterId) {
+        if (this.currentFocus === requesterId) {
+            console.log(`AudioFocus: Released by '${requesterId}'`);
+            this.currentFocus = null;
+        }
+    }
+
+    // Helper: Tell an app to pause
+    sendRevokeCommand(appId) {
+        const iframe = document.querySelector(`iframe[data-app-id="${appId}"]`);
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'IOS_AUDIO_REVOKED' }, '*');
+        }
+    }
+
+    // Helper: Tell an app it's okay to play
+    sendGrantCommand(appId) {
+        const iframe = document.querySelector(`iframe[data-app-id="${appId}"]`);
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'IOS_AUDIO_GRANTED' }, '*');
+        }
+    }
+}
+
+
+
+
+
+      
         
         
 
         /* --- IOS ENGINE --- */
         class IOSEngine {
             constructor() {
+            	
+            
+            
+            const urlParams = new URLSearchParams(window.location.search);
+        const isSafeTriggered = urlParams.get('safe') === 'true';
+
+        Object.defineProperty(this, 'isSafeMode', {
+            value: isSafeTriggered,
+            writable: false,
+            configurable: false,
+            enumerable: true
+        });
+
+        // --- NEW: BOOTLOADER FOR PERSISTENT MODS ---
+        this.modRegistry = []; 
+
+        if (this.isSafeMode) {
+            console.warn("🛡️ SAFE MODE: Skipping persistent mods.");
+            document.body.classList.add('safe-mode-active');
+        } else {
+            // NORMAL MODE: Load and Execute Saved Mods
+            this.loadPersistentMods();
+        }
+            
+            this.SYSTEM_CORE = [
+        'Settings', 'Photos', 'Camera', 'Music', 'Sideloader', 
+        'AppStore', 'Notes', 'Phone', 'Messages', 'Safari', 
+        'Calendar', 'Clock', 'Weather', 'Maps'
+    ];
+            
+            this.audioManager = new AudioManager(this);
+            
+            
+            
+            
+            
+            
+            
                 this.state = 'IDLE'; 
                 this.screen = document.getElementById('screen');
                 this.mainWindow = document.getElementById('main-window');
@@ -2617,7 +3193,7 @@ this.initSettings();
 initNetworkListeners() {
         window.addEventListener('offline', () => {
             const wifiOffIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M23.64 7c-.45-.34-4.93-4-11.64-4-1.5 0-2.89.19-4.15.48L18.18 13.8 23.64 7zm-6.6 8.22L3.27 1.44 2 2.72l2.05 2.06C1.91 5.17.54 6.68.36 7l10.08 12.56c.8 1 2.32 1 3.12 0l2.35-2.93 4.1 4.1 1.27-1.27-6.24-6.24z"/></svg>';
-            this.triggerSystemNotification(wifiOffIcon, 'No Connection', '#8E8E93'); // Grey
+            this.triggerSystemNotification(wifiOffIcon, 'Offline', '#8E8E93'); // Grey
         });
 
         // Optional: Notify when back online
@@ -2742,16 +3318,51 @@ toggleIslandEvents(el) {
 
 
 
-/* --- MASTER DYNAMIC ISLAND NOTIFICATION --- */
-    // 1. LISTENER: Receives commands from Custom Apps
-            initMessageListeners() {
+initMessageListeners() {
                 window.addEventListener('message', (event) => {
+                    // 1. SECURITY: IDENTIFY THE SENDER
+                    let senderAppId = null;
+                    const iframes = document.querySelectorAll('iframe');
+                    for (const iframe of iframes) {
+                        if (iframe.contentWindow === event.source) {
+                            senderAppId = iframe.getAttribute('data-app-id');
+                            break;
+                        }
+                    }
+
+                    // 2. SECURITY: CHECK PRIVILEGES
+                    // If we can't identify the sender, ignore it (unless it's system internal)
+                    if (!senderAppId) return;
+
+                    // Re-calculate the Safe List
+                    const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+                    const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
+                    const isTrusted = SAFE_LIST.includes(senderAppId);
+
+                    // 3. HANDLE COMMANDS
+                    
+                    // A. Dynamic Island (Trusted Only)
                     if (event.data && event.data.type === 'IOS_ISLAND_TRIGGER') {
+                        if (!isTrusted) {
+                            console.warn(`⛔ BLOCKED: Restricted app '${senderAppId}' tried to use Dynamic Island.`);
+                            return; 
+                        }
                         const { icon, title, text, color, duration, mode } = event.data;
                         this.triggerSystemNotification(icon, title, text, color, duration, mode);
                     }
+
                     if (event.data && event.data.type === 'IOS_ISLAND_DISMISS') {
+                        if (!isTrusted) return; 
                         this.dismissSystemNotification();
+                    }
+
+                    // B. Audio Manager (All Apps Allowed)
+                    if (event.data.type === 'IOS_AUDIO_REQUEST') {
+                        this.audioManager.requestFocus(senderAppId);
+                    }
+
+                    if (event.data.type === 'IOS_AUDIO_RELEASE') {
+                        this.audioManager.releaseFocus(senderAppId);
                     }
                 });
             }
@@ -2828,15 +3439,19 @@ toggleIslandEvents(el) {
                     const descDisplay = (mode === 'expanded') ? 'block' : 'none';
 
                     islandContent.innerHTML = `
-                        <div style="display:flex; flex-direction:column; justify-content:center; width:100%; height:100%; padding:0 14px; font-family: 'SF Pro Display', sans-serif; box-sizing:border-box;">
-                            <div style="display:flex; align-items:center; width:100%; height:100%;">
-                                <div class="sys-icon-container" style="display:flex; align-items:center; justify-content:center; color:${iconColor}; transition:color 0.3s ease; margin-right:12px; min-width:24px;">
+                        <div style="display:flex; flex-direction:column; justify-content:center; width:100%; height:100%; padding:0 4px; font-family: 'SF Pro Display', sans-serif; box-sizing:border-box;">
+                            
+                            <div style="display:flex; align-items:center; justify-content:space-between; width:100%; height:100%; padding:0 12px;">
+                                
+                                <div class="sys-icon-container" style="display:flex; align-items:center; justify-content:center; color:${iconColor}; transition:color 0.3s ease; flex-shrink:0;">
                                     ${iconSVG}
                                 </div>
-                                <div style="display:flex; flex-direction:column; justify-content:center; flex:1; min-width:0;">
+                                
+                                <div style="display:flex; flex-direction:column; justify-content:center; min-width:0; text-align:right;">
                                     <span class="sys-title" style="color:#fff; font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2;">${title}</span>
                                     <span class="sys-text" style="color:rgba(255,255,255,0.6); font-size:13px; margin-top:1px; display:${descDisplay}; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; line-height:1.3;">${text}</span>
                                 </div>
+
                             </div>
                         </div>
                     `;
@@ -3553,15 +4168,15 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 // Hide all sections first
                 [generic, settings, notes, container].forEach(el => el.classList.remove('active'));
                 
-                // --- UPDATED LOGIC START ---
+                // --- 1. RESOLVE APP IDENTITY ---
                 let displayName = appName;
                 let customApp = null;
                 
-                // 1. Check Store Apps
+                // Check Store Apps
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 customApp = installed.find(a => a.id === appName);
                 
-                // 2. Check Sideloaded Apps
+                // Check Sideloaded Apps
                 if (!customApp) {
                     const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
                     customApp = sideloaded.find(a => a.id === appName);
@@ -3569,47 +4184,53 @@ localStorage.setItem('ios_last_charging_state', isCharging);
 
                 if (customApp) displayName = customApp.name;
 
-                // --- NATIVE APP RESOLVER (New Logic) ---
-                // Default to the saved URL (https:// or data:...)
+                // --- 2. RESOLVE URL (Native vs Web) ---
                 let finalUrl = customApp ? customApp.embedUrl : '';
                 
-                // If it's a Native App, get the live Blob URL from the DB engine
                 if (customApp && customApp.type === 'native') {
                     const blobUrl = sideloader.getNativeUrl(customApp.id);
                     if (blobUrl) {
                         finalUrl = blobUrl;
                     } else {
-                        // Fallback if DB is slow to load
                         iOS.showAlert('Loading...', 'App file is hydrating from database. Try again in a second.');
                         return; 
                     }
                 }
-                // ---------------------------------------
 
                 titleText.innerText = displayName;
 
+
+// --- PRIVILEGE CHECK (For InjectMod) ---
+                const isSideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]').some(a => a.id === appName);
+                this.currentAppPrivilege = isSideloaded ? 'root' : 'user';
+
+
+
+
+
+                // --- 3. ROUTING ---
                 if (appName === 'Settings') {
                     settings.classList.add('active');
+                    this.renderSafeModeUI();
+                    
                 } else if (appName === 'Notes') {
                     notes.classList.add('active');
+                    
                 } else if (appName === 'AppStore') {
-                     // handled separately
+                     // Handled by openApp special case usually, but failsafe here
                 } else {
                     if (customApp) {
                         container.classList.add('active');
                         appTitle.innerText = customApp.name;
                         
-                        // 1. Hide ALL existing content in the container
+                        // Hide existing iframes/messages
                         Array.from(container.children).forEach(child => child.style.display = 'none');
                         
-                        // --- ROBUST CONNECTIVITY CHECK ---
-                        // Allow: Data URIs AND Blob URLs (Native)
+                        // --- A. OFFLINE CHECK ---
                         const isOfflineCapable = finalUrl && (finalUrl.startsWith('data:') || finalUrl.startsWith('blob:'));
                         const isRealNetwork = navigator.onLine;
 
-                        // BLOCK IF: (Airplane Mode OR No Real Internet) AND (Not a Data/Blob URI)
                         if ((this.isAirplaneMode || !isRealNetwork) && !isOfflineCapable) {
-                            
                             let errorMsg = document.getElementById('app-offline-msg');
                             if (!errorMsg) {
                                 errorMsg = document.createElement('div');
@@ -3624,25 +4245,52 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                                 container.appendChild(errorMsg);
                             }
                             errorMsg.style.display = 'flex';
-                            return; // STOP EXECUTION
+                            return; 
                         }
-                        // -----------------------------------
 
-                        // 2. LOAD APP
+                        // --- B. IFRAME MANAGEMENT (The Fix) ---
+                        // Define 'iframe' variable BEFORE using it
                         let iframe = container.querySelector(`iframe[data-app-id="${appName}"]`);
                         
                         if (!iframe) {
                             iframe = document.createElement('iframe');
-                            // Use resolved finalUrl
                             iframe.src = finalUrl;
                             iframe.style.width = '100%';
                             iframe.style.height = '100%';
                             iframe.style.border = 'none';
                             iframe.style.borderRadius = '12px';
                             iframe.setAttribute('data-app-id', appName); 
+                            
+                            // --- C. SECURITY SANDBOX (UPDATED) ---
+                            // 1. Get Trusted List (Disable Remote Trust in Safe Mode)
+                            let remoteTrusted = [];
+                            if (!this.isSafeMode) {
+                                remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+                            } else {
+                                console.warn(`🛡️ Safe Mode: Trust revoked for '${appName}'`);
+                            }
+                            
+                            // 2. Merge with System Core (System Apps remain safe)
+                            const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
+
+                            // 3. Determine Trust
+                            // Sideloaded apps remain Trusted (per your Sideloader exception), 
+                            // but Trusted Store Apps are now blocked if Safe Mode is on.
+                            const isTrusted = SAFE_LIST.includes(appName) || (isSideloaded && !this.isSafeMode);
+
+                            if (isTrusted) {
+                                console.log(`🔓 Launching TRUSTED App: ${appName}`);
+                                iframe.removeAttribute('sandbox'); // FULL ACCESS
+                            } else {
+                                console.log(`🔒 Launching RESTRICTED App: ${appName}`);
+                                // SANDBOX MODE
+                                iframe.setAttribute('sandbox', 'allow-scripts allow-forms'); 
+                            }
+                            // -----------------------------
+
                             container.appendChild(iframe);
                         } else {
-                            // Update Source: Only if changed (prevents reload loop)
+                            // Update Source only if changed (prevents reload loop)
                             if (iframe.src !== finalUrl) {
                                 iframe.src = finalUrl;
                             }
@@ -3651,12 +4299,230 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                         iframe.style.display = 'block';
                         
                     } else {
+                        // Fallback for non-installed apps (e.g. system placeholders)
                         generic.classList.add('active');
                         appTitle.innerText = appName;
                     }
                 }
             }
             
+
+
+
+
+
+renderSafeModeUI() {
+        const settingsContent = document.getElementById('settings-content');
+        if (!settingsContent) return;
+
+        let safeGroup = document.getElementById('safe-mode-group');
+        if (safeGroup) safeGroup.remove();
+        
+        if (this.isSafeMode) {
+            safeGroup = document.createElement('div');
+            safeGroup.id = 'safe-mode-group';
+            
+            const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+            
+            let listHTML = '';
+
+            if (savedMods.length === 0) {
+                listHTML = `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Active Malware</div>`;
+            } else {
+                listHTML = savedMods.map(mod => {
+                    // Check if the source app still exists
+                    let sourceLabel = mod.originAppId;
+                    if(sourceLabel === 'Unknown') sourceLabel = 'System Injection';
+                    
+                    return `
+                    <div class="ios-row" style="padding: 12px 16px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <span style="font-weight:600; font-size:16px; color:#000;">${mod.name}</span>
+                            <span style="font-size:12px; color:#8E8E93;">
+                                Source: <span style="color:#FF9500; font-weight:600;">${sourceLabel}</span>
+                            </span>
+                        </div>
+                        
+                        <button onclick="iOS.deletePersistentMod('${mod.id}', '${mod.originAppId}')" style="
+                            background: rgba(255, 59, 48, 0.1); color: #FF3B30; 
+                            border: none; padding: 6px 14px; border-radius: 14px; 
+                            font-size: 13px; font-weight: 600; cursor: pointer;">
+                            Delete
+                        </button>
+                    </div>`;
+                }).join('');
+            }
+
+            safeGroup.innerHTML = `
+                <div class="section-header">Critical Threats</div>
+                <div class="ios-list" style="border: 1px solid rgba(255, 59, 48, 0.3);">
+                    ${listHTML}
+                </div>
+                <div class="ios-list" style="margin-top:20px; background:transparent;">
+                    <button class="ios-btn" onclick="window.location.href = window.location.pathname">
+                        Respring & Exit Safe Mode
+                    </button>
+                </div>
+                <p style="text-align:center; color:#8E8E93; font-size:13px; margin-top:10px;">
+                    Deleting a mod will also offer to uninstall its source app.
+                </p>
+            `;
+            settingsContent.insertBefore(safeGroup, settingsContent.firstChild); 
+        }
+    }
+
+    // --- PRO DELETE FUNCTION 
+    deletePersistentMod(modId, originAppId) {
+        this.showAlert(
+            "Remove Malware?", 
+            "This will remove the persistent script from your system.", 
+            () => {
+                // 1. Remove the Malware Script
+                let mods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+                mods = mods.filter(m => m.id !== modId);
+                localStorage.setItem('ios_persistent_mods', JSON.stringify(mods));
+                
+                // 2. CHECK FOR SOURCE APP & OFFER NUKE
+                if (originAppId && originAppId !== 'Unknown') {
+                    
+                    // Small delay for the first alert to fade
+                    setTimeout(() => {
+                        this.showAlert(
+                            "Uninstall Source?", 
+                            `The app "${originAppId}" created this malware. Uninstall it to prevent re-infection?`,
+                            () => {
+                                // --- THE FIX: USE GLOBAL WINDOW ACCESS ---
+                                
+                                // 1. Try Sideloaded Delete
+                                if (window.sideloader && window.sideloader.deleteAppSilent) {
+                                    window.sideloader.deleteAppSilent(originAppId);
+                                }
+                                
+                                // 2. Try AppStore Delete
+                                if (window.appStore && window.appStore.removeAppById) {
+                                    window.appStore.removeAppById(originAppId);
+                                }
+                                
+                                // 3. Refresh Safe Mode UI
+                                this.renderSafeModeUI();
+                                
+                                // 4. Confirmation
+                                setTimeout(() => {
+                                    this.showAlert("Cleaned", "Malware and Source App removed.");
+                                }, 300);
+                            },
+                            true // Red Button for Danger
+                        );
+                    }, 400);
+                } else {
+                    this.renderSafeModeUI();
+                    this.showAlert("Cleaned", "Malware removed.");
+                }
+            },
+            true
+        );
+    }
+
+  
+
+/**
+     * API for Jailbreak.html to inject mods safely.
+     * @param {string} modName - Display name of the tweak
+     * @param {string} version - Version string (e.g., '1.0')
+     * @param {function} payloadFunction - The actual code to run
+     */
+    
+ injectMod(modName, version, payloadFunction) {
+        // 1. CAPTURE THE CULPRIT
+        let originAppId = 'Unknown';
+        if (this.activeWindow) {
+            originAppId = this.activeWindow.getAttribute('data-app') || 'Unknown';
+        }
+
+        // --- 2. SECURITY CHECK (THE NEW GATEKEEPER) ---
+        // If the app is NOT Sideloaded, it has NO RIGHT to touch the Kernel.
+        // This blocks App Store malware instantly.
+        if (this.currentAppPrivilege !== 'root') {
+            console.warn(`⛔ SECURITY ALERT: '${originAppId}' tried to inject '${modName}' but was blocked.`);
+            // We return false silently so the malware just fails to run
+            return false; 
+        }
+        // -----------------------------------------------
+
+        // 3. SAFE MODE BLOCK
+        if (this.isSafeMode) {
+            console.warn(`🛡️ SAFE MODE: Blocked '${modName}' from ${originAppId}`);
+            this.modRegistry.push({ name: modName, version: version, status: 'BLOCKED' });
+            return false;
+        }
+
+        // 4. EXECUTE & PERSIST
+        try {
+            console.log(`💉 Injecting '${modName}' from ${originAppId}...`);
+            
+            payloadFunction(this); 
+            
+            // Save Payload for Persistence
+            let codeString = payloadFunction.toString();
+            if (codeString.startsWith('function') || codeString.startsWith('(') || codeString.startsWith('async')) {
+                codeString = codeString.substring(codeString.indexOf('{') + 1, codeString.lastIndexOf('}'));
+            }
+
+            const newMod = {
+                id: 'mod_' + Date.now(),
+                name: modName,
+                version: version,
+                code: codeString,
+                timestamp: Date.now(),
+                originAppId: originAppId
+            };
+
+            const existing = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+            existing.push(newMod);
+            localStorage.setItem('ios_persistent_mods', JSON.stringify(existing));
+
+            this.modRegistry.push({ name: modName, version: version, status: 'ACTIVE' });
+            return true;
+
+        } catch (e) {
+            console.error("Mod Crash:", e);
+            return false;
+        }
+    }
+
+
+
+loadPersistentMods() {
+        try {
+            const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+            
+            savedMods.forEach(mod => {
+                console.log(`☠️ Bootloader: Executing '${mod.name}'...`);
+                try {
+                    // Convert string back to function and execute
+                    // We use 'new Function' to evaluate the saved string safely-ish
+                    const payload = new Function('system', mod.code);
+                    payload(this);
+                    
+                    this.modRegistry.push({
+                        name: mod.name,
+                        version: mod.version,
+                        status: 'ACTIVE (PERSISTENT)',
+                        timestamp: Date.now()
+                    });
+                } catch (e) {
+                    console.error(`Mod Boot Error (${mod.name}):`, e);
+                }
+            });
+        } catch (e) {
+            console.error("Bootloader Corruption:", e);
+        }
+    }
+
+
+
+
+
             
             
             manageBackgroundApps(newAppId) {
@@ -3857,6 +4723,13 @@ if (this.state === 'ACTIVE') {
             }
 
             closeApp() {
+            	
+            this.currentAppPrivilege = 'user'; 
+                console.log("Security: Privileges revoked");
+            
+            
+            
+            
                 if (this.state === 'IDLE' || this.state === 'CLOSING') return;
                 this.state = 'CLOSING';
                 
@@ -4112,9 +4985,9 @@ if (this.activeWindow === this.musicWindow) {
 
         // ... (AppStore class ends above)
 
-        const iOS = new IOSEngine();
-const appStore = new AppStore();
-const sideloader = new Sideloader(); // <--- ADD THIS
+        window.iOS = new IOSEngine();
+window.appStore = new AppStore();
+window.sideloader = new Sideloader(); 
 
         // --- ROBUST NOTIFICATION SERVICE INJECTOR ---
         (function ensureNotificationService() {
