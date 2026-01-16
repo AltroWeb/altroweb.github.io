@@ -469,6 +469,200 @@
 
         .loading-spinner { text-align: center; padding: 60px 20px; color: var(--sub-text); font-weight: 500; }
 
+
+
+
+/* --- DEVELOPER PROFILE CARD --- */
+.dev-profile-card {
+    position: relative;
+    display: none;      /* Hidden by default */
+    align-items: center;
+    /* Left padding = 68px to clear the Back Button */
+    padding: 24px 24px 24px 68px; 
+    margin: 0 20px 20px 20px;
+    background: var(--secondary-bg);
+    border-radius: 22px;
+    gap: 20px;
+    
+    animation: fadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+/* Back Button (Absolute Left) */
+.dev-back-btn {
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(120, 120, 128, 0.08);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--accent-color);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+.dev-back-btn:active {
+    background: rgba(120, 120, 128, 0.2);
+    
+}
+.dev-back-btn svg {
+    width: 18px; 
+    height: 18px;
+    margin-right: 2px; /* Optical center adjustment for arrow */
+}
+
+/* Avatar Styling */
+.dev-avatar {
+    width: 64px; 
+    height: 64px;
+    border-radius: 50%;
+    background: #007AFF;
+    color: white;
+    font-size: 28px; 
+    font-weight: 700;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    flex-shrink: 0; 
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Text Info */
+.dev-info { 
+    flex: 1; 
+    min-width: 0; /* Prevents text overflow issues */
+}
+
+.dev-name { 
+    font-size: 22px; 
+    font-weight: 700; 
+    margin: 0 0 4px 0; 
+    color: var(--text-color); 
+    display: flex; 
+    align-items: center; 
+    flex-wrap: nowrap; /* Keep badge next to name */
+}
+
+/* Badge Styling (Fixed Distortion) */
+.verified-badge-large {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* CRITICAL: Prevents squashing */
+    width: 24px;
+    height: 24px;
+    margin-left: 6px;
+}
+.verified-badge-large svg {
+    width: 24px !important;
+    height: 24px !important;
+    display: block;
+}
+
+.dev-bio { 
+    font-size: 15px; 
+    color: var(--sub-text); 
+    margin: 0; 
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit bio to 2 lines */
+    -webkit-box-orient: vertical;
+}
+
+/* --- SECTION HEADER --- */
+.dev-section-header {
+    padding: 0 24px 12px 24px; /* Align with card */
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-color);
+    display: none; /* Hidden by default */
+    animation: fadeIn 0.4s ease;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+    .dev-profile-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 48px 24px 24px 24px; /* Extra top padding for button */
+    }
+    .dev-back-btn {
+        top: 16px;
+        left: 16px;
+        transform: none; /* Reset transform */
+    }
+    .dev-name { justify-content: center; }
+}
+
+
+.author-link { 
+    position: relative; z-index: 5;
+    cursor: pointer; transition: color 0.2s;
+}
+.author-link:active { color: #007AFF; }
+
+
+/* --- NEW DEV CARD BUTTON --- */
+.dev-open-btn {
+    margin-top: 20px;
+    margin-bottom: 5px;
+
+    background: rgba(0, 122, 255, 0.1);
+    color: var(--accent-color);
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    
+    /* FIX: Added 20px padding to left/right to prevent text touching borders */
+    padding: 12px 20px; 
+    
+    width: 100%;
+    
+    /* Ensure padding doesn't make the button wider than 100% */
+    box-sizing: border-box; 
+    
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+    
+    /* Optional: Prevent text from wrapping awkwardly on tiny screens */
+    white-space: nowrap; 
+}
+
+.dev-open-btn:hover {
+    background: rgba(0, 122, 255, 0.2);
+}
+
+.dev-open-btn:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+}
+
+/* Dark Mode Adjustment */
+body.dark-mode .dev-open-btn {
+    background: rgba(10, 132, 255, 0.15);
+    color: #409CFF;
+}
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -496,6 +690,29 @@
                 <input type="text" id="store-search-input" placeholder="Games, Apps, Stories">
             </div>
         </div>
+        
+        
+  <div id="dev-profile-card" class="dev-profile-card" style="display: none;">
+    <button class="dev-back-btn" onclick="appStoreWeb.clearSearch()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+    </button>
+
+    <div id="dev-avatar-container"></div>
+    
+    <div class="dev-info">
+        <h1 class="dev-name">
+            <span id="dev-name-text"></span>
+            <span id="dev-badge-container"></span>
+        </h1><br>
+        <p class="dev-bio" id="dev-bio-text">Developer</p><br>
+    </div>
+</div>
+
+<div id="dev-section-header" class="dev-section-header">Apps</div>
+        
+        
 
         <!-- App List -->
         <div class="store-list" id="store-list">
@@ -671,28 +888,69 @@
             }
 
             async fetchApps() {
-                try {
-                    const snap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                    this.apps = [];
-                    snap.forEach(doc => {
-                        const data = doc.data();
-                        if ((data.reportCount || 0) >= 10) return; // Tripwire
-                        this.apps.push({ id: doc.id, ...data });
-                    });
-                    this.renderStore(this.apps);
-                } catch (e) {
-                    document.getElementById('store-list').innerHTML = `<div class="loading-spinner">Could not load apps.<br>Check internet connection.</div>`;
-                }
+    try {
+        const snap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+        this.apps = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            if ((data.reportCount || 0) >= 10) return; 
+            this.apps.push({ id: doc.id, ...data });
+        });
+        
+        // FIX: Do NOT render here. Let checkUrlParams decide what to render.
+        // This prevents showing "All Apps" before filtering kicks in.
+        this.checkUrlParams(); 
+
+    } catch (e) {
+        document.getElementById('store-list').innerHTML = `<div class="loading-spinner">Could not load apps.<br>Check internet connection.</div>`;
+    }
+}
+
+
+
+clearSearch() {
+                // 1. Clear Input
+                const input = document.getElementById('store-search-input');
+                if (input) input.value = '';
+
+                // 2. Hide Dev UI
+                document.getElementById('dev-profile-card').style.display = 'none';
+                document.getElementById('dev-section-header').style.display = 'none';
+
+                // 3. Clean URL (Push State)
+                const url = new URL(window.location);
+                url.search = '';
+                window.history.pushState({}, '', url);
+
+                // 4. Show All Apps
+                this.renderStore(this.apps);
             }
+
+
+
+
 
             // --- LOGIC ---
             checkUrlParams() {
                 const params = new URLSearchParams(window.location.search);
-                const query = params.get('s') || params.get('app');
+                
+                // 1. Get Query
+                let query = params.get('s') || params.get('app');
+                const devParam = params.get('dev'); // Support strict ?dev= param
+
+                // 2. Normalize "dev" param into a search string
+                if (devParam) {
+                    query = `dev:${devParam}`;
+                }
+
+                // 3. Update Search Bar & Filter
                 if (query) {
                     const input = document.getElementById('store-search-input');
-                    input.value = query;
+                    if (input) input.value = query;
                     this.filterApps(query);
+                } else {
+                    // Default Home: Render All Apps
+                    this.renderStore(this.apps);
                 }
             }
 
@@ -702,7 +960,42 @@
             }
 
             filterApps(query) {
-                const term = query.toLowerCase();
+                if (!query) {
+                    this.clearSearch(); // Reset to home if empty
+                    return;
+                }
+
+                const term = query.toLowerCase().trim();
+                const card = document.getElementById('dev-profile-card');
+                const header = document.getElementById('dev-section-header');
+                
+                // --- MODE A: DEVELOPER SEARCH (dev:...) ---
+                if (term.startsWith('dev:')) {
+                    // Extract name (e.g. "dev:Zenith" -> "zenith")
+                    const targetDev = term.substring(4).trim();
+                    
+                    if (targetDev.length > 0) {
+                        // Find apps where Author Name matches (Case Insensitive)
+                        const devApps = this.apps.filter(app => 
+                            (app.author || '').toLowerCase().includes(targetDev)
+                        );
+
+                        if (devApps.length > 0) {
+                            // 1. Update Card (Visuals)
+                            this.updateDevCard(devApps[0]); 
+                            
+                            // 2. Render Apps
+                            this.renderStore(devApps);
+                            return; // Stop here, do not run normal search
+                        }
+                    }
+                }
+
+                // --- MODE B: STANDARD SEARCH ---
+                // Hide Developer Elements
+                if (card) card.style.display = 'none';
+                if (header) header.style.display = 'none';
+
                 const filtered = this.apps.filter(app => {
                     const displayName = (app.storeName || app.name || '').toLowerCase();
                     const author = (app.author || '').toLowerCase();
@@ -710,8 +1003,151 @@
                     
                     return displayName.includes(term) || author.includes(term) || desc.includes(term);
                 });
+
                 this.renderStore(filtered);
             }
+            
+            
+            
+            
+            async updateDevCard(app) {
+    const card = document.getElementById('dev-profile-card');
+    const header = document.getElementById('dev-section-header');
+    
+    const nameEl = document.getElementById('dev-name-text');
+    const bioEl = document.getElementById('dev-bio-text');
+    const avatarEl = document.getElementById('dev-avatar-container');
+    const badgeEl = document.getElementById('dev-badge-container');
+
+    const authorName = app.author || "Unknown";
+    const authorId = app.authorId;
+
+    // --- PHASE 1: INSTANT RENDER ---
+    nameEl.innerText = authorName;
+    bioEl.innerText = app.authorBio || "Developer"; 
+    header.innerText = `Apps by ${authorName}`;
+    
+    // Avatar
+    if (app.authorIcon) {
+        avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar">`;
+    } else {
+        avatarEl.innerHTML = `<div class="dev-avatar">${authorName.charAt(0).toUpperCase()}</div>`;
+    }
+
+    // Badge Logic
+    const badgeType = this.userBadges.get(authorId);
+    if (badgeType === 'member') {
+        badgeEl.innerHTML = `<span class="verified-badge member verified-badge-large"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+    } else if (badgeType === 'verified') {
+        badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg style="width:10px; height:10px;" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+    } else {
+        badgeEl.innerHTML = '';
+    }
+
+    // --- NEW: INJECT OPEN BUTTON ---
+    // Remove existing button if any to prevent duplicates
+    const oldBtn = card.querySelector('.dev-open-btn');
+    if (oldBtn) oldBtn.remove();
+
+    // Create the Link URL
+    const safeName = encodeURIComponent(authorName);
+    const openUrl = `${window.location.origin}/ios-simu-appstore?s=dev:${safeName}`;
+
+    const btn = document.createElement('a');
+    btn.className = 'dev-open-btn';
+    btn.href = openUrl;
+    btn.target = '_blank'; // Open in new tab
+    btn.innerHTML = `
+        <span>Open in Simulator</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+    `;
+    
+    // Append to the dev-info container
+    card.querySelector('.dev-info').appendChild(btn);
+
+    // Show UI
+    card.style.display = 'flex';
+    header.style.display = 'block';
+
+    // --- PHASE 2: LIVE FETCH ---
+    try {
+        const userDoc = await this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('user_info').doc(authorId).get();
+
+        if (userDoc.exists) {
+            const profile = userDoc.data();
+            if (profile.authorBio) bioEl.innerText = profile.authorBio;
+            if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
+                    avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar">`;
+            }
+        }
+    } catch(e) { console.warn(e); }
+}
+            
+            
+  loadDevProfile(devName) {
+    // 1. Case-Insensitive Matching
+    const target = devName.toLowerCase();
+    const devApps = this.apps.filter(app => (app.author || "Unknown").toLowerCase() === target);
+    
+    if (devApps.length === 0) {
+        // If no exact match, try partial match or just return
+        return; 
+    }
+
+    // 2. Get Metadata (Use the author name from the actual app to get correct casing)
+    const metaApp = devApps[0];
+    const realName = metaApp.author; // e.g. "Ferro" instead of "ferro"
+    const authorId = metaApp.authorId;
+    
+    // 3. Populate Card
+    const card = document.getElementById('dev-profile-card');
+    const nameEl = document.getElementById('dev-name-display');
+    const bioEl = document.getElementById('dev-bio-display');
+    const avatarEl = document.getElementById('dev-avatar-container');
+    const badgeEl = document.getElementById('dev-badge-container');
+
+    nameEl.innerText = realName;
+    bioEl.innerText = metaApp.authorBio || "Developer";
+
+    // Avatar
+    if (metaApp.authorIcon) {
+        avatarEl.innerHTML = `<img src="${metaApp.authorIcon}" class="dev-avatar" alt="${realName}">`;
+    } else {
+        const letter = realName.charAt(0).toUpperCase();
+        avatarEl.innerHTML = `<div class="dev-avatar">${letter}</div>`;
+    }
+
+    // Badges
+    const badgeType = this.userBadges.get(authorId);
+    if (badgeType === 'member') {
+        badgeEl.innerHTML = `<span class="verified-badge member" style="margin:0;"><svg width="20" height="20" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+    } else if (badgeType === 'verified') {
+        badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg style="width:10px; height:10px;" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+    } else {
+        badgeEl.innerHTML = '';
+    }
+
+    // 4. Show UI
+    card.style.display = 'flex';
+    
+    // 5. Update Search Bar (Visual Feedback)
+    const searchInput = document.getElementById('store-search-input');
+    if(searchInput) searchInput.value = `dev:${realName}`;
+
+    // 6. Render ONLY developer apps
+    this.renderStore(devApps);
+} 
+            
+            
+            
+            
+            
 
             // --- NATIVE ALERTS ---
             showAlert(title, msg, onOk = null) {
@@ -921,63 +1357,82 @@ const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
 
             // --- FAST RENDERER ---
             renderStore(appList) {
-                const listEl = document.getElementById('store-list');
-                
-                if (appList.length === 0) {
-                    listEl.innerHTML = '<div class="loading-spinner">No results found.</div>';
-                    return;
-                }
+    const listEl = document.getElementById('store-list');
+    
+    // 1. Handle Empty State
+    if (appList.length === 0) {
+        listEl.innerHTML = '<div class="loading-spinner">No results found.</div>';
+        return;
+    }
 
-                // Optimization: Use DocumentFragment
-                const fragment = document.createDocumentFragment();
+    // 2. Optimization: Use DocumentFragment for performance
+    const fragment = document.createDocumentFragment();
 
-                appList.forEach(app => {
-                    const displayName = app.storeName || app.name;
-                    
-                    // Badges
-                    const badgeType = this.userBadges.get(app.authorId);
-                    let badgeHTML = '';
-                    if (badgeType === 'member') badgeHTML = `<span class="verified-badge member"><svg width="14" height="14" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
-                    else if (badgeType === 'verified') badgeHTML = `<span class="verified-badge verified"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
-
-                    let shieldHTML = '';
-                    if (this.trustedList.includes(app.id)) shieldHTML = `<span class="trusted-app-badge">       <svg viewBox="0 0 24 24">
-                                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v3.66c0 4.16-2.63 7.97-6 9.09-3.37-1.12-6-4.93-6-9.09V6.43l6-2.25z" fill-rule="evenodd"/>
-                                    <path d="M12 7L7 8.9v2.6c0 2.8 2 5.1 5 6.2 3-1.1 5-3.4 5-6.2V8.9L12 7z"/>
-                                </svg></span>`;
-
-                    const dlText = this.formatDownloadCount(app.downloadCount);
-                    const dlHTML = dlText ? `<span class="dl-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px; opacity:0.7;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${dlText}</span>` : '';
-
-                    const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(displayName)}`;
-
-                    const div = document.createElement('div');
-                    div.className = 'store-item';
-                    div.innerHTML = `
-                        <img src="${app.iconUrl}" class="store-icon" onerror="this.src='https://via.placeholder.com/62?text=App'">
-                        <div class="store-info">
-                            <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
-                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
-                        </div>
-                        <div class="action-stack">
-                            <div class="top-actions-row">
-                                <button class="share-btn" onclick="appStoreWeb.shareApp('${app.id}')">
-                                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-                                </button>
-                                <button class="report-btn" onclick="appStoreWeb.openReport('${app.id}')">
-                                    <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
-                                </button>
-                            </div>
-                            <a href="${simuLink}" class="open-btn" target="_blank">OPEN</a>
-                        </div>
-                    `;
-                    fragment.appendChild(div);
-                });
-
-                listEl.innerHTML = ''; 
-                listEl.appendChild(fragment); 
-            }
+    appList.forEach(app => {
+        const displayName = app.storeName || app.name;
+        
+        // --- BADGE LOGIC (List Size) ---
+        const badgeType = this.userBadges.get(app.authorId);
+        let badgeHTML = '';
+        
+        if (badgeType === 'member') {
+            // Blue Hollow Tick
+            badgeHTML = `<span class="verified-badge member"><svg width="14" height="14" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+        } else if (badgeType === 'verified') {
+            // Blue Solid Tick
+            badgeHTML = `<span class="verified-badge verified"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
         }
+
+        // --- TRUSTED SHIELD LOGIC ---
+        let shieldHTML = '';
+        if (this.trustedList.includes(app.id)) {
+            shieldHTML = `<span class="trusted-app-badge"><svg viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v3.66c0 4.16-2.63 7.97-6 9.09-3.37-1.12-6-4.93-6-9.09V6.43l6-2.25z" fill-rule="evenodd"/><path d="M12 7L7 8.9v2.6c0 2.8 2 5.1 5 6.2 3-1.1 5-3.4 5-6.2V8.9L12 7z"/></svg></span>`;
+        }
+
+        // --- DOWNLOAD COUNT LOGIC ---
+        const dlText = this.formatDownloadCount(app.downloadCount);
+        const dlHTML = dlText ? `<span class="dl-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px; opacity:0.7;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${dlText}</span>` : '';
+
+        // --- CLICKABLE AUTHOR LOGIC ---
+        // Escape single quotes (e.g., "O'Neil") to prevent JS errors
+        const safeAuthorName = (app.author || 'Unknown').replace(/'/g, "\\'");
+        
+        // This span triggers the search for "dev:Name"
+        const authorHTML = `<span class="author-link" onclick="window.scrollTo(0,0); appStoreWeb.filterApps('dev:${safeAuthorName}')">${app.author || 'Unknown'}</span>`;
+
+        // Link to open the simulated app page
+        const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(displayName)}`;
+
+        // --- BUILD ITEM ---
+        const div = document.createElement('div');
+        div.className = 'store-item';
+        div.innerHTML = `
+            <img src="${app.iconUrl}" class="store-icon" onerror="this.src='https://via.placeholder.com/62?text=App'">
+            
+            <div class="store-info">
+                <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
+                <div class="store-sub">${authorHTML}${badgeHTML} • ${app.description}</div>
+            </div>
+            
+            <div class="action-stack">
+                <div class="top-actions-row">
+                    <button class="share-btn" onclick="appStoreWeb.shareApp('${app.id}')">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                    </button>
+                    <button class="report-btn" onclick="appStoreWeb.openReport('${app.id}')">
+                        <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                    </button>
+                </div>
+                <a href="${simuLink}" class="open-btn" target="_blank">OPEN</a>
+            </div>
+        `;
+        fragment.appendChild(div);
+    });
+
+    listEl.innerHTML = ''; 
+    listEl.appendChild(fragment); 
+}
+}
         window.appStoreWeb = new AppStoreWeb();
     </script>
 </body>

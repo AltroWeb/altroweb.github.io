@@ -850,6 +850,121 @@ body.dark-mode .ra-title, body.dark-mode .ra-msg { color: #fff; }
 .ra-btn.danger { color: #FF3B30; }
 
 
+
+
+
+/* --- APP STORE DEV PROFILE (Apple Style) --- */
+/* --- APP STORE DEV PROFILE (Apple Style) --- */
+.dev-profile-card {
+    display: none; /* Hidden by default */
+    flex-direction: column; 
+    align-items: center;
+    text-align: center;
+    padding: 32px 24px 24px 24px;
+    
+    /* FIX: Removed side margins (0) to fit container perfectly */
+    margin: 0 0 24px 0; 
+    
+    background: #fff; 
+    border-radius: 22px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    
+    /* FIX: Animation removed for static appearance */
+    animation: none; 
+}
+body.dark-mode .dev-profile-card {
+    background: #1C1C1E; /* iOS Dark Elevation */
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Back Button - Floating Top Left */
+.dev-back-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(120, 120, 128, 0.12);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    color: #007AFF; cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 10;
+}
+.dev-back-btn:active { transform: scale(0.9); background: rgba(120, 120, 128, 0.24); }
+
+/* Avatar - Big & Centered */
+.dev-avatar-container {
+    margin-bottom: 12px;
+}
+.dev-avatar-circle {
+    width: 80px; height: 80px; /* Big Pro Size */
+    border-radius: 50%;
+    background: #007AFF;
+    color: white; font-size: 32px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    object-fit: cover;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+/* Typography */
+.dev-info { width: 100%; }
+.dev-name {
+    font-size: 24px; font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #000;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    letter-spacing: -0.5px;
+}
+body.dark-mode .dev-name { color: #fff; }
+
+#store-dev-bio  {
+    font-size: 15px; color: #8E8E93 !important;
+    line-height: 1.4; margin: 0 auto;
+    max-width: 80%;
+}
+
+
+body.dark-mode .section-header { color: #fff; }
+
+/* Clickable Author Name in List */
+.store-author-link { 
+    position: relative; z-index: 5;
+    cursor: pointer; transition: color 0.2s;
+}
+.store-author-link:active { color: #007AFF; }
+
+
+/* --- CUSTOM DEV PAGE HEADER --- */
+#store-dev-header {
+    /* Reset System Styles */
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    color: #000 !important; /* Force Black in Light Mode */
+    
+    /* Custom Styling */
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    margin: 20px 0 10px 4px !important;
+    opacity: 0.9;
+}
+
+/* Dark Mode Support */
+body.dark-mode #store-dev-header {
+    color: #fff !important;
+}
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -1100,6 +1215,31 @@ body.dark-mode .ra-title, body.dark-mode .ra-msg { color: #fff; }
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                         <input type="text" id="store-search-input" placeholder="Games, Apps, Stories" style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;">
                     </div>
+                    
+                    
+                    <div id="store-dev-card" class="dev-profile-card">
+    <button class="dev-back-btn" onclick="appStore.clearSearch()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+    </button>
+    
+    <div id="store-dev-avatar" class="dev-avatar-container"></div>
+    
+    <div class="dev-info">
+        <h1 class="dev-name">
+            <span id="store-dev-name"></span>
+            <span id="store-dev-badge"></span>
+        </h1>
+        <p id="store-dev-bio">Developer</p>
+    </div>
+</div>
+
+<h2 id="store-dev-header" class="section-header" style="display:none;">Apps</h2>
+                    
+                    
+                    
+                    
                     
                     <div id="store-list">
                         <!-- APPS INJECTED HERE -->
@@ -1470,86 +1610,234 @@ async fetchTrustedApps() {
             
 
           async fetchApps() {
-                // 1. ROBUST CONNECTIVITY GUARD
-                const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
-                const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
-                const isRealNetwork = navigator.onLine;
+    // 1. ROBUST CONNECTIVITY GUARD
+    const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+    const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
+    const isRealNetwork = navigator.onLine;
 
-                // Logic: Must have (No Airplane) + (Simulated Wifi) + (Real Internet)
-                const isConnected = !isAirplane && isWifiOn && isRealNetwork;
-                this.isOfflineMode = !isConnected; 
+    const isConnected = !isAirplane && isWifiOn && isRealNetwork;
+    this.isOfflineMode = !isConnected; 
 
-                // 2. OFFLINE PREP & UI CLEANUP
-                if (this.isOfflineMode) {
-                    // Force remove update header so it doesn't float over the offline screen
-                    const updateHeader = document.getElementById('store-update-section');
-                    if (updateHeader) updateHeader.remove(); 
+    if (this.isOfflineMode) {
+        const updateHeader = document.getElementById('store-update-section');
+        if (updateHeader) updateHeader.remove(); 
+        if (isAirplane) this.offlineReason = 'airplane';
+        else if (!isWifiOn) this.offlineReason = 'wifi';
+        else this.offlineReason = 'network';
+    }
 
-                    // Determine specific reason for renderStore to use later
-                    if (isAirplane) this.offlineReason = 'airplane';
-                    else if (!isWifiOn) this.offlineReason = 'wifi';
-                    else this.offlineReason = 'network';
+    // 2. LOAD LOCAL APPS FIRST
+    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    this.apps = [...installed];
+
+    // 3. ONLINE SYNC
+    if (isConnected && this.db) {
+        this.flushPendingDecrements();
+        try {
+            const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+            const serverApps = [];
+            snapshot.forEach(doc => {
+                serverApps.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Merge: Server is source of truth
+            this.apps = [...serverApps];
+            installed.forEach(localApp => {
+                if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
+                    this.apps.push(localApp);
                 }
+            });
+            
+        } catch (e) {
+            console.error("Fetch Error:", e);
+            this.isOfflineMode = true; 
+            this.offlineReason = 'network';
+        }
+    }
 
-                // 3. ALWAYS LOAD LOCAL APPS FIRST (Critical Fix: Ensures content exists offline)
-                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                this.apps = [...installed];
+    // 4. SMART RENDER (THE FIX)
+    // Check if user (or deep link) has already typed something. 
+    // If so, don't overwrite their filtered view with the full list.
+    const searchInput = document.getElementById('store-search-input');
+    if (searchInput && searchInput.value.trim().length > 0) {
+      // console.log("⚡ Skipping default render (Search active)");
+        this.filterApps(searchInput.value);
+    } else {
+        this.renderStore(this.apps);
+    }
+    
+    // Check params only if we haven't already processed them
+    if (!searchInput || searchInput.value === '') {
+        this.checkUrlParams();
+    }
+}
 
-                // 4. ONLINE LOGIC (Only runs if connected)
-                if (isConnected && this.db) {
-                    // A. Sync Offline Data
-                    this.flushPendingDecrements();
-
-                    try {
-                        // B. Fetch Server Apps
-                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                        
-                        const serverApps = [];
-                        snapshot.forEach(doc => {
-                            serverApps.push({ id: doc.id, ...doc.data() });
-                        });
-
-                        // C. MERGE STRATEGY: Server Data is King (for updates), Local is fallback
-                        // Start with Server Apps so we have the NEWEST timestamps
-                        this.apps = [...serverApps];
-
-                        // Add Sideloaded Apps (Local apps that don't exist on server)
-                        installed.forEach(localApp => {
-                            if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
-                                this.apps.push(localApp);
-                            }
-                        });
-                        
-                    } catch (e) {
-                        console.error("Error fetching apps, using local cache:", e);
-                        // We stay with 'installed' apps loaded in Step 3
-                        this.isOfflineMode = true; // Fallback to offline mode visuals if fetch crashes
-                        this.offlineReason = 'network';
-                    }
-                }
-
-                // 5. RENDER (Passes the full list to be rendered)
-                this.renderStore(this.apps);
+            
+initSearch() {
+                const input = document.getElementById('store-search-input');
+                if(!input) return;
+                
+                input.addEventListener('input', (e) => {
+                    this.filterApps(e.target.value);
+                });
             }
 
-            // Inside AppStore class -> initSearch()
-initSearch() {
-    const input = document.getElementById('store-search-input');
-    if(!input) return;
-    input.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
+
+
+
+checkUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('s');
+
+    // 1. CLEAN URL (Fixes Persistence/Back Button Loop)
+    if (query && window.history.replaceState) {
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+    }
+
+    // 2. SET INPUT
+    if (query) {
+        const input = document.getElementById('store-search-input');
+        if (input) input.value = query;
+    }
+
+    // 3. INSTALL THE FIREWALL (The "Pro" Fix)
+    // We patch the render function once. This ensures that NO MATTER who calls render 
+    // (fetchApps, background sync, etc.), the filter is respected.
+    if (!this._hasInstalledFirewall) {
+        this._hasInstalledFirewall = true;
         
-        // UPDATED FILTER LOGIC
-        const filtered = this.apps.filter(app => {
-            const displayName = app.storeName || app.name;
-            return displayName.toLowerCase().includes(term) || // Search Display Name
-                   app.name.toLowerCase().includes(term) ||    // Search Internal Name
-                   app.author.toLowerCase().includes(term) ||
-                   app.description.toLowerCase().includes(term);
-        });
-        this.renderStore(filtered);
-    });
+        const originalRender = this.renderStore.bind(this);
+        const originalFilter = this.filterApps.bind(this);
+        let isInternalFilter = false;
+
+        // Patch Filter: Mark when WE are doing the rendering
+        this.filterApps = (q) => {
+            isInternalFilter = true;
+            originalFilter(q);
+            isInternalFilter = false;
+        };
+
+        // Patch Render: Intercept unwanted updates
+        this.renderStore = (list) => {
+            const currentSearch = document.getElementById('store-search-input')?.value;
+
+            // IF: We have a search term AND this render call didn't come from our filter...
+            // THEN: It's an unwanted overwrite (like fetchApps finishing). BLOCK IT.
+            if (currentSearch && currentSearch.trim() !== "" && !isInternalFilter) {
+                console.log("🛡️ Firewall: Blocked overwrite, enforcing filter:", currentSearch);
+                this.filterApps(currentSearch); // Re-run filter on the NEW data
+                return;
+            }
+
+            // ELSE: Allow normal render
+            originalRender(list);
+        };
+    }
+
+    // 4. TRIGGER IMMEDIATE FILTER
+    if (query) {
+        // We use a small timeout to ensure the UI is ready, 
+        // but the Firewall above handles the data whenever it arrives.
+        setTimeout(() => this.filterApps(query), 50);
+    }
 }
+
+
+
+
+
+
+
+
+            
+            
+            
+   clearSearch() {
+    const input = document.getElementById('store-search-input');
+    
+    // 1. Reset UI
+    if (input) {
+        input.value = '';
+        this.filterApps(''); // Reset to full list
+    }
+    document.getElementById('store-dev-card').style.display = 'none';
+    document.getElementById('store-dev-header').style.display = 'none';
+
+    // 2. CRITICAL: Wipe URL Parameter
+    // This ensures that when you close and reopen the app, the ?s= param 
+    // is gone, so it doesn't auto-trigger the dev page again.
+    if (window.history && window.history.replaceState) {
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+    }
+}
+            
+
+
+
+
+
+filterApps(query) {
+    const term = query.toLowerCase().trim();
+    const card = document.getElementById('store-dev-card');
+    const header = document.getElementById('store-dev-header');
+
+    // --- DEVELOPER MODE HANDLING ---
+    if (term.startsWith('dev:')) {
+        if (!navigator.onLine) {
+            this.renderStore([]); 
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            return;
+        }
+
+        const targetDev = term.substring(4).trim();
+        
+        // Filter Logic: Case-insensitive check on Author Name
+        const devApps = this.apps.filter(app => 
+            (app.author || '').toLowerCase().includes(targetDev)
+        );
+
+        if (devApps.length > 0) {
+            // Success: Update Card AND Render Specific List
+            this.updateDevCard(devApps[0]);
+            this.renderStore(devApps); 
+        } else {
+            // No matches found for this dev
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore([]); 
+        }
+        return; // Stop here so standard search doesn't run
+    }
+
+    // --- STANDARD SEARCH HANDLING ---
+    if (card) card.style.display = 'none';
+    if (header) header.style.display = 'none';
+
+    const filtered = this.apps.filter(app => {
+        const displayName = (app.storeName || app.name || '').toLowerCase();
+        const author = (app.author || '').toLowerCase();
+        const desc = (app.description || '').toLowerCase();
+        return displayName.includes(term) || author.includes(term) || desc.includes(term);
+    });
+    
+    this.renderStore(filtered);
+}
+
+
+
+
+
+
+triggerDevSearch(query) {
+                const input = document.getElementById('store-search-input');
+                if (input) {
+                    input.value = query;
+                    this.filterApps(query);
+                }
+            }
 
 
 
@@ -1817,6 +2105,72 @@ async submitReport(reason) {
 
 
 
+async updateDevCard(app) {
+                const card = document.getElementById('store-dev-card');
+                const header = document.getElementById('store-dev-header');
+                
+                // 1. OFFLINE GUARD (Robustness)
+                if (!navigator.onLine) {
+                    if (card) card.style.display = 'none';
+                    if (header) header.style.display = 'none';
+                    return;
+                }
+
+                const nameEl = document.getElementById('store-dev-name');
+                const bioEl = document.getElementById('store-dev-bio');
+                const avatarEl = document.getElementById('store-dev-avatar');
+                const badgeEl = document.getElementById('store-dev-badge');
+
+                const authorName = app.author || "Unknown";
+                const authorId = app.authorId;
+
+                // 2. RENDER IMMEDIATE DATA
+                nameEl.innerText = authorName;
+                bioEl.innerText = app.authorBio || "Developer"; 
+                header.innerText = `Apps by ${authorName}`;
+
+                // Avatar
+                if (app.authorIcon) {
+                    avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
+                } else {
+                    avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
+                }
+
+                // Badges
+                const badgeType = this.userBadges.get(authorId);
+                if (badgeType === 'member') {
+                    badgeEl.innerHTML = `<span class="verified-badge member" style="width:20px; height:20px;"><svg width="20" height="20" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+                } else if (badgeType === 'verified') {
+                    badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+                } else {
+                    badgeEl.innerHTML = '';
+                }
+
+                // Show
+                card.style.display = 'flex';
+                header.style.display = 'block';
+
+                // 3. LIVE FETCH (user_info)
+                if (this.db) {
+                    try {
+                        const userDoc = await this.db.collection('artifacts').doc(this.appId)
+                            .collection('public').doc('data')
+                            .collection('user_info').doc(authorId).get();
+
+                        if (userDoc.exists) {
+                            const profile = userDoc.data();
+                            if (profile.authorBio) bioEl.innerText = profile.authorBio;
+                            if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
+                                avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
+                            }
+                        }
+                    } catch(e) {}
+                }
+            }
+
+
+
+
 
 
 
@@ -1965,10 +2319,17 @@ const reportBtn = this.isNetworkStrict() ?
 ${reportBtn} </div>`;
                     }
 
+                    // Escape Author Name for JS safety
+                    const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
+                    
+                    // Create Clickable Link
+                    const authorHTML = `<span class="store-author-link" onclick="const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
+
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
+                            <div class="store-sub">${authorHTML}${badgeHTML} • ${app.description}</div>
                         </div>
                         ${actionHTML}
                     `;
@@ -3915,25 +4276,29 @@ handleDeepLinks() {
 
         // 2. Wait for AppStore to be initialized
         const waitForStore = setInterval(() => {
-            // Check if appStore instance exists (assuming 'appStore' is the variable name for your AppStore class instance)
             if (typeof appStore !== 'undefined') {
                 clearInterval(waitForStore);
 
                 // 3. Set the Search Input Early
-                // We set this BEFORE the app opens so the value is there waiting
                 const input = document.getElementById('store-search-input');
                 if (input) input.value = searchQuery;
 
-                // 4. "No-Flash" Render Override
-                // We wrap the standard render function. When fetchApps() finishes and calls renderStore(),
-                // this wrapper intercepts it, checks the search input, filters the data, 
-                // and THEN passes the filtered list to the real renderer.
+                // 4. "No-Flash" Render Override (THE FIX IS HERE)
                 if (appStore.renderStore) {
                     const originalRender = appStore.renderStore.bind(appStore);
                     
                     appStore.renderStore = function(list) {
-                        const searchVal = document.getElementById('store-search-input')?.value.toLowerCase();
+                        const searchVal = document.getElementById('store-search-input')?.value.toLowerCase().trim();
                         
+                        // >>> FIX START: Bypass re-filtering for Dev Queries <<<
+                        // If it's a "dev:" query, filterApps() has already done the complex logic.
+                        // We must pass the list through as-is, otherwise standard filtering will wipe it out.
+                        if (searchVal && searchVal.startsWith('dev:')) {
+                            originalRender(list);
+                            return;
+                        }
+                        // >>> FIX END <<<
+
                         if (searchVal && list.length > 0) {
                             // "Normal Search" Logic: Check Name, Author, Desc
                             const filtered = list.filter(app => {
@@ -3955,7 +4320,6 @@ handleDeepLinks() {
                 }
 
                 // 5. Open the App Store UI
-                // Wait briefly for the OS animations/boot to be ready
                 setTimeout(() => {
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
                     if (appStoreIcon) {

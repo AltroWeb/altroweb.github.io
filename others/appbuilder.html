@@ -727,13 +727,30 @@
             <div class="card">
                 <div class="form-group">
                     <label>Display Name</label>
-                    <input type="text" id="set-name">
+                    <input type="text" id="set-name" placeholder="Studio Name">
                 </div>
+
+                <div class="form-group">
+                    <label>Developer Icon URL (Optional)</label>
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <img id="set-icon-preview" src="grey.png" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #eee; flex-shrink: 0; border: 1px solid var(--border);">
+                        <div style="flex: 1;">
+                            <input type="text" id="set-icon" placeholder="https://..." oninput="appBuilder.updateSettingsIconPreview(this.value)">
+                            <div class="hint">Appears on your Developer Profile Card.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Developer Bio (Optional)</label>
+                    <textarea id="set-bio" rows="2" placeholder="Tell users about your studio..."></textarea>
+                </div>
+
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="set-email" disabled style="color: var(--text-secondary); cursor: not-allowed; background: rgba(0,0,0,0.05);">
-                    <div class="hint">Email cannot be changed directly.</div>
                 </div>
+
                 <div class="form-group">
                     <label>New Password</label>
                     <div class="password-wrapper">
@@ -745,11 +762,14 @@
                     </div>
                 </div>
                 
-                <div class="settings-footer">
+        <div class="settings-footer">
      <button class="btn danger" onclick="appBuilder.confirmDeleteAccount()">Delete Account</button>
      <div class="settings-controls">
          <button class="btn secondary" onclick="appBuilder.confirmLogout()">Sign Out</button>
-         <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()">Save Changes</button>
+         <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()">
+             <span>Save Changes</span>
+             <div class="loader"></div>
+         </button>
      </div>
 </div>
                 
@@ -856,6 +876,19 @@
                     closedIcon.style.display = 'none';
                 }
             }
+            
+            
+            
+            
+            updateSettingsIconPreview(url) {
+                document.getElementById('set-icon-preview').src = this.getSafeIconUrl(url);
+            }
+            
+            
+            
+            
+            
+            
 
             toggleDarkMode(forceState) {
                 const body = document.body;
@@ -1994,10 +2027,34 @@ showAlert(title, message, isError = false) {
             
             
 
-            loadSettings() {
+            async loadSettings() {
+                // 1. Load Basic Auth Info
                 document.getElementById('set-name').value = this.devProfile.displayName;
                 document.getElementById('set-email').value = this.devProfile.email;
                 document.getElementById('set-pass').value = '';
+                
+                // 2. Fetch Extended Profile (Icon & Bio) from NEW 'user_info' collection
+                try {
+                    const userDoc = await this.db.collection('artifacts').doc(this.appId)
+                        .collection('public').doc('data')
+                        .collection('user_info').doc(this.devProfile.uid).get();
+
+                    if (userDoc.exists) {
+                        const data = userDoc.data();
+                        const iconUrl = data.authorIcon || '';
+                        
+                        document.getElementById('set-icon').value = iconUrl;
+                        document.getElementById('set-bio').value = data.authorBio || '';
+                        this.updateSettingsIconPreview(iconUrl);
+                    } else {
+                        // Default state if no profile exists yet
+                        document.getElementById('set-icon').value = '';
+                        document.getElementById('set-bio').value = '';
+                        this.updateSettingsIconPreview('');
+                    }
+                } catch(e) {
+                    console.warn("Failed to load extended profile", e);
+                }
             }
             
             async sendPasswordReset() {
@@ -2011,6 +2068,8 @@ showAlert(title, message, isError = false) {
 
             async saveSettings() {
                 const newName = document.getElementById('set-name').value.trim();
+                const newIcon = document.getElementById('set-icon').value.trim();
+                const newBio = document.getElementById('set-bio').value.trim();
                 const newPass = document.getElementById('set-pass').value.trim();
 
                 if (!newName) { alert("Display Name cannot be empty."); return; }
@@ -2021,59 +2080,69 @@ showAlert(title, message, isError = false) {
                 try {
                     const oldName = this.devProfile.displayName;
                     
-                    // 1. Update Profile (Name)
+                    // --- STEP 1: Update Firebase Auth Profile (Display Name) ---
                     if (newName !== oldName) {
                         await this.user.updateProfile({ displayName: newName });
                         this.devProfile.displayName = newName;
                     }
                     
-                    // 2. Update Password (if provided)
+                    // --- STEP 2: Update Password (Optional) ---
                     if (newPass) {
                         const passError = this.validatePassword(newPass);
                         if (passError) throw new Error(passError);
-                        
                         try {
                             await this.user.updatePassword(newPass);
                         } catch(e) {
                             if (e.code === 'auth/requires-recent-login') {
-                                const currentPass = prompt("Security Check: Please enter your CURRENT password to save changes.");
+                                const currentPass = prompt("Security: Enter CURRENT password to save changes.");
                                 if (currentPass) {
                                     const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
                                     await this.user.reauthenticateWithCredential(credential);
                                     await this.user.updatePassword(newPass);
-                                } else {
-                                    throw new Error("Re-authentication cancelled. Password not changed.");
-                                }
-                            } else {
-                                throw e;
-                            }
+                                } else throw new Error("Cancelled.");
+                            } else throw e;
                         }
                     }
 
-                    // --- 3. BATCH UPDATE AUTHOR NAME ON ALL APPS ---
-                    // This ensures existing apps show the new name immediately
-                    if (newName !== oldName) {
-                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                        const batch = this.db.batch();
-                        let count = 0;
+                    // --- STEP 3: SAVE TO user_info ONLY ---
+                    // We DO NOT touch the 'users' collection (Badges).
+                    const userInfoRef = this.db.collection('artifacts').doc(this.appId)
+                        .collection('public').doc('data')
+                        .collection('user_info').doc(this.devProfile.uid);
+                        
+                    await userInfoRef.set({
+                        authorIcon: newIcon,
+                        authorBio: newBio
+                    }, { merge: true }); // Merge ensures we don't wipe other future fields
 
-                        snapshot.forEach(doc => {
-                            const data = doc.data();
-                            // Only update my apps
-                            if (data.authorId === this.devProfile.uid) {
-                                batch.update(doc.ref, { author: newName });
-                                count++;
-                            }
-                        });
+                    // --- STEP 4: BATCH PROPAGATION (Sync to Apps) ---
+                    // This updates the cached author info on all your apps so the Store displays them correctly.
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId)
+                        .collection('public').doc('data')
+                        .collection('store_apps').get();
+                        
+                    const batch = this.db.batch();
+                    let appCount = 0;
 
-                        if (count > 0) {
-                            await batch.commit();
-                            console.log(`Updated author name for ${count} apps.`);
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // Only update apps that belong to YOU
+                        if (data.authorId === this.devProfile.uid) {
+                            batch.update(doc.ref, { 
+                                author: newName,
+                                authorIcon: newIcon,
+                                authorBio: newBio
+                            });
+                            appCount++;
                         }
-                    }
-                    // -----------------------------------------------
+                    });
 
-                    // Update local session
+                    if (appCount > 0) {
+                        await batch.commit();
+                        console.log(`Updated profile identity for ${appCount} apps.`);
+                    }
+
+                    // --- STEP 5: Finalize ---
                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
                     document.getElementById('nav-username').innerText = newName;
                     
