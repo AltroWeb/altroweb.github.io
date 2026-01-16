@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>App Store Web</title>
-    
+    <link rel="icon" href="appstore.ico" type="image/x-icon">
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
@@ -878,14 +879,21 @@ async submitReport(reason) {
                 if (!app) return;
                 
                 const appName = app.storeName || app.name;
+                
+                const author = app.author || "Unknown";
+                
                 const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeURIComponent(appName)}`;
+
+
+
+const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
 
                 if (navigator.share) {
                     try {
-                        await navigator.share({ title: appName, text: `Check out ${appName} on App Store Web!`, url: shareUrl });
-                    } catch (err) { this.copyToClipboard(shareUrl); }
+                        await navigator.share({ title: appName, text: `Check out ${appName} by ${author} on App Store Web!\n\n`, url: shareUrl });
+                    } catch (err) { this.copyToClipboard(shareText+''+shareUrl); }
                 } else {
-                    this.copyToClipboard(shareUrl);
+                    this.copyToClipboard(shareText+''+shareUrl);
                 }
             }
 
