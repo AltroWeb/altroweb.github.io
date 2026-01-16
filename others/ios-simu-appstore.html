@@ -1145,33 +1145,41 @@ body.dark-mode .ra-title, body.dark-mode .ra-msg { color: #fff; }
 
             <div id="sl-form-view" style="display:none;">
     <div class="ios-list">
+        <!-- APP NAME ROW -->
         <div class="ios-row">
             <input type="text" class="ios-input" id="sl-name" placeholder="App Name" style="background:transparent; padding:0;">
         </div>
-        <div class="ios-row" style="padding: 12px 16px;">
-    <div style="display:flex; align-items:center; width:100%; gap:15px;">
         
-        <div style="position:relative; width:54px; height:54px; flex-shrink:0;">
-            <img id="sl-icon-preview" src="grey.png" 
-                 style="width:100%; height:100%; border-radius:12px; background:#f2f2f2; object-fit:cover; border:1px solid rgba(0,0,0,0.1);"
-                 onerror="this.src='grey.png'">
-            
-            <input type="file" id="sl-icon-upload" accept="image/*" style="display:none;" onchange="sideloader.handleIconUpload(this)">
-            
-            <div onclick="document.getElementById('sl-icon-upload').click()" 
-                 style="position:absolute; bottom:-4px; right:-4px; background:#007AFF; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-            </div>
+        <!-- AUTHOR NAME ROW (New Addition) -->
+        <div class="ios-row" style="">
+            <input type="text" class="ios-input" id="sl-author" placeholder="Author Name (Optional)" style="background:transparent; padding:0;">
         </div>
 
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-             <input type="text" class="ios-input" id="sl-icon" placeholder="Icon URL (or tap pencil)" 
-                   style="background:transparent; padding:0; width:100%; margin-bottom:4px;" 
-                   oninput="sideloader.handleUrlInput(this)">
-             <span style="font-size:12px; color:#8E8E93;">Tap pencil to upload</span>
+        <!-- ICON ROW -->
+        <div class="ios-row" style="padding: 12px 16px;">
+            <div style="display:flex; align-items:center; width:100%; gap:15px;">
+                
+                <div style="position:relative; width:54px; height:54px; flex-shrink:0;">
+                    <img id="sl-icon-preview" src="grey.png" 
+                         style="width:100%; height:100%; border-radius:12px; background:#f2f2f2; object-fit:cover; border:1px solid rgba(0,0,0,0.1);"
+                         onerror="this.src='grey.png'">
+                    
+                    <input type="file" id="sl-icon-upload" accept="image/*" style="display:none;" onchange="sideloader.handleIconUpload(this)">
+                    
+                    <div onclick="document.getElementById('sl-icon-upload').click()" 
+                         style="position:absolute; bottom:-4px; right:-4px; background:#007AFF; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #fff; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </div>
+                </div>
+
+                <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                     <input type="text" class="ios-input" id="sl-icon" placeholder="Icon URL (or tap pencil)" 
+                            style="background:transparent; padding:0; width:100%; margin-bottom:4px;" 
+                            oninput="sideloader.handleUrlInput(this)">
+                     <span style="font-size:12px; color:#8E8E93;">Tap pencil to upload</span>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
     </div>
 
     <div class="section-header">Source Type</div>
@@ -1209,10 +1217,13 @@ body.dark-mode .ra-title, body.dark-mode .ra-msg { color: #fff; }
             <span id="sl-file-name">Select HTML File</span>
         </div>
         <input type="file" id="sl-file-input" accept=".html" style="display:none;" onchange="sideloader.handleFile(this)">
-        <input type="hidden" id="sl-file-data"> </div>
+        <input type="hidden" id="sl-file-data"> 
+    </div>
 
     <div class="ios-list" style="background:transparent; margin-top:20px;">
         <button class="ios-btn" onclick="sideloader.saveApp()">Save App</button>
+        <!-- The Export Button will be injected here by JS if needed, or you can add it statically -->
+        <button class="ios-btn secondary" id="sl-export-btn" onclick="sideloader.downloadIAP()" style="margin-top:10px; color:#007AFF;">Export .iap Package</button>
         <div style="height:10px;"></div>
         <button class="ios-btn secondary" onclick="sideloader.showList()">Cancel</button>
     </div>
@@ -1566,6 +1577,87 @@ formatDownloadCount(num) {
 
 
 
+
+
+// REPLACE your existing forceDeleteApp with this updated version
+async forceDeleteApp(appId) {
+    console.log(`☢️ NUKING APP: ${appId}`);
+
+    // 1. ANALYTICS (Store Only)
+    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const isStoreApp = installed.some(a => a.id === appId);
+
+    if (isStoreApp && this.isNetworkStrict()) {
+        try {
+            await this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('store_apps').doc(appId)
+                .update({ installCount: firebase.firestore.FieldValue.increment(-1) });
+        } catch (e) { this.addToPendingDecrement(appId); }
+    } else if (isStoreApp) {
+        this.addToPendingDecrement(appId);
+    }
+
+    // 2. WIPE STORAGE
+    const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+    const newInstalled = installed.filter(a => a.id !== appId);
+    const newSideloaded = sideloaded.filter(a => a.id !== appId);
+    
+    localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
+    localStorage.setItem('ios_sideloaded_apps', JSON.stringify(newSideloaded));
+
+    // --- FIX: SYNC SIDELOADER MEMORY ---
+    if (window.sideloader) {
+        window.sideloader.apps = newSideloaded; // <--- CRITICAL FIX
+    }
+    // -----------------------------------
+
+    // 3. WIPE METADATA
+    const icons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+    if (icons[appId]) { delete icons[appId]; localStorage.setItem('ios_custom_icons', JSON.stringify(icons)); }
+    localStorage.removeItem(`ios_stat_cooldown_${appId}`);
+    localStorage.removeItem(`ios_report_cooldown_${appId}`);
+
+    // 4. WIPE NATIVE BINARY
+    if (window.sideloader && window.sideloader.db) {
+        window.sideloader.db.transaction('native_apps', 'readwrite').objectStore('native_apps').delete(appId);
+    }
+
+    // 5. WIPE MEMORY BLOB
+    if (window.sideloader && window.sideloader.nativeUrls[appId]) {
+        URL.revokeObjectURL(window.sideloader.nativeUrls[appId]);
+        delete window.sideloader.nativeUrls[appId];
+    }
+    
+    // 6. SCRUB PRIVATE DBs
+    try {
+        if (window.indexedDB.databases) {
+            const dbs = await window.indexedDB.databases();
+            if (dbs.find(db => db.name === appId)) window.indexedDB.deleteDatabase(appId);
+        }
+    } catch(e) {}
+
+    // 7. REFRESH UI
+    iOS.removeSingleApp(appId);
+    
+    // Force App Store Refresh (if active)
+    if (this.apps) { 
+        // Update App Store memory too so the button flips to "GET" immediately
+        // We assume 'this.apps' is your store list. If you rely on fetchApps(), call that.
+        this.fetchApps(); 
+    }
+    
+    // Force Sideloader Refresh
+    if (window.sideloader) window.sideloader.renderList();
+    
+    console.log("✅ App NUKED.");
+}
+
+
+
+
+
+
 // --- REPORTING SYSTEM ---
 
 // --- NEW NATIVE ALERT LOGIC ---
@@ -1597,8 +1689,61 @@ closeReportAlert() {
     this.pendingReportAppId = null;
 }
 
+
+
+getDeviceId() {
+    let did = localStorage.getItem('ios_device_unique_id');
+    if (!did) {
+        did = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        localStorage.setItem('ios_device_unique_id', did);
+    }
+    this.backupDeviceIdToDB(did);
+    return did;
+}
+
+
+
+
+
+async backupDeviceIdToDB(id) {
+    try {
+        const req = indexedDB.open('iOS_Identity_Store', 1);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('identity')) db.createObjectStore('identity');
+        };
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction('identity', 'readwrite');
+            tx.objectStore('identity').put(id, 'device_id');
+        };
+    } catch(e) {}
+}
+
+async restoreDeviceId() {
+    return new Promise((resolve) => {
+        const req = indexedDB.open('iOS_Identity_Store', 1);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction('identity', 'readonly');
+            const get = tx.objectStore('identity').get('device_id');
+            get.onsuccess = () => {
+                if (get.result) {
+                    localStorage.setItem('ios_device_unique_id', get.result);
+                    resolve(get.result);
+                } else resolve(null);
+            };
+        };
+        req.onerror = () => resolve(null);
+    });
+}
+
 async submitReport(reason) {
-    const appId = this.pendingReportAppId;
+    let deviceId = localStorage.getItem('ios_device_unique_id');
+    if (!deviceId) deviceId = await this.restoreDeviceId();
+    deviceId = this.getDeviceId(); 
+
+    const appId = this.pendingReportAppId; 
     this.closeReportAlert(); 
 
     if (!appId || !this.db) return;
@@ -1614,7 +1759,6 @@ async submitReport(reason) {
             .collection('public').doc('data')
             .collection('reports');
 
-        // 1. Data Harvesting
         const app = this.apps.find(a => a.id === appId);
         const safeData = {
             appName: app ? (app.name || 'Unknown') : 'Unknown',
@@ -1622,14 +1766,20 @@ async submitReport(reason) {
             authorId: app ? (app.authorId || 'anonymous_dev') : 'anonymous_dev'
         };
 
-        // 2. RUN BATCH (Atomic Operation)
-        // We do both: File the report AND Increment the shame counter
+        // --- TIME-SLOT LOGIC (6 Hours) ---
+        const now = Date.now();
+        const windowSize = 21600000; // 6 Hours in MS
+        const timeSlot = Math.floor(now / windowSize);
+        
+        // Rotatable ID
+        const reportDocId = `${appId}_${deviceId}_${timeSlot}`;
+        const specificReportRef = reportsRef.doc(reportDocId);
+
         const batch = this.db.batch();
 
-        // Operation A: File Report
-        const newReportRef = reportsRef.doc();
-        batch.set(newReportRef, {
+        batch.set(specificReportRef, {
             appId: appId,
+            deviceId: deviceId, 
             appName: safeData.appName,
             authorName: safeData.authorName,
             authorId: safeData.authorId,
@@ -1639,28 +1789,29 @@ async submitReport(reason) {
             clientTime: new Date().toISOString() 
         });
 
-        // Operation B: Tripwire Increment (Strike +1)
-        // Note: We use increment(1) which works with our new Rules
         batch.update(appRef, {
-    reportCount: firebase.firestore.FieldValue.increment(1),
-    lastReportReason: reason // <--- SAVES THE REASON FOR FETCHING
-});
+            reportCount: firebase.firestore.FieldValue.increment(1),
+            lastReportReason: reason 
+        });
 
         await batch.commit();
 
-        // 3. Persistence
         localStorage.setItem(`ios_report_cooldown_${appId}`, Date.now());
         
-        // 4. Confirmation
         setTimeout(() => {
             iOS.showAlert('Report Confirmed', 'The investigation ID has been generated. Thank you.');
-            // Optional: Refresh apps to immediately hide it if it hit 10
             this.fetchApps(); 
         }, 600);
 
     } catch (e) {
-        console.error("Report System Error:", e);
-        iOS.showAlert('Submission Failed', 'Network rejected the report packet.');
+        console.warn("Report System Response:", e.code);
+
+        if (e.code === 'permission-denied' || e.code === 'already-exists') {
+            iOS.showAlert('Reported', 'You have already reported this app recently. Please wait 6 hours.');
+            localStorage.setItem(`ios_report_cooldown_${appId}`, Date.now());
+        } else {
+            iOS.showAlert('Submission Failed', 'Network rejected the report packet.');
+        }
     }
 }
 
@@ -1721,7 +1872,7 @@ async submitReport(reason) {
                 // >>> TRIPWIRE CHECK (Shadow Ban) <<<
         // If reports >= 10, completely skip rendering this app.
         // It effectively ceases to exist in the store UI.
-        if ((app.reportCount || 0) >= 1) {
+        if ((app.reportCount || 0) >= 10) {
             return; // App is shadow-banned.
         }
                 
@@ -2251,30 +2402,19 @@ if (window.iOS && window.iOS.isSafeMode) {
             // Helper: Actual Uninstall Logic
             // Helper: Actual Uninstall Logic
             async performUninstall(app, btn) {
-        if (btn.classList.contains('processing')) return;
-        btn.classList.add('processing', 'loading');
+    if (btn) {
+        btn.classList.add('loading');
         btn.disabled = true;
-
-        try {
-            // Try Online Decrement
-            if (this.isNetworkStrict() && app.enableAnalytics !== false) {
-                await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(app.id)
-                    .update({ installCount: firebase.firestore.FieldValue.increment(-1) });
-            } else {
-                throw new Error("Offline"); // Force Queue
-            }
-        } catch (e) {
-            // QUEUE IT
-            console.log("⚠️ Uninstall offline. Added to queue.");
-            this.addToPendingDecrement(app.id);
-        } finally {
-            // Always remove visually
-            this.uninstallApp(app, btn);
-            btn.classList.remove('loading', 'installed', 'processing');
-            btn.disabled = false;
-            btn.querySelector('span').innerText = 'GET';
-        }
     }
+
+    // Delegate everything to the master function
+    await this.forceDeleteApp(app.id);
+    
+    // No need to reset button text manually; forceDeleteApp calls fetchApps() 
+    // which completely re-renders the store list, resetting the button state automatically.
+}
+
+
             async installApp(app) {
                 const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 if (installed.some(a => a.id === app.id)) return;
@@ -2523,60 +2663,486 @@ handleUrlInput(el) {
     // --- 3. FORM MANAGEMENT ---
 
     showForm(editId = null) {
-        document.getElementById('sl-list-view').style.display = 'none';
-        document.getElementById('sl-form-view').style.display = 'block';
-        document.getElementById('sl-main-header').innerText = editId ? 'Edit App' : 'New App';
+    	
+    if (window.iOS && window.iOS.isSafeMode) {
+                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
+                    return;
+                }
+    
+    
+    
+    
+    // Switch Views
+    document.getElementById('sl-list-view').style.display = 'none';
+    const formView = document.getElementById('sl-form-view');
+    formView.style.display = 'block';
+    
+    // Set Header
+    document.getElementById('sl-main-header').innerText = editId ? 'Edit App' : 'New App';
+    
+    // Reset Globals
+    this.pendingIconBase64 = null; 
+    document.getElementById('sl-icon').placeholder = "Icon URL (or tap pencil)";
+
+    // Inject Export Button if missing
+    let exportBtn = document.getElementById('sl-export-btn');
+    if (!exportBtn) {
+        // Look for the last list container to append buttons
+        const containers = formView.querySelectorAll('.ios-list');
+        const actionList = containers[containers.length - 1]; 
         
-        // Reset State
-        this.pendingIconBase64 = null; 
-        document.getElementById('sl-icon').placeholder = "Icon URL (or tap pencil)";
-
-        if(editId) {
-            const app = this.apps.find(a => a.id === editId);
-            this.editingId = editId;
-            document.getElementById('sl-name').value = app.name;
-            
-            // --- SMART ICON DISPLAY LOGIC ---
-            const iconInput = document.getElementById('sl-icon');
-            const iconPreview = document.getElementById('sl-icon-preview');
-
-            if (app.iconUrl && app.iconUrl.startsWith('data:')) {
-                // CASE A: Uploaded Icon (Hide the Base64 string)
-                iconInput.value = ''; 
-                iconInput.placeholder = "Using Uploaded Icon"; 
-                this.pendingIconBase64 = app.iconUrl; // Preserve existing data in background
-                iconPreview.src = app.iconUrl;
-            } else {
-                // CASE B: Standard URL (Show it)
-                iconInput.value = app.iconUrl || '';
-                this.pendingIconBase64 = null;
-                iconPreview.src = app.iconUrl || 'grey.png';
-            }
-            // -------------------------------
-            
-            // Mode Detection (Existing Logic)
-            if (app.type === 'native') {
-                this.toggleSource('native');
-                document.getElementById('sl-file-name').innerText = "Native App Loaded";
-            } else if (app.embedUrl.startsWith('data:')) {
-                this.toggleSource('file');
-                document.getElementById('sl-file-data').value = app.embedUrl;
-                document.getElementById('sl-file-name').innerText = "Legacy File Loaded";
-            } else {
-                this.toggleSource('url');
-                document.getElementById('sl-url').value = app.embedUrl;
-            }
-        } else {
-            // NEW APP STATE
-            this.editingId = null;
-            document.getElementById('sl-name').value = '';
-            document.getElementById('sl-icon').value = '';
-            document.getElementById('sl-url').value = '';
-            document.getElementById('sl-file-data').value = '';
-            document.getElementById('sl-icon-preview').src = 'grey.png';
-            this.toggleSource('url');
-        }
+        exportBtn = document.createElement('button');
+        exportBtn.id = 'sl-export-btn';
+        exportBtn.className = 'ios-btn secondary';
+        exportBtn.innerText = 'Export .iap Package';
+        exportBtn.onclick = () => this.downloadIAP();
+        exportBtn.style.marginTop = '10px';
+        exportBtn.style.color = '#007AFF'; 
+        
+        actionList.insertBefore(exportBtn, actionList.lastElementChild); // Before Cancel
+        
+        const spacer = document.createElement('div');
+        spacer.style.height = '10px';
+        actionList.insertBefore(spacer, actionList.lastElementChild);
     }
+
+    if(editId) {
+        // --- EDIT MODE ---
+        const app = this.apps.find(a => a.id === editId);
+        this.editingId = editId;
+        
+        document.getElementById('sl-name').value = app.name;
+        
+        // LOAD AUTHOR (Robust Check)
+        const authorField = document.getElementById('sl-author');
+        if (authorField) {
+            const storedAuthor = app.author;
+            // Only show if it's a real name, not a generic system label
+            const isGeneric = !storedAuthor || storedAuthor === 'Sideloaded Package' || storedAuthor === 'User Generated';
+            authorField.value = isGeneric ? '' : storedAuthor;
+        }
+        
+        // Icon Logic
+        const iconInput = document.getElementById('sl-icon');
+        const iconPreview = document.getElementById('sl-icon-preview');
+
+        if (app.iconUrl && app.iconUrl.startsWith('data:')) {
+            iconInput.value = ''; 
+            iconInput.placeholder = "Using Uploaded Icon"; 
+            this.pendingIconBase64 = app.iconUrl; 
+            iconPreview.src = app.iconUrl;
+        } else {
+            iconInput.value = app.iconUrl || '';
+            this.pendingIconBase64 = null;
+            iconPreview.src = app.iconUrl || 'grey.png';
+        }
+        
+        // Source Logic
+        if (app.type === 'native') {
+            this.toggleSource('native');
+            document.getElementById('sl-file-name').innerText = "Native App Loaded";
+        } else if (app.embedUrl.startsWith('data:')) {
+            this.toggleSource('file');
+            document.getElementById('sl-file-data').value = app.embedUrl;
+            document.getElementById('sl-file-name').innerText = "Legacy File Loaded";
+        } else {
+            this.toggleSource('url');
+            document.getElementById('sl-url').value = app.embedUrl;
+        }
+        
+        exportBtn.style.display = 'block';
+        
+    } else {
+        // --- NEW APP MODE ---
+        this.editingId = null;
+        
+        document.getElementById('sl-name').value = '';
+        if(document.getElementById('sl-author')) document.getElementById('sl-author').value = ''; // Clear Author
+        
+        document.getElementById('sl-icon').value = '';
+        document.getElementById('sl-url').value = '';
+        document.getElementById('sl-file-data').value = '';
+        document.getElementById('sl-icon-preview').src = 'grey.png';
+        document.getElementById('sl-file-name').innerText = "Select HTML File";
+        
+        this.pendingBlob = null; 
+        this.toggleSource('url'); 
+        
+        exportBtn.style.display = 'block';
+    }
+}
+    
+    
+    
+    
+    
+    
+    
+  // --- .IAP FILE HANDLING (Obfuscated Package) ---
+
+// 1. IMPORT BUTTON UI
+triggerIAPImport() {
+	
+	
+	if (window.iOS && window.iOS.isSafeMode) {
+                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
+                    return;
+                }
+    
+    
+	
+	
+    // Create hidden file input dynamically
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.iap'; // Custom Extension
+    input.onchange = (e) => this.handleIAPFile(e.target.files[0]);
+    input.click();
+}
+
+
+
+
+_integrityEnvironmentCheck() {
+    
+    
+    const start = Date.now();
+    debugger; 
+    const end = Date.now();
+    
+    if (end - start > 100) {
+        
+        console.warn("Security Alert: Debugging environment detected.");
+        return false;
+    }
+    return true;
+}
+
+
+
+
+// 2. PARSE & INSTALL .IAP
+handleIAPFile(file) {
+	
+	
+	if (!this._integrityEnvironmentCheck()) {
+            return; 
+        }
+	
+	
+    if (!file) return;
+    
+    if (window.iOS && window.iOS.isSafeMode) {
+        iOS.showAlert('Blocked', 'IAP installation is disabled in Safe Mode.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file); // Important: Read as Binary
+    
+    reader.onload = async (e) => {
+        try {
+            const arrayBuffer = e.target.result;
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            // 1. Decrypt & Verify Integrity
+            // If this fails, it throws an error immediately
+            const pkg = await this.decryptIAP(uint8Array);
+
+            // 2. Install
+            const confirmMsg = `Install "${pkg.meta.name}"?\nVerified Author: ${pkg.meta.author}\nType: ${pkg.meta.type}`;
+            
+            iOS.showAlert('Secure Install', confirmMsg, () => {
+                // Adapt the package format to your installer
+                // (Your existing installer expects specific fields, so we map them back)
+                const installData = {
+                    signature: 'IAP_SECURE_V2', // Dummy signature to satisfy legacy check
+                    meta: pkg.meta,
+                    payload: pkg.payload
+                };
+                this.installIAP(installData);
+            });
+
+        } catch (err) {
+            console.error("IAP Load Error", err);
+            iOS.showAlert('Security Error', 'Package integrity check failed.\nThe file has been tampered with.');
+        }
+    };
+}
+
+installIAP(pkg) {
+    // 1. Construct App Object
+    const appId = pkg.meta.id || 'iap_' + Date.now();
+    const appData = {
+        id: appId,
+        name: pkg.meta.name,
+        iconUrl: pkg.meta.icon,
+        author: pkg.meta.author || 'Sideloaded Package',
+        type: pkg.meta.type,
+        embedUrl: '', // Will be filled below
+        isPacked: true, // Flag to disable editing
+        updatedAt: Date.now()
+    };
+
+    // 2. Handle Payload (Native vs Legacy)
+    if (pkg.meta.type === 'native') {
+        // Payload is Base64 Blob Data. Convert back to Blob.
+        const blob = appStore.dataURItoBlob(pkg.payload);
+        appStore.saveToNativeDB(appId, blob).then(() => {
+            appData.embedUrl = `native://${appId}`;
+            this.finalizeInstall(appData);
+        });
+    } else {
+        // Payload is URL or HTML Data URI
+        appData.embedUrl = pkg.payload;
+        this.finalizeInstall(appData);
+    }
+}
+
+finalizeInstall(appData) {
+    // Save to Storage
+    // Remove old version if exists
+    this.apps = this.apps.filter(a => a.id !== appData.id);
+    this.apps.push(appData);
+    localStorage.setItem('ios_sideloaded_apps', JSON.stringify(this.apps));
+    
+    // Cache Icon
+    if (appData.iconUrl) {
+        const icons = JSON.parse(localStorage.getItem('ios_custom_icons') || '{}');
+        icons[appData.id] = appData.iconUrl;
+        localStorage.setItem('ios_custom_icons', JSON.stringify(icons));
+    }
+
+    iOS.injectSingleApp(appData);
+    this.showList();
+    iOS.applyCustomIcons();
+    iOS.showAlert('Installed', `${appData.name} has been unpacked and installed.`);
+}
+
+// 3. EXPORT .IAP (Creation)
+downloadIAP() {
+	
+	if (window.iOS && window.iOS.isSafeMode) {
+                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
+                    return;
+                }
+    
+    
+	
+	
+	
+    const name = document.getElementById('sl-name').value.trim();
+    
+    // Same robust capture for Export
+    const rawAuthor = document.getElementById('sl-author') ? document.getElementById('sl-author').value.trim() : '';
+    const author = rawAuthor || 'User Generated';
+    
+    const icon = this.pendingIconBase64 || document.getElementById('sl-icon').value.trim();
+    
+    if (!name) { iOS.showAlert('Error', 'App Name is required'); return; }
+
+    // Detects specific type: HTTPS URL, Legacy HTML, or falls back to native
+let type = this.currentSourceMode === 'url' ? 'HTTPS URL' : (this.currentSourceMode === 'file' ? 'Legacy HTML' : 'native');
+    let payload = ''; // The content to pack
+
+    // Get Content based on active mode
+    if (this.currentSourceMode === 'url') {
+        payload = document.getElementById('sl-url').value.trim();
+        if (!payload) { iOS.showAlert('Error', 'URL required'); return; }
+    } 
+    else if (this.currentSourceMode === 'file') {
+        payload = document.getElementById('sl-file-data').value;
+        if (!payload) { iOS.showAlert('Error', 'File required'); return; }
+    } 
+    else if (this.currentSourceMode === 'native') {
+        // Native is tricky: we need the Base64 of the Blob
+        if (!this.pendingBlob) { iOS.showAlert('Error', 'Native file missing'); return; }
+        type = 'native';
+        
+        // Async read for blob
+        
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // FIX: Added 'author' as the 6th argument
+            this.generatePackage(name, icon, type, e.target.result, this.pendingBlob.size, author);
+        };
+        reader.readAsDataURL(this.pendingBlob); // Converts blob to base64 string
+        return; // Pause here, let reader finish
+    }
+
+    // Determine size roughly for text
+    const sizeStr = (payload.length / 1024).toFixed(1) + ' KB';
+    this.generatePackage(name, icon, type, payload, sizeStr, author);
+}
+
+
+
+
+
+_getRuntimeSecret() {
+    const _0x4a2 = [
+        105, 79, 83, 95, 83, 105, 109, 117, 95, 83, 121, 115, 116, 101, 109, 
+        95, 82, 111, 111, 116, 95, 75, 101, 121, 95, 86, 49, 95, 64, 57, 102, 
+        35, 56, 107, 76
+    ];
+    
+    
+    return _0x4a2.map(c => String.fromCharCode(c)).join('');
+}
+
+async getCryptoKey(mode) {
+    
+    const rawSecret = this._getRuntimeSecret();
+    
+    
+    const enc = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey(
+        "raw", 
+        enc.encode(rawSecret), 
+        { name: "PBKDF2" }, 
+        false, 
+        ["deriveKey"]
+    );
+
+    
+    const saltBuffer = new Uint8Array([
+        105, 79, 83, 95, 83, 97, 108, 116, 95, 86, 50 // "iOS_Salt_V2"
+    ]);
+
+    return window.crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: saltBuffer, 
+            iterations: 250000, 
+            hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        true,
+        [mode]
+    );
+}
+async encryptIAP(jsonObject) {
+    const key = await this.getCryptoKey("encrypt");
+    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Random Initialization Vector
+    const encodedData = new TextEncoder().encode(JSON.stringify(jsonObject));
+
+    const ciphertext = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        encodedData
+    );
+
+    
+    const buffer = new Uint8Array(iv.byteLength + ciphertext.byteLength);
+    buffer.set(iv);
+    buffer.set(new Uint8Array(ciphertext), iv.byteLength);
+
+    return buffer; // Returns raw binary data
+}
+
+async decryptIAP(buffer) {
+    try {
+        const key = await this.getCryptoKey("decrypt");
+        const iv = buffer.slice(0, 12); // Extract IV
+        const ciphertext = buffer.slice(12); // Extract Data
+
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            ciphertext
+        );
+
+        const decoded = new TextDecoder().decode(decrypted);
+        return JSON.parse(decoded);
+    } catch (e) {
+        console.error("Crypto Error:", e);
+        throw new Error("Integrity Check Failed: Package modified or corrupt.");
+    }
+}
+
+
+
+
+
+
+
+xorCipher(text, key = "iOS_Simu_Pro_Secure_Key_V1") {
+    let result = [];
+    for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+        result.push(String.fromCharCode(charCode));
+    }
+    return result.join("");
+}
+
+// Convert String to Uint8Array for true binary blob creation
+stringToUint8Array(str) {
+    const arr = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+        arr[i] = str.charCodeAt(i);
+    }
+    return arr;
+}
+
+// Convert Uint8Array back to String
+uint8ArrayToString(arr) {
+    let str = "";
+    for (let i = 0; i < arr.length; i++) {
+        str += String.fromCharCode(arr[i]);
+    }
+    return str;
+}
+
+
+async generatePackage(name, icon, type, payload, size, author) {
+    const rawData = {
+        meta: {
+            id: 'iap_' + Math.random().toString(36).substr(2, 9),
+            name: name,
+            icon: icon, 
+            author: author,
+            type: type,
+            size: size,
+            created: Date.now(),
+            version: "SECURE_V4"
+        },
+        payload: payload
+    };
+
+    try {
+        // 1. Encrypt (AES-GCM 256)
+        const encryptedBuffer = await this.encryptIAP(rawData);
+
+        // 2. Download Binary Blob
+        const blob = new Blob([encryptedBuffer], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name.replace(/\s+/g, '_')}.iap`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        iOS.showAlert('Success', 'App exported successfully.');
+    } catch (e) {
+        iOS.showAlert('Export Failed', 'Encryption error: ' + e.message);
+    }
+}
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     showList() {
         document.getElementById('sl-list-view').style.display = 'block';
@@ -2588,49 +3154,71 @@ handleUrlInput(el) {
     }
 
     renderList() {
-        const list = document.getElementById('sl-apps-list');
-        const term = document.getElementById('sl-search')?.value.trim().toLowerCase() || '';
-        list.innerHTML = '';
-        
-        if (this.apps.length === 0) {
-            list.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No sideloaded apps.</div>';
-            return;
-        }
+    const list = document.getElementById('sl-apps-list');
+    const term = document.getElementById('sl-search')?.value.trim().toLowerCase() || '';
+    list.innerHTML = '';
+    
+    // --- ADD IMPORT BUTTON HERE (First Item) ---
+    const importRow = document.createElement('div');
+    importRow.className = 'ios-row';
+    importRow.style.color = '#007AFF';
+    importRow.style.justifyContent = 'center';
+    importRow.style.fontWeight = '600';
+    importRow.innerText = 'Import .iap Package';
+    importRow.onclick = () => this.triggerIAPImport();
+    list.appendChild(importRow);
+    // -------------------------------------------
 
-        const filtered = this.apps.filter(app => app.name.toLowerCase().includes(term) || app.id.toLowerCase().includes(term));
-
-        if (filtered.length === 0) {
-            list.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No matches found</div>';
-            return;
-        }
-
-        filtered.forEach(app => {
-            const row = document.createElement('div');
-            row.className = 'ios-row';
-            row.style.padding = '12px 16px';
-            const iconSrc = app.iconUrl || 'grey.png';
-            
-            // Badge for Native Apps
-            const badge = app.type === 'native' 
-                ? '' 
-                : '';
-
-            row.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
-                    <img src="${iconSrc}" style="width:42px; height:42px; border-radius:10px; background:#eee; object-fit:cover; flex-shrink:0;" onerror="this.src='grey.png'">
-                    <div style="display:flex; flex-direction:column; min-width:0;">
-                        <span style="font-weight:600; font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${app.name}${badge}</span>
-                        <span style="font-size:11px; color:#8E8E93; font-family: 'SF Mono', monospace; margin-top:2px;">${app.id}</span>
-                    </div>
-                </div>
-                <div style="display:flex; gap:8px; margin-left:10px;">
-                    <button style="background:#E9E9EA; color:#007AFF; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">Edit</button>
-                    <button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Delete</button>
-                </div>
-            `;
-            list.appendChild(row);
-        });
+    if (this.apps.length === 0) {
+        const empty = document.createElement('div');
+        empty.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No apps installed</div>';
+        list.appendChild(empty);
+        return;
     }
+
+    const filtered = this.apps.filter(app => app.name.toLowerCase().includes(term));
+
+    filtered.forEach(app => {
+        const row = document.createElement('div');
+        row.className = 'ios-row';
+        row.style.padding = '12px 16px';
+        const iconSrc = app.iconUrl || 'grey.png';
+        
+        // Badge Logic
+        let badge = '';
+        if (app.isPacked) badge = ' <span style="font-size:10px; background:#E5E5EA; padding:2px 4px; border-radius:4px; color:#000;">IAP</span>';
+        else if (app.type === 'native') badge = ' <span style="font-size:10px; background:#34C759; color:white; padding:2px 4px; border-radius:4px; display: none;">NATIVE</span>';
+
+        // Conditional Edit Button
+        // If isPacked (IAP), show ONLY Delete. If normal, show Edit + Delete.
+        let actionsHTML = '';
+        if (app.isPacked) {
+            actionsHTML = `<button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Uninstall</button>`;
+        } else {
+            actionsHTML = `
+                <button style="background:#E9E9EA; color:#007AFF; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">Edit</button>
+                <button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Delete</button>
+            `;
+        }
+
+        row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+            <img src="${iconSrc}" style="width:42px; height:42px; border-radius:10px; background:#eee; object-fit:cover; flex-shrink:0;" onerror="this.src='grey.png'">
+            <div style="display:flex; flex-direction:column; min-width:0;">
+                <span style="font-weight:600; font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${app.name}${badge}</span>
+                <!-- SHOW AUTHOR AND ID -->
+                <span style="font-size:11px; color:#8E8E93; font-family: 'SF Mono', monospace; margin-top:2px; white-space:normal; overflow-wrap:break-word; line-height:1.3;">
+    ${app.author || 'Sideloaded'} • ${app.id}
+</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-left:10px;">
+            ${actionsHTML}
+        </div>
+    `;
+        list.appendChild(row);
+    });
+}
 
     toggleSource(mode) {
         this.currentSourceMode = mode;
@@ -2664,18 +3252,18 @@ handleUrlInput(el) {
         else if (mode === 'native') {
             if (fileSection) fileSection.style.display = 'block';
             if (checkNative) checkNative.style.display = 'block';
-            
-            // Smart Label Update
-            if (fileNameLabel) {
-                if (this.pendingBlob) {
-                     const sizeMB = (this.pendingBlob.size / 1024 / 1024).toFixed(2);
-                     fileNameLabel.innerText = `Native File Selected (${sizeMB} MB)`;
-                     fileNameLabel.style.color = "#000"; // Or #fff in dark mode
-                } else {
-                     fileNameLabel.innerText = "Select Native HTML (Max 5MB)";
-                     fileNameLabel.style.color = "#007AFF";
-                }
-            }
+          if (fileNameLabel) {
+        // FIX: Check pendingBlob to set correct text
+        if (this.pendingBlob) {
+             const sizeMB = (this.pendingBlob.size / 1024 / 1024).toFixed(2);
+             fileNameLabel.innerText = `Native File Selected (${sizeMB} MB)`;
+             fileNameLabel.style.color = "#000"; 
+        } else {
+             // Reset to prompt
+             fileNameLabel.innerText = "Select Native HTML (Max 5MB)";
+             fileNameLabel.style.color = "#007AFF";
+        }
+    }
         }
     }
 
@@ -2746,6 +3334,13 @@ handleUrlInput(el) {
         const urlValue = document.getElementById('sl-icon').value.trim();
         const appId = this.editingId || 'sl_' + Math.random().toString(36).substr(2, 6);
 
+
+const rawAuthor = document.getElementById('sl-author') ? document.getElementById('sl-author').value.trim() : '';
+    // 2. If empty, fallback to 'User Generated' (Cleaner than 'Sideloaded Package')
+    const author = rawAuthor || 'User Generated';
+
+
+
         // LOGIC: Use Uploaded Base64 if exists, otherwise use URL
         const finalIcon = this.pendingIconBase64 || urlValue;
 
@@ -2776,9 +3371,10 @@ handleUrlInput(el) {
         const appData = {
             id: appId,
             name: name,
+            author: author, // SAVE AUTHOR
             iconUrl: finalIcon, // <--- SAVES NEW ICON
             embedUrl: embedUrl,
-            author: type === 'native' ? 'Native Sideload' : 'Sideloaded',
+            
             type: type,
             updatedAt: Date.now()
         };
@@ -2845,28 +3441,19 @@ handleUrlInput(el) {
     
 
     deleteApp(id) {
-        iOS.showAlert('Delete App?', 'This cannot be undone.', () => {
-            // 1. Remove from Array
-            this.apps = this.apps.filter(a => a.id !== id);
-            localStorage.setItem('ios_sideloaded_apps', JSON.stringify(this.apps));
-            
-            // 2. Remove from Database (if native)
-            if (this.db) {
-                const tx = this.db.transaction('native_apps', 'readwrite');
-                tx.objectStore('native_apps').delete(id);
-                // Cleanup Blob URL
-                if (this.nativeUrls[id]) URL.revokeObjectURL(this.nativeUrls[id]);
-                delete this.nativeUrls[id];
-            }
-
-            // 3. UI Cleanup
-            iOS.removeSingleApp(id);
-            this.renderList();
-        }, true);
-    }
+    iOS.showAlert('Delete App?', 'This cannot be undone.', () => {
+        // Delegate to the master function in AppStore
+        if (window.appStore) {
+            window.appStore.forceDeleteApp(id);
+        } else {
+            // Fallback if AppStore isn't loaded (Unlikely)
+            this.deleteAppSilent(id); 
+        }
+    }, true); // Destructive Alert (Red Button)
 }
         
-        
+
+}     
         
   
 
@@ -3152,7 +3739,7 @@ this.initMessageListeners();
 
 this.initSettings();
 
-
+this.handleDeepLinks();
 
             }
             
@@ -3315,6 +3902,73 @@ toggleIslandEvents(el) {
     this.islandEventsEnabled = el.checked;
     localStorage.setItem('ios_island_enabled', el.checked);
 }
+
+
+
+handleDeepLinks() {
+    // 1. Get the Query
+    const params = new URLSearchParams(window.location.search);
+    const searchQuery = params.get('s'); // Get ?s=Query
+
+    if (searchQuery) {
+        console.log("🔗 Deep Link Detected:", searchQuery);
+
+        // 2. Wait for AppStore to be initialized
+        const waitForStore = setInterval(() => {
+            // Check if appStore instance exists (assuming 'appStore' is the variable name for your AppStore class instance)
+            if (typeof appStore !== 'undefined') {
+                clearInterval(waitForStore);
+
+                // 3. Set the Search Input Early
+                // We set this BEFORE the app opens so the value is there waiting
+                const input = document.getElementById('store-search-input');
+                if (input) input.value = searchQuery;
+
+                // 4. "No-Flash" Render Override
+                // We wrap the standard render function. When fetchApps() finishes and calls renderStore(),
+                // this wrapper intercepts it, checks the search input, filters the data, 
+                // and THEN passes the filtered list to the real renderer.
+                if (appStore.renderStore) {
+                    const originalRender = appStore.renderStore.bind(appStore);
+                    
+                    appStore.renderStore = function(list) {
+                        const searchVal = document.getElementById('store-search-input')?.value.toLowerCase();
+                        
+                        if (searchVal && list.length > 0) {
+                            // "Normal Search" Logic: Check Name, Author, Desc
+                            const filtered = list.filter(app => {
+                                const displayName = (app.storeName || app.name).toLowerCase();
+                                const author = (app.author || '').toLowerCase();
+                                const desc = (app.description || '').toLowerCase();
+                                
+                                return displayName.includes(searchVal) || 
+                                       author.includes(searchVal) || 
+                                       desc.includes(searchVal);
+                            });
+                            // Render only the filtered results
+                            originalRender(filtered);
+                        } else {
+                            // Render everything if search is empty
+                            originalRender(list);
+                        }
+                    };
+                }
+
+                // 5. Open the App Store UI
+                // Wait briefly for the OS animations/boot to be ready
+                setTimeout(() => {
+                    const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
+                    if (appStoreIcon) {
+                        this.openApp(appStoreIcon, 'AppStore', 'light');
+                    }
+                }, 1200); 
+            }
+        }, 100);
+    }
+}
+
+
+
 
 
 
@@ -4371,57 +5025,44 @@ renderSafeModeUI() {
         }
     }
 
-    // --- PRO DELETE FUNCTION 
-    deletePersistentMod(modId, originAppId) {
-        this.showAlert(
-            "Remove Malware?", 
-            "This will remove the persistent script from your system.", 
-            () => {
-                // 1. Remove the Malware Script
-                let mods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
-                mods = mods.filter(m => m.id !== modId);
-                localStorage.setItem('ios_persistent_mods', JSON.stringify(mods));
-                
-                // 2. CHECK FOR SOURCE APP & OFFER NUKE
-                if (originAppId && originAppId !== 'Unknown') {
-                    
-                    // Small delay for the first alert to fade
-                    setTimeout(() => {
-                        this.showAlert(
-                            "Uninstall Source?", 
-                            `The app "${originAppId}" created this malware. Uninstall it to prevent re-infection?`,
-                            () => {
-                                // --- THE FIX: USE GLOBAL WINDOW ACCESS ---
-                                
-                                // 1. Try Sideloaded Delete
-                                if (window.sideloader && window.sideloader.deleteAppSilent) {
-                                    window.sideloader.deleteAppSilent(originAppId);
-                                }
-                                
-                                // 2. Try AppStore Delete
-                                if (window.appStore && window.appStore.removeAppById) {
-                                    window.appStore.removeAppById(originAppId);
-                                }
-                                
-                                // 3. Refresh Safe Mode UI
-                                this.renderSafeModeUI();
-                                
-                                // 4. Confirmation
-                                setTimeout(() => {
-                                    this.showAlert("Cleaned", "Malware and Source App removed.");
-                                }, 300);
-                            },
-                            true // Red Button for Danger
-                        );
-                    }, 400);
-                } else {
-                    this.renderSafeModeUI();
-                    this.showAlert("Cleaned", "Malware removed.");
-                }
-            },
-            true
-        );
-    }
+
+
+deletePersistentMod(modId, originAppId) {
+    this.showAlert(
+        "Remove Malware?", 
+        "This will remove the persistent script from your system.", 
+        () => {
+            // 1. Remove the Malware Script
+            let mods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+            mods = mods.filter(m => m.id !== modId);
+            localStorage.setItem('ios_persistent_mods', JSON.stringify(mods));
+            
+            // 2. NUKE SOURCE APP (Using the robust method)
+            if (originAppId && originAppId !== 'Unknown') {
+                setTimeout(() => {
+                    this.showAlert(
+                        "Uninstall Source?", 
+                        `The app "${originAppId}" created this malware. Delete it?`,
+                        () => {
+                            // USE THE MASTER DELETE FUNCTION
+                            if (window.appStore) {
+                                window.appStore.forceDeleteApp(originAppId);
+                            }
+                            
+                            this.renderSafeModeUI();
+                            setTimeout(() => this.showAlert("Cleaned", "Malware and Source nuked."), 300);
+                        },
+                        true // Destructive Red Button
+                    );
+                }, 400);
+            } else {
+                this.renderSafeModeUI();
+                this.showAlert("Cleaned", "Malware removed.");
+            }
+        },
+        true
+    );
+}
 
   
 

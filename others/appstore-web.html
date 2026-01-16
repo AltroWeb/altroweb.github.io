@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Store Web</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #fff;
+            --text-color: #000;
+            --secondary-bg: #F2F2F7;
+            --border-color: rgba(0,0,0,0.1);
+            --sub-text: #8E8E93;
+            --accent-color: #007AFF;
+            --danger-color: #FF3B30;
+            --success-color: #34C759;
+            --max-width: 800px;
+            --nav-blur: rgba(255, 255, 255, 0.85);
+            --alert-bg: rgba(240,240,240,0.95);
+            --footer-text: #86868b;
+        }
+
+        body.dark-mode {
+            --bg-color: #000;
+            --text-color: #fff;
+            --secondary-bg: #1c1c1e;
+            --border-color: rgba(255,255,255,0.15);
+            --sub-text: #98989d;
+            --nav-blur: rgba(20, 20, 20, 0.85);
+            --alert-bg: rgba(30,30,30,0.95);
+            --footer-text: #a1a1a6;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* --- NAVIGATION BAR (Overlay) --- */
+        .navbar-fixed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 54px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border-bottom: 0.5px solid transparent;
+            transition: background 0.3s, border 0.3s;
+            pointer-events: none;
+        }
+
+        .navbar-fixed.scrolled {
+            background: var(--nav-blur);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 0.5px solid var(--border-color);
+            pointer-events: auto;
+        }
+
+        .nav-small-title {
+            font-size: 17px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s, transform 0.3s;
+            color: var(--text-color);
+        }
+
+        .navbar-fixed.scrolled .nav-small-title {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- CONTENT HEADER --- */
+        .content-header {
+            padding: 40px 20px 0px 20px;
+            margin-bottom: 10px;
+        }
+
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .large-title {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: var(--secondary-bg);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: background 0.2s;
+        }
+        .theme-toggle:active { opacity: 0.7; }
+
+        /* --- SEARCH --- */
+        .search-container {
+            padding: 0 20px 20px 20px;
+        }
+
+        .ios-search-bar {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--secondary-bg);
+            border-radius: 10px;
+            border: none;
+            font-size: 17px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+        
+        .ios-search-bar input {
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 17px;
+            width: 100%;
+            color: inherit;
+        }
+        
+        .ios-search-bar svg {
+            opacity: 0.5;
+            color: var(--sub-text);
+        }
+
+        /* --- APP LIST --- */
+        .store-list {
+            padding: 0 20px 40px 20px;
+            flex: 1;
+        }
+
+        .store-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 0.5px solid var(--border-color);
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .store-icon {
+            width: 62px;
+            height: 62px;
+            border-radius: 14px;
+            background: #eee;
+            margin-right: 14px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
+
+        /* --- APP LIST LAYOUT (Wrapping Fix) --- */
+
+.store-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+    min-width: 0; /* CRITICAL: Prevents long text from pushing buttons off screen */
+    margin-right: 10px;
+}
+
+.store-name {
+    font-weight: 600;
+    font-size: 17px;
+    color: inherit;
+    /* Wrapping Logic */
+    white-space: normal; 
+    overflow-wrap: break-word;
+    line-height: 1.25;
+    /* Ensure badges sit nicely inline */
+    display: block; 
+}
+
+.store-sub {
+    font-size: 13px;
+    color: var(--sub-text);
+    /* Wrapping Logic */
+    white-space: normal;       /* Was 'nowrap' */
+    overflow-wrap: break-word; /* Breaks super long words */
+    line-height: 1.35;
+    /* Remove truncation */
+    overflow: visible;
+    text-overflow: clip;
+}
+
+        /* --- BADGES --- */
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 4px;
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
+        }
+        .verified-badge.verified {
+            width: 14px; height: 14px; background: var(--accent-color); border-radius: 50%;
+        }
+        .verified-badge.verified svg { width: 8px; height: 8px; fill: white; display: block; }
+        .verified-badge.member svg { width: 14px; height: 14px; display: block; }
+
+        .trusted-app-badge {
+            display: inline-flex; margin-left: 4px; vertical-align: middle; position: relative; top: -1px;
+        }
+        .trusted-app-badge svg {
+            width: 14px; height: 14px; fill: var(--success-color);
+        }
+
+        .dl-badge {
+            display: inline-flex;
+            align-items: center;
+            background: var(--secondary-bg);
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-left: 6px;
+            font-size: 11px;
+            color: var(--sub-text);
+            font-weight: 500;
+        }
+
+        /* --- ACTIONS STACK --- */
+        .action-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 75px;
+        }
+
+        .top-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .share-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--accent-color);
+            padding: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .share-btn:active { opacity: 0.6; }
+        .share-btn svg { width: 24px; height: 24px; }
+
+        .report-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--sub-text);
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+        .report-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+        .open-btn {
+            background: var(--secondary-bg);
+            color: var(--accent-color);
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 20px;
+            padding: 6px 0;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+        }
+        .open-btn:active { opacity: 0.7; background: #d1d1d6; }
+        body.dark-mode .open-btn:active { background: #3a3a3c; }
+
+        /* --- FOOTER --- */
+        .footer {
+            padding: 40px 20px;
+            background: var(--secondary-bg);
+            margin-top: auto;
+            border-top: 0.5px solid var(--border-color);
+            font-size: 12px;
+            color: var(--footer-text);
+        }
+        
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .footer p { margin: 8px 0; line-height: 1.5; }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: var(--footer-text);
+            text-decoration: none;
+            padding-right: 15px;
+            border-right: 1px solid var(--border-color);
+        }
+        .footer-links a:last-child { border: none; padding: 0; }
+        .footer-links a:hover { text-decoration: underline; color: var(--accent-color); }
+        
+        
+        
+        a {
+            color: var(--footer-text);
+            text-decoration: underline;
+            
+        }
+        
+        a:hover { text-decoration: underline; color: var(--accent-color); }
+        
+        .ecosystem-tag a {
+            color: var(--footer-text);
+            text-decoration: none;
+            
+        }
+        
+        .ecosystem-tag a:hover {
+            text-decoration: underline; color: var(--accent-color);
+        }
+        
+        
+        
+        
+        
+        .ecosystem-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 15px;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* --- SYSTEM ALERT MODAL --- */
+        .sys-alert-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .sys-alert-overlay.visible { opacity: 1; pointer-events: auto; }
+        
+        .sys-alert-box {
+            width: 270px; background: var(--alert-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 14px; text-align: center; overflow: hidden;
+            transform: scale(1.1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: var(--text-color);
+        }
+        .sys-alert-overlay.visible .sys-alert-box { transform: scale(1); }
+
+        .sa-content { padding: 20px 16px; }
+        .sa-title { font-weight: 600; font-size: 17px; margin-bottom: 4px; color:inherit; }
+        .sa-msg { font-size: 13px; color: inherit; }
+        
+        .sa-btn-group { display: flex; width: 100%; border-top: 0.5px solid rgba(60,60,67,0.36); }
+        .sa-btn {
+            flex: 1; padding: 12px; font-size: 17px; color: var(--accent-color); 
+            background: transparent; border: none; cursor: pointer;
+            border-right: 0.5px solid rgba(60,60,67,0.36);
+        }
+        .sa-btn:last-child { border-right: none; font-weight: 600; }
+        .sa-btn:active { background: rgba(128,128,128,0.1); }
+
+        /* --- REPORT OPTIONS MODAL --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 3000;
+            display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+        }
+        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+
+        .report-box {
+            width: 270px; background: var(--alert-bg);
+            backdrop-filter: blur(20px); border-radius: 14px; overflow: hidden; text-align: center;
+            transform: scale(1.1); transition: transform 0.2s;
+            color: var(--text-color);
+        }
+        .modal-overlay.visible .report-box { transform: scale(1); }
+
+        .ra-header { padding: 16px 16px 12px 16px; }
+        .ra-title { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: inherit; }
+        .ra-msg { font-size: 13px; color: inherit; }
+
+        .ra-options { display: flex; flex-direction: column; border-top: 0.5px solid rgba(60,60,67,0.36); }
+        .ra-btn {
+            background: transparent; border: none; padding: 12px; font-size: 17px; color: var(--accent-color);
+            border-bottom: 0.5px solid rgba(60,60,67,0.36); cursor: pointer;
+        }
+        .ra-btn:last-child { border-bottom: none; font-weight: 600; }
+        .ra-btn.danger { color: var(--danger-color); }
+        .ra-btn:active { background: rgba(128,128,128,0.1); }
+
+        /* Toast & Spinner */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(50px);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 12px 24px; border-radius: 30px;
+            font-weight: 500; opacity: 0; transition: all 0.4s; z-index: 2000; pointer-events: none; backdrop-filter: blur(10px);
+        }
+        .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .loading-spinner { text-align: center; padding: 60px 20px; color: var(--sub-text); font-weight: 500; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Fixed Navbar (Overlay) -->
+    <div class="navbar-fixed" id="navbar-fixed">
+        <span class="nav-small-title">App Store Web</span>
+    </div>
+
+    <div class="container">
+        <!-- Content Header -->
+        <div class="content-header">
+            <div class="header-top-row">
+                <h1 class="large-title">App Store Web</h1>
+                <button class="theme-toggle" onclick="appStoreWeb.toggleTheme()">
+                    <svg id="theme-icon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-container">
+            <div class="ios-search-bar">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="store-search-input" placeholder="Games, Apps, Stories">
+            </div>
+        </div>
+
+        <!-- App List -->
+        <div class="store-list" id="store-list">
+            <div class="loading-spinner">Connecting to App Store...</div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p><strong>App Store Web</strong></p>
+                <p>Not affiliated with Apple Inc. This is a simulation environment.</p>
+                
+                <div class="footer-links">
+                    <a href="ios-simu-web?page=privacy" target="_blank">Privacy Policy</a>
+                    <a href="ios-simu-web?page=terms" target="_blank">Terms of Service</a>
+                    <a href="ios-simu-web?page=about" target="_blank">About</a>
+                </div>
+
+                <p>Get your own apps on the App Store. Join the <a href="appbuilder" target="_blank">developer program.</a></p>
+                
+                <div class="ecosystem-tag">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    <a href="ios-simu-web" target="_blank">Part of the iOS Simu Ecosystem</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span id="toast-msg">Link Copied</span>
+    </div>
+
+    <!-- SYSTEM ALERT DIALOG (Native iOS Style) -->
+    <div class="sys-alert-overlay" id="sys-alert">
+        <div class="sys-alert-box">
+            <div class="sa-content">
+                <div class="sa-title" id="sa-title">Alert</div>
+                <div class="sa-msg" id="sa-msg">Message</div>
+            </div>
+            <div class="sa-btn-group">
+                <button class="sa-btn" id="sa-btn-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div class="modal-overlay" id="report-modal">
+        <div class="report-box">
+            <div class="ra-header">
+                <div class="ra-title">Report App</div>
+                <div class="ra-msg" id="ra-app-name">Select a reason</div>
+            </div>
+            <div class="ra-options">
+                <button class="ra-btn danger" onclick="appStoreWeb.submitReport('Malware')">Malware / Virus</button>
+                <button class="ra-btn" onclick="appStoreWeb.submitReport('Scam')">Scam / Fraud</button>
+                <button class="ra-btn" onclick="appStoreWeb.submitReport('Abusive')">Abusive Content</button>
+                <button class="ra-btn" onclick="appStoreWeb.submitReport('Policy')">Policy Violation</button>
+                <button class="ra-btn" style="font-weight:400;" onclick="appStoreWeb.closeReport()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBmnPoBKKnfpQj1ms_zuwXrc_1AlVRcJt8",
+            authDomain: "ios-simu-app-store.firebaseapp.com",
+            projectId: "ios-simu-app-store",
+            storageBucket: "ios-simu-app-store.firebasestorage.app",
+            messagingSenderId: "112772830208",
+            appId: "1:112772830208:web:a0e84ee244865b949db4e5"
+        };
+        const GLOBAL_APP_ID = 'default-app-id';
+
+        class AppStoreWeb {
+            constructor() {
+                this.db = null;
+                this.appId = GLOBAL_APP_ID;
+                this.apps = [];
+                this.userBadges = new Map();
+                this.trustedList = [];
+                this.pendingReportId = null;
+                this.deviceId = this.getDeviceId();
+                
+                // Init Theme
+                const savedTheme = localStorage.getItem('ios_web_theme') || 'light';
+                if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+                
+                this.init();
+            }
+
+            // --- PRO: DEVICE TOKEN ---
+            getDeviceId() {
+    let did = localStorage.getItem('ios_device_unique_id');
+    if (!did) {
+        did = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        localStorage.setItem('ios_device_unique_id', did);
+    }
+    this.backupDeviceIdToDB(did);
+    return did;
+}
+
+            async init() {
+                this.updateThemeIcon();
+                this.setupScrollListener();
+                
+                // 1. Firebase Init
+                if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
+                this.db = firebase.firestore();
+
+                // 2. Auth - Robust fail-safe
+                try {
+                    const auth = firebase.auth();
+                    if (!auth.currentUser) await auth.signInAnonymously();
+                } catch (e) {
+                    console.warn("Auth check: Guest Mode active or Auth Restricted.", e.message);
+                }
+
+                // 3. Listeners
+                this.initSearch();
+
+                // 4. Fetch Data (Optimized)
+                await Promise.all([this.fetchVerifiedUsers(), this.fetchTrustedApps()]);
+                await this.fetchApps();
+
+                // 5. Deep Links
+                this.checkUrlParams();
+            }
+
+            // --- UI ---
+            setupScrollListener() {
+                window.addEventListener('scroll', () => {
+                    const navbar = document.getElementById('navbar-fixed');
+                    if (window.scrollY > 50) navbar.classList.add('scrolled');
+                    else navbar.classList.remove('scrolled');
+                });
+            }
+
+            toggleTheme() {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('ios_web_theme', isDark ? 'dark' : 'light');
+                this.updateThemeIcon();
+            }
+
+            updateThemeIcon() {
+                const isDark = document.body.classList.contains('dark-mode');
+                const svg = document.getElementById('theme-icon');
+                if (isDark) {
+                    svg.innerHTML = '<path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/>';
+                } else {
+                    svg.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
+                }
+            }
+
+            // --- DATA ---
+            async fetchVerifiedUsers() {
+                try {
+                    const snap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('users').get();
+                    snap.forEach(doc => {
+                        const d = doc.data();
+                        if (d.member === true) this.userBadges.set(doc.id, 'member');
+                        else if (d.verified === true || d.authorVerified === true) this.userBadges.set(doc.id, 'verified');
+                    });
+                } catch(e) {}
+            }
+
+            async fetchTrustedApps() {
+                try {
+                    const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('config').doc('security').get();
+                    if (doc.exists && doc.data().trustedAppIds) this.trustedList = doc.data().trustedAppIds;
+                } catch(e) {}
+            }
+
+            async fetchApps() {
+                try {
+                    const snap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                    this.apps = [];
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        if ((data.reportCount || 0) >= 10) return; // Tripwire
+                        this.apps.push({ id: doc.id, ...data });
+                    });
+                    this.renderStore(this.apps);
+                } catch (e) {
+                    document.getElementById('store-list').innerHTML = `<div class="loading-spinner">Could not load apps.<br>Check internet connection.</div>`;
+                }
+            }
+
+            // --- LOGIC ---
+            checkUrlParams() {
+                const params = new URLSearchParams(window.location.search);
+                const query = params.get('s') || params.get('app');
+                if (query) {
+                    const input = document.getElementById('store-search-input');
+                    input.value = query;
+                    this.filterApps(query);
+                }
+            }
+
+            initSearch() {
+                const input = document.getElementById('store-search-input');
+                input.addEventListener('input', (e) => this.filterApps(e.target.value));
+            }
+
+            filterApps(query) {
+                const term = query.toLowerCase();
+                const filtered = this.apps.filter(app => {
+                    const displayName = (app.storeName || app.name || '').toLowerCase();
+                    const author = (app.author || '').toLowerCase();
+                    const desc = (app.description || '').toLowerCase();
+                    
+                    return displayName.includes(term) || author.includes(term) || desc.includes(term);
+                });
+                this.renderStore(filtered);
+            }
+
+            // --- NATIVE ALERTS ---
+            showAlert(title, msg, onOk = null) {
+                document.getElementById('sa-title').innerText = title;
+                document.getElementById('sa-msg').innerText = msg;
+                const overlay = document.getElementById('sys-alert');
+                const okBtn = document.getElementById('sa-btn-ok');
+                
+                const newBtn = okBtn.cloneNode(true);
+                okBtn.parentNode.replaceChild(newBtn, okBtn);
+                
+                newBtn.onclick = () => {
+                    overlay.classList.remove('visible');
+                    if (onOk) onOk();
+                };
+                
+                overlay.classList.add('visible');
+            }
+
+            // --- REPORTING (PRO DEVICE-ID FLOW) ---
+            async openReport(appId) {
+                if (!navigator.onLine) {
+                    this.showAlert('Offline', 'Connect to internet to report apps.');
+                    return;
+                }
+
+                // Check Local Cooldown (Fast Check)
+                const cooldownKey = `ios_report_cooldown_${appId}`;
+                const lastReport = localStorage.getItem(cooldownKey);
+                
+                if (lastReport && (Date.now() - parseInt(lastReport) < 14400000)) { // 4 hours
+                    this.showAlert('Reported', 'You have recently reported this app. We are investigating.');
+                    return;
+                }
+
+                this.pendingReportId = appId;
+                const app = this.apps.find(a => a.id === appId);
+                document.getElementById('ra-app-name').innerText = `Reporting "${app ? app.name : 'App'}"`;
+                document.getElementById('report-modal').classList.add('visible');
+            }
+
+            closeReport() {
+                document.getElementById('report-modal').classList.remove('visible');
+                this.pendingReportId = null;
+            }
+
+            async backupDeviceIdToDB(id) {
+    try {
+        const req = indexedDB.open('iOS_Identity_Store', 1);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('identity')) db.createObjectStore('identity');
+        };
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction('identity', 'readwrite');
+            tx.objectStore('identity').put(id, 'device_id');
+        };
+    } catch(e) {}
+}
+
+async restoreDeviceId() {
+    return new Promise((resolve) => {
+        const req = indexedDB.open('iOS_Identity_Store', 1);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            const tx = db.transaction('identity', 'readonly');
+            const get = tx.objectStore('identity').get('device_id');
+            get.onsuccess = () => {
+                if (get.result) {
+                    localStorage.setItem('ios_device_unique_id', get.result);
+                    resolve(get.result);
+                } else resolve(null);
+            };
+        };
+        req.onerror = () => resolve(null);
+    });
+}
+
+// --- 2. REPORT SUBMISSION (6-HOUR COOLDOWN) ---
+async submitReport(reason) {
+    let deviceId = localStorage.getItem('ios_device_unique_id');
+    if (!deviceId) deviceId = await this.restoreDeviceId();
+    deviceId = this.getDeviceId(); 
+
+    const appId = this.pendingReportId; 
+    this.closeReport(); 
+
+    if (!appId || !this.db) return;
+
+    this.showAlert('Sending...', 'Securely submitting report data.');
+
+    try {
+        const appRef = this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('store_apps').doc(appId);
+
+        const reportsRef = this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('reports');
+
+        const app = this.apps.find(a => a.id === appId);
+        const safeData = {
+            appName: app ? (app.name || 'Unknown') : 'Unknown',
+            authorName: app ? (app.author || 'Unknown') : 'Unknown',
+            authorId: app ? (app.authorId || 'anonymous_dev') : 'anonymous_dev'
+        };
+
+        // --- TIME-SLOT LOGIC (6 Hours) ---
+        // 1. Get current time in ms
+        const now = Date.now();
+        // 2. Define Window Size: 6 * 60 * 60 * 1000 = 21600000 ms
+        const windowSize = 21600000; 
+        // 3. Calculate Slot ID (e.g. 19823)
+        const timeSlot = Math.floor(now / windowSize);
+        
+        // 4. Create Rotatable ID: appId + deviceId + timeSlot
+        const reportDocId = `${appId}_${deviceId}_${timeSlot}`;
+        const specificReportRef = reportsRef.doc(reportDocId);
+
+        const batch = this.db.batch();
+
+        batch.set(specificReportRef, {
+            appId: appId,
+            deviceId: deviceId, 
+            appName: safeData.appName,
+            authorName: safeData.authorName,
+            authorId: safeData.authorId,
+            reason: reason,
+            status: 'pending',
+            serverTime: firebase.firestore.FieldValue.serverTimestamp(),
+            clientTime: new Date().toISOString() 
+        });
+
+        batch.update(appRef, {
+            reportCount: firebase.firestore.FieldValue.increment(1),
+            lastReportReason: reason 
+        });
+
+        await batch.commit();
+
+        // Save local timestamp for UI (optional now, since server handles it, but good for UX)
+        localStorage.setItem(`ios_report_cooldown_${appId}`, Date.now());
+        
+        setTimeout(() => {
+            this.showAlert('Report Confirmed', 'The investigation ID has been generated. Thank you.');
+            this.fetchApps(); 
+        }, 600);
+
+    } catch (e) {
+        console.warn("Report System Response:", e.code);
+
+        if (e.code === 'permission-denied' || e.code === 'already-exists') {
+            this.showAlert('Reported', 'You have already reported this app recently. Please wait 6 hours.');
+            localStorage.setItem(`ios_report_cooldown_${appId}`, Date.now());
+        } else {
+            this.showAlert('Submission Failed', 'Network rejected the report packet.');
+        }
+    }
+}
+
+            // --- SHARING ---
+            async shareApp(appId) {
+                const app = this.apps.find(a => a.id === appId);
+                if (!app) return;
+                
+                const appName = app.storeName || app.name;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeURIComponent(appName)}`;
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share({ title: appName, text: `Check out ${appName} on App Store Web!`, url: shareUrl });
+                    } catch (err) { this.copyToClipboard(shareUrl); }
+                } else {
+                    this.copyToClipboard(shareUrl);
+                }
+            }
+
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const toast = document.getElementById('toast');
+                    document.getElementById('toast-msg').innerText = "Link Copied";
+                    toast.classList.add('visible');
+                    setTimeout(() => toast.classList.remove('visible'), 3000);
+                });
+            }
+
+            formatDownloadCount(num) {
+                if (!num || num < 5) return null;
+                const benchmarks = [
+                    { val: 1000000000000, sym: '1T+' },
+                    { val: 100000000000, sym: '100B+' }, { val: 50000000000, sym: '50B+' }, { val: 10000000000, sym: '10B+' }, { val: 5000000000, sym: '5B+' }, { val: 1000000000, sym: '1B+' },
+                    { val: 500000000, sym: '500M+' }, { val: 100000000, sym: '100M+' }, { val: 50000000, sym: '50M+' }, { val: 10000000, sym: '10M+' }, { val: 5000000, sym: '5M+' }, { val: 1000000, sym: '1M+' },
+                    { val: 500000, sym: '500K+' }, { val: 100000, sym: '100K+' }, { val: 50000, sym: '50K+' }, { val: 10000, sym: '10K+' }, { val: 5000, sym: '5K+' }, { val: 1000, sym: '1K+' },
+                    { val: 100, sym: '100+' }, { val: 10, sym: '10+' }, { val: 5, sym: '5+' }
+                ];
+                for (const b of benchmarks) { if (num >= b.val) return b.sym; }
+                return '5+';
+            }
+
+            // --- FAST RENDERER ---
+            renderStore(appList) {
+                const listEl = document.getElementById('store-list');
+                
+                if (appList.length === 0) {
+                    listEl.innerHTML = '<div class="loading-spinner">No results found.</div>';
+                    return;
+                }
+
+                // Optimization: Use DocumentFragment
+                const fragment = document.createDocumentFragment();
+
+                appList.forEach(app => {
+                    const displayName = app.storeName || app.name;
+                    
+                    // Badges
+                    const badgeType = this.userBadges.get(app.authorId);
+                    let badgeHTML = '';
+                    if (badgeType === 'member') badgeHTML = `<span class="verified-badge member"><svg width="14" height="14" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+                    else if (badgeType === 'verified') badgeHTML = `<span class="verified-badge verified"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+
+                    let shieldHTML = '';
+                    if (this.trustedList.includes(app.id)) shieldHTML = `<span class="trusted-app-badge">       <svg viewBox="0 0 24 24">
+                                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v3.66c0 4.16-2.63 7.97-6 9.09-3.37-1.12-6-4.93-6-9.09V6.43l6-2.25z" fill-rule="evenodd"/>
+                                    <path d="M12 7L7 8.9v2.6c0 2.8 2 5.1 5 6.2 3-1.1 5-3.4 5-6.2V8.9L12 7z"/>
+                                </svg></span>`;
+
+                    const dlText = this.formatDownloadCount(app.downloadCount);
+                    const dlHTML = dlText ? `<span class="dl-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="margin-right:2px; opacity:0.7;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>${dlText}</span>` : '';
+
+                    const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(displayName)}`;
+
+                    const div = document.createElement('div');
+                    div.className = 'store-item';
+                    div.innerHTML = `
+                        <img src="${app.iconUrl}" class="store-icon" onerror="this.src='https://via.placeholder.com/62?text=App'">
+                        <div class="store-info">
+                            <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
+                            <div class="store-sub">${app.author}${badgeHTML} • ${app.description}</div>
+                        </div>
+                        <div class="action-stack">
+                            <div class="top-actions-row">
+                                <button class="share-btn" onclick="appStoreWeb.shareApp('${app.id}')">
+                                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                                </button>
+                                <button class="report-btn" onclick="appStoreWeb.openReport('${app.id}')">
+                                    <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                                </button>
+                            </div>
+                            <a href="${simuLink}" class="open-btn" target="_blank">OPEN</a>
+                        </div>
+                    `;
+                    fragment.appendChild(div);
+                });
+
+                listEl.innerHTML = ''; 
+                listEl.appendChild(fragment); 
+            }
+        }
+        window.appStoreWeb = new AppStoreWeb();
+    </script>
+</body>
+</html>

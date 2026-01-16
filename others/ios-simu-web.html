@@ -511,6 +511,10 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
             <div class="cta-group">
                 <button class="btn btn-primary" onclick="window.open('ios-simu-appstore.html', '_blank')">Launch Simulator</button>
                 <button class="btn btn-secondary" onclick="window.open('appbuilder.html', '_blank')">Open App Builder</button>
+                
+                <button class="btn btn-secondary" onclick="window.open('appstore-web.html', '_blank')" style="width: fit-content; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1);">
+            Launch Web Store
+        </button>
             </div>
             <p style="font-size: 13px; color: var(--text-secondary);">v2.0 • HTTPS Required</p>
         </section>
@@ -539,6 +543,31 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
                         </div>
                     </div>
                 </div>
+                
+                
+                <!-- Insert inside <div class="bento-grid"> -->
+<div class="card">
+    <div class="card-content">
+        <h3>App Store Web</h3>
+        <p>Browse the full app catalog, search via URL parameters, and generate shareable deep links without launching the full OS.</p>
+        <!-- Button to launch -->
+        <button class="btn btn-secondary" onclick="window.open('appstore-web.html', '_blank')" style="margin-top: 20px; width: fit-content; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1);">
+            Launch Web Store
+        </button>
+    </div>
+    <!-- Visual Representation -->
+    <div class="card-visual" style="background: linear-gradient(135deg, #5E5CE6, #BF5AF2); display: flex; align-items: center; justify-content: center;">
+        <div class="mock-window" style="height: 60%; width: 70%; background: rgba(255,255,255,0.95); box-shadow: 0 10px 30px rgba(0,0,0,0.2); color: #000;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <div style="width:20px; height:20px; background:#007AFF; border-radius:5px;"></div>
+                <span style="font-weight:600; font-size:14px;">Store</span>
+            </div>
+            <div style="width:100%; height:8px; background:#f2f2f7; border-radius:4px; margin-bottom:8px;"></div>
+            <div style="width:70%; height:8px; background:#f2f2f7; border-radius:4px;"></div>
+        </div>
+    </div>
+</div>
+                
             </div>
         </section>
     </div>
@@ -570,6 +599,9 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
                 <a href="#doc-settings">System Settings</a>
                 
                 <a href="#doc-mods">System Mods (Root)</a> 
+                
+                
+                <a href="#doc-iap">IAP Packages</a>
                 
             </aside>
             
@@ -1023,6 +1055,62 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
             <br>
                     <strong>Console Defense</strong>
                     <p>For security, the Simulator automatically revokes <code>Root</code> privileges when the system is idle. If you try to run `iOS.injectMod()` from the browser console, it will fail. You must open a <strong>Sideloaded App</strong> (which grants temporary Root access) to execute system-level commands.</p>
+                    
+                    
+                    
+                   <div id="doc-iap" class="doc-block">
+    <h3>The .IAP Package System</h3>
+    <p>The <strong>iOS App Package (.iap)</strong> is a secure, encrypted file format designed for sharing apps offline. Unlike standard HTML files, .iap packages are tamper-proof and cryptographically signed.</p>
+
+    <div class="feature-grid" style="margin-top: 20px; margin-bottom: 30px;">
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#007AFF;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            </div>
+            <h3>AES-256 Encryption</h3>
+            <p>Packages are encrypted using industry-standard AES-GCM. The source code is protected from casual modification.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#34C759;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            </div>
+            <h3>Integrity Check</h3>
+            <p>The system calculates a cryptographic hash. If a single byte of the file is altered, the installation will be rejected.</p>
+        </div>
+    </div>
+
+    <h4>How to Use</h4>
+    <p>Installing a package is simple and works entirely offline.</p>
+    <div class="code-box" style="white-space: normal;">
+        1. Open the <strong>Sideloader</strong> app.<br>
+        2. Tap <strong>"Import .iap Package"</strong> at the top of the list.<br>
+        3. Select the file from your device.<br>
+        4. Review the App Name, Author, and Permissions before confirming.
+    </div>
+
+    <h4>Creating Packages</h4>
+    <p>Developers can export their apps as .iap files directly from the Sideloader. When editing an app, simply click <strong>"Export .iap Package"</strong>. This bundles the icon, metadata, and source code into a single shareable file.</p>
+
+    <div class="alert-box">
+        <div class="alert-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        </div>
+        <div class="alert-content">
+            <h4>Safety Advisory</h4>
+            <p>While .iap files ensure the code hasn't been tampered with since export, they do not guarantee the original author is trustworthy.</p>
+            <ul style="margin-top: 10px; padding-left: 20px;">
+                <li><strong>Only install packages from trusted sources.</strong></li>
+                <li><strong>Never</strong> bypass a "Corrupted Package" warning.</li>
+                <li>If an app asks for sensitive permissions immediately after install, uninstall it.</li>
+            </ul>
+        </div>
+    </div>
+</div> 
+                    
+                    
+                    
+                    
+                    
             
         </div>
     </div>
@@ -1058,6 +1146,7 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
                 <a href="#sup-sideload">Sideloading</a>
                 <a href="#sup-features">Features</a>
                 <a href="#sup-report">Report System</a>
+                <a href="#sup-webstore">App Store Web</a>
             </aside>
 
             <main class="doc-content">
@@ -1165,6 +1254,35 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
 </div>
 
 
+
+<div id="sup-webstore" class="doc-block">
+    <h3>App Store Web</h3>
+    <p>The Web Store is a lightweight, browser-based version of the App Store that runs outside the Simulator. It is perfect for quick searching and sharing.</p>
+    
+    <div class="info-box">
+        <strong>URL Parameter Trick:</strong><br>
+        You can share a direct link to any app using the <code>?s=</code> parameter.<br>
+        <em>Example:</em> <code>/app-store-web.html?s=Calculator</code>
+    </div>
+
+    <div class="feature-grid">
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#007AFF;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+            </div>
+            <h3>Smart Sharing</h3>
+            <p>Click the <strong>Share</strong> icon on any app to copy a unique deep link to your clipboard.</p>
+        </div>
+        
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#34C759;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            </div>
+            <h3>Open in Simulator</h3>
+            <p>Found an app you like? Tap <strong>OPEN</strong> to instantly boot the Simulator with that app pre-filtered.</p>
+        </div>
+    </div>
+</div>
 
 
             </main>
@@ -1383,6 +1501,36 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
         }
 
         function mobileNavigate(view) { switchView(view); }
+        
+        
+        
+        
+        /* --- AUTO-ROUTING (Deep Links) --- */
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    // Support both ?page= and ?view=
+    const targetView = params.get('page') || params.get('view');
+    
+    // Whitelist valid views to match your HTML IDs (view-home, view-docs, etc.)
+    const validViews = ['home', 'docs', 'support', 'privacy', 'terms', 'about'];
+    
+    if (targetView && validViews.includes(targetView)) {
+        console.log("🚀 Auto-routing to:", targetView);
+        switchView(targetView);
+        
+        // Optional: If there is also a hash anchor (e.g., ?page=support#sup-sideload)
+        if (window.location.hash) {
+            setTimeout(() => {
+                const el = document.querySelector(window.location.hash);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300); // Small delay to allow view transition
+        }
+    }
+});
+        
+        
+        
+        
     </script>
 </body>
 </html>
