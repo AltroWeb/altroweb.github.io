@@ -1483,7 +1483,7 @@ body.dark-mode #store-dev-header {
 
     <script>
     	
-   console.log = function() {};
+ console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -2672,37 +2672,66 @@ async removeAppById(appId) {
 
 
                 async handleUpdateClick(btn, appId, silent = false) {
-        // UPDATE (STRICT BLOCK)
-        if (!this.isNetworkStrict()) {
-            if (!silent) iOS.showAlert('No Connection', 'Cannot update while offline.');
-            return;
-        }
+    // 1. NETWORK & SAFE MODE CHECKS
+    if (!this.isNetworkStrict()) {
+        if (!silent) iOS.showAlert('No Connection', 'Cannot update while offline.');
+        return;
+    }
+    if (window.iOS && window.iOS.isSafeMode) {
+        iOS.showAlert('Cannot update', `Updates are disabled in safe mode.`);
+        return;
+    }
+    if (btn.classList.contains('loading')) return; 
 
+    // 2. GET DATA
+    const serverApp = this.apps.find(a => a.id === appId);
+    if (!serverApp) return;
 
-if (window.iOS && window.iOS.isSafeMode) {
-                    iOS.showAlert('Cannot update',`Updates are disabled in safe mode.`);
-                    return;
-                }
-                // ---------------------------
+    // --- ROBUST ANALYTICS CHECK (THE LOGIC) ---
+    // We must read the OLD installed app before we uninstall it
+    const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const localApp = installedApps.find(a => a.id === appId);
+    
+    let shouldBackfill = false;
 
-                if (btn.classList.contains('loading')) return; 
-
-
-
-
-        const app = this.apps.find(a => a.id === appId);
-        if (!app) return;
-
-        if(btn) btn.classList.add('loading');
+    if (localApp) {
+        // Condition A: Was Analytics previously DISABLED? (Explicitly false)
+        const wasDisabled = localApp.enableAnalytics === false;
         
-        this.uninstallApp(app, btn); // Clean old version
-        await this.performInstall(app, btn || document.createElement('div')); // Install new
-        
-        if (!silent) {
-            this.fetchApps(); 
-            iOS.showAlert('Updated', `${app.name} has been updated.`);
+        // Condition B: Is Analytics now ENABLED? (True or Undefined/Default)
+        const isNowEnabled = serverApp.enableAnalytics !== false;
+
+        // VERDICT: Only count if we are switching from OFF -> ON
+        if (wasDisabled && isNowEnabled) {
+            console.log(`📈 Backfill Detected: Analytics activated for ${serverApp.name}`);
+            shouldBackfill = true;
         }
     }
+    // ------------------------------------------
+
+    if(btn) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+    }
+    
+    // 3. FORCE VISUAL DELAY (0.6s)
+    await new Promise(r => setTimeout(r, 600));
+    
+    // 4. Uninstall Old (Button stays locked)
+    this.uninstallApp(serverApp, btn, true); 
+    
+    // 5. Install New (Pass 'shouldBackfill')
+    // We pass 'true' for isUpdate, but we pass 'shouldBackfill' as a new 4th arg
+    await this.performInstall(serverApp, btn, true, shouldBackfill); 
+    
+    // 6. Feedback
+    if (!silent) {
+        iOS.showAlert('Updated', `${serverApp.name} has been updated.`);
+        setTimeout(() => {
+            this.fetchApps(); 
+        }, 100);
+    }
+}
 
 
 
@@ -2723,109 +2752,125 @@ if (window.iOS && window.iOS.isSafeMode) {
             }
 
     async handleGetClick(btn, appId) {
-        const app = this.apps.find(a => a.id === appId);
-        if (!app) return;
+    const app = this.apps.find(a => a.id === appId);
+    if (!app) return;
 
-
-
-
-
-        const isInstalled = btn.classList.contains('installed');
-        
-        
-        
-        
-        // --- SAFE MODE LOCKDOWN ---
-                if (window.iOS && window.iOS.isSafeMode && !isInstalled) {
-                    iOS.showAlert('Cannot install',`Installation is disabled in safe mode.`);
-                    return;
-                }
-                // ---------------------------
-
-                if (btn.classList.contains('loading')) return; 
-        
-        
-        
-
-        if (isInstalled) {
-            // UNINSTALL (Allowed offline)
-            iOS.showAlert(
-                `Delete "${app.name}"?`,
-                "Deleting this app will also delete its data.",
-                () => this.performUninstall(app, btn), 
-                true 
-            );
-        } else {
-            // INSTALL (STRICT BLOCK)
-            if (!this.isNetworkStrict()) {
-                iOS.showAlert('No Connection', 'Turn off Airplane Mode or connect to Wi-Fi to install.');
-                return; 
-            }
-
-            btn.classList.add('loading');
-            await new Promise(r => setTimeout(r, 800)); // Visual delay
-            await this.performInstall(app, btn);
-        }
+    const isInstalled = btn.classList.contains('installed');
+    
+    if (window.iOS && window.iOS.isSafeMode && !isInstalled) {
+        iOS.showAlert('Cannot install',`Installation is disabled in safe mode.`);
+        return;
     }
 
-            
-            // Helper: Actual Install Logic
-            async performInstall(app, btn) {
-                const originalText = btn.querySelector('span').innerText;
-                
-                // 1. LOCK UI
-                btn.disabled = true;
+    if (btn.classList.contains('loading')) return; 
+
+    if (isInstalled) {
+        // UNINSTALL FLOW
+        iOS.showAlert(
+            `Delete "${app.name}"?`,
+            "Deleting this app will also delete its data.",
+            () => {
+                // LOCK immediately on confirm
                 btn.classList.add('loading');
+                btn.disabled = true;
+                this.performUninstall(app, btn);
+            }, 
+            true 
+        );
+    } else {
+        // INSTALL FLOW
+        if (!this.isNetworkStrict()) {
+            iOS.showAlert('No Connection', 'Turn off Airplane Mode or connect to Wi-Fi to install.');
+            return; 
+        }
 
-                const lastStatTime = parseInt(localStorage.getItem(`ios_stat_cooldown_${app.id}`) || '0');
-                const now = Date.now();
-                const canCountStat = (now - lastStatTime) > 3000;
-                const analyticsEnabled = app.enableAnalytics !== false;
+        // 1. INSTANT LOCK
+        btn.classList.add('loading');
+        btn.disabled = true;
+        
+        // 2. Visual Delay (800ms)
+        await new Promise(r => setTimeout(r, 800));
+        
+        // 3. Perform Install (Will Unlock & Transform button when done)
+        await this.performInstall(app, btn, false, false);
+    }
+}
 
-                try {
-                    // 2. Transaction
-                    if (analyticsEnabled && canCountStat) {
-                        const appRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(app.id);
-                        await this.db.runTransaction(async (transaction) => {
-                            const sfDoc = await transaction.get(appRef);
-                            if (sfDoc.exists) {
-                                const data = sfDoc.data();
-                                const dl = typeof data.downloadCount === 'number' ? data.downloadCount : 0;
-                                const ins = typeof data.installCount === 'number' ? data.installCount : 0;
-                                transaction.update(appRef, { downloadCount: dl + 1, installCount: ins + 1 });
-                            }
-                        });
-                        localStorage.setItem(`ios_stat_cooldown_${app.id}`, now);
-                    }
+            
+            // Helper: Actual Install Logic (Unhackable Analytics)
+async performInstall(app, btn, isUpdate = false, forceBackfill = false) {
+    const originalText = btn.querySelector('span').innerText;
+    
+    // 1. LOCK UI
+    btn.disabled = true;
+    if (!btn.classList.contains('loading')) btn.classList.add('loading');
 
-                    // 3. Local Install
-                    this.installApp(app);
-                    
-                    // 4. UI Update
-                    btn.classList.remove('loading');
-                    btn.classList.add('installed');
-                    btn.querySelector('span').innerText = 'UNINSTALL'; // Use OPEN if you want "Open" button behavior
+    try {
+        // --- STEP 1: INSTALL LOCALLY ---
+        this.installApp(app);
+        
+        // --- STEP 2: HANDLE BUTTON STATE ---
+        if (isUpdate) {
+            btn.remove(); 
+        } else {
+            btn.classList.remove('loading');
+            btn.classList.add('installed');
+            btn.querySelector('span').innerText = 'UNINSTALL';
+            btn.disabled = false;
+        }
 
-                } catch (e) {
-                    console.error(e);
-                    btn.classList.remove('loading');
-                    // Revert to Get if failed
-                    btn.querySelector('span').innerText = originalText;
-                    
-                    // Optional: If you want to allow local install even if stats fail, un-comment next lines:
-                    // this.installApp(app);
-                    // btn.classList.add('installed');
-                    // btn.querySelector('span').innerText = 'UNINSTALL';
-                } finally {
-                    // 5. UNLOCK
-                    btn.disabled = false;
+        // --- STEP 3: ANALYTICS CORE ---
+        const analyticsEnabled = app.enableAnalytics !== false;
+        const lastStatTime = parseInt(localStorage.getItem(`ios_stat_cooldown_${app.id}`) || '0');
+        const now = Date.now();
+        const canCountStat = (now - lastStatTime) > 3000;
+
+        // THE LOGIC: 
+        // 1. Is this a Fresh Install? (!isUpdate)
+        // 2. OR Is this a specific "Backfill" Update? (forceBackfill)
+        // 3. AND is analytics actually enabled on the server?
+        
+        const shouldCount = ((!isUpdate && analyticsEnabled) || (isUpdate && forceBackfill));
+
+        if (shouldCount && canCountStat) {
+             
+             console.log(`📊 Analytics: Incrementing count for ${app.id} (Backfill: ${forceBackfill})`);
+
+             const appRef = this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('store_apps').doc(app.id);
+                
+             this.db.runTransaction(async (transaction) => {
+                const sfDoc = await transaction.get(appRef);
+                if (sfDoc.exists) {
+                    const data = sfDoc.data();
+                    const dl = typeof data.downloadCount === 'number' ? data.downloadCount : 0;
+                    const ins = typeof data.installCount === 'number' ? data.installCount : 0;
+                    transaction.update(appRef, { downloadCount: dl + 1, installCount: ins + 1 });
                 }
-            }
+            }).catch(e => console.warn("Analytics bg error", e));
+            
+            localStorage.setItem(`ios_stat_cooldown_${app.id}`, now);
+        
+        } else {
+            // Debug Log
+            // console.log(`Analytics Skipped. Update: ${isUpdate}, Backfill: ${forceBackfill}`);
+        }
+
+    } catch (e) {
+        console.error(e);
+        if (document.body.contains(btn)) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            btn.querySelector('span').innerText = originalText;
+        }
+    }
+}
             
             
             
 
-            // Helper: Actual Uninstall Logic
+            
             // Helper: Actual Uninstall Logic
             async performUninstall(app, btn) {
     if (btn) {
@@ -2879,24 +2924,35 @@ if (window.iOS && window.iOS.isSafeMode) {
                 iOS.injectSingleApp(finalApp); 
             }
 
-            uninstallApp(app, btn) {
-                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                const newInstalled = installed.filter(a => a.id !== app.id);
-                localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
-                
-                // --- DB CLEANUP ---
-                // If it was a native app, delete the blob
-                const request = indexedDB.open('iOS_Simu_DB', 1);
-                request.onsuccess = (e) => {
-                    const db = e.target.result;
-                    const tx = db.transaction('native_apps', 'readwrite');
-                    tx.objectStore('native_apps').delete(app.id);
-                };
-                // ------------------
+            // Updated uninstallApp to prevent flashing "GET" button
+uninstallApp(app, btn, skipRefresh = false) {
+    // 1. Remove from Local Storage
+    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    const newInstalled = installed.filter(a => a.id !== app.id);
+    localStorage.setItem('ios_installed_apps', JSON.stringify(newInstalled));
+    
+    // 2. Remove from Native DB (Async/Fire-and-forget)
+    const request = indexedDB.open('iOS_Simu_DB', 1);
+    request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (db.objectStoreNames.contains('native_apps')) {
+            const tx = db.transaction('native_apps', 'readwrite');
+            tx.objectStore('native_apps').delete(app.id);
+        }
+    };
 
-                iOS.removeSingleApp(app.id);
-                this.fetchApps(); // Refreshes UI
-            }}
+    // 3. Remove from UI (DOM)
+    iOS.removeSingleApp(app.id);
+    
+    // 4. ROBUST BUTTON LOGIC
+    if (!skipRefresh) {
+        // Normal Uninstall: Refresh the whole list (Button is gone anyway)
+        this.fetchApps(); 
+    } else {
+        // Update Mode: DO NOT UNLOCK THE BUTTON.
+        // We leave it disabled/loading so 'performInstall' inherits a locked button.
+    }
+}}
         
         
         
