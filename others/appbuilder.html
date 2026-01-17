@@ -1827,11 +1827,17 @@ async toggleGlobalAnalytics(toggleEl) {
 }
 
             animateNum(el, val) {
-                let start = 0; const duration = 1000; const startTime = performance.now();
+            	
+            
+            
+
+
+// NEW (The Fix):
+let start = Math.max(0, parseInt(el.innerText.replace(/,/g, '')) || 0); const duration = 1000; const startTime = performance.now();
                 const step = (now) => {
                     const progress = Math.min((now - startTime) / duration, 1);
                     const ease = 1 - Math.pow(1 - progress, 4);
-                    el.innerText = Math.floor(ease * val).toLocaleString();
+                    el.innerText = Math.max(0, Math.floor(ease * val)).toLocaleString();
                     if (progress < 1) requestAnimationFrame(step);
                     else el.innerText = val.toLocaleString();
                 };
