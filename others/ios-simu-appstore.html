@@ -962,7 +962,11 @@ body.dark-mode #store-dev-header {
 }
 
 
-
+/* FIX: Force white spinner on Blue Update buttons */
+.store-get-btn[style*="color:white"] .spinner {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    border-top-color: #ffffff !important;
+}
 
 
     </style>
@@ -1478,8 +1482,13 @@ body.dark-mode #store-dev-header {
     </div>
 
     <script>
+    	
+   console.log = function() {};
+// console.warn = function() {};
+// console.error = function() {};
+    
         /* --- FIREBASE CONFIGURATION BLOCK --- */
-        // REPLACE THIS WITH YOUR FIREBASE PROJECT CONFIG
+        
         const FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBmnPoBKKnfpQj1ms_zuwXrc_1AlVRcJt8",
   authDomain: "ios-simu-app-store.firebaseapp.com",
@@ -1582,31 +1591,87 @@ body.dark-mode #store-dev-header {
             
             
             
+            
+            
+     
+            
+            
+            
+            
+            
 async fetchTrustedApps() {
-    // 1. Load cached version first (Fast Boot)
-    const cached = JSON.parse(localStorage.getItem('ios_trusted_list') || '[]');
+    const DB_KEY_DATA = "sys_kernel_cache";
+    const DB_KEY_SIG = "sys_kernel_integ";
+
+    const _0xSecret = () => {
+        const _mask = 0x3F;
+        const _payload = [
+            0x56, 0x50, 0x4c, 0x60, 0x4c, 0x56, 0x52, 0x4a, 0x60, 
+            0x4c, 0x5c, 0x5a, 0x5c, 0x4a, 0x4d, 0x5a, 0x60, 0x5c, 
+            0x50, 0x51, 0x59, 0x56, 0x58, 0x60, 0x47, 0x06, 0x06
+        ];
+        return _payload.map(b => String.fromCharCode(b ^ _mask)).join('');
+    };
+
+    const generateHash = (str) => {
+        let hash = 0;
+        const secret = _0xSecret();
+        const finger = navigator.userAgent + (window.screen.width * window.screen.height);
+        const combined = str + secret + finger;
+        for (let i = 0; i < combined.length; i++) {
+            const char = combined.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return hash.toString(16);
+    };
+
+    let cached = [];
+    try {
+        const rawList = await SecureStorage.read(DB_KEY_DATA);
+        const rawSig = await SecureStorage.read(DB_KEY_SIG);
+
+        if (rawList) {
+            if (rawSig && generateHash(rawList) === rawSig) {
+                cached = JSON.parse(rawList);
+            } else {
+                await SecureStorage.purge();
+                cached = [];
+            }
+        }
+    } catch(e) {}
+    
     this.trustedList = cached;
 
     if (!this.db) return;
 
     try {
-        // 2. Fetch fresh list from "config/security"
         const doc = await this.db.collection('artifacts').doc(this.appId)
             .collection('public').doc('data')
             .collection('config').doc('security').get();
 
         if (doc.exists && doc.data().trustedAppIds) {
             this.trustedList = doc.data().trustedAppIds;
-            // 3. Update Cache
-            localStorage.setItem('ios_trusted_list', JSON.stringify(this.trustedList));
-            console.log("🛡️ Security: Trusted Apps List Updated", this.trustedList);
+            
+            const stringified = JSON.stringify(this.trustedList);
+            const newSig = generateHash(stringified);
+            
+            await SecureStorage.write(DB_KEY_DATA, stringified);
+            await SecureStorage.write(DB_KEY_SIG, newSig);
+            
+            console.log("Kernel Sync OK", this.trustedList);
         }
-    } catch (e) {
-        console.warn("🛡️ Security: Used cached trusted list (Offline/Error)");
-    }
-}            
+    } catch (e) {}
+}
             
-            
+  
+
+
+
+
+
+
+          
             
 
           async fetchApps() {
@@ -3865,7 +3930,49 @@ class AudioManager {
 
 
 
+const SecureStorage = {
+    open: () => {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('iOS_Security_Core_v1', 1);
+            req.onupgradeneeded = (e) => {
+                e.target.result.createObjectStore('system_blob');
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
 
+    write: async (key, value) => {
+        const db = await SecureStorage.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('system_blob', 'readwrite');
+            const store = tx.objectStore('system_blob');
+            store.put(value, key);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    },
+
+    read: async (key) => {
+        const db = await SecureStorage.open();
+        return new Promise((resolve) => {
+            const tx = db.transaction('system_blob', 'readonly');
+            const store = tx.objectStore('system_blob');
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+        });
+    },
+
+    purge: async () => {
+        const db = await SecureStorage.open();
+        return new Promise((resolve) => {
+            const tx = db.transaction('system_blob', 'readwrite');
+            tx.objectStore('system_blob').clear();
+            tx.oncomplete = () => resolve();
+        });
+    }
+};
 
       
         
@@ -4155,6 +4262,9 @@ initNetworkListeners() {
                          appStore.flushPendingDecrements();
                          // Optional: Refresh the store UI if it happens to be open in the background
                          appStore.fetchApps(); 
+                         
+                         appStore.fetchTrustedApps();
+                         
                      }
                      // -------------------------------------
              
@@ -4218,6 +4328,7 @@ initNetworkListeners() {
                     // FUNCTIONALITY: Disconnect App Store
                     if (this.activeWindow && this.activeWindow.getAttribute('data-app') === 'AppStore') {
                         if (typeof appStore !== 'undefined') appStore.fetchApps();
+                        appStore.fetchTrustedApps();
                     }
                     
                     
@@ -5602,6 +5713,7 @@ loadPersistentMods() {
                     if(list) list.innerHTML = '<div style="text-align:center; color:#8E8E93; padding:40px;">Loading...</div>';
                     // Trigger Fetch
                     if (typeof appStore !== 'undefined') appStore.fetchApps();
+                    appStore.fetchTrustedApps();
                     // -----------------------------
 
                 } else if (appName === 'Sideloader') {  // <--- ADD THIS BLOCK
