@@ -570,12 +570,19 @@
     font-size: 15px; 
     color: var(--sub-text); 
     margin: 0; 
-    line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Limit bio to 2 lines */
-    -webkit-box-orient: vertical;
+    line-height: 1.5;
+    
+    /* PRESERVE FORMATTING & ENABLE WRAPPING */
+    white-space: pre-wrap;       /* Respects \n line breaks and multiple spaces */
+    word-wrap: break-word;       /* Prevents horizontal scroll */
+    overflow-wrap: break-word;   /* Modern standard for wrapping */
+    
+    /* REMOVE TRUNCATION */
+    overflow: visible;
+    text-overflow: clip;
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
 }
 
 /* --- SECTION HEADER --- */
@@ -660,8 +667,93 @@ body.dark-mode .dev-open-btn {
 
 
 
+/* Web Dev Card Share Button */
+.dev-share-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--secondary-bg); /* Matches card theme */
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.dev-share-btn:hover {
+    background: rgba(0,122,255,0.08);
+}
+.dev-share-btn:active {
+    transform: scale(0.95);
+}
+body.dark-mode .dev-share-btn {
+    background: #2c2c2e;
+    border-color: rgba(255,255,255,0.1);
+}
 
 
+
+/* --- iOS NATIVE ALERT STYLES --- */
+.sys-alert-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.35); 
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
+}
+.sys-alert-overlay.visible { opacity: 1; pointer-events: auto; }
+
+.sys-alert-box {
+    width: 270px; 
+    background: rgba(240,240,240,0.92); /* iOS Glass */
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 14px; text-align: center; overflow: hidden;
+    transform: scale(1.1); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    color: #000;
+}
+.sys-alert-overlay.visible .sys-alert-box { transform: scale(1); }
+body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
+
+.sa-content { padding: 20px 16px 18px 16px; }
+.sa-title { font-weight: 600; font-size: 17px; margin: 0 0 4px 0; }
+.sa-msg { font-size: 13px; margin: 0; line-height: 1.4; word-break: break-word; }
+
+/* Update these specific classes in your <style> block */
+
+.sa-btn-group { 
+    display: flex; 
+    width: 100%; 
+    border-top: 0.5px solid rgba(60, 60, 67, 0.36); /* Standard iOS separator color */
+}
+
+.sa-btn {
+    flex: 1; 
+    padding: 12px; 
+    font-size: 17px; 
+    color: #007AFF; 
+    background: transparent; 
+    border: none; 
+    cursor: pointer;
+    transition: background 0.1s;
+    /* This handles the vertical line between Cancel and OK */
+    border-right: 0.5px solid rgba(60, 60, 67, 0.36); 
+    border-radius: 0; /* Resets weird browser defaults */
+}
+
+/* Remove border from the last button so there's no dangling line */
+.sa-btn:last-child { 
+    border-right: none; 
+}
+
+.sa-btn:active { 
+    background: rgba(128,128,128,0.15); 
+}
 
     </style>
 </head>
@@ -897,8 +989,9 @@ body.dark-mode .dev-open-btn {
             this.apps.push({ id: doc.id, ...data });
         });
         
-        // FIX: Do NOT render here. Let checkUrlParams decide what to render.
-        // This prevents showing "All Apps" before filtering kicks in.
+        this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
+        
+        
         this.checkUrlParams(); 
 
     } catch (e) {
@@ -960,54 +1053,71 @@ clearSearch() {
             }
 
             filterApps(query) {
-                if (!query) {
-                    this.clearSearch(); // Reset to home if empty
-                    return;
-                }
+    if (!query) {
+        this.clearSearch();
+        return;
+    }
 
-                const term = query.toLowerCase().trim();
-                const card = document.getElementById('dev-profile-card');
-                const header = document.getElementById('dev-section-header');
-                
-                // --- MODE A: DEVELOPER SEARCH (dev:...) ---
-                if (term.startsWith('dev:')) {
-                    // Extract name (e.g. "dev:Zenith" -> "zenith")
-                    const targetDev = term.substring(4).trim();
-                    
-                    if (targetDev.length > 0) {
-                        // Find apps where Author Name matches (Case Insensitive)
-                        const devApps = this.apps.filter(app => 
-                            (app.author || '').toLowerCase().includes(targetDev)
-                        );
+    let term = query.trim();
+    const card = document.getElementById('dev-profile-card');
+    const header = document.getElementById('dev-section-header');
 
-                        if (devApps.length > 0) {
-                            // 1. Update Card (Visuals)
-                            this.updateDevCard(devApps[0]); 
-                            
-                            // 2. Render Apps
-                            this.renderStore(devApps);
-                            return; // Stop here, do not run normal search
-                        }
-                    }
-                }
+    // --- 1. ROBUST ID LOOKUP (NEW) ---
+    const exactIdMatch = this.apps.find(a => a.id === term);
 
-                // --- MODE B: STANDARD SEARCH ---
-                // Hide Developer Elements
-                if (card) card.style.display = 'none';
-                if (header) header.style.display = 'none';
+    if (exactIdMatch) {
+        // Visual Swap: ID -> Name
+        const input = document.getElementById('store-search-input');
+        const appName = exactIdMatch.storeName || exactIdMatch.name;
+        if (input) input.value = appName;
 
-                const filtered = this.apps.filter(app => {
-                    const displayName = (app.storeName || app.name || '').toLowerCase();
-                    const author = (app.author || '').toLowerCase();
-                    const desc = (app.description || '').toLowerCase();
-                    
-                    return displayName.includes(term) || author.includes(term) || desc.includes(term);
-                });
+        // Hide Dev UI just in case
+        if (card) card.style.display = 'none';
+        if (header) header.style.display = 'none';
 
-                this.renderStore(filtered);
+        // Render Exact Match
+        this.renderStore([exactIdMatch]);
+        return;
+    }
+
+    // --- 2. DEV SEARCH ---
+    if (term.toLowerCase().startsWith('dev:')) {
+        const targetDev = term.substring(4).trim().toLowerCase();
+        if (targetDev.length > 0) {
+            const devApps = this.apps.filter(app => 
+                (app.author || '').toLowerCase().includes(targetDev)
+            );
+            if (devApps.length > 0) {
+                this.updateDevCard(devApps[0]); 
+                this.renderStore(devApps);
+                return;
             }
+        }
+    }
+
+    // --- 3. STANDARD SEARCH ---
+    if (card) card.style.display = 'none';
+    if (header) header.style.display = 'none';
+
+    term = term.toLowerCase();
+    const filtered = this.apps.filter(app => {
+        const displayName = (app.storeName || app.name || '').toLowerCase();
+        const author = (app.author || '').toLowerCase();
+        const desc = (app.description || '').toLowerCase();
+        return displayName.includes(term) || author.includes(term) || desc.includes(term);
+    });
+
+    this.renderStore(filtered);
+}
             
-            
+  renderBio(text) {
+    // Replaces ${url} with a clickable link that triggers an alert
+    return (text || "Developer").replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+        `<a href="#" onclick="event.preventDefault(); const u='$1'; const f=()=>window.open(u, '_blank'); window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent, #007AFF); text-decoration:underline; pointer-events:auto;">$1</a>`);
+}
+
+
+          
             
             
             async updateDevCard(app) {
@@ -1022,7 +1132,7 @@ clearSearch() {
     const authorName = app.author || "Unknown";
     const authorId = app.authorId;
 
-    // --- PHASE 1: INSTANT RENDER ---
+    // 1. RENDER DATA
     nameEl.innerText = authorName;
     bioEl.innerText = app.authorBio || "Developer"; 
     header.innerText = `Apps by ${authorName}`;
@@ -1044,19 +1154,34 @@ clearSearch() {
         badgeEl.innerHTML = '';
     }
 
-    // --- NEW: INJECT OPEN BUTTON ---
-    // Remove existing button if any to prevent duplicates
+    // --- NEW: INJECT SHARE BUTTON ---
+    const oldShare = card.querySelector('.dev-share-btn');
+    if (oldShare) oldShare.remove();
+
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'dev-share-btn';
+    shareBtn.setAttribute('title', 'Share Profile');
+    shareBtn.setAttribute('onclick', `appStoreWeb.shareDevProfile('${encodeURIComponent(authorName)}')`);
+    shareBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+        </svg>
+    `;
+    card.appendChild(shareBtn);
+    // -------------------------------
+
+    // --- OPEN IN SIMULATOR BUTTON ---
+    // Remove existing button if any
     const oldBtn = card.querySelector('.dev-open-btn');
     if (oldBtn) oldBtn.remove();
 
-    // Create the Link URL
     const safeName = encodeURIComponent(authorName);
     const openUrl = `${window.location.origin}/others/ios-simu-appstore?s=dev:${safeName}`;
 
     const btn = document.createElement('a');
     btn.className = 'dev-open-btn';
     btn.href = openUrl;
-    btn.target = '_blank'; // Open in new tab
+    btn.target = '_blank';
     btn.innerHTML = `
         <span>Open in Simulator</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1065,15 +1190,13 @@ clearSearch() {
             <line x1="10" y1="14" x2="21" y2="3"></line>
         </svg>
     `;
-    
-    // Append to the dev-info container
     card.querySelector('.dev-info').appendChild(btn);
 
     // Show UI
     card.style.display = 'flex';
     header.style.display = 'block';
 
-    // --- PHASE 2: LIVE FETCH ---
+    // Live Fetch
     try {
         const userDoc = await this.db.collection('artifacts').doc(this.appId)
             .collection('public').doc('data')
@@ -1081,13 +1204,40 @@ clearSearch() {
 
         if (userDoc.exists) {
             const profile = userDoc.data();
-            if (profile.authorBio) bioEl.innerText = profile.authorBio;
+            if (profile.authorBio) bioEl.innerHTML = this.renderBio(profile.authorBio);
             if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
-                    avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar">`;
+                avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar">`;
             }
         }
+        
+        
     } catch(e) { console.warn(e); }
 }
+            
+            
+            
+            
+            
+       shareDevProfile(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    // Ensure we point to the web interface for sharing
+    const link = `${window.location.origin}${window.location.pathname}?s=dev:${encodeURIComponent(name)}`;
+    const text = `View ${name} on App Store\n\n`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: name,
+            text: text,
+            url: link
+        }).catch(console.error);
+    } else {
+        this.copyToClipboard(`${text}\n${link}`);
+    }
+}     
+            
+            
+            
+            
             
             
   loadDevProfile(devName) {
@@ -1150,22 +1300,38 @@ clearSearch() {
             
 
             // --- NATIVE ALERTS ---
-            showAlert(title, msg, onOk = null) {
-                document.getElementById('sa-title').innerText = title;
-                document.getElementById('sa-msg').innerText = msg;
-                const overlay = document.getElementById('sys-alert');
-                const okBtn = document.getElementById('sa-btn-ok');
-                
-                const newBtn = okBtn.cloneNode(true);
-                okBtn.parentNode.replaceChild(newBtn, okBtn);
-                
-                newBtn.onclick = () => {
-                    overlay.classList.remove('visible');
-                    if (onOk) onOk();
-                };
-                
-                overlay.classList.add('visible');
-            }
+           // Updated showAlert with Cancel support
+    showAlert(title, message, onConfirm) {
+        const modal = document.getElementById('alert-modal');
+        const titleEl = document.getElementById('alert-title');
+        const msgEl = document.getElementById('alert-msg');
+        const okBtn = document.getElementById('alert-ok');
+        const cancelBtn = document.getElementById('alert-cancel');
+
+        titleEl.innerText = title;
+        msgEl.innerHTML = message;
+        
+        // Show Modal
+        modal.classList.add('visible');
+
+        // Helper to close modal
+        const close = () => {
+            modal.classList.remove('visible');
+            okBtn.onclick = null;
+            cancelBtn.onclick = null;
+        };
+
+        // Cancel Click: Just close
+        cancelBtn.onclick = () => {
+            close();
+        };
+
+        // OK Click: Close AND run callback
+        okBtn.onclick = () => {
+            close();
+            if (onConfirm) onConfirm();
+        };
+    }
 
             // --- REPORTING (PRO DEVICE-ID FLOW) ---
             async openReport(appId) {
@@ -1318,7 +1484,7 @@ async submitReport(reason) {
                 
                 const author = app.author || "Unknown";
                 
-                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeURIComponent(appName)}`;
+                const shareUrl = `${window.location.origin}${window.location.pathname}?s=${encodeURIComponent(app.id)}`;
 
 
 
@@ -1400,8 +1566,8 @@ const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
         // This span triggers the search for "dev:Name"
         const authorHTML = `<span class="author-link" onclick="window.scrollTo(0,0); appStoreWeb.filterApps('dev:${safeAuthorName}')">${app.author || 'Unknown'}</span>`;
 
-        // Link to open the simulated app page
-        const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(displayName)}`;
+        // USE APP ID FOR ROBUST LINKING
+const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
 
         // --- BUILD ITEM ---
         const div = document.createElement('div');
@@ -1435,5 +1601,24 @@ const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
 }
         window.appStoreWeb = new AppStoreWeb();
     </script>
+    
+    
+    
+<div id="alert-modal" class="sys-alert-overlay">
+    <div class="sys-alert-box">
+        <div class="sa-content">
+            <h2 class="sa-title" id="alert-title">Alert</h2>
+            <p class="sa-msg" id="alert-msg">Message</p>
+        </div>
+        <div class="sa-btn-group">
+            <button class="sa-btn" id="alert-cancel">Cancel</button>
+            <button class="sa-btn" id="alert-ok" style="font-weight: 600;">OK</button>
+        </div>
+    </div>
+</div>
+    
+    
+    
+    
 </body>
 </html>

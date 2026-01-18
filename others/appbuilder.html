@@ -742,9 +742,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Developer Bio (Optional)</label>
-                    <textarea id="set-bio" rows="2" placeholder="Tell users about your studio..."></textarea>
-                </div>
+    <label>Developer Bio (Optional)</label>
+    <textarea id="set-bio" rows="4" maxlength="1000" placeholder="Tell users about your studio...Add links using $[link]" oninput="document.getElementById('bio-counter').innerText = this.value.length"></textarea>
+    <div style="text-align: right; font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+        <span id="bio-counter">0</span>/1000
+    </div>
+</div>
 
                 <div class="form-group">
                     <label>Email</label>
@@ -1010,53 +1013,102 @@ async performFirebaseAuth(isInteractive) {
                 }
             }
 
+
+// --- NAME LOCKING SYSTEM ---
+
+normalizeName(name) {
+    if (!name) return "";
+    // Lowercase + Trim + Single Spaces = The "Unhackable" ID
+    return name.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+async isNameTaken(name) {
+    const nameId = this.normalizeName(name);
+    if (!nameId) return false;
+    
+    const doc = await this.db.collection('artifacts').doc(this.appId)
+        .collection('public').doc('data')
+        .collection('taken_names').doc(nameId).get();
+    
+    return doc.exists;
+}
+
+
+
+
+isValidName(name) {
+    // Regex matches A-Z, 0-9, spaces, and common punctuation
+    const regex = /^[a-zA-Z0-9\s.,_\-&@!#$%*()\[\]+=|?<>'"\/]+$/;
+    return regex.test(name);
+}
+
+
+
+async claimName(name, uid) {
+    const nameId = this.normalizeName(name);
+    // Create the Lock Document: ID = normalized name
+    await this.db.collection('artifacts').doc(this.appId)
+        .collection('public').doc('data')
+        .collection('taken_names').doc(nameId).set({
+            ownerId: uid,
+            displayName: name.trim(), 
+            lockedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+}
+
+
+
+
 async register() {
-                const name = document.getElementById('reg-name').value.trim();
-                const email = document.getElementById('reg-email').value.trim();
-                const pass = document.getElementById('reg-pass').value.trim();
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-pass').value.trim();
 
-                if (!name || !email || !pass) { alert("All fields are required."); return; }
-                
-                const passError = this.validatePassword(pass);
-                if (passError) { alert(passError); return; }
+    if (!name || !email || !pass) { alert("All fields are required."); return; }
+    
+    
+    if (!this.isValidName(name)) {
+        alert("Display Name contains invalid characters.\n\nAllowed: Letters, Numbers, Spaces, dots (.), dashes (-), and underscores (_).\n\nEmojis and special symbols are NOT allowed.");
+        return;
+    }
+    
+    
+    const passError = this.validatePassword(pass);
+    if (passError) { alert(passError); return; }
 
-                const btn = document.getElementById('btn-register');
-                btn.classList.add('loading');
+    const btn = document.getElementById('btn-register');
+    btn.classList.add('loading');
 
-                try {
-                    // 1. Create Account
-                    const userCredential = await this.auth.createUserWithEmailAndPassword(email, pass);
-                    
-                    // 2. Update Profile on Server
-                    await userCredential.user.updateProfile({ displayName: name });
+    try {
+        // 1. PRE-FLIGHT CHECK (Is Name Taken?)
+        const isTaken = await this.isNameTaken(name);
+        if (isTaken) throw new Error("This Display Name is already taken. Please choose another.");
 
-                    // 3. Create Session Object
-                    this.devProfile = {
-                        email: email,
-                        displayName: name, // We use the input name directly
-                        uid: userCredential.user.uid
-                    };
+        // 2. CREATE AUTH USER
+        const userCredential = await this.auth.createUserWithEmailAndPassword(email, pass);
+        const uid = userCredential.user.uid;
 
-                    // 4. Session is managed by Firebase Auth; avoid storing profile in localStorage.
+        // 3. LOCK THE NAME (Critical Step)
+        await this.claimName(name, uid);
 
-                    // 5. [CRITICAL FIX] FORCE UPDATE UI INSTANTLY
-                    // We manually update the DOM right here, so the user sees their name
-                    // immediately without waiting for the background listener to catch up.
-                    document.getElementById('nav-username').innerText = name;
-                    document.getElementById('navbar').style.display = 'flex';
+        // 4. UPDATE AUTH PROFILE
+        await userCredential.user.updateProfile({ displayName: name });
 
-                    this.showDashboard();
-                } catch (e) {
-                    console.error(e);
-                    let msg = "Registration Failed: " + e.message;
-                    if (e.code === 'auth/email-already-in-use') msg = "This email is already registered.";
-                    if (e.code === 'auth/weak-password') msg = "Password is too weak.";
-                    if (e.code === 'auth/invalid-email') msg = "Invalid email format.";
-                    alert(msg);
-                } finally {
-                    btn.classList.remove('loading');
-                }
-            }
+        // 5. SETUP SESSION & UI
+        this.devProfile = { email: email, displayName: name, uid: uid };
+        document.getElementById('nav-username').innerText = name;
+        document.getElementById('navbar').style.display = 'flex';
+
+        this.showDashboard();
+    } catch (e) {
+        console.error(e);
+        let msg = e.message;
+        if (e.code === 'auth/email-already-in-use') msg = "Email already registered.";
+        alert(msg);
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
 
             confirmLogout() {
                 if(confirm("Are you sure you want to sign out?")) {
@@ -2051,6 +2103,12 @@ showAlert(title, message, isError = false) {
                         
                         document.getElementById('set-icon').value = iconUrl;
                         document.getElementById('set-bio').value = data.authorBio || '';
+                        
+                        
+document.getElementById('set-bio').dispatchEvent(new Event('input'));
+
+                        
+                        
                         this.updateSettingsIconPreview(iconUrl);
                     } else {
                         // Default state if no profile exists yet
@@ -2067,146 +2125,194 @@ showAlert(title, message, isError = false) {
                  try {
                      await this.auth.sendPasswordResetEmail(this.devProfile.email);
                      alert("Password reset email sent to " + this.devProfile.email);
-                 } catch(e) {
-                     alert("Error sending reset email: " + e.message);
-                 }
+          
+
+            } catch(e) {
+                console.warn("Failed to load extended profile", e);
             }
+
+     const finalBioInput = document.getElementById('set-bio');
+    const finalCounter = document.getElementById('bio-counter');
+
+    // 2. Force update the counter immediately
+    if (finalBioInput && finalCounter) {
+        finalCounter.innerText = finalBioInput.value.length;
+    }
+        }
 
             async saveSettings() {
-                const newName = document.getElementById('set-name').value.trim();
-                const newIcon = document.getElementById('set-icon').value.trim();
-                const newBio = document.getElementById('set-bio').value.trim();
-                const newPass = document.getElementById('set-pass').value.trim();
+    const newName = document.getElementById('set-name').value.trim();
+    const newIcon = document.getElementById('set-icon').value.trim();
+    const newBio = document.getElementById('set-bio').value.trim();
+    const newPass = document.getElementById('set-pass').value.trim();
 
-                if (!newName) { alert("Display Name cannot be empty."); return; }
-                
-                const btn = document.getElementById('btn-save-settings');
-                btn.classList.add('loading');
+    if (!newName) { alert("Display Name cannot be empty."); return; }
+    
+    const btn = document.getElementById('btn-save-settings');
+    btn.classList.add('loading');
 
-                try {
-                    const oldName = this.devProfile.displayName;
-                    
-                    // --- STEP 1: Update Firebase Auth Profile (Display Name) ---
-                    if (newName !== oldName) {
-                        await this.user.updateProfile({ displayName: newName });
-                        this.devProfile.displayName = newName;
-                    }
-                    
-                    // --- STEP 2: Update Password (Optional) ---
-                    if (newPass) {
-                        const passError = this.validatePassword(newPass);
-                        if (passError) throw new Error(passError);
-                        try {
-                            await this.user.updatePassword(newPass);
-                        } catch(e) {
-                            if (e.code === 'auth/requires-recent-login') {
-                                const currentPass = prompt("Security: Enter CURRENT password to save changes.");
-                                if (currentPass) {
-                                    const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
-                                    await this.user.reauthenticateWithCredential(credential);
-                                    await this.user.updatePassword(newPass);
-                                } else throw new Error("Cancelled.");
-                            } else throw e;
-                        }
-                    }
+    try {
+        const oldName = this.devProfile.displayName;
+        const uid = this.devProfile.uid;
+        
+        // --- STEP 1: NAME CHANGE LOGIC ---
+        if (this.normalizeName(newName) !== this.normalizeName(oldName)) {
+        	
+        
+        if (!this.isValidName(newName)) {
+        alert("Display Name contains invalid characters.\n\nAllowed: Letters, Numbers, Spaces, dots (.), dashes (-), and underscores (_).\n\nEmojis and special symbols are NOT allowed.");
+        btn.classList.remove('loading'); // Reset button
+        btn.disabled = false;
+        return;
+    }
+        
+        
+        
+        
+            // A. Check Availability
+            const isTaken = await this.isNameTaken(newName);
+            if (isTaken) throw new Error(`The name "${newName}" is already taken.`);
 
-                    // --- STEP 3: SAVE TO user_info ONLY ---
-                    // We DO NOT touch the 'users' collection (Badges).
-                    const userInfoRef = this.db.collection('artifacts').doc(this.appId)
-                        .collection('public').doc('data')
-                        .collection('user_info').doc(this.devProfile.uid);
-                        
-                    await userInfoRef.set({
-                        authorIcon: newIcon,
-                        authorBio: newBio
-                    }, { merge: true }); // Merge ensures we don't wipe other future fields
+            // B. Claim NEW Name
+            await this.claimName(newName, uid);
 
-                    // --- STEP 4: BATCH PROPAGATION (Sync to Apps) ---
-                    // This updates the cached author info on all your apps so the Store displays them correctly.
-                    const snapshot = await this.db.collection('artifacts').doc(this.appId)
-                        .collection('public').doc('data')
-                        .collection('store_apps').get();
-                        
-                    const batch = this.db.batch();
-                    let appCount = 0;
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        // Only update apps that belong to YOU
-                        if (data.authorId === this.devProfile.uid) {
-                            batch.update(doc.ref, { 
-                                author: newName,
-                                authorIcon: newIcon,
-                                authorBio: newBio
-                            });
-                            appCount++;
-                        }
-                    });
-
-                    if (appCount > 0) {
-                        await batch.commit();
-                        console.log(`Updated profile identity for ${appCount} apps.`);
-                    }
-
-                    // --- STEP 5: Finalize ---
-                    localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
-                    document.getElementById('nav-username').innerText = newName;
-                    
-                    alert("Settings Saved Successfully!");
-                    this.showDashboard();
-                    
-                } catch(e) {
-                    console.error(e);
-                    alert("Error saving settings: " + e.message);
-                } finally {
-                    btn.classList.remove('loading');
-                }
+            // C. Release OLD Name
+            const oldNameId = this.normalizeName(oldName);
+            if (oldNameId) {
+                await this.db.collection('artifacts').doc(this.appId)
+                    .collection('public').doc('data')
+                    .collection('taken_names').doc(oldNameId).delete()
+                    .catch(e => console.warn("Old lock missing", e));
             }
+
+            // D. Update Auth
+            await this.user.updateProfile({ displayName: newName });
+            this.devProfile.displayName = newName;
+        }
+        
+        // --- STEP 2: PASSWORD LOGIC ---
+        if (newPass) {
+            const passError = this.validatePassword(newPass);
+            if (passError) throw new Error(passError);
+            try {
+                await this.user.updatePassword(newPass);
+            } catch(e) {
+                if (e.code === 'auth/requires-recent-login') {
+                    const currentPass = prompt("Security: Enter CURRENT password to save changes.");
+                    if (currentPass) {
+                        const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
+                        await this.user.reauthenticateWithCredential(credential);
+                        await this.user.updatePassword(newPass);
+                    } else throw new Error("Cancelled.");
+                } else throw e;
+            }
+        }
+
+        // --- STEP 3: UPDATE USER INFO DOC ---
+        await this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('user_info').doc(uid).set({
+                authorName: newName,
+                authorIcon: newIcon,
+                authorBio: newBio
+            }, { merge: true });
+
+        // --- STEP 4: BATCH UPDATE APPS (Propagate Name Change) ---
+        const snapshot = await this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('store_apps').where('authorId', '==', uid).get();
+            
+        const batch = this.db.batch();
+        let appCount = 0;
+
+        snapshot.forEach(doc => {
+            batch.update(doc.ref, { 
+                author: newName,
+                authorIcon: newIcon,
+                authorBio: newBio
+            });
+            appCount++;
+        });
+
+        if (appCount > 0) await batch.commit();
+
+        // --- STEP 5: FINALIZE ---
+        localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+        document.getElementById('nav-username').innerText = newName;
+        alert("Settings Saved Successfully!");
+        this.showDashboard();
+        
+    } catch(e) {
+        console.error(e);
+        alert("Error saving settings: " + e.message);
+    } finally {
+        btn.classList.remove('loading');
+    }
+}
 
             async confirmDeleteAccount() {
-                const userInput = prompt(`To confirm deletion, type "${this.devProfile.email}" below.\nWARNING: This will delete ALL your published apps permanently.`);
-                if (userInput === this.devProfile.email) {
-                    try {
-                        const btn = document.querySelector('.btn.danger');
-                        if(btn) btn.innerText = "Deleting...";
+    const userInput = prompt(`To confirm deletion, type "${this.devProfile.email}" below.\nWARNING: This will delete ALL your published apps permanently.`);
+    
+    if (userInput === this.devProfile.email) {
+        try {
+            const btn = document.querySelector('.btn.danger');
+            if(btn) btn.innerText = "Deleting...";
 
-                        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-                        const batch = this.db.batch();
-                        
-                        let count = 0;
-                        snapshot.forEach(doc => {
-                            if (doc.data().authorId === this.devProfile.uid) {
-                                batch.delete(doc.ref);
-                                count++;
-                            }
-                        });
+            const uid = this.devProfile.uid;
 
-                        if (count > 0) await batch.commit();
-                        
-                        // Delete Firebase Auth User
-                        await this.user.delete();
-
-                        localStorage.removeItem('ios_builder_session');
-                        alert("Account and " + count + " apps deleted.");
-                        
-                        // User.delete() automatically signs out
-                        window.location.reload();
-
-                    } catch (e) {
-                        console.error(e);
-                        if (e.code === 'permission-denied') {
-                            alert("PERMISSION DENIED: You cannot delete these apps.\n\nUpdate Firestore Rules to allow delete operations.");
-                        } else if (e.code === 'auth/requires-recent-login') {
-                             alert("Security Check Failed: Please Sign Out and Sign In again, then try deleting your account immediately.");
-                        } else {
-                            alert("Error deleting account: " + e.message);
-                        }
-                        if(document.querySelector('.btn.danger')) document.querySelector('.btn.danger').innerText = "Delete Account";
-                    }
-                } else if (userInput !== null) {
-                    alert("Email did not match. Deletion cancelled.");
-                }
+            // --- 1. RELEASE NAME LOCK (Critical Fix) ---
+            // Must be done before deleting the user so we have permission
+            const nameId = this.normalizeName(this.devProfile.displayName);
+            if (nameId) {
+                await this.db.collection('artifacts').doc(this.appId)
+                    .collection('public').doc('data')
+                    .collection('taken_names').doc(nameId).delete()
+                    .catch(e => console.warn("Name lock already gone", e));
             }
+
+            // --- 2. DELETE USER INFO ---
+            await this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('user_info').doc(uid).delete()
+                .catch(e => console.warn("User info already gone", e));
+
+            // --- 3. DELETE APPS (Batch) ---
+            const snapshot = await this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('store_apps').where('authorId', '==', uid).get();
+            
+            const batch = this.db.batch();
+            let count = 0;
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+                count++;
+            });
+
+            if (count > 0) await batch.commit();
+            
+            // --- 4. DELETE AUTH ACCOUNT ---
+            await this.user.delete();
+
+            localStorage.removeItem('ios_builder_session');
+            alert("Account, Username, and " + count + " apps deleted.");
+            window.location.reload();
+
+        } catch (e) {
+            console.error(e);
+            if (e.code === 'permission-denied') {
+                alert("PERMISSION DENIED: You cannot delete these apps.");
+            } else if (e.code === 'auth/requires-recent-login') {
+                 alert("Security: Please Sign Out and Sign In again, then try deleting immediately.");
+            } else {
+                alert("Error deleting account: " + e.message);
+            }
+            const btn = document.querySelector('.btn.danger');
+            if(btn) btn.innerText = "Delete Account";
+        }
+    } else if (userInput !== null) {
+        alert("Email did not match. Deletion cancelled.");
+    }
+}
         }
 
         const appBuilder = new AppBuilder();

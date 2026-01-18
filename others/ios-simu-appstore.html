@@ -938,11 +938,26 @@ body.dark-mode .dev-profile-card {
 }
 body.dark-mode .dev-name { color: #fff; }
 
-#store-dev-bio  {
-    font-size: 15px; color: #8E8E93 !important;
-    line-height: 1.4; margin: 0 auto;
+#store-dev-bio {
+    font-size: 15px; 
+    color: #8E8E93 !important;
+    line-height: 1.5;
+    margin: 0 auto;
     max-width: 80%;
+    
+    /* PRESERVE FORMATTING & ENABLE WRAPPING */
+    white-space: pre-wrap;       /* Respects line breaks and spaces */
+    word-wrap: break-word;       /* Prevents horizontal scroll */
+    overflow-wrap: break-word;   /* Standard wrapping */
+    
+    /* REMOVE TRUNCATION */
+    overflow: visible;
+    text-overflow: clip;
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
 }
+
 
 
 body.dark-mode .section-header { color: #fff; }
@@ -1258,8 +1273,8 @@ body.dark-mode #store-dev-header {
         <h1 class="dev-name">
             <span id="store-dev-name"></span>
             <span id="store-dev-badge"></span>
-        </h1>
-        <p id="store-dev-bio">Developer</p>
+        </h1><br>
+        <p id="store-dev-bio">Developer</p><br>
     </div>
 </div>
 
@@ -1539,7 +1554,7 @@ body.dark-mode #store-dev-header {
                 
                 this.backgroundApps = []; // Track IDs of apps kept alive [id1, id2]
                 this.MAX_BG_APPS = 3;     // Limit to save RAM
-                
+                this.lockedAppId = null;
                 // FIX: Call init() here instead of individual methods
                 this.init();
             }
@@ -1737,6 +1752,10 @@ async fetchTrustedApps() {
                 }
             });
             
+            
+            
+            this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
+            
         } catch (e) {
             console.error("Fetch Error:", e);
             this.isOfflineMode = true; 
@@ -1868,40 +1887,77 @@ checkUrlParams() {
 
 
 filterApps(query) {
-    const term = query.toLowerCase().trim();
+    if (!query) {
+        this.lockedAppId = null; // Clear lock if search is cleared
+        this.renderStore(this.apps);
+        return;
+    }
+
+    const rawTerm = query.trim();
+    const term = rawTerm.toLowerCase();
+    
     const card = document.getElementById('store-dev-card');
     const header = document.getElementById('store-dev-header');
 
-    // --- DEVELOPER MODE HANDLING ---
-    if (term.startsWith('dev:')) {
-        if (!navigator.onLine) {
-            this.renderStore([]); 
-            if (card) card.style.display = 'none';
-            if (header) header.style.display = 'none';
-            return;
+    // --- 1. EXACT ID MATCH (The Lock) ---
+    const exactIdMatch = this.apps.find(a => a.id === rawTerm);
+
+    if (exactIdMatch) {
+        console.log("Locking Search to ID:", rawTerm);
+        this.lockedAppId = exactIdMatch.id; // SET LOCK
+
+        // UI Swap: ID -> Name
+        const input = document.getElementById('store-search-input');
+        const appName = exactIdMatch.storeName || exactIdMatch.name;
+        if (input && input.value !== appName) {
+            input.value = appName;
         }
 
-        const targetDev = term.substring(4).trim();
+        // Hide Dev UI
+        if (card) card.style.display = 'none';
+        if (header) header.style.display = 'none';
+
+        this.renderStore([exactIdMatch]);
+        return;
+    }
+
+    // --- 2. CHECK LOCK STATE (The Fix) ---
+    // If we have a lock, check if the current query matches the Locked App's Name.
+    // If it does, it means this search was triggered by our own auto-swap or a refresh.
+    // We must IGNORE the fuzzy search and keep showing the specific app.
+    if (this.lockedAppId) {
+        const lockedApp = this.apps.find(a => a.id === this.lockedAppId);
+        if (lockedApp) {
+            const appName = (lockedApp.storeName || lockedApp.name).toLowerCase();
+            if (term === appName) {
+                // Query matches the name of our locked app -> Keep Lock
+                this.renderStore([lockedApp]);
+                return;
+            }
+        }
+        // If query doesn't match ID or Name -> User typed something new -> Break Lock
+        this.lockedAppId = null; 
+    }
+
+    // --- 3. DEV SEARCH ---
+    if (term.startsWith('dev:')) {
         
-        // Filter Logic: Case-insensitive check on Author Name
+        const targetDev = term.substring(4).trim();
         const devApps = this.apps.filter(app => 
             (app.author || '').toLowerCase().includes(targetDev)
         );
-
         if (devApps.length > 0) {
-            // Success: Update Card AND Render Specific List
             this.updateDevCard(devApps[0]);
-            this.renderStore(devApps); 
+            this.renderStore(devApps);
         } else {
-            // No matches found for this dev
-            if (card) card.style.display = 'none';
-            if (header) header.style.display = 'none';
-            this.renderStore([]); 
+            if(card) card.style.display='none';
+            if(header) header.style.display='none';
+            this.renderStore([]);
         }
-        return; // Stop here so standard search doesn't run
+        return;
     }
 
-    // --- STANDARD SEARCH HANDLING ---
+    // --- 4. STANDARD FUZZY SEARCH ---
     if (card) card.style.display = 'none';
     if (header) header.style.display = 'none';
 
@@ -2194,68 +2250,64 @@ async submitReport(reason) {
 
 
 
-async updateDevCard(app) {
-                const card = document.getElementById('store-dev-card');
-                const header = document.getElementById('store-dev-header');
-                
-                // 1. OFFLINE GUARD (Robustness)
-                if (!navigator.onLine) {
-                    if (card) card.style.display = 'none';
-                    if (header) header.style.display = 'none';
-                    return;
-                }
+renderBio(text) {
+    // Replaces ${url} with a clickable link that triggers an alert
+    return (text || "Developer").replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+        `<a href="#" onclick="event.preventDefault(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent, #007AFF); text-decoration:underline; pointer-events:auto;">$1</a>`);
+}
 
-                const nameEl = document.getElementById('store-dev-name');
-                const bioEl = document.getElementById('store-dev-bio');
-                const avatarEl = document.getElementById('store-dev-avatar');
-                const badgeEl = document.getElementById('store-dev-badge');
 
-                const authorName = app.author || "Unknown";
-                const authorId = app.authorId;
+    // Main Function - REPLACE YOUR EXISTING ONE COMPLETELY
+    async updateDevCard(app) {
+        const card = document.getElementById('store-dev-card');
+        const header = document.getElementById('store-dev-header');
+        
+        if (!navigator.onLine) {
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            return;
+        }
 
-                // 2. RENDER IMMEDIATE DATA
-                nameEl.innerText = authorName;
-                bioEl.innerText = app.authorBio || "Developer"; 
-                header.innerText = `Apps by ${authorName}`;
+        const nameEl = document.getElementById('store-dev-name');
+        const bioEl = document.getElementById('store-dev-bio');
+        const avatarEl = document.getElementById('store-dev-avatar');
+        const badgeEl = document.getElementById('store-dev-badge');
 
-                // Avatar
-                if (app.authorIcon) {
-                    avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
-                } else {
-                    avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
-                }
+        const authorName = app.author || "Unknown";
+        const authorId = app.authorId;
 
-                // Badges
-                const badgeType = this.userBadges.get(authorId);
-                if (badgeType === 'member') {
-                    badgeEl.innerHTML = `<span class="verified-badge member" style="width:20px; height:20px;"><svg width="20" height="20" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
-                } else if (badgeType === 'verified') {
-                    badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
-                } else {
-                    badgeEl.innerHTML = '';
-                }
+        // 1. Render Name
+        nameEl.innerText = authorName;
+        header.innerText = `Apps by ${authorName}`;
 
-                // Show
-                card.style.display = 'flex';
-                header.style.display = 'block';
+        // 2. Render Bio (Using innerHTML to allow links)
+        // If app.authorBio is empty, it defaults to "Developer"
+        bioEl.innerHTML = this.renderBio(app.authorBio || "Developer");
 
-                // 3. LIVE FETCH (user_info)
-                if (this.db) {
-                    try {
-                        const userDoc = await this.db.collection('artifacts').doc(this.appId)
-                            .collection('public').doc('data')
-                            .collection('user_info').doc(authorId).get();
+        // 3. Render Avatar
+        if (app.authorIcon) {
+            avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
+        } else {
+            avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
+        }
 
-                        if (userDoc.exists) {
-                            const profile = userDoc.data();
-                            if (profile.authorBio) bioEl.innerText = profile.authorBio;
-                            if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
-                                avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
-                            }
-                        }
-                    } catch(e) {}
-                }
-            }
+        // 4. Render Badges
+        const badgeType = this.userBadges.get(authorId);
+        if (badgeType === 'member') {
+            badgeEl.innerHTML = `<span class="verified-badge member" style="width:20px; height:20px;"><svg width="20" height="20" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+        } else if (badgeType === 'verified') {
+            badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+        } else {
+            badgeEl.innerHTML = '';
+        }
+
+        // 5. Show Card
+        card.style.display = 'flex';
+        header.style.display = 'block';
+
+        // STOP! Do not add any DB fetch code below this line.
+        // It will overwrite the bio with raw text.
+    }
 
 
 
