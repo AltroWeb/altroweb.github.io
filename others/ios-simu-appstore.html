@@ -6127,21 +6127,21 @@ if (this.activeWindow === this.musicWindow) {
                     if (this.state !== 'ACTIVE' || !this.activeWindow) return;
                     isDragging = true;
                     
-                    // [PRO FIX] Activate the Shield
+                    // 1. ACTIVATE SHIELD (Fixes sticky drag)
                     document.body.classList.add('dragging-mode');
                     
                     this.activeWindow.classList.add('dragging');
                     startY = e.touches ? e.touches[0].clientY : e.clientY;
                     startX = e.touches ? e.touches[0].clientX : e.clientX;
+                    
+                    // Setup initial visual state
                     this.activeWindow.style.transition = 'border-radius 0.2s ease-out';
                     this.activeWindow.style.borderRadius = 'var(--app-radius)';
                 };
 
                 const move = (e) => {
                     if (!isDragging) return;
-                    
-                    // [PRO FIX] Force browser to track mouse even if it hovers iframe
-                    e.preventDefault(); 
+                    e.preventDefault(); // Stop interactions/scrolling
                     
                     const y = e.touches ? e.touches[0].clientY : e.clientY;
                     const x = e.touches ? e.touches[0].clientX : e.clientX;
@@ -6152,6 +6152,7 @@ if (this.activeWindow === this.musicWindow) {
                     let translateY = deltaY;
                     let translateX = Math.max(-25, Math.min(25, deltaX * 0.15));
 
+                    // Logic for Pull Up vs Pull Down
                     if (deltaY < 0) {
                         translateY = deltaY * 0.3;
                         scale = Math.max(0.35, 1 - (Math.abs(deltaY) / 800)); 
@@ -6160,19 +6161,15 @@ if (this.activeWindow === this.musicWindow) {
                          scale = 1 - (translateY / 2000); 
                     }
                     
-                    // [PRO FIX] Use requestAnimationFrame for butter-smooth 60fps
-                    requestAnimationFrame(() => {
-                        if(this.activeWindow) {
-                            this.activeWindow.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
-                        }
-                    });
+                    // 2. DIRECT UPDATE (No rAF = No Conflicts)
+                    this.activeWindow.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
                 };
 
                 const end = (e) => {
                     if (!isDragging) return;
                     isDragging = false;
                     
-                    // [PRO FIX] Deactivate the Shield
+                    // 3. REMOVE SHIELD (Restores iframe interaction)
                     document.body.classList.remove('dragging-mode');
                     
                     this.activeWindow.classList.remove('dragging');
@@ -6180,8 +6177,10 @@ if (this.activeWindow === this.musicWindow) {
                     const deltaY = (y - startY) / this.currentScale;
 
                     if (deltaY < -100) {
+                        // 4. TRIGGER CLOSE (Animation plays perfectly now)
                         this.closeApp();
                     } else {
+                        // Snap Back Animation
                         this.activeWindow.style.transition = 'transform 0.4s var(--ease-open), border-radius 0.4s ease';
                         this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1)';
                         this.activeWindow.style.borderRadius = 'var(--app-radius)'; 
@@ -6200,7 +6199,7 @@ if (this.activeWindow === this.musicWindow) {
                 bar.addEventListener('mousedown', start);
                 bar.addEventListener('touchstart', start, {passive: false});
                 window.addEventListener('mousemove', move);
-                window.addEventListener('touchmove', move, {passive: false}); // passive: false is critical for preventing scroll
+                window.addEventListener('touchmove', move, {passive: false});
                 window.addEventListener('mouseup', end);
                 window.addEventListener('touchend', end);
             }
