@@ -197,6 +197,12 @@
             transform-origin: center center; box-shadow: 0 0 0 0 rgba(0,0,0,0);
             backface-visibility: hidden; will-change: transform, border-radius, filter, opacity;
             background: #fff; border-radius: 0px; transition: background 0.3s;
+
+
+    
+    transform: translate3d(0,0,0); /* Force Hardware Acceleration */
+
+
         }
         .app-window.dragging { box-shadow: 0 20px 50px rgba(0,0,0,0.4); border-radius: 44px !important; }
 
@@ -967,6 +973,20 @@ body.dark-mode #store-dev-header {
     border-color: rgba(255, 255, 255, 0.3) !important;
     border-top-color: #ffffff !important;
 }
+
+
+/* PRO OPTIMIZATION: Prevents iframe from swallowing mouse events during drag */
+.app-window:active iframe,
+.app-window.dragging iframe,
+.app-window.closing iframe { 
+    pointer-events: none !important;
+}
+
+
+
+
+
+
 
 
     </style>
