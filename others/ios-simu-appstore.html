@@ -197,11 +197,9 @@
             transform-origin: center center; box-shadow: 0 0 0 0 rgba(0,0,0,0);
             backface-visibility: hidden; will-change: transform, border-radius, filter, opacity;
             background: #fff; border-radius: 0px; transition: background 0.3s;
-            
-            
-            transform: translate3d(0,0,0);
-            
-            
+
+
+
         }
         .app-window.dragging { box-shadow: 0 20px 50px rgba(0,0,0,0.4); border-radius: 44px !important; }
 
@@ -238,8 +236,6 @@
         .app-window.vacuum-active {
             transition: transform 0.35s var(--ease-vacuum), border-radius 0.35s var(--ease-vacuum), filter 0.35s ease-in, opacity 0.15s ease 0.2s !important;
             filter: blur(20px) drop-shadow(0 0 20px rgba(0, 122, 255, 0.6)) !important; opacity: 0 !important; 
-            
-            
         }
 
         @keyframes time-warp-launch {
@@ -319,16 +315,20 @@
         .ios-slider-container { width: 100%; padding: 10px 0; }
         .ios-slider {
             -webkit-appearance: none; 
-
--mox-appearance: none;
-appearance: none;
-
-
-width: 100%; height: 6px;
+			
+			-moz-appearance: none;
+			appearance: none;
+			
+			width: 100%; height: 6px;
             background: #E9E9EA; border-radius: 3px; outline: none; transition: background 0.3s;
         }
         .ios-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 28px; height: 28px; background: #fff;
+            -webkit-appearance: none;
+-moz-appearance: none;
+			appearance: none;
+
+
+			width: 28px; height: 28px; background: #fff;
             border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.2); cursor: pointer;
         }
 
@@ -983,6 +983,11 @@ body.dark-mode #store-dev-header {
 
 
 
+.app-window.dragging iframe {
+    pointer-events: none !important;
+}
+
+
 
 
 
@@ -1314,7 +1319,7 @@ body.dark-mode #store-dev-header {
         </div>
         
         <!-- AUTHOR NAME ROW (New Addition) -->
-        <div class="ios-row" style="">
+        <div class="ios-row">
             <input type="text" class="ios-input" id="sl-author" placeholder="Author Name (Optional)" style="background:transparent; padding:0;">
         </div>
 
@@ -1502,7 +1507,7 @@ body.dark-mode #store-dev-header {
 
     <script>
     	
-//  console.log = function() {};
+ console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -6116,34 +6121,24 @@ if (this.activeWindow === this.musicWindow) {
                 let startY = 0;
                 let startX = 0;
                 let isDragging = false;
-
                 const start = (e) => {
                     if (this.state !== 'ACTIVE' || !this.activeWindow) return;
                     isDragging = true;
-                    
-                    // 1. ADD CLASS: Activates CSS Shield (No Sticky Iframe) & Shadow
                     this.activeWindow.classList.add('dragging');
-                    
                     startY = e.touches ? e.touches[0].clientY : e.clientY;
                     startX = e.touches ? e.touches[0].clientX : e.clientX;
-                    
                     this.activeWindow.style.transition = 'border-radius 0.2s ease-out';
                     this.activeWindow.style.borderRadius = 'var(--app-radius)';
                 };
-
                 const move = (e) => {
                     if (!isDragging) return;
-                    e.preventDefault(); // Stop scrolling while dragging
-                    
                     const y = e.touches ? e.touches[0].clientY : e.clientY;
                     const x = e.touches ? e.touches[0].clientX : e.clientX;
                     const deltaY = (y - startY) / this.currentScale;
                     const deltaX = (x - startX) / this.currentScale;
-                    
                     let scale = 1;
                     let translateY = deltaY;
                     let translateX = Math.max(-25, Math.min(25, deltaX * 0.15));
-
                     if (deltaY < 0) {
                         translateY = deltaY * 0.3;
                         scale = Math.max(0.35, 1 - (Math.abs(deltaY) / 800)); 
@@ -6151,42 +6146,31 @@ if (this.activeWindow === this.musicWindow) {
                          translateY = deltaY * 0.3;
                          scale = 1 - (translateY / 2000); 
                     }
-                    
-                    // 2. DIRECT UPDATE: Smooth, instant tracking
                     this.activeWindow.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
                 };
-
                 const end = (e) => {
                     if (!isDragging) return;
                     isDragging = false;
-                    
+                    this.activeWindow.classList.remove('dragging');
                     const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
                     const deltaY = (y - startY) / this.currentScale;
-
                     if (deltaY < -100) {
-                        // 3. CLOSING: Keep .dragging class so shadow stays during animation
                         this.closeApp();
-                        
-                        // Cleanup failsafe
-                        setTimeout(() => {
-                           if(this.activeWindow) this.activeWindow.classList.remove('dragging');
-                        }, 600);
                     } else {
-                        // 4. SNAPPING BACK: Remove class IMMEDIATELY to restore interaction
-                        this.activeWindow.classList.remove('dragging');
-                        
                         this.activeWindow.style.transition = 'transform 0.4s var(--ease-open), border-radius 0.4s ease';
                         this.activeWindow.style.transform = 'translate3d(0, 0, 0) scale(1)';
-                        this.activeWindow.style.borderRadius = '0px'; 
-                        
+                        this.activeWindow.style.borderRadius = 'var(--app-radius)'; 
                         setTimeout(() => {
                             if (this.state === 'ACTIVE') {
-                                this.activeWindow.style.transition = '';
+                                this.activeWindow.style.transition = 'border-radius 0.3s ease';
+                                this.activeWindow.style.borderRadius = '0px';
+                                setTimeout(() => {
+                                    if (this.state === 'ACTIVE') this.activeWindow.style.transition = '';
+                                }, 300);
                             }
                         }, 400);
                     }
                 };
-
                 bar.addEventListener('mousedown', start);
                 bar.addEventListener('touchstart', start, {passive: false});
                 window.addEventListener('mousemove', move);
