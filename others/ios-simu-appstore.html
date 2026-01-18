@@ -317,7 +317,10 @@
 
         .ios-slider-container { width: 100%; padding: 10px 0; }
         .ios-slider {
-            -webkit-appearance: none; width: 100%; height: 6px;
+            
+            -webkit-appearance: none; /* For older WebKit browsers */
+  -moz-appearance: none;    /* For older Firefox browsers */
+  appearance: none;   width: 100%; height: 6px;
             background: #E9E9EA; border-radius: 3px; outline: none; transition: background 0.3s;
         }
         .ios-slider::-webkit-slider-thumb {
@@ -985,7 +988,9 @@ body.dark-mode #store-dev-header {
 
 
 
-
+body.dragging-mode iframe {
+    pointer-events: none !important;
+}
 
 
 
@@ -1315,7 +1320,7 @@ body.dark-mode #store-dev-header {
         </div>
         
         <!-- AUTHOR NAME ROW (New Addition) -->
-        <div class="ios-row" style="">
+        <div class="ios-row">
             <input type="text" class="ios-input" id="sl-author" placeholder="Author Name (Optional)" style="background:transparent; padding:0;">
         </div>
 
@@ -6117,24 +6122,36 @@ if (this.activeWindow === this.musicWindow) {
                 let startY = 0;
                 let startX = 0;
                 let isDragging = false;
+
                 const start = (e) => {
                     if (this.state !== 'ACTIVE' || !this.activeWindow) return;
                     isDragging = true;
+                    
+                    // [PRO FIX] Activate the Shield
+                    document.body.classList.add('dragging-mode');
+                    
                     this.activeWindow.classList.add('dragging');
                     startY = e.touches ? e.touches[0].clientY : e.clientY;
                     startX = e.touches ? e.touches[0].clientX : e.clientX;
                     this.activeWindow.style.transition = 'border-radius 0.2s ease-out';
                     this.activeWindow.style.borderRadius = 'var(--app-radius)';
                 };
+
                 const move = (e) => {
                     if (!isDragging) return;
+                    
+                    // [PRO FIX] Force browser to track mouse even if it hovers iframe
+                    e.preventDefault(); 
+                    
                     const y = e.touches ? e.touches[0].clientY : e.clientY;
                     const x = e.touches ? e.touches[0].clientX : e.clientX;
                     const deltaY = (y - startY) / this.currentScale;
                     const deltaX = (x - startX) / this.currentScale;
+                    
                     let scale = 1;
                     let translateY = deltaY;
                     let translateX = Math.max(-25, Math.min(25, deltaX * 0.15));
+
                     if (deltaY < 0) {
                         translateY = deltaY * 0.3;
                         scale = Math.max(0.35, 1 - (Math.abs(deltaY) / 800)); 
@@ -6142,14 +6159,26 @@ if (this.activeWindow === this.musicWindow) {
                          translateY = deltaY * 0.3;
                          scale = 1 - (translateY / 2000); 
                     }
-                    this.activeWindow.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+                    
+                    // [PRO FIX] Use requestAnimationFrame for butter-smooth 60fps
+                    requestAnimationFrame(() => {
+                        if(this.activeWindow) {
+                            this.activeWindow.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+                        }
+                    });
                 };
+
                 const end = (e) => {
                     if (!isDragging) return;
                     isDragging = false;
+                    
+                    // [PRO FIX] Deactivate the Shield
+                    document.body.classList.remove('dragging-mode');
+                    
                     this.activeWindow.classList.remove('dragging');
                     const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
                     const deltaY = (y - startY) / this.currentScale;
+
                     if (deltaY < -100) {
                         this.closeApp();
                     } else {
@@ -6167,10 +6196,11 @@ if (this.activeWindow === this.musicWindow) {
                         }, 400);
                     }
                 };
+
                 bar.addEventListener('mousedown', start);
                 bar.addEventListener('touchstart', start, {passive: false});
                 window.addEventListener('mousemove', move);
-                window.addEventListener('touchmove', move, {passive: false});
+                window.addEventListener('touchmove', move, {passive: false}); // passive: false is critical for preventing scroll
                 window.addEventListener('mouseup', end);
                 window.addEventListener('touchend', end);
             }
