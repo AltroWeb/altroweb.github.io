@@ -189,11 +189,38 @@
             margin-right: 16px; object-fit: cover; border: 1px solid rgba(0,0,0,0.1);
             flex-shrink: 0;
         }
-        .list-info { flex: 1; min-width: 0; margin-right: 10px; }
-        .list-name { font-weight: 600; font-size: 17px; margin-bottom: 4px; }
+        /* --- APP LIST FIXES --- */
+.list-info { 
+    flex: 1; 
+    min-width: 0; /* Crucial for text wrapping in Flexbox */
+    margin-right: 12px; /* Safety gap from buttons */
+}
+
+.list-name { 
+    font-weight: 600; 
+    font-size: 17px; 
+    margin-bottom: 4px; 
+    
+    /* WRAPPING LOGIC */
+    white-space: normal;     /* Allow text to wrap to next line */
+    word-break: break-word;  /* Break extremely long words if needed */
+    line-height: 1.3;        /* Better spacing for multi-line titles */
+}
+
+.list-actions { 
+    display: flex; 
+    gap: 8px; 
+    flex-shrink: 0;          /* Buttons will NEVER shrink/squash */
+    align-items: center;     /* Align vertically with text */
+}
         .list-meta { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .list-actions { display: flex; gap: 8px; }
+ .list-actions { 
+    display: flex; 
+    gap: 8px; 
+    flex-shrink: 0;          /* Buttons will NEVER shrink/squash */
+    align-items: center;     /* Align vertically with text */
+}
 
         .tag {
             display: inline-block; padding: 2px 8px; border-radius: 6px; 
@@ -210,10 +237,19 @@
         }
         .tab-item.active { background: var(--accent); color: white; }
 
-        .toggle-switch {
-            position: relative; width: 44px; height: 24px;
-            background: var(--border); border-radius: 12px; cursor: pointer; transition: 0.3s;
-        }
+ 
+.toggle-switch {
+    position: relative; 
+    width: 44px; 
+    height: 24px;
+    background: var(--border); 
+    border-radius: 12px; 
+    cursor: pointer; 
+    transition: 0.3s;
+    
+    /* THE FIX: Prevents the slider from shrinking in tight spaces */
+    flex-shrink: 0; 
+}
         .toggle-switch::after {
             content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
             background: white; border-radius: 50%; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -349,7 +385,42 @@
 }
 
 
+.nav-icon-btn {
+    width: 36px; 
+    height: 36px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.2s, transform 0.2s;
+}
+.nav-icon-btn:hover { 
+    background: rgba(128,128,128,0.1); 
+}
+.nav-icon-btn:active { 
+    transform: scale(0.92); 
+}
 
+
+
+
+
+/* --- ANALYTICS NUMBERS (Dynamic Scaling) --- */
+#glob-total, #glob-active, #ana-total, #ana-active {
+    /* Override inline styles to enforce dynamic sizing */
+    font-size: clamp(28px, 5vw, 48px) !important; 
+    
+    /* Safety Wrapping */
+    white-space: normal;
+    word-wrap: break-word;
+    line-height: 1.1;       /* Tight line height prevents card expansion */
+    
+    /* Prevent layout breaking */
+    width: 100%;
+    display: block;
+}
 
 
     </style>
@@ -369,7 +440,9 @@
             App Store Connect
         </div>
         <div class="nav-controls">
-             <div class="toggle-switch" id="dark-mode-toggle" onclick="appBuilder.toggleDarkMode()"></div>
+             <div class="nav-icon-btn" id="dark-mode-btn" onclick="appBuilder.toggleDarkMode()" title="Toggle Theme">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+</div>
              <div class="user-menu" id="user-menu" onclick="appBuilder.showSettings()">
                  <span id="nav-username">User</span>
                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -476,15 +549,13 @@
                            style="padding-left: 36px; height: 42px; width: 100%; font-size: 15px;">
                 </div>
 
-          <!-- Inside #dashboard-view .header-row -->
-<div style="display: flex; gap: 10px;">
-    <!-- NEW: Global Analytics Button -->
-    <button class="btn secondary" onclick="appBuilder.openGlobalAnalytics()" style="height: 42px; white-space: nowrap;">
+<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; width: 100%;">
+    <button class="btn secondary" onclick="appBuilder.openGlobalAnalytics()" style="height: 42px; padding: 0 20px; flex: 1; min-width: 140px; justify-content: center;">
         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
         Overview
     </button>
     
-    <button class="btn" onclick="appBuilder.createNewApp()" style="height: 42px; white-space: nowrap;">
+    <button class="btn" onclick="appBuilder.createNewApp()" style="height: 42px; padding: 0 20px; flex: 1; min-width: 140px; justify-content: center;">
         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         New App
     </button>
@@ -626,8 +697,14 @@
                 <button class="btn secondary sm" onclick="appBuilder.showDashboard()">
                     &larr; Back
                 </button>
-                <h1 style="margin:0;" id="editor-title">Create App</h1>
-            </div>
+                <div style="flex:1;">
+    <h1 style="margin:0;" id="editor-title">Create App</h1>
+    <div id="editor-date" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; display: none;"></div>
+</div>
+</div>
+
+
+
 
             <div class="card">
             	
@@ -692,6 +769,11 @@
                         <input type="hidden" id="edit-file-data">
                     </div>
                 </div>
+
+
+<div id="editor-meta-card" style="background: var(--bg-color); border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid var(--border); display: none;">
+    </div>
+
                 
                 
                                 <!-- ANALYTICS TOGGLE -->
@@ -894,14 +976,33 @@
             
 
             toggleDarkMode(forceState) {
-                const body = document.body;
-                const toggle = document.getElementById('dark-mode-toggle');
-                let isDark = forceState !== undefined ? forceState : !body.classList.contains('dark-mode');
-                
-                if (isDark) { body.classList.add('dark-mode'); toggle.classList.add('checked'); } 
-                else { body.classList.remove('dark-mode'); toggle.classList.remove('checked'); }
-                localStorage.setItem('builder_dark_mode', isDark);
-            }
+    const body = document.body;
+    const btn = document.getElementById('dark-mode-btn');
+    
+    // Determine state
+    let isDark = forceState !== undefined ? forceState : !body.classList.contains('dark-mode');
+
+    // Apply Class
+    if (isDark) { 
+        body.classList.add('dark-mode'); 
+    } else { 
+        body.classList.remove('dark-mode'); 
+    }
+    
+    // Save
+    localStorage.setItem('builder_dark_mode', isDark);
+
+    // Update Icon (Sun vs Moon)
+    if (btn) {
+        if (isDark) {
+            // Show SUN icon (to switch to light)
+            btn.innerHTML = `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+        } else {
+            // Show MOON icon (to switch to dark)
+            btn.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+        }
+    }
+}
 
             async initFirebase() {
                 if (firebase.apps.length === 0) {
@@ -981,34 +1082,37 @@ async performFirebaseAuth(isInteractive) {
                 const email = document.getElementById('login-email').value.trim();
                 const pass = document.getElementById('login-pass').value.trim();
 
-                if (!email || !pass) { alert("Please enter email and password."); return; }
+                if (!email || !pass) { 
+                    await this.showAlert("Missing Info", "Please enter email and password.", true); 
+                    return; 
+                }
                 
                 const btn = document.getElementById('btn-login');
                 btn.classList.add('loading');
 
                 try {
                     await this.auth.signInWithEmailAndPassword(email, pass);
-                    // performFirebaseAuth will trigger via onAuthStateChanged
                 } catch (e) {
                     console.error(e);
                     let msg = "Login Failed: " + e.message;
                     if (e.code === 'auth/user-not-found') msg = "No account found with this email.";
                     if (e.code === 'auth/wrong-password') msg = "Incorrect password.";
                     if (e.code === 'auth/invalid-email') msg = "Invalid email format.";
-                    alert(msg);
+                    await this.showAlert("Login Failed", msg, true);
                 } finally {
                     btn.classList.remove('loading');
                 }
             }
             
             async forgotPassword() {
-                const email = prompt("Enter your email address to reset password:");
+                const email = await this.showPrompt("Reset Password", "Enter your email address to receive a reset link:", "name@example.com");
+                
                 if (email) {
                     try {
                         await this.auth.sendPasswordResetEmail(email);
-                        alert("Password reset email sent! Check your inbox.");
+                        await this.showAlert("Email Sent", "Password reset email sent! Check your inbox.");
                     } catch(e) {
-                        alert("Error: " + e.message);
+                        await this.showAlert("Error", e.message, true);
                     }
                 }
             }
@@ -1060,58 +1164,63 @@ async claimName(name, uid) {
 
 
 async register() {
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-pass').value.trim();
+                const name = document.getElementById('reg-name').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const pass = document.getElementById('reg-pass').value.trim();
 
-    if (!name || !email || !pass) { alert("All fields are required."); return; }
-    
-    
-    if (!this.isValidName(name)) {
-        alert("Display Name contains invalid characters.\n\nAllowed: Letters, Numbers, Spaces, dots (.), dashes (-), and underscores (_).\n\nEmojis and special symbols are NOT allowed.");
-        return;
-    }
-    
-    
-    const passError = this.validatePassword(pass);
-    if (passError) { alert(passError); return; }
+                if (!name || !email || !pass) { 
+                    await this.showAlert("Missing Info", "All fields are required.", true); 
+                    return; 
+                }
+                
+                if (!this.isValidName(name)) {
+                    await this.showAlert("Invalid Name", "Display Name contains invalid characters.<br><br>Allowed: Letters, Numbers, Spaces, dots (.), dashes (-), and underscores (_).<br><br>Emojis and special symbols are NOT allowed.", true);
+                    return;
+                }
+                
+                const passError = this.validatePassword(pass);
+                if (passError) { 
+                    await this.showAlert("Weak Password", passError, true); 
+                    return; 
+                }
 
-    const btn = document.getElementById('btn-register');
-    btn.classList.add('loading');
+                const btn = document.getElementById('btn-register');
+                btn.classList.add('loading');
 
-    try {
-        // 1. PRE-FLIGHT CHECK (Is Name Taken?)
-        const isTaken = await this.isNameTaken(name);
-        if (isTaken) throw new Error("This Display Name is already taken. Please choose another.");
+                try {
+                    // 1. PRE-FLIGHT CHECK
+                    const isTaken = await this.isNameTaken(name);
+                    if (isTaken) throw new Error("This Display Name is already taken. Please choose another.");
 
-        // 2. CREATE AUTH USER
-        const userCredential = await this.auth.createUserWithEmailAndPassword(email, pass);
-        const uid = userCredential.user.uid;
+                    // 2. CREATE AUTH USER
+                    const userCredential = await this.auth.createUserWithEmailAndPassword(email, pass);
+                    const uid = userCredential.user.uid;
 
-        // 3. LOCK THE NAME (Critical Step)
-        await this.claimName(name, uid);
+                    // 3. LOCK THE NAME
+                    await this.claimName(name, uid);
 
-        // 4. UPDATE AUTH PROFILE
-        await userCredential.user.updateProfile({ displayName: name });
+                    // 4. UPDATE AUTH PROFILE
+                    await userCredential.user.updateProfile({ displayName: name });
 
-        // 5. SETUP SESSION & UI
-        this.devProfile = { email: email, displayName: name, uid: uid };
-        document.getElementById('nav-username').innerText = name;
-        document.getElementById('navbar').style.display = 'flex';
+                    // 5. SETUP SESSION & UI
+                    this.devProfile = { email: email, displayName: name, uid: uid };
+                    document.getElementById('nav-username').innerText = name;
+                    document.getElementById('navbar').style.display = 'flex';
 
-        this.showDashboard();
-    } catch (e) {
-        console.error(e);
-        let msg = e.message;
-        if (e.code === 'auth/email-already-in-use') msg = "Email already registered.";
-        alert(msg);
-    } finally {
-        btn.classList.remove('loading');
-    }
-}
+                    this.showDashboard();
+                } catch (e) {
+                    console.error(e);
+                    let msg = e.message;
+                    if (e.code === 'auth/email-already-in-use') msg = "Email already registered.";
+                    await this.showAlert("Registration Failed", msg, true);
+                } finally {
+                    btn.classList.remove('loading');
+                }
+            }
 
-            confirmLogout() {
-                if(confirm("Are you sure you want to sign out?")) {
+            async confirmLogout() {
+                const confirmed = await this.showConfirm("Sign Out", "Are you sure you want to sign out?", "Sign Out");
+                if(confirmed) {
                     this.logout();
                 }
             }
@@ -1345,16 +1454,18 @@ async fetchMyApps() {
             
 
             async deleteApp(appId, appName) {
-                if(confirm(`Are you sure you want to delete "${appName}"? This cannot be undone.`)) {
+                const confirmed = await this.showConfirm("Delete App", `Are you sure you want to delete "${appName}"? This cannot be undone.`, "Delete");
+                
+                if(confirmed) {
                     try {
                         await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).delete();
                         this.fetchMyApps();
                     } catch(e) {
                         console.error(e);
                         if (e.code === 'permission-denied') {
-                            alert("PERMISSION DENIED: You cannot delete this app.\n\nMake sure your Firebase Rules allow deletes for 'store_apps'.");
+                            await this.showAlert("Permission Denied", "You cannot delete this app.<br><br>Make sure your Firebase Rules allow deletes for 'store_apps'.", true);
                         } else {
-                            alert("Error deleting app: " + e.message);
+                            await this.showAlert("Error", "Error deleting app: " + e.message, true);
                         }
                     }
                 }
@@ -1363,6 +1474,11 @@ async fetchMyApps() {
                         createNewApp() {
                 this.currentEditingId = null;
                 document.getElementById('editor-title').innerText = "Create New App";
+                
+                
+                document.getElementById('editor-meta-card').style.display = 'none';
+                
+                
                 document.getElementById('publish-text').innerText = "Publish to App Store";
                 document.getElementById('display-app-id').innerText = "Auto-generated after publishing";
                 document.getElementById('display-app-id').style.fontStyle = "italic";
@@ -1393,6 +1509,59 @@ async fetchMyApps() {
                     const data = doc.data();
                     this.currentEditingId = appId;
                     document.getElementById('editor-title').innerText = "Edit App";
+                    
+                    
+                    // --- DATE LOGIC --
+     const metaCard = document.getElementById('editor-meta-card');
+    
+    if (data.createdAt) {
+        // 1. Format Created Date (NOW INCLUDES TIME)
+        const createdStr = new Date(data.createdAt).toLocaleDateString(undefined, { 
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit' 
+        });
+        
+        // ROW 1: Created
+        let metaHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px; font-size:13px;">
+                <span style="color:var(--text-secondary); font-weight:500;">Created</span>
+                <span style="color:var(--text-primary); font-weight:600; text-align:right;">${createdStr}</span>
+            </div>
+        `;
+
+        // 2. ROW 2: Last Active
+        if (data.updatedAt) {
+            const updatedStr = new Date(data.updatedAt).toLocaleDateString(undefined, { 
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+            });
+            
+            const count = data.updateCount ? `Update #${data.updateCount}` : 'Edited';
+
+            metaHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; padding-top:10px; border-top:1px solid var(--border);">
+                    <span style="color:var(--text-secondary); font-weight:500; white-space:nowrap;">Last Active</span>
+                    <div style="display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:6px; text-align:right; flex:1;">
+                        <span style="font-size:10px; font-weight:700; background:rgba(0,113,227,0.1); color:var(--accent); padding:3px 8px; border-radius:6px; text-transform:uppercase; white-space:nowrap;">
+                            ${count}
+                        </span>
+                        <span style="color:var(--text-primary); font-weight:600; white-space:nowrap;">
+                            ${updatedStr}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        metaCard.innerHTML = metaHTML;
+        metaCard.style.display = 'block';
+    } else {
+        metaCard.style.display = 'none';
+    }
+                    
+                    
+                    
+                    
+                    
                     document.getElementById('publish-text').innerText = "Save Changes";
                     document.getElementById('display-app-id').innerText = appId;
                     document.getElementById('display-app-id').style.fontStyle = "normal";
@@ -1433,7 +1602,7 @@ async fetchMyApps() {
                     
               
                 } catch(e) {
-                    alert("Error: " + e.message);
+                    await this.showAlert("Error", e.message, true);
                 }
             }
 
@@ -1466,12 +1635,12 @@ async fetchMyApps() {
                 }
             }
 
-            handleFileUpload(input) {
+            async handleFileUpload(input) {
                 if (input.files && input.files[0]) {
                     const file = input.files[0];
-                    // SAFETY LIMIT: 600KB (Base64 -> ~800KB). Keeps Firestore healthy.
+                    // SAFETY LIMIT: 600KB
                     if (file.size > 600 * 1024) { 
-                        alert("File is too large. Max 600KB for App Store sync.");
+                        await this.showAlert("File Too Large", "File is too large. Max 600KB for App Store sync.", true);
                         input.value = '';
                         return;
                     }
@@ -1499,7 +1668,7 @@ async fetchMyApps() {
     // Get Toggle State
     const enableAnalytics = document.getElementById('toggle-analytics-ui').classList.contains('checked');
 
-    if (!name || !desc || !embedUrl) { alert("Name, Description, and Source are required."); return; }
+    if (!name || !desc || !embedUrl) { await this.showAlert("Missing Info", "Name, Description, and Content Source are required.", true); return; }
 
     const btn = document.getElementById('btn-publish');
     btn.classList.add('loading');
@@ -1536,35 +1705,27 @@ async fetchMyApps() {
             
         } else {
             // --- SCENARIO 2: EDIT EXISTING APP ---
-            const docRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId);
+    const docRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId);
 
-            // A. FETCH FIRST (Read-Before-Write)
-            // We must read the doc to see if 'analyticsVersion' already exists.
-            const docSnap = await docRef.get();
-            const existingData = docSnap.exists ? docSnap.data() : {};
+    const docSnap = await docRef.get();
+    const existingData = docSnap.exists ? docSnap.data() : {};
 
-            // B. APPLY ROBUST LOGIC
-            if (enableAnalytics) {
-                // If turning ON: 
-                // Only set a new version if one is MISSING.
-                // If it exists, we leave it out of 'appData', so Firestore keeps the old value.
-                if (!existingData.analyticsVersion) {
-                    appData.analyticsVersion = now; 
-                }
-            }
-            // If turning OFF: 
-            // 'appData' contains { enableAnalytics: false }.
-            // We do NOT include 'analyticsVersion' in 'appData'.
-            // Therefore, Firestore .update() will KEEP the existing timestamp in the database.
-            // This ensures the Uninstall Signal remains active for users.
+    // Analytics Logic (Keep existing)
+    if (enableAnalytics && !existingData.analyticsVersion) {
+        appData.analyticsVersion = now; 
+    }
 
-            await docRef.update(appData);
+    // --- NEW: INCREMENT UPDATE COUNTER ---
+    // Uses Firestore atomic increment so it's always accurate
+    appData.updateCount = firebase.firestore.FieldValue.increment(1);
+
+    await docRef.update(appData);
         }
         
         this.showDashboard();
     } catch (e) {
         console.error(e);
-        alert("Error saving: " + e.message);
+        await this.showAlert("Publish Error", "Error saving: " + e.message, true);
     } finally {
         btn.classList.remove('loading');
     }
@@ -1644,7 +1805,6 @@ async fetchMyApps() {
                 
                 if (!confirmed) return;
 
-                // UI Feedback
                 const btn = document.querySelector('#global-analytics-view .btn.danger');
                 if(btn) { btn.innerText = "Nuking..."; btn.disabled = true; }
 
@@ -1662,16 +1822,16 @@ async fetchMyApps() {
 
                     if (count > 0) {
                         await batch.commit();
-                        alert(`Successfully reset stats for ${count} apps.`);
-                        this.fetchMyApps(); // Refresh cache
-                        this.openGlobalAnalytics(); // Refresh view
+                        await this.showAlert("Success", `Successfully reset stats for ${count} apps.`);
+                        this.fetchMyApps(); 
+                        this.openGlobalAnalytics(); 
                     } else {
-                        alert("No apps found to reset.");
+                        await this.showAlert("Info", "No apps found to reset.");
                     }
 
                 } catch(e) {
                     console.error(e);
-                    alert("Batch Reset Failed: " + e.message);
+                    await this.showAlert("Error", "Batch Reset Failed: " + e.message, true);
                 } finally {
                     if(btn) { btn.innerText = "Reset Statistics for ALL Apps"; btn.disabled = false; }
                 }
@@ -1680,96 +1840,78 @@ async fetchMyApps() {
   
 
 async toggleGlobalAnalytics(toggleEl) {
-    // 1. LOCK UI
-    if (toggleEl.classList.contains('disabled')) return;
-    toggleEl.classList.add('disabled');
-    toggleEl.style.opacity = '0.5';
-    toggleEl.style.cursor = 'not-allowed';
+                if (toggleEl.classList.contains('disabled')) return;
+                toggleEl.classList.add('disabled');
+                toggleEl.style.opacity = '0.5';
+                toggleEl.style.cursor = 'not-allowed';
 
-    const newState = !toggleEl.classList.contains('checked');
-    if(newState) toggleEl.classList.add('checked');
-    else toggleEl.classList.remove('checked');
+                const newState = !toggleEl.classList.contains('checked');
+                if(newState) toggleEl.classList.add('checked');
+                else toggleEl.classList.remove('checked');
 
-    // Visual Feedback
-    const label = toggleEl.nextElementSibling.querySelector('span');
-    const originalText = label.innerText;
-    label.innerText = "Processing Updates...";
-    
-    // Capture one timestamp for consistency
-    const now = Date.now();
+                const label = toggleEl.nextElementSibling.querySelector('span');
+                const originalText = label.innerText;
+                label.innerText = "Processing Updates...";
+                
+                const now = Date.now();
 
-    try {
-        const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-        const batch = this.db.batch();
-        let count = 0;
+                try {
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+                    const batch = this.db.batch();
+                    let count = 0;
 
-        snapshot.forEach(doc => {
-            if (doc.data().authorId === this.devProfile.uid) {
-                const data = doc.data();
-                const updateData = {};
+                    snapshot.forEach(doc => {
+                        if (doc.data().authorId === this.devProfile.uid) {
+                            const data = doc.data();
+                            const updateData = {};
 
-                if (newState === true) {
-                    // --- TURN ON LOGIC ---
-                    updateData.enableAnalytics = true;
+                            if (newState === true) {
+                                updateData.enableAnalytics = true;
+                                if (!data.analyticsVersion) {
+                                    updateData.analyticsVersion = now;
+                                    updateData.updatedAt = now; 
+                                }
+                            } else {
+                                updateData.enableAnalytics = false;
+                            }
+                            
+                            batch.update(doc.ref, updateData);
+                            count++;
+                        }
+                    });
 
-                    // ANTI-CHEAT FIX:
-                    // Only broadcast a NEW 'analyticsVersion' if one does NOT exist yet.
-                    // If it exists, it means the app was already tracking.
-                    // We flip the switch back to TRUE, but we DO NOT update the timestamp.
-                    // This prevents the Simulator from seeing a "New Version" and inflating downloads.
-                    if (!data.analyticsVersion) {
-                        updateData.analyticsVersion = now;
-                        updateData.updatedAt = now; // Signal the update
+                    if (count > 0) {
+                        await batch.commit();
+                        
+                        this.myAppsCache.forEach(app => {
+                            app.enableAnalytics = newState;
+                            if (newState === true) {
+                                if (!app.analyticsVersion) {
+                                    app.analyticsVersion = now;
+                                    app.updatedAt = now;
+                                }
+                            }
+                        });
+                        
+                        label.innerText = "Success! Reloading...";
+                    } else {
+                        label.innerText = "No apps to update.";
                     }
                     
-                } else {
-                    // --- TURN OFF LOGIC ---
-                    // Disable local buttons, but suppress the signal (no timestamp change).
-                    updateData.enableAnalytics = false;
+                    await new Promise(r => setTimeout(r, 1000));
+
+                } catch(e) {
+                    console.error(e);
+                    await this.showAlert("Bulk Error", "Update Failed: " + e.message, true);
+                    if(newState) toggleEl.classList.remove('checked');
+                    else toggleEl.classList.add('checked');
+                } finally {
+                    label.innerText = originalText;
+                    toggleEl.classList.remove('disabled');
+                    toggleEl.style.opacity = '1';
+                    toggleEl.style.cursor = 'pointer';
                 }
-                
-                batch.update(doc.ref, updateData);
-                count++;
             }
-        });
-
-        if (count > 0) {
-            await batch.commit();
-            
-            // Update Local Cache (Mirror the Logic Above)
-            this.myAppsCache.forEach(app => {
-                app.enableAnalytics = newState;
-                
-                if (newState === true) {
-                    // Only update local timestamp if it was missing (First activation)
-                    if (!app.analyticsVersion) {
-                        app.analyticsVersion = now;
-                        app.updatedAt = now;
-                    }
-                }
-                // If turning OFF or RE-ENABLING, we preserve the existing timestamp
-            });
-            
-            label.innerText = "Success! Reloading...";
-        } else {
-            label.innerText = "No apps to update.";
-        }
-        
-        await new Promise(r => setTimeout(r, 1000));
-
-    } catch(e) {
-        console.error(e);
-        alert("Bulk Update Failed: " + e.message);
-        if(newState) toggleEl.classList.remove('checked');
-        else toggleEl.classList.add('checked');
-    } finally {
-        // 3. RESTORE UI
-        label.innerText = originalText;
-        toggleEl.classList.remove('disabled');
-        toggleEl.style.opacity = '1';
-        toggleEl.style.cursor = 'pointer';
-    }
-}
             
             
             
@@ -1814,7 +1956,7 @@ async toggleGlobalAnalytics(toggleEl) {
 
     } catch(e) {
         console.error(e);
-        alert("Error loading global stats.");
+        await this.showAlert("Error", "Error loading global stats.", true);
     }
 }
             
@@ -1826,57 +1968,51 @@ async toggleGlobalAnalytics(toggleEl) {
             
             
                         async openAnalytics(appId) {
-    this.currentAnalyticsId = appId;
-    this.updateUIState('none'); 
-    document.getElementById('analytics-view').classList.add('active');
+                this.currentAnalyticsId = appId;
+                this.updateUIState('none'); 
+                document.getElementById('analytics-view').classList.add('active');
 
-    const totalEl = document.getElementById('ana-total');
-    const activeEl = document.getElementById('ana-active');
-    
-    // 1. UI FEEDBACK: Reset numbers to '...' to prove we are refetching
-    totalEl.innerText = '...';
-    activeEl.innerText = '...';
-    
-    // Show loading in chart area
-    document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Refreshing...</div>';
+                const totalEl = document.getElementById('ana-total');
+                const activeEl = document.getElementById('ana-active');
+                
+                totalEl.innerText = '...';
+                activeEl.innerText = '...';
+                
+                document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Refreshing...</div>';
 
-    try {
-        // 2. FETCH SINGLE DOC: Hits Firebase directly for this specific app
-        const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
-        
-        if (!doc.exists) {
-            alert("App not found!");
-            this.showDashboard();
-            return;
-        }
-        
-        const data = doc.data();
-        
-        // Update Header
-        document.getElementById('ana-title').innerHTML = data.name + this.getShieldHTML(appId);
-        document.getElementById('ana-id').innerText = "ID: " + appId;
-        document.getElementById('ana-icon').src = data.iconUrl || 'grey.png';
+                try {
+                    const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
+                    
+                    if (!doc.exists) {
+                        await this.showAlert("Not Found", "App not found!", true);
+                        this.showDashboard();
+                        return;
+                    }
+                    
+                    const data = doc.data();
+                    
+                    document.getElementById('ana-title').innerHTML = data.name + this.getShieldHTML(appId);
+                    document.getElementById('ana-id').innerText = "ID: " + appId;
+                    document.getElementById('ana-icon').src = data.iconUrl || 'grey.png';
 
-        // Handle Disabled State
-        if (data.enableAnalytics === false) {
-            totalEl.innerText = "Disabled";
-            activeEl.innerText = "Disabled";
-            document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Analytics Disabled</div>';
-            return;
-        }
+                    if (data.enableAnalytics === false) {
+                        totalEl.innerText = "Disabled";
+                        activeEl.innerText = "Disabled";
+                        document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Analytics Disabled</div>';
+                        return;
+                    }
 
-        // 3. RENDER NEW NUMBERS
-        const downloads = data.downloadCount || 0;
-        const installs = data.installCount || 0;
+                    const downloads = data.downloadCount || 0;
+                    const installs = data.installCount || 0;
 
-        this.animateNum(totalEl, downloads);
-        this.animateNum(activeEl, installs);
-        this.renderChart(downloads, installs);
+                    this.animateNum(totalEl, downloads);
+                    this.animateNum(activeEl, installs);
+                    this.renderChart(downloads, installs);
 
-    } catch(e) {
-        console.error("Analytics Error", e);
-    }
-}
+                } catch(e) {
+                    console.error("Analytics Error", e);
+                }
+            }
 
             animateNum(el, val) {
             	
@@ -1948,18 +2084,15 @@ let start = Math.max(0, parseInt(el.innerText.replace(/,/g, '')) || 0); const du
 async resetAnalytics() {
                 if (!this.currentAnalyticsId) return;
                 
-                // 1. CUSTOM CONFIRMATION (Replaces browser alert)
                 const confirmed = await this.showConfirm(
                     "Reset Statistics?", 
                     "This will permanently reset download counts to zero. This action cannot be undone.",
                     "Reset Everything"
                 );
                 
-                if (!confirmed) return; // Exit cleanly if canceled
+                if (!confirmed) return;
 
-                // 2. UI UPDATE
-                const btn = document.querySelector('#analytics-view .btn.secondary'); // The refresh/action button
-                const originalHtml = btn ? btn.innerHTML : 'Refresh';
+                const btn = document.querySelector('#analytics-view .btn.secondary');
                 
                 if(btn) {
                     btn.innerText = "Resetting...";
@@ -1967,23 +2100,18 @@ async resetAnalytics() {
                 }
 
                 try {
-                    // 3. PERFORM RESET
                     await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentAnalyticsId).update({
                         downloadCount: 0,
                         installCount: 0
                     });
                     
-                    // 4. REFRESH DATA
                     await this.openAnalytics(this.currentAnalyticsId); 
-                    
-                    // Optional: Show success toast or small alert
-                    // alert("Analytics have been reset."); // You can replace this too if you want
+                    // Optional success toast here if desired
 
                 } catch (e) {
                     console.error(e);
-                    alert("Error resetting stats: " + e.message);
+                    await this.showAlert("Error", "Error resetting stats: " + e.message, true);
                 } finally {
-                    // 5. RESTORE BUTTON STATE
                     if(btn) {
                         btn.innerHTML = `<svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>`;
                         btn.disabled = false;
@@ -2052,11 +2180,10 @@ showAlert(title, message, isError = false) {
                     const cancelBtn = document.getElementById('confirm-cancel');
 
                     titleEl.innerText = title;
-                    msgEl.innerText = message;
+                    msgEl.innerHTML = message; // <--- FIXED: Renders HTML tags
                     okBtn.innerText = okText;
 
                     modal.style.display = 'flex';
-                    // Trigger animation
                     requestAnimationFrame(() => {
                         content.style.opacity = '1';
                         content.style.transform = 'scale(1)';
@@ -2070,7 +2197,6 @@ showAlert(title, message, isError = false) {
                             resolve(result);
                         }, 200);
                         
-                        // Cleanup listeners to prevent memory leaks or duplicate triggers
                         okBtn.onclick = null;
                         cancelBtn.onclick = null;
                     };
@@ -2081,6 +2207,56 @@ showAlert(title, message, isError = false) {
             }
 
 
+
+
+showPrompt(title, message, placeholder = "", inputType = "text", okText = "Submit") {
+                return new Promise((resolve) => {
+                    const modal = document.getElementById('prompt-modal');
+                    const content = modal.firstElementChild;
+                    const titleEl = document.getElementById('prompt-title');
+                    const msgEl = document.getElementById('prompt-msg');
+                    const inputEl = document.getElementById('prompt-input');
+                    const okBtn = document.getElementById('prompt-ok');
+                    const cancelBtn = document.getElementById('prompt-cancel');
+
+                    titleEl.innerText = title;
+                    msgEl.innerHTML = message;
+                    inputEl.placeholder = placeholder;
+                    inputEl.type = inputType; // Allows switching to 'password'
+                    inputEl.value = ''; // Reset value
+                    okBtn.innerText = okText;
+
+                    modal.style.display = 'flex';
+                    inputEl.focus();
+
+                    // Animation
+                    requestAnimationFrame(() => {
+                        content.style.opacity = '1';
+                        content.style.transform = 'scale(1)';
+                    });
+
+                    const close = (value) => {
+                        content.style.opacity = '0';
+                        content.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            modal.style.display = 'none';
+                            resolve(value);
+                        }, 200);
+                        
+                        okBtn.onclick = null;
+                        cancelBtn.onclick = null;
+                        inputEl.onkeydown = null;
+                    };
+
+                    okBtn.onclick = () => close(inputEl.value);
+                    cancelBtn.onclick = () => close(null);
+                    
+                    // Allow Enter key to submit
+                    inputEl.onkeydown = (e) => {
+                        if(e.key === 'Enter') close(inputEl.value);
+                    };
+                });
+            }
           
             
             
@@ -2124,12 +2300,12 @@ document.getElementById('set-bio').dispatchEvent(new Event('input'));
             async sendPasswordReset() {
                  try {
                      await this.auth.sendPasswordResetEmail(this.devProfile.email);
-                     alert("Password reset email sent to " + this.devProfile.email);
-          
-
-            } catch(e) {
-                console.warn("Failed to load extended profile", e);
-            }
+                     await this.showAlert("Check Mail", "Password reset email sent to " + this.devProfile.email);
+                } catch(e) {
+                    console.warn("Reset Error", e);
+                    await this.showAlert("Error", e.message, true);
+                }
+            
 
      const finalBioInput = document.getElementById('set-bio');
     const finalCounter = document.getElementById('bio-counter');
@@ -2141,178 +2317,184 @@ document.getElementById('set-bio').dispatchEvent(new Event('input'));
         }
 
             async saveSettings() {
-    const newName = document.getElementById('set-name').value.trim();
-    const newIcon = document.getElementById('set-icon').value.trim();
-    const newBio = document.getElementById('set-bio').value.trim();
-    const newPass = document.getElementById('set-pass').value.trim();
+                const newName = document.getElementById('set-name').value.trim();
+                const newIcon = document.getElementById('set-icon').value.trim();
+                const newBio = document.getElementById('set-bio').value.trim();
+                const newPass = document.getElementById('set-pass').value.trim();
 
-    if (!newName) { alert("Display Name cannot be empty."); return; }
-    
-    const btn = document.getElementById('btn-save-settings');
-    btn.classList.add('loading');
+                if (!newName) { 
+                    await this.showAlert("Invalid Input", "Display Name cannot be empty.", true); 
+                    return; 
+                }
+                
+                const btn = document.getElementById('btn-save-settings');
+                btn.classList.add('loading');
 
-    try {
-        const oldName = this.devProfile.displayName;
-        const uid = this.devProfile.uid;
-        
-        // --- STEP 1: NAME CHANGE LOGIC ---
-        if (this.normalizeName(newName) !== this.normalizeName(oldName)) {
-        	
-        
-        if (!this.isValidName(newName)) {
-        alert("Display Name contains invalid characters.\n\nAllowed: Letters, Numbers, Spaces, dots (.), dashes (-), and underscores (_).\n\nEmojis and special symbols are NOT allowed.");
-        btn.classList.remove('loading'); // Reset button
-        btn.disabled = false;
-        return;
-    }
-        
-        
-        
-        
-            // A. Check Availability
-            const isTaken = await this.isNameTaken(newName);
-            if (isTaken) throw new Error(`The name "${newName}" is already taken.`);
+                try {
+                    const oldName = this.devProfile.displayName;
+                    const uid = this.devProfile.uid;
+                    
+                    // --- STEP 1: NAME CHANGE LOGIC ---
+                    if (this.normalizeName(newName) !== this.normalizeName(oldName)) {
+                        
+                        if (!this.isValidName(newName)) {
+                            await this.showAlert("Invalid Name", "Display Name contains invalid characters.<br><br>Allowed: Letters, Numbers, Spaces, dots (.), dashes (-), and underscores (_).<br><br>Emojis and special symbols are NOT allowed.", true);
+                            btn.classList.remove('loading'); 
+                            return;
+                        }
+                    
+                        // A. Check Availability
+                        const isTaken = await this.isNameTaken(newName);
+                        if (isTaken) throw new Error(`The name "${newName}" is already taken.`);
 
-            // B. Claim NEW Name
-            await this.claimName(newName, uid);
+                        // B. Claim NEW Name
+                        await this.claimName(newName, uid);
 
-            // C. Release OLD Name
-            const oldNameId = this.normalizeName(oldName);
-            if (oldNameId) {
-                await this.db.collection('artifacts').doc(this.appId)
-                    .collection('public').doc('data')
-                    .collection('taken_names').doc(oldNameId).delete()
-                    .catch(e => console.warn("Old lock missing", e));
+                        // C. Release OLD Name
+                        const oldNameId = this.normalizeName(oldName);
+                        if (oldNameId) {
+                            await this.db.collection('artifacts').doc(this.appId)
+                                .collection('public').doc('data')
+                                .collection('taken_names').doc(oldNameId).delete()
+                                .catch(e => console.warn("Old lock missing", e));
+                        }
+
+                        // D. Update Auth
+                        await this.user.updateProfile({ displayName: newName });
+                        this.devProfile.displayName = newName;
+                    }
+                    
+                    // --- STEP 2: PASSWORD LOGIC ---
+                    if (newPass) {
+                        const passError = this.validatePassword(newPass);
+                        if (passError) throw new Error(passError);
+                        try {
+                            await this.user.updatePassword(newPass);
+                        } catch(e) {
+                            if (e.code === 'auth/requires-recent-login') {
+                                // REPLACED NATIVE PROMPT WITH CUSTOM PASSWORD PROMPT
+                                const currentPass = await this.showPrompt("Security Check", "Please enter your CURRENT password to confirm changes:", "", "password");
+                                
+                                if (currentPass) {
+                                    const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
+                                    await this.user.reauthenticateWithCredential(credential);
+                                    await this.user.updatePassword(newPass);
+                                } else {
+                                    throw new Error("Re-authentication cancelled.");
+                                }
+                            } else throw e;
+                        }
+                    }
+
+                    // --- STEP 3: UPDATE USER INFO DOC ---
+                    await this.db.collection('artifacts').doc(this.appId)
+                        .collection('public').doc('data')
+                        .collection('user_info').doc(uid).set({
+                            authorName: newName,
+                            authorIcon: newIcon,
+                            authorBio: newBio
+                        }, { merge: true });
+
+                    // --- STEP 4: BATCH UPDATE APPS ---
+                    const snapshot = await this.db.collection('artifacts').doc(this.appId)
+                        .collection('public').doc('data')
+                        .collection('store_apps').where('authorId', '==', uid).get();
+                        
+                    const batch = this.db.batch();
+                    let appCount = 0;
+
+                    snapshot.forEach(doc => {
+                        batch.update(doc.ref, { 
+                            author: newName,
+                            authorIcon: newIcon,
+                            authorBio: newBio
+                        });
+                        appCount++;
+                    });
+
+                    if (appCount > 0) await batch.commit();
+
+                    // --- STEP 5: FINALIZE ---
+                    localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+                    document.getElementById('nav-username').innerText = newName;
+                    await this.showAlert("Saved", "Settings Saved Successfully!");
+                    this.showDashboard();
+                    
+                } catch(e) {
+                    console.error(e);
+                    await this.showAlert("Error", "Error saving settings: " + e.message, true);
+                } finally {
+                    btn.classList.remove('loading');
+                }
             }
-
-            // D. Update Auth
-            await this.user.updateProfile({ displayName: newName });
-            this.devProfile.displayName = newName;
-        }
-        
-        // --- STEP 2: PASSWORD LOGIC ---
-        if (newPass) {
-            const passError = this.validatePassword(newPass);
-            if (passError) throw new Error(passError);
-            try {
-                await this.user.updatePassword(newPass);
-            } catch(e) {
-                if (e.code === 'auth/requires-recent-login') {
-                    const currentPass = prompt("Security: Enter CURRENT password to save changes.");
-                    if (currentPass) {
-                        const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
-                        await this.user.reauthenticateWithCredential(credential);
-                        await this.user.updatePassword(newPass);
-                    } else throw new Error("Cancelled.");
-                } else throw e;
-            }
-        }
-
-        // --- STEP 3: UPDATE USER INFO DOC ---
-        await this.db.collection('artifacts').doc(this.appId)
-            .collection('public').doc('data')
-            .collection('user_info').doc(uid).set({
-                authorName: newName,
-                authorIcon: newIcon,
-                authorBio: newBio
-            }, { merge: true });
-
-        // --- STEP 4: BATCH UPDATE APPS (Propagate Name Change) ---
-        const snapshot = await this.db.collection('artifacts').doc(this.appId)
-            .collection('public').doc('data')
-            .collection('store_apps').where('authorId', '==', uid).get();
-            
-        const batch = this.db.batch();
-        let appCount = 0;
-
-        snapshot.forEach(doc => {
-            batch.update(doc.ref, { 
-                author: newName,
-                authorIcon: newIcon,
-                authorBio: newBio
-            });
-            appCount++;
-        });
-
-        if (appCount > 0) await batch.commit();
-
-        // --- STEP 5: FINALIZE ---
-        localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
-        document.getElementById('nav-username').innerText = newName;
-        alert("Settings Saved Successfully!");
-        this.showDashboard();
-        
-    } catch(e) {
-        console.error(e);
-        alert("Error saving settings: " + e.message);
-    } finally {
-        btn.classList.remove('loading');
-    }
-}
 
             async confirmDeleteAccount() {
-    const userInput = prompt(`To confirm deletion, type "${this.devProfile.email}" below.\nWARNING: This will delete ALL your published apps permanently.`);
-    
-    if (userInput === this.devProfile.email) {
-        try {
-            const btn = document.querySelector('.btn.danger');
-            if(btn) btn.innerText = "Deleting...";
+                // REPLACED NATIVE PROMPT WITH CUSTOM PROMPT
+                const userInput = await this.showPrompt(
+                    "Delete Account", 
+                    `To confirm deletion, type your email:<br><b>${this.devProfile.email}</b><br><br><span style="color:var(--danger)">WARNING: This will delete ALL your published apps permanently.</span>`, 
+                    "Type email here"
+                );
+                
+                if (userInput === this.devProfile.email) {
+                    try {
+                        const btn = document.querySelector('.btn.danger');
+                        if(btn) btn.innerText = "Deleting...";
 
-            const uid = this.devProfile.uid;
+                        const uid = this.devProfile.uid;
 
-            // --- 1. RELEASE NAME LOCK (Critical Fix) ---
-            // Must be done before deleting the user so we have permission
-            const nameId = this.normalizeName(this.devProfile.displayName);
-            if (nameId) {
-                await this.db.collection('artifacts').doc(this.appId)
-                    .collection('public').doc('data')
-                    .collection('taken_names').doc(nameId).delete()
-                    .catch(e => console.warn("Name lock already gone", e));
+                        // --- 1. RELEASE NAME LOCK ---
+                        const nameId = this.normalizeName(this.devProfile.displayName);
+                        if (nameId) {
+                            await this.db.collection('artifacts').doc(this.appId)
+                                .collection('public').doc('data')
+                                .collection('taken_names').doc(nameId).delete()
+                                .catch(e => console.warn("Name lock already gone", e));
+                        }
+
+                        // --- 2. DELETE USER INFO ---
+                        await this.db.collection('artifacts').doc(this.appId)
+                            .collection('public').doc('data')
+                            .collection('user_info').doc(uid).delete()
+                            .catch(e => console.warn("User info already gone", e));
+
+                        // --- 3. DELETE APPS (Batch) ---
+                        const snapshot = await this.db.collection('artifacts').doc(this.appId)
+                            .collection('public').doc('data')
+                            .collection('store_apps').where('authorId', '==', uid).get();
+                        
+                        const batch = this.db.batch();
+                        let count = 0;
+                        snapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                            count++;
+                        });
+
+                        if (count > 0) await batch.commit();
+                        
+                        // --- 4. DELETE AUTH ACCOUNT ---
+                        await this.user.delete();
+
+                        localStorage.removeItem('ios_builder_session');
+                        await this.showAlert("Goodbye", "Account, Username, and " + count + " apps deleted.");
+                        window.location.reload();
+
+                    } catch (e) {
+                        console.error(e);
+                        if (e.code === 'permission-denied') {
+                            await this.showAlert("Permission Denied", "You cannot delete these apps.", true);
+                        } else if (e.code === 'auth/requires-recent-login') {
+                             await this.showAlert("Security Check", "Please Sign Out and Sign In again, then try deleting immediately.", true);
+                        } else {
+                            await this.showAlert("Error", "Error deleting account: " + e.message, true);
+                        }
+                        const btn = document.querySelector('.btn.danger');
+                        if(btn) btn.innerText = "Delete Account";
+                    }
+                } else if (userInput !== null) { // If null, user cancelled
+                    await this.showAlert("Mismatch", "Email did not match. Deletion cancelled.", true);
+                }
             }
-
-            // --- 2. DELETE USER INFO ---
-            await this.db.collection('artifacts').doc(this.appId)
-                .collection('public').doc('data')
-                .collection('user_info').doc(uid).delete()
-                .catch(e => console.warn("User info already gone", e));
-
-            // --- 3. DELETE APPS (Batch) ---
-            const snapshot = await this.db.collection('artifacts').doc(this.appId)
-                .collection('public').doc('data')
-                .collection('store_apps').where('authorId', '==', uid).get();
-            
-            const batch = this.db.batch();
-            let count = 0;
-            snapshot.forEach(doc => {
-                batch.delete(doc.ref);
-                count++;
-            });
-
-            if (count > 0) await batch.commit();
-            
-            // --- 4. DELETE AUTH ACCOUNT ---
-            await this.user.delete();
-
-            localStorage.removeItem('ios_builder_session');
-            alert("Account, Username, and " + count + " apps deleted.");
-            window.location.reload();
-
-        } catch (e) {
-            console.error(e);
-            if (e.code === 'permission-denied') {
-                alert("PERMISSION DENIED: You cannot delete these apps.");
-            } else if (e.code === 'auth/requires-recent-login') {
-                 alert("Security: Please Sign Out and Sign In again, then try deleting immediately.");
-            } else {
-                alert("Error deleting account: " + e.message);
-            }
-            const btn = document.querySelector('.btn.danger');
-            if(btn) btn.innerText = "Delete Account";
-        }
-    } else if (userInput !== null) {
-        alert("Email did not match. Deletion cancelled.");
-    }
-}
         }
 
         const appBuilder = new AppBuilder();
@@ -2343,7 +2525,23 @@ document.getElementById('set-bio').dispatchEvent(new Event('input'));
         <button class="btn block" id="alert-ok" style="width: 100%; height: 44px; font-size: 16px;">OK</button>
     </div>
 </div>   
-    
+  
+
+<div id="prompt-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 10002;">
+    <div style="background: var(--card-bg); width: 90%; max-width: 400px; padding: 24px; border-radius: 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); text-align: center; transform: scale(0.95); opacity: 0; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+        <h2 id="prompt-title" style="margin: 0 0 8px; font-size: 20px;">Input Required</h2>
+        <p id="prompt-msg" style="margin: 0 0 20px; color: var(--text-secondary); font-size: 14px; line-height: 1.5;">Please enter details below:</p>
+        
+        <input type="text" id="prompt-input" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; margin-bottom: 24px; box-sizing: border-box; background: var(--input-bg); color: var(--text-primary); outline: none;">
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn secondary block" id="prompt-cancel" style="flex: 1;">Cancel</button>
+            <button class="btn block" id="prompt-ok" style="flex: 1;">Submit</button>
+        </div>
+    </div>
+</div>
+
+  
     
 </body>
 </html>
