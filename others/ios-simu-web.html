@@ -152,6 +152,7 @@
         .mobile-menu.open a:nth-child(4) { transition-delay: 0.2s; }
         .mobile-menu.open a:nth-child(5) { transition-delay: 0.25s; }
         .mobile-menu.open a:nth-child(6) { transition-delay: 0.30s; }
+        .mobile-menu.open a:nth-child(7) { transition-delay: 0.35s; }
 
         /* --- HERO SECTION --- */
         .hero {
@@ -469,6 +470,117 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
 }
 
 
+
+
+
+/* --- SEARCH VIEW STYLES --- */
+/* --- SEARCH VIEW STYLES --- */
+.search-hero-section {
+    padding: 100px 20px 60px;
+    text-align: center;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+}
+.search-hero-section h1 { font-size: 48px; font-weight: 700; margin-bottom: 10px; }
+.search-hero-section p { font-size: 20px; color: var(--text-secondary); margin-bottom: 40px; }
+
+.big-search-wrapper {
+    max-width: 600px; margin: 0 auto; position: relative;
+    display: flex; align-items: center;
+}
+.big-search-wrapper input {
+    width: 100%; 
+    /* 60px Right Padding ensures text doesn't overlap the button */
+    padding: 18px 60px 18px 54px;
+    font-size: 19px; border-radius: 16px; border: none;
+    background: #F2F2F7; color: var(--text-primary);
+    outline: none; transition: box-shadow 0.2s, background 0.2s;
+}
+.big-search-wrapper input:focus {
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(0,122,255,0.3);
+}
+body.dark-mode .big-search-wrapper input { background: #1C1C1E; border: 1px solid #333; }
+body.dark-mode .big-search-wrapper input:focus { background: #000; border-color: #007AFF; }
+
+.search-icon {
+    position: absolute; left: 20px; color: var(--text-secondary); pointer-events: none;
+}
+
+#search-share-btn {
+    position: absolute; right: 12px;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s, background 0.2s; color: var(--accent);
+    z-index: 5;
+}
+#search-share-btn.visible { opacity: 1; pointer-events: auto; }
+#search-share-btn:active { transform: scale(0.9); }
+#search-share-btn:hover { background: rgba(0,122,255,0.1); }
+
+/* Results Grid */
+.search-results-container {
+    max-width: 800px; margin: 0 auto; padding: 40px 20px; min-height: 400px;
+}
+
+.result-category-header {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    color: var(--text-secondary); margin: 30px 0 15px 0; letter-spacing: 0.5px;
+}
+
+.result-card {
+    background: var(--bg-card); padding: 20px; border-radius: 14px;
+    margin-bottom: 15px; border: 1px solid var(--border-color);
+    cursor: pointer; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    display: flex; flex-direction: column; gap: 5px;
+}
+.result-card:hover {
+    transform: translateY(-2px); border-color: var(--accent);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+.result-card h4 { margin: 0; font-size: 17px; font-weight: 600; color: var(--accent); }
+.result-card p { margin: 0; font-size: 14px; color: var(--text-primary); opacity: 0.8; line-height: 1.5; }
+.result-path { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+
+/* Empty State & Tags */
+.empty-search-state { text-align: center; color: var(--text-secondary); padding-top: 40px; }
+.quick-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.quick-tags span {
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer;
+    transition: all 0.2s;
+}
+.quick-tags span:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* --- TOAST NOTIFICATION (New) --- */
+#toast-container {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.toast-msg {
+    background: rgba(0, 0, 0, 0.8); color: white;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 10px 20px; border-radius: 50px; font-size: 14px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex; align-items: center; gap: 8px;
+    animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+    to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+}
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -482,6 +594,9 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
             
             <div class="nav-links-desktop">
     <a onclick="switchView('home')" id="link-home" class="active">Overview</a>
+    
+    <a onclick="switchView('search'); triggerSearch('')" id="link-search">Search</a>
+    
     <a onclick="switchView('docs')" id="link-docs">Documentation</a>
     <a onclick="switchView('support')" id="link-support">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
     <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator ↗</a>
@@ -498,6 +613,9 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
 
 <div class="mobile-menu" id="mobile-menu">
     <a onclick="mobileNavigate('home')">Overview</a>
+    
+    <a onclick="switchView('search'); triggerSearch('')" id="link-search">Search</a>
+    
     <a onclick="mobileNavigate('docs')">Documentation</a>
     <a onclick="mobileNavigate('support')">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
     <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator</a>
@@ -1446,6 +1564,44 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
         </div>
     </div>
 
+
+
+
+<div id="view-search" class="view-section">
+    <div class="search-hero-section">
+        <h1>Find Anything.</h1>
+        <p>Search across documentation, support articles, and features.</p>
+        
+        <div class="big-search-wrapper">
+            <svg onclick="triggerSearch('')" style="pointer-events:auto; cursor:pointer;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="global-search-input" placeholder="Type here to search" autocomplete="off" spellcheck="false">
+            
+            <button id="search-share-btn" onclick="shareSearchQuery()" title="Copy Link to Search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="search-results-container" id="search-results-area">
+        <div class="empty-search-state">
+            
+            <h3>Type to search...</h3>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+
+
+
+
     <footer>
         <div class="footer-nav">
             <span onclick="switchView('privacy')">Privacy Policy</span>
@@ -1586,6 +1742,222 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+        
+        
+        
+        
+        /* --- SEARCH ENGINE & LOGIC --- */
+
+const searchIndex = [
+    // DOCUMENTATION
+    { id: 'doc-start', title: 'Getting Started', category: 'Documentation', text: 'Host-guest architecture, URL Embed, HTML Upload, App Builder', view: 'docs' },
+    { id: 'doc-deploy', title: 'Deployment & Security', category: 'Documentation', text: 'HTTPS requirement, Service Workers, secure contexts', view: 'docs' },
+    { id: 'doc-verify', title: 'App Store Verification', category: 'Documentation', text: 'Badges, Trusted Member, Official Partner, verification request', view: 'docs' },
+    { id: 'doc-audio', title: 'Audio Focus Manager', category: 'Documentation', text: 'Prevent audio overlap, IOS_AUDIO_REQUEST, AudioClient', view: 'docs' },
+    { id: 'doc-api', title: 'System APIs', category: 'Documentation', text: 'setWallpaper, showAlert, fetchAllApps, Bridge, IOS_INJECT_SCRIPT', view: 'docs' },
+    { id: 'doc-island', title: 'Dynamic Island API', category: 'Documentation', text: 'triggerSystemNotification, compact mode, expanded mode, live activity', view: 'docs' },
+    { id: 'doc-settings', title: 'Settings Injection', category: 'Documentation', text: 'Toggle Dark Mode, Brightness, Airplane Mode, WiFi', view: 'docs' },
+    { id: 'doc-mods', title: 'System Mods (Root)', category: 'Documentation', text: 'injectMod, Root Privilege, Malware protection', view: 'docs' },
+    { id: 'doc-iap', title: 'IAP Packages', category: 'Documentation', text: 'AES-256 Encryption, Offline install, Integrity Check', view: 'docs' },
+
+    // SUPPORT
+    { id: 'sup-safety', title: 'Safety & Recovery', category: 'Support', text: 'Safe Mode, Black Screen of Death, recovery tools', view: 'support' },
+    { id: 'sup-trust', title: 'Trust & Verification', category: 'Support', text: 'Green Shield, Blue Tick, Trusted System App', view: 'support' },
+    { id: 'sup-sideload', title: 'Sideloading Guide', category: 'Support', text: 'Installing .html files, risks, restricted privileges', view: 'support' },
+    { id: 'sup-report', title: 'Report System', category: 'Support', text: 'Community moderation, Shadow Ban, Tripwire, Report button', view: 'support' },
+    { id: 'sup-assistive', title: 'Assistive Touch', category: 'Support', text: 'Floating button, Back, Home, Auto-Hide, Pro behavior', view: 'support' },
+    { id: 'sup-display', title: 'Display Settings', category: 'Support', text: 'Brightness slider, True Tone, eye strain, dark mode', view: 'support' },
+
+    // GENERAL
+    { id: 'view-home', title: 'Home / Overview', category: 'General', text: 'iOS Web Ecosystem, Simulator, App Builder', view: 'home' },
+    { id: 'view-about', title: 'About the Project', category: 'General', text: 'Open source, mission, technology stack, Github', view: 'about' }
+];
+
+// --- 1. RANDOM TAGS GENERATOR ---
+function renderRandomTags() {
+    // Get unique titles
+    const titles = searchIndex.map(item => item.title);
+    
+    // Shuffle array (Fisher-Yates)
+    for (let i = titles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [titles[i], titles[j]] = [titles[j], titles[i]];
+    }
+    
+    // Pick 5
+    const selected = titles.slice(0, 5);
+
+    // Render
+    const container = document.getElementById('search-results-area');
+    let tagsHtml = selected.map(tag => 
+        `<span onclick="triggerSearch('${tag.replace(/'/g, "\\'")}')">${tag}</span>`
+    ).join('');
+
+    container.innerHTML = `
+        <div class="empty-search-state">
+            
+            <h3>Quick Links</h3>
+            <div class="quick-tags">
+                ${tagsHtml}
+            </div>
+        </div>`;
+}
+
+// --- 2. SEARCH EXECUTION ---
+const searchInput = document.getElementById('global-search-input');
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        performSearch(e.target.value);
+    });
+}
+
+function triggerSearch(query) {
+    const input = document.getElementById('global-search-input');
+    input.value = query;
+    performSearch(query);
+}
+
+function performSearch(query) {
+    const resultsArea = document.getElementById('search-results-area');
+    const shareBtn = document.getElementById('search-share-btn');
+    const term = query.toLowerCase().trim();
+
+    // Toggle Share Button Visibility
+    if (term.length > 0) shareBtn.classList.add('visible');
+    else shareBtn.classList.remove('visible');
+
+    // Show Random Tags if empty
+    if (term.length === 0) {
+        renderRandomTags();
+        return;
+    }
+
+    if (term.length < 2) return; // Wait for 2 chars
+
+    // Filter Logic
+    const hits = searchIndex.filter(item => 
+        item.title.toLowerCase().includes(term) || 
+        item.text.toLowerCase().includes(term) ||
+        item.category.toLowerCase().includes(term)
+    );
+
+    if (hits.length === 0) {
+        resultsArea.innerHTML = `<div class="empty-search-state"><h3>No results found for "${query}"</h3></div>`;
+        return;
+    }
+
+    // Group Results
+    const grouped = hits.reduce((acc, item) => {
+        if (!acc[item.category]) acc[item.category] = [];
+        acc[item.category].push(item);
+        return acc;
+    }, {});
+
+    // Build HTML
+    let html = '';
+    for (const [category, items] of Object.entries(grouped)) {
+        html += `<div class="result-category-header">${category}</div>`;
+        items.forEach(item => {
+            const snippet = item.text.length > 100 ? item.text.substring(0, 100) + '...' : item.text;
+            html += `
+            <div class="result-card" onclick="navigateToResult('${item.view}', '${item.id}')">
+                <div class="result-path">${category} > ${item.title}</div>
+                <h4>${item.title}</h4>
+                <p>${snippet}</p>
+            </div>`;
+        });
+    }
+    resultsArea.innerHTML = html;
+}
+
+function navigateToResult(view, hash) {
+    switchView(view);
+    setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.style.transition = 'background 0.5s';
+            const oldBg = el.style.background;
+            el.style.background = 'rgba(0,122,255,0.1)';
+            setTimeout(() => { el.style.background = oldBg; }, 1000);
+        }
+    }, 300);
+}
+
+// --- 3. SHARE & TOAST SYSTEM ---
+
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast-msg';
+    toast.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        ${message}
+    `;
+    
+    container.appendChild(toast);
+
+    // Remove after 3s
+    setTimeout(() => {
+        toast.style.animation = 'toastOut 0.3s forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function shareSearchQuery() {
+    const query = document.getElementById('global-search-input').value.trim();
+    if (!query) return;
+
+    // Create Deep Link
+    const url = `${window.location.origin}${window.location.pathname}?page=search&s=${encodeURIComponent(query)}`;
+    
+    navigator.clipboard.writeText(url).then(() => {
+        // Trigger Toast
+        showToast('Link Copied to Clipboard');
+    }).catch(err => {
+        console.error('Failed to copy', err);
+    });
+}
+
+// --- 4. AUTO-ROUTER (Deep Link Handler) ---
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const targetView = params.get('page') || params.get('view');
+    const searchQuery = params.get('s');
+
+    const validViews = ['home', 'docs', 'support', 'privacy', 'terms', 'about', 'search'];
+
+    if (targetView && validViews.includes(targetView)) {
+        switchView(targetView);
+
+        if (targetView === 'search') {
+            if (searchQuery) {
+                const input = document.getElementById('global-search-input');
+                if (input) {
+                    input.value = searchQuery;
+                    performSearch(searchQuery);
+                }
+            } else {
+                // If Search page but empty, show random tags
+                renderRandomTags();
+            }
+        }
+        else if (window.location.hash) {
+            setTimeout(() => {
+                const el = document.querySelector(window.location.hash);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+    } else {
+        // Fallback for when we navigate to Search manually without a query
+        const input = document.getElementById('global-search-input');
+        if (input && !input.value) {
+            renderRandomTags();
+        }
+    }
+});
+        
+        
         
         
         
