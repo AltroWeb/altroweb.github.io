@@ -1003,6 +1003,101 @@ body.dark-mode #store-dev-header {
 }
 
 
+/* --- ASSISTIVE TOUCH (Pro) --- */
+
+
+
+/* --- ASSISTIVE TOUCH (Pro Animation) --- */
+/* --- ASSISTIVE MENU ANIMATION FIX --- */
+.assistive-menu {
+    /* Base State (Closed) */
+    opacity: 0;
+    transform: scale(0.4); /* Shrink down */
+    filter: blur(20px);    /* Heavy Motion Blur */
+    pointer-events: none;
+    
+    /* Layout & Style */
+    position: absolute;
+    width: 260px; height: 260px;
+    background: rgba(35, 35, 35, 0.85);
+    backdrop-filter: blur(50px) saturate(180%);
+    -webkit-backdrop-filter: blur(50px) saturate(180%);
+    border-radius: 38px;
+    z-index: 100001;
+    overflow: hidden;
+    
+    display: grid; 
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px; padding: 16px;
+    /* THE TRANSITION (Handles both Open and Close) */
+    transition: 
+        opacity 0.3s ease,
+        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), /* Smooth Retract */
+        filter 0.3s ease; /* Blur Fade */
+}
+
+.assistive-menu.active {
+    /* Open State */
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px); /* Sharp */
+    pointer-events: auto;
+    
+    /* Slightly bouncier open */
+    transition: 
+        opacity 0.25s ease,
+        transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
+        filter 0.3s ease;
+}
+
+/* Menu Items */
+.as-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: white; gap: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer;
+}
+.as-item:active { background: rgba(255, 255, 255, 0.2); }
+.as-item svg { width: 28px; height: 28px; fill: white; }
+
+
+
+
+
+
+.assistive-touch-btn.idle {
+    width: 6px !important;        /* Skinny bar width */
+    height: 44px !important;      /* Handle height */
+    background: rgba(255, 255, 255, 0.65) !important; /* Lighter handle color */
+    backdrop-filter: blur(5px);
+    opacity: 0.5;                 /* Lower opacity */
+    box-shadow: none;
+    border: none;
+    cursor: default;
+    transform: none !important;   /* Reset scale transforms */
+}
+
+/* Hide the inner circle when idle */
+.assistive-touch-btn.idle .assistive-inner {
+    opacity: 0 !important;
+    transform: scale(0) !important;
+}
+
+/* --- SIDE SPECIFIC DOCKING --- */
+/* These make the bar look "attached" to the screen bezel */
+
+/* Snapped to LEFT: Flat left side, rounded right side */
+.assistive-touch-btn.idle[data-side="left"] {
+    border-radius: 0 12px 12px 0 !important; 
+}
+
+/* Snapped to RIGHT: Flat right side, rounded left side */
+.assistive-touch-btn.idle[data-side="right"] {
+    border-radius: 12px 0 0 12px !important;
+}
 
 
 
@@ -1190,7 +1285,18 @@ body.dark-mode #store-dev-header {
 </div>
                         </div>
 
-
+<div class="section-header">Accessibility</div>
+<div class="ios-list">
+    <div class="ios-row">
+        <span>Assistive Touch</span>
+        <input type="checkbox" class="ios-switch" id="setting-assistive" onchange="iOS.toggleAssistiveTouch(this)">
+    </div>
+    
+    <div class="ios-row" id="row-assistive-hide" style="display:none;">
+        <span>Auto-Hide to Edge</span>
+        <input type="checkbox" class="ios-switch" id="setting-assistive-hide" onchange="iOS.toggleAssistiveAutoHide(this)">
+    </div>
+</div>
 
 <div class="section-header">Developer</div>
 <div class="ios-list">
@@ -4493,7 +4599,35 @@ this.islandEventsEnabled = savedIsland;
 const islandSwitch = document.getElementById('setting-island');
 if (islandSwitch) islandSwitch.checked = savedIsland;
                 
-                
+   
+
+// --- ASSISTIVE TOUCH SETUP ---
+    const savedAssistive = localStorage.getItem('ios_assistive_touch') === 'true';
+    const assistSwitch = document.getElementById('setting-assistive');
+    const hideRow = document.getElementById('row-assistive-hide');
+
+    if (assistSwitch) {
+        assistSwitch.checked = savedAssistive;
+    }
+
+    // 1. Set Initial Visibility of the Auto-Hide Row
+    if (hideRow) {
+        hideRow.style.display = savedAssistive ? 'flex' : 'none';
+    }
+
+    // 2. Load the Auto-Hide Preference
+    const savedHide = localStorage.getItem('ios_assistive_autohide') !== 'false';
+    const hideSwitch = document.getElementById('setting-assistive-hide');
+    if (hideSwitch) hideSwitch.checked = savedHide;
+
+    // 3. Render if enabled
+    if (savedAssistive) {
+        this.renderAssistiveTouch();
+    }
+             
+             
+             
+             
                 
             } 
             
@@ -5769,7 +5903,327 @@ loadPersistentMods() {
 
 
 
+// 1. Toggle Switch Handler
+    toggleAssistiveTouch(el) {
+    const enabled = el.checked;
+    localStorage.setItem('ios_assistive_touch', enabled);
+    
+    // 1. Handle the Feature
+    if (enabled) {
+        this.renderAssistiveTouch();
+    } else {
+        this.removeAssistiveTouch();
+    }
 
+    // 2. Handle the Sub-Toggle Visibility
+    const hideRow = document.getElementById('row-assistive-hide');
+    if (hideRow) {
+        // Smooth toggle
+        if (enabled) {
+            hideRow.style.display = 'flex';
+            // Optional: You could add a small fade-in animation here if you wanted
+        } else {
+            hideRow.style.display = 'none';
+        }
+    }
+}
+
+
+
+
+toggleAssistiveAutoHide(el) {
+    const enabled = el.checked;
+    localStorage.setItem('ios_assistive_autohide', enabled);
+    
+    // If button exists, apply change immediately
+    const btn = document.getElementById('assistive-touch');
+    if (btn) {
+        if (enabled) {
+            // Restart timer logic if enabled
+            // We need to re-trigger the idle timer logic, 
+            // the easiest way is to simulate a "mouseup" or just call render again if simpler,
+            // but let's just trigger the 'wakeUp' -> 'startTimer' flow via a custom event or hacking it.
+            // A cleaner way: re-render to attach fresh timers.
+            this.removeAssistiveTouch();
+            this.renderAssistiveTouch();
+        } else {
+            // Disable idle state immediately
+            btn.classList.remove('idle');
+            // Reset position if it was snapped to 0
+            const side = btn.getAttribute('data-side');
+            if (side === 'left') btn.style.left = '5px';
+            else if (side === 'right') btn.style.left = `${window.innerWidth - 73}px`; // Adjust for new size
+            
+            // We can't easily kill the private timer inside the closure, 
+            // so we re-render to kill the closure context.
+            this.removeAssistiveTouch();
+            this.renderAssistiveTouch();
+        }
+    }
+}
+
+
+
+
+    // 2. Render the Button & Menu
+renderAssistiveTouch() {
+    // 1. CLEANUP OLD ELEMENTS & TIMERS
+    if (document.getElementById('assistive-touch')) document.getElementById('assistive-touch').remove();
+    if (document.getElementById('assistive-menu')) document.getElementById('assistive-menu').remove();
+    if (this.assistiveHeartbeat) clearInterval(this.assistiveHeartbeat);
+
+    const shouldAutoHide = localStorage.getItem('ios_assistive_autohide') !== 'false';
+
+    // 2. INJECT PRO STYLES (Dynamic Visibility)
+    let styleTag = document.getElementById('assistive-pro-styles');
+    if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = 'assistive-pro-styles';
+        document.head.appendChild(styleTag);
+    }
+    styleTag.innerHTML = `
+        .assistive-touch-btn {
+            position: absolute; width: 58px; height: 58px;
+            background: rgba(40, 40, 40, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 22px; z-index: 100000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: none;
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .assistive-touch-btn:active { opacity: 0.8; transform: scale(0.95); }
+        .assistive-inner {
+            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%; pointer-events: none; transition: all 0.3s ease;
+        }
+
+        /* --- IDLE STATE --- */
+        .assistive-touch-btn.idle {
+            width: 6px !important; height: 44px !important;
+            background: rgba(255, 255, 255, 0.55) !important;
+            backdrop-filter: blur(10px) invert(0.05);
+            border: 0.5px solid rgba(255,255,255,0.6) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
+            border-radius: 12px !important;
+            opacity: 1 !important; transform: none !important;
+        }
+        .assistive-touch-btn.idle .assistive-inner { opacity: 0 !important; transform: scale(0) !important; }
+        
+        /* Flush Docking */
+        .assistive-touch-btn.idle[data-side="left"] { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-left: none !important; }
+        .assistive-touch-btn.idle[data-side="right"] { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; border-right: none !important; }
+    `;
+
+    // 3. CREATE BUTTON
+    const btn = document.createElement('div');
+    btn.id = 'assistive-touch';
+    btn.className = 'assistive-touch-btn';
+    btn.innerHTML = '<div class="assistive-inner"></div>';
+    
+    const BTN_SIZE = 58; 
+    btn.style.left = `${window.innerWidth - (BTN_SIZE + 10)}px`;
+    btn.style.top = `${window.innerHeight / 2}px`;
+
+    // 4. CREATE MENU
+    const menu = document.createElement('div');
+    menu.id = 'assistive-menu';
+    menu.className = 'assistive-menu';
+    menu.innerHTML = `
+        <div class="as-item" onclick="iOS.handleAssistiveAction('Back')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back</span></div>
+        <div class="as-item" onclick="iOS.handleAssistiveAction('Home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></div>
+        <div class="as-item" onclick="iOS.handleAssistiveAction('Close')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg><span>Close</span></div>
+        <div class="as-item" style="opacity:0.5; pointer-events:none;"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><span>None</span></div>
+    `;
+
+    // --- 5. ROBUST HEARTBEAT LOGIC (The Fix) ---
+    // Instead of a fragile timer, we use a timestamp + interval loop.
+    let lastInteraction = Date.now();
+    
+    // Only used to temporarily pause logic while dragging
+    let isInteracting = false; 
+
+    const touch = () => {
+        lastInteraction = Date.now();
+        if (!shouldAutoHide) return;
+
+        // Visual Wake Up
+        if (btn.classList.contains('idle')) {
+            btn.classList.remove('idle');
+            const side = btn.getAttribute('data-side');
+            if (side === 'left') btn.style.left = '2px';
+            else btn.style.left = `${window.innerWidth - (BTN_SIZE + 2)}px`;
+        }
+    };
+
+    // Store the interval ID on the class instance so we can clear it later
+    this.assistiveHeartbeat = setInterval(() => {
+        if (!shouldAutoHide) return;
+        if (isInteracting) return; // Don't hide while dragging
+        if (menu.classList.contains('active')) return; // Don't hide if menu is open
+
+        // Check if 4 seconds have passed since last touch
+        if (Date.now() - lastInteraction > 4000) {
+            if (!btn.classList.contains('idle')) {
+                const rect = btn.getBoundingClientRect();
+                const isRight = (rect.left + rect.width/2) > window.innerWidth / 2;
+                
+                btn.setAttribute('data-side', isRight ? 'right' : 'left');
+                btn.classList.add('idle');
+
+                if (isRight) btn.style.left = `${window.innerWidth - 6}px`; 
+                else btn.style.left = '0px'; 
+            }
+        }
+    }, 1000); // Check every second
+
+    // --- DRAG LOGIC ---
+    let startX, startY, initLeft, initTop;
+
+    const onStart = (e) => {
+        isInteracting = true; // Pause idle check
+        touch(); // Update timestamp
+        btn.style.transition = 'none';
+        btn.setAttribute('data-dragging', 'false');
+        
+        startX = e.touches ? e.touches[0].clientX : e.clientX;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        const r = btn.getBoundingClientRect();
+        initLeft = r.left; initTop = r.top;
+        
+        document.addEventListener('mousemove', onMove); document.addEventListener('touchmove', onMove, {passive:false});
+        document.addEventListener('mouseup', onEnd); document.addEventListener('touchend', onEnd);
+    };
+
+    const onMove = (e) => {
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        if (Math.abs(cx - startX) > 5 || Math.abs(cy - startY) > 5) btn.setAttribute('data-dragging', 'true');
+        
+        let nx = initLeft + (cx - startX);
+        let ny = initTop + (cy - startY);
+        nx = Math.max(0, Math.min(nx, window.innerWidth - BTN_SIZE));
+        ny = Math.max(0, Math.min(ny, window.innerHeight - BTN_SIZE));
+        btn.style.left = `${nx}px`; btn.style.top = `${ny}px`;
+        
+        touch(); // Keep awake while dragging
+    };
+
+    const onEnd = () => {
+        isInteracting = false; // Resume idle check
+        touch(); // Reset timer on release
+        
+        document.removeEventListener('mousemove', onMove); document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('mouseup', onEnd); document.removeEventListener('touchend', onEnd);
+        
+        btn.style.transition = 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        
+        if (btn.getAttribute('data-dragging') === 'true') {
+            const r = btn.getBoundingClientRect();
+            const isRight = (r.left + r.width/2) > window.innerWidth/2;
+            btn.style.left = isRight ? `${window.innerWidth - (BTN_SIZE + 5)}px` : '5px';
+            setTimeout(() => btn.setAttribute('data-dragging', 'false'), 50);
+        }
+    };
+
+    // --- CLICK HANDLER ---
+    btn.onclick = () => {
+        if (btn.getAttribute('data-dragging') === 'true') return;
+        touch(); // Update time
+        
+        if (window.iOS?.toggleAssistiveAppList) window.iOS.toggleAssistiveAppList(false);
+        
+        const rect = btn.getBoundingClientRect();
+        const centerX = rect.left + rect.width/2;
+        const centerY = rect.top + rect.height/2;
+        
+        const menuSize = 260;
+        let tl = Math.min(Math.max(10, centerX - menuSize/2), window.innerWidth - menuSize - 10);
+        let tt = Math.min(Math.max(10, centerY - menuSize/2), window.innerHeight - menuSize - 10);
+        
+        menu.style.left = `${tl}px`; menu.style.top = `${tt}px`;
+        menu.style.transformOrigin = `${centerX - tl}px ${centerY - tt}px`;
+        
+        requestAnimationFrame(() => {
+            menu.classList.add('active'); 
+            btn.style.opacity = '0'; 
+            btn.style.pointerEvents = 'none';
+        });
+    };
+
+    btn.addEventListener('mousedown', onStart); btn.addEventListener('touchstart', onStart, {passive:false});
+    document.body.appendChild(btn); document.body.appendChild(menu);
+}
+
+    // 3. Remove Elements
+    removeAssistiveTouch() {
+        const btn = document.getElementById('assistive-touch');
+        const menu = document.getElementById('assistive-menu');
+        if (btn) btn.remove();
+        if (menu) menu.remove();
+    }
+
+    // 4. Handle Menu Actions
+    /* --- REPLACE YOUR handleAssistiveAction() --- */
+
+handleAssistiveAction(action) {
+    const menu = document.getElementById('assistive-menu');
+    const btn = document.getElementById('assistive-touch');
+
+    // 1. Close Animation
+    if (menu) {
+        menu.classList.remove('active');
+        // Wait for CSS transition (0.3s) before showing button
+        setTimeout(() => {
+            if (btn) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        }, 250); // Slight overlap for fluidity
+    }
+
+    // 2. Action Logic
+    if (action === 'Close') return; // Just close menu
+
+    if (action === 'Home') {
+        if (this.state === 'ACTIVE') this.closeApp();
+        else if (this.currentPage > 0) {
+            this.currentPage = 0;
+            this.updatePageScroll();
+        }
+    }
+
+    if (action === 'Back') {
+        if (this.state === 'ACTIVE' && this.activeWindow) {
+            const appName = this.activeWindow.getAttribute('data-app');
+            
+            // App Store Back Logic
+            if (appName === 'AppStore') {
+                const devCard = document.getElementById('store-dev-card');
+                if (devCard && devCard.style.display !== 'none') {
+                    if (window.appStore) window.appStore.clearSearch();
+                    return;
+                }
+            }
+            
+            // Sideloader Back Logic
+            if (appName === 'Sideloader') {
+                const formView = document.getElementById('sl-form-view');
+                if (formView && formView.style.display !== 'none') {
+                    if (window.sideloader) window.sideloader.showList();
+                    return;
+                }
+            }
+
+            // Default: Close App
+            this.closeApp();
+        } else {
+            // Home Screen Back Logic (Go to Page 0)
+            if (this.currentPage > 0) {
+                this.currentPage = 0;
+                this.updatePageScroll();
+            }
+        }
+    }
+}
 
             
             
@@ -6493,6 +6947,8 @@ window.sideloader = new Sideloader();
             }
         })();
         
+        
+        window.addEventListener('click', e => { if (!e.target.closest('#assistive-menu') && !e.target.closest('#assistive-touch')) { document.getElementById('assistive-menu')?.classList.remove('active'); const btn = document.getElementById('assistive-touch'); if(btn) { btn.style.opacity='1'; btn.style.pointerEvents='auto'; } } });
         
     </script>
 </body>
