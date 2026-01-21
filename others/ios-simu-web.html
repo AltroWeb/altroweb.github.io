@@ -1142,12 +1142,15 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
 
                 <h4>Support Topics</h4>
                 <a href="#sup-start" class="active">Overview</a>
-                <a href="#sup-safety">Safety & Recovery</a>
-                <a href="#sup-trust">Trust & Verification</a>
-                <a href="#sup-sideload">Sideloading</a>
-                <a href="#sup-features">Features</a>
-                <a href="#sup-report">Report System</a>
-                <a href="#sup-webstore">App Store Web</a>
+<a href="#sup-safety">Safety & Recovery</a>
+<a href="#sup-trust">Trust & Verification</a>
+<a href="#sup-sideload">Sideloading</a>
+<a href="#sup-features">Features</a>
+
+<a href="#sup-assistive">Assistive Touch</a>
+<a href="#sup-display">Display Settings</a>
+<a href="#sup-report">Report System</a>
+<a href="#sup-webstore">App Store Web</a>
             </aside>
 
             <main class="doc-content">
@@ -1224,6 +1227,61 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
                         </div>
                     </div>
                 </div>
+
+
+<div id="sup-assistive" class="doc-block">
+    <h3>Assistive Touch</h3>
+    <p>The Assistive Touch button is a floating navigation tool designed for users who prefer tapping over swiping gestures. It provides instant access to core system functions.</p>
+
+    <div class="feature-grid">
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#007AFF;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+            </div>
+            <h3>Core Actions</h3>
+            <p>
+                <strong>Home:</strong> Minimizes the active app. If already on the homescreen, it returns you to the first page.<br><br>
+                <strong>Back:</strong> Acts as a universal "Close" button for apps, or returns to the previous menu in supported system apps.
+            </p>
+        </div>
+
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#5856D6;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+            </div>
+            
+            <h3>Pro Behavior</h3>
+            <p>The button features an <strong>Auto-Hide</strong> system. When inactive, it snaps to the nearest edge and morphs into a discreet sidebar to keep your screen clutter-free.</p>
+        </div>
+    </div>
+    
+    <br>
+
+    <div class="info-box">
+        <strong>How to Enable:</strong> Open <span style="background:rgba(142, 142, 147, 0.15); padding:2px 6px; border-radius:4px; font-weight:500;">Settings</span> > <strong>Accessibility</strong> and toggle the switch.
+    </div>
+</div>
+
+<div id="sup-display" class="doc-block">
+    <h3>Display & Brightness</h3>
+    <p>Control how the simulator looks and reacts to lighting conditions. These settings are simulated using CSS overlays to mimic hardware behavior.</p>
+
+    <h4>Brightness Slider</h4>
+    <p>Located in <strong>Settings > Display</strong>, this slider controls the backlight intensity. Lowering it applies a black overlay to the screen, simulating low-light usage without affecting the actual UI rendering.</p>
+
+    <h4>True Tone</h4>
+    <p>True Tone technology uses advanced sensors (simulated) to adjust the color and intensity of your display to match the ambient light.</p>
+    
+    <div class="pro-tip">
+        <strong>Why use True Tone?</strong>
+        <p>Enabling this feature applies a warm, amber tint to the entire OS. This reduces eye strain during late-night coding or reading sessions within the simulator.</p>
+    </div>
+</div>
+
+
+
+
+
 
 
 
