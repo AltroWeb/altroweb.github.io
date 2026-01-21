@@ -1003,48 +1003,82 @@ body.dark-mode #store-dev-header {
 }
 
 
-/* --- ASSISTIVE TOUCH (Pro) --- */
+/* --- ASSISTIVE TOUCH (Pro Suite) --- */
 
+.assistive-touch-btn {
+            position: absolute; width: 58px; height: 58px;
+            background: rgba(40, 40, 40, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 22px; z-index: 100000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: none;
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
 
+      .assistive-touch-btn:active { opacity: 0.8; transform: scale(0.95); }
+        .assistive-inner {
+            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%; pointer-events: none; transition: all 0.3s ease;
+        }
 
-/* --- ASSISTIVE TOUCH (Pro Animation) --- */
-/* --- ASSISTIVE MENU ANIMATION FIX --- */
+/* 2. IDLE STATE (The "Sliver" Docking) */
+        .assistive-touch-btn.idle {
+            width: 6px !important; height: 44px !important;
+            background: rgba(255, 255, 255, 0.55) !important;
+            backdrop-filter: blur(10px) invert(0.05);
+            border: 0.5px solid rgba(255,255,255,0.6) !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
+            border-radius: 12px !important;
+            opacity: 1 !important; transform: none !important;
+        }
+       .assistive-touch-btn.idle .assistive-inner { opacity: 0 !important; transform: scale(0) !important; }
+
+/* Side Specific Docking (Flat edge against screen) */
+       .assistive-touch-btn.idle[data-side="left"] { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-left: none !important; }
+.assistive-touch-btn.idle[data-side="right"] { 
+    border-top-right-radius: 0 !important; 
+    border-bottom-right-radius: 0 !important; 
+    border-right: none !important; 
+}
+
+/* 3. THE MENU (Fixed Position) */
 .assistive-menu {
-    /* Base State (Closed) */
-    opacity: 0;
-    transform: scale(0.4); /* Shrink down */
-    filter: blur(20px);    /* Heavy Motion Blur */
-    pointer-events: none;
-    
-    /* Layout & Style */
-    position: absolute;
+    /* Layout */
+    position: fixed; /* Fixed to Viewport */
     width: 260px; height: 260px;
     background: rgba(35, 35, 35, 0.85);
     backdrop-filter: blur(50px) saturate(180%);
     -webkit-backdrop-filter: blur(50px) saturate(180%);
     border-radius: 38px;
-    z-index: 100001;
+    z-index: 1000000;
     overflow: hidden;
     
+    /* Grid Content */
     display: grid; 
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 12px; padding: 16px;
-    /* THE TRANSITION (Handles both Open and Close) */
+    
+    /* Closed State */
+    opacity: 0;
+    transform: scale(0.4); 
+    filter: blur(20px);
+    pointer-events: none;
+    
+    /* Transition */
     transition: 
         opacity 0.3s ease,
-        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), /* Smooth Retract */
-        filter 0.3s ease; /* Blur Fade */
+        transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+        filter 0.3s ease;
 }
 
 .assistive-menu.active {
     /* Open State */
     opacity: 1;
     transform: scale(1);
-    filter: blur(0px); /* Sharp */
+    filter: blur(0px);
     pointer-events: auto;
     
-    /* Slightly bouncier open */
+    /* Bouncy Open Animation */
     transition: 
         opacity 0.25s ease,
         transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), 
@@ -1062,42 +1096,6 @@ body.dark-mode #store-dev-header {
 }
 .as-item:active { background: rgba(255, 255, 255, 0.2); }
 .as-item svg { width: 28px; height: 28px; fill: white; }
-
-
-
-
-
-
-.assistive-touch-btn.idle {
-    width: 6px !important;        /* Skinny bar width */
-    height: 44px !important;      /* Handle height */
-    background: rgba(255, 255, 255, 0.65) !important; /* Lighter handle color */
-    backdrop-filter: blur(5px);
-    opacity: 0.5;                 /* Lower opacity */
-    box-shadow: none;
-    border: none;
-    cursor: default;
-    transform: none !important;   /* Reset scale transforms */
-}
-
-/* Hide the inner circle when idle */
-.assistive-touch-btn.idle .assistive-inner {
-    opacity: 0 !important;
-    transform: scale(0) !important;
-}
-
-/* --- SIDE SPECIFIC DOCKING --- */
-/* These make the bar look "attached" to the screen bezel */
-
-/* Snapped to LEFT: Flat left side, rounded right side */
-.assistive-touch-btn.idle[data-side="left"] {
-    border-radius: 0 12px 12px 0 !important; 
-}
-
-/* Snapped to RIGHT: Flat right side, rounded left side */
-.assistive-touch-btn.idle[data-side="right"] {
-    border-radius: 12px 0 0 12px !important;
-}
 
 
 
@@ -5967,63 +5965,23 @@ toggleAssistiveAutoHide(el) {
 
     // 2. Render the Button & Menu
 renderAssistiveTouch() {
-    // 1. CLEANUP OLD ELEMENTS & TIMERS
+    // 1. CLEANUP
     if (document.getElementById('assistive-touch')) document.getElementById('assistive-touch').remove();
     if (document.getElementById('assistive-menu')) document.getElementById('assistive-menu').remove();
     if (this.assistiveHeartbeat) clearInterval(this.assistiveHeartbeat);
 
     const shouldAutoHide = localStorage.getItem('ios_assistive_autohide') !== 'false';
 
-    // 2. INJECT PRO STYLES (Dynamic Visibility)
-    let styleTag = document.getElementById('assistive-pro-styles');
-    if (!styleTag) {
-        styleTag = document.createElement('style');
-        styleTag.id = 'assistive-pro-styles';
-        document.head.appendChild(styleTag);
-    }
-    styleTag.innerHTML = `
-        .assistive-touch-btn {
-            position: absolute; width: 58px; height: 58px;
-            background: rgba(40, 40, 40, 0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border-radius: 22px; z-index: 100000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.25);
-            display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: none;
-            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-        .assistive-touch-btn:active { opacity: 0.8; transform: scale(0.95); }
-        .assistive-inner {
-            width: 42px; height: 42px; background: rgba(255, 255, 255, 0.9);
-            border-radius: 50%; pointer-events: none; transition: all 0.3s ease;
-        }
-
-        /* --- IDLE STATE --- */
-        .assistive-touch-btn.idle {
-            width: 6px !important; height: 44px !important;
-            background: rgba(255, 255, 255, 0.55) !important;
-            backdrop-filter: blur(10px) invert(0.05);
-            border: 0.5px solid rgba(255,255,255,0.6) !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.35) !important;
-            border-radius: 12px !important;
-            opacity: 1 !important; transform: none !important;
-        }
-        .assistive-touch-btn.idle .assistive-inner { opacity: 0 !important; transform: scale(0) !important; }
-        
-        /* Flush Docking */
-        .assistive-touch-btn.idle[data-side="left"] { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; border-left: none !important; }
-        .assistive-touch-btn.idle[data-side="right"] { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; border-right: none !important; }
-    `;
-
-    // 3. CREATE BUTTON
+    // 2. CREATE ELEMENTS (Styles are in CSS now)
     const btn = document.createElement('div');
     btn.id = 'assistive-touch';
     btn.className = 'assistive-touch-btn';
     btn.innerHTML = '<div class="assistive-inner"></div>';
     
-    const BTN_SIZE = 58; 
-    btn.style.left = `${window.innerWidth - (BTN_SIZE + 10)}px`;
+    // Init Position
+    btn.style.left = `${window.innerWidth - 70}px`;
     btn.style.top = `${window.innerHeight / 2}px`;
 
-    // 4. CREATE MENU
     const menu = document.createElement('div');
     menu.id = 'assistive-menu';
     menu.className = 'assistive-menu';
@@ -6034,112 +5992,93 @@ renderAssistiveTouch() {
         <div class="as-item" style="opacity:0.5; pointer-events:none;"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><span>None</span></div>
     `;
 
-    // --- 5. ROBUST HEARTBEAT LOGIC (The Fix) ---
-    // Instead of a fragile timer, we use a timestamp + interval loop.
+    // 3. LOGIC & HEARTBEAT
     let lastInteraction = Date.now();
-    
-    // Only used to temporarily pause logic while dragging
     let isInteracting = false; 
 
     const touch = () => {
         lastInteraction = Date.now();
-        if (!shouldAutoHide) return;
-
-        // Visual Wake Up
         if (btn.classList.contains('idle')) {
             btn.classList.remove('idle');
             const side = btn.getAttribute('data-side');
             if (side === 'left') btn.style.left = '2px';
-            else btn.style.left = `${window.innerWidth - (BTN_SIZE + 2)}px`;
+            else btn.style.left = `${window.innerWidth - 60}px`;
         }
     };
 
-    // Store the interval ID on the class instance so we can clear it later
     this.assistiveHeartbeat = setInterval(() => {
-        if (!shouldAutoHide) return;
-        if (isInteracting) return; // Don't hide while dragging
-        if (menu.classList.contains('active')) return; // Don't hide if menu is open
-
-        // Check if 4 seconds have passed since last touch
+        if (!shouldAutoHide || isInteracting || menu.classList.contains('active')) return;
         if (Date.now() - lastInteraction > 4000) {
             if (!btn.classList.contains('idle')) {
                 const rect = btn.getBoundingClientRect();
                 const isRight = (rect.left + rect.width/2) > window.innerWidth / 2;
-                
                 btn.setAttribute('data-side', isRight ? 'right' : 'left');
                 btn.classList.add('idle');
-
                 if (isRight) btn.style.left = `${window.innerWidth - 6}px`; 
                 else btn.style.left = '0px'; 
             }
         }
-    }, 1000); // Check every second
+    }, 1000);
 
-    // --- DRAG LOGIC ---
+    // 4. DRAG LOGIC (Fixed)
     let startX, startY, initLeft, initTop;
-
     const onStart = (e) => {
-        isInteracting = true; // Pause idle check
-        touch(); // Update timestamp
+        isInteracting = true; touch();
         btn.style.transition = 'none';
         btn.setAttribute('data-dragging', 'false');
-        
         startX = e.touches ? e.touches[0].clientX : e.clientX;
         startY = e.touches ? e.touches[0].clientY : e.clientY;
         const r = btn.getBoundingClientRect();
         initLeft = r.left; initTop = r.top;
-        
         document.addEventListener('mousemove', onMove); document.addEventListener('touchmove', onMove, {passive:false});
         document.addEventListener('mouseup', onEnd); document.addEventListener('touchend', onEnd);
     };
-
     const onMove = (e) => {
+        e.preventDefault(); 
         const cx = e.touches ? e.touches[0].clientX : e.clientX;
         const cy = e.touches ? e.touches[0].clientY : e.clientY;
         if (Math.abs(cx - startX) > 5 || Math.abs(cy - startY) > 5) btn.setAttribute('data-dragging', 'true');
-        
         let nx = initLeft + (cx - startX);
         let ny = initTop + (cy - startY);
-        nx = Math.max(0, Math.min(nx, window.innerWidth - BTN_SIZE));
-        ny = Math.max(0, Math.min(ny, window.innerHeight - BTN_SIZE));
+        nx = Math.max(0, Math.min(nx, window.innerWidth - 58));
+        ny = Math.max(0, Math.min(ny, window.innerHeight - 58));
         btn.style.left = `${nx}px`; btn.style.top = `${ny}px`;
-        
-        touch(); // Keep awake while dragging
+        touch();
     };
-
     const onEnd = () => {
-        isInteracting = false; // Resume idle check
-        touch(); // Reset timer on release
-        
+        isInteracting = false; touch();
         document.removeEventListener('mousemove', onMove); document.removeEventListener('touchmove', onMove);
         document.removeEventListener('mouseup', onEnd); document.removeEventListener('touchend', onEnd);
-        
         btn.style.transition = 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        
         if (btn.getAttribute('data-dragging') === 'true') {
-            const r = btn.getBoundingClientRect();
-            const isRight = (r.left + r.width/2) > window.innerWidth/2;
-            btn.style.left = isRight ? `${window.innerWidth - (BTN_SIZE + 5)}px` : '5px';
+            const isRight = (btn.getBoundingClientRect().left + 29) > window.innerWidth/2;
+            btn.style.left = isRight ? `${window.innerWidth - 63}px` : '5px';
             setTimeout(() => btn.setAttribute('data-dragging', 'false'), 50);
         }
     };
 
-    // --- CLICK HANDLER ---
+    // 5. CLICK & ANIMATE (The Key Fix)
     btn.onclick = () => {
         if (btn.getAttribute('data-dragging') === 'true') return;
-        touch(); // Update time
-        
+        touch();
         if (window.iOS?.toggleAssistiveAppList) window.iOS.toggleAssistiveAppList(false);
         
+        // --- ANIMATION CALCULATION ---
         const rect = btn.getBoundingClientRect();
-        const centerX = rect.left + rect.width/2;
-        const centerY = rect.top + rect.height/2;
-        
+        // Center of the Button
+        const centerX = rect.left + 29; 
+        const centerY = rect.top + 29;
         const menuSize = 260;
+        
+        // Calculate best position for Menu to stay on screen
         let tl = Math.min(Math.max(10, centerX - menuSize/2), window.innerWidth - menuSize - 10);
         let tt = Math.min(Math.max(10, centerY - menuSize/2), window.innerHeight - menuSize - 10);
         
-        menu.style.left = `${tl}px`; menu.style.top = `${tt}px`;
+        // Set Menu Position
+        menu.style.left = `${tl}px`; 
+        menu.style.top = `${tt}px`;
+        
+        // CRITICAL: Set Origin to the Button's relative location
         menu.style.transformOrigin = `${centerX - tl}px ${centerY - tt}px`;
         
         requestAnimationFrame(() => {
