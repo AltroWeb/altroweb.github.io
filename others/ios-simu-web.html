@@ -1959,7 +1959,46 @@ window.addEventListener('DOMContentLoaded', () => {
         
         
         
-        
+        /* --- DYNAMIC URL ROUTER (One-Step Fix) --- */
+
+// 1. Capture your existing view switcher
+const _originalSwitchView = window.switchView;
+
+// 2. Override it to inject URL updates automatically
+window.switchView = function(viewName) {
+    if (_originalSwitchView) _originalSwitchView(viewName);
+    
+    // Updates URL to: ?page=viewName
+    const newUrl = `${window.location.pathname}?page=${viewName}`;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+};
+
+// 3. Override Search Navigation to handle specific #Anchors
+window.navigateToResult = function(view, hash) {
+    // Switch the view first
+    switchView(view); 
+
+    // Then refine URL to: ?page=viewName#section-id
+    const deepLink = `${window.location.pathname}?page=${view}#${hash}`;
+    window.history.replaceState({ path: deepLink }, '', deepLink);
+
+    // Perform the smooth scroll
+    setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Flash Highlight
+            const oldTransition = el.style.transition;
+            const oldBg = el.style.background;
+            el.style.transition = 'background 0.5s';
+            el.style.background = 'rgba(0, 122, 255, 0.15)'; // Blue highlight
+            setTimeout(() => { 
+                el.style.background = oldBg; 
+                el.style.transition = oldTransition; 
+            }, 1000);
+        }
+    }, 300);
+};
         
         
     </script>
