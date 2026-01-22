@@ -631,7 +631,7 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
                 <button class="btn btn-primary" onclick="window.open('ios-simu-appstore.html', '_blank')">Launch Simulator</button>
                 <button class="btn btn-secondary" onclick="window.open('appbuilder.html', '_blank')">Open App Builder</button>
                 
-                <button class="btn btn-secondary" onclick="window.open('appstore-web.html', '_blank')" style="width: fit-content; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1);">
+                <button class="btn btn-secondary" onclick="window.open('appstore-web.html', '_blank')" >
             Launch Web Store
         </button>
             </div>
@@ -670,7 +670,7 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
         <h3>App Store Web</h3>
         <p>Browse the full app catalog, search via URL parameters, and generate shareable deep links without launching the full OS.</p>
         <!-- Button to launch -->
-        <button class="btn btn-secondary" onclick="window.open('appstore-web.html', '_blank')" style="margin-top: 20px; width: fit-content; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1);">
+        <button class="btn btn-secondary" onclick="window.open('appstore-web.html', '_blank')" style="margin-top: 20px; width: fit-content;">
             Launch Web Store
         </button>
     </div>
@@ -708,8 +708,11 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
                 </button>
                 
                 <h4>Documentation</h4>
-                <a href="#doc-start" class="active">Getting Started</a>
-                <a href="#doc-deploy">Deployment</a>
+<a href="#doc-start" class="active">Getting Started</a>
+
+<a href="#doc-builder">App Builder Guide</a>
+
+             <a href="#doc-deploy">Deployment</a>
                 <a href="#doc-verify">Verification</a>
                 <a href="#doc-audio">Audio Manager</a> 
                 <a href="#doc-api">System APIs</a>
@@ -737,6 +740,117 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
                         <li><strong>HTML Upload:</strong> Best for single-file widgets or simple tools you want to host directly within the ecosystem.</li>
                     </ul>
                 </div>
+                
+                
+                
+                
+<div id="doc-builder" class="doc-block">
+    <h3>App Builder Guide</h3>
+    <p>The <strong>App Builder</strong> is the command center for the ecosystem. It allows you to create, update, and manage your applications directly from the browser.</p>
+
+    <div class="feature-grid" style="margin-bottom: 30px;">
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#FF9500;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
+            <h3>Create & Edit</h3>
+            <p>Manage metadata, icons, and source code. Updates are pushed instantly to all users.</p>
+        </div>
+        <div class="feature-item">
+            <div class="feature-icon" style="color:#34C759;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3>Health Monitor</h3>
+            <p>View real-time status of your apps, including Shadow Ban warnings and report counts.</p>
+        </div>
+    </div>
+
+    <h4>1. Choosing an App Type</h4>
+    <p>The ecosystem supports three distinct architectures. Choose the one that fits your permission needs:</p>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:20px;">
+        
+        <div style="background:var(--bg-body); padding:20px; border-radius:12px; border:1px solid var(--border-color);">
+            <strong style="color:#007AFF; font-size:16px;">1. URL Embed (Standard)</strong>
+            <p style="font-size:14px; color:var(--text-secondary); margin-top:8px;">
+                Best for existing web apps (Vercel, Netlify) that need full internet access.
+            </p>
+            <ul style="font-size:13px; margin-bottom:0; padding-left:16px;">
+                <li>Full Internet Access</li>
+                <li>Standard Permissions</li>
+                <li>Instant Updates via Host</li>
+            </ul>
+        </div>
+
+        <div style="background:var(--bg-body); padding:20px; border-radius:12px; border:1px solid var(--border-color);">
+            <strong style="color:#FF9500; font-size:16px;">2. Legacy HTML (Lite)</strong>
+            <p style="font-size:14px; color:var(--text-secondary); margin-top:8px;">
+                Best for simple offline tools, calculators, or games with no server.
+            </p>
+            <ul style="font-size:13px; margin-bottom:0; padding-left:16px;">
+                <li><strong>No Major Permissions</strong></li>
+                <li>Strict Sandbox (High Security)</li>
+                <li>Runs entirely in-browser</li>
+            </ul>
+        </div>
+
+        <div style="background:rgba(52, 199, 89, 0.1); padding:20px; border-radius:12px; border:1px solid #34C759;">
+            <strong style="color:#34C759; font-size:16px;">3. Native App (System)</strong>
+            <p style="font-size:14px; color:var(--text-primary); margin-top:8px;">
+                For system utilities (Settings, Launchers) that modify the Host OS.
+            </p>
+            <ul style="font-size:13px; margin-bottom:0; padding-left:16px;">
+                <li><strong>Root / System Access</strong></li>
+                <li>Can Inject Mods</li>
+                <li><span style="background:#34C759; color:white; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:bold; vertical-align:middle;">TRUSTED BADGE REQUIRED</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="info-box" style="border-left: 4px solid #FF9500; background: rgba(255, 149, 0, 0.1);">
+        <strong>Note:</strong> <strong>HTTPS & URL Apps</strong> may also require a <strong>Trusted Badge</strong> as they too can offer <strong>System-Level Customization</strong> and <strong>Mods</strong>.
+    </div>
+
+    <h4>2. Creating an App</h4>
+    <div class="info-box">
+        <ol style="margin:0; padding-left:20px; line-height:1.8;">
+            <li>Open the <a href="appbuilder.html" target="_blank" style="color:var(--accent);">App Builder</a> and sign in.</li>
+            <li>Click the large <strong>(+) Create App</strong> button on the dashboard.</li>
+            <li><strong>Metadata:</strong> Enter a unique App Name and a short description.</li>
+            <li><strong>Icon:</strong> Provide a direct URL to a square image (PNG/JPG).</li>
+            <li><strong>Source Code:</strong> Select your method based on the types above:
+                <ul style="margin-top:5px; color:var(--text-secondary);">
+                    <li><em>Embed URL:</em> Paste your https:// link.</li>
+                    <li><em>Code Upload:</em> Paste raw HTML. (Select "Native" checkbox only if you have verification).</li>
+                </ul>
+            </li>
+            <li>Click <strong>Publish</strong>. Your app is now live in the Store!</li>
+        </ol>
+    </div>
+
+    <h4>3. Updating & Maintaining</h4>
+    <p>You can push updates to your app at any time without changing the App ID.</p>
+    <ul>
+        <li><strong>To Update:</strong> Click the <strong>Edit (Pencil)</strong> icon on your app card. Modify the code or URL, then click <strong>Save Changes</strong>. Users will see the new version the next time they launch the app.</li>
+        <li><strong>To Delete:</strong> Click the <strong>Delete (Trash)</strong> icon. <strong style="color:var(--danger);">Warning: This is permanent.</strong></li>
+    </ul>
+
+    <h4>4. Developer Verification</h4>
+    <p>To publish <strong>Native Apps</strong> or receive the "Verified" tick, you must request a status upgrade.</p>
+    <div class="alert-box" style="margin-top:10px;">
+        <div class="alert-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <div class="alert-content">
+            <h4>Native App Restrictions</h4>
+            <p>If you try to publish a "Native" app without the <strong>Trusted Badge</strong>, it will automatically be rejected by the store firewall. Please contact an Admin via GitHub Issues to apply for Trusted Status.</p>
+        </div>
+    </div>
+</div>
+                
+                
+                
+                
 
                 <div id="doc-deploy" class="doc-block">
                     <h3>Deployment & Security</h3>
@@ -1268,6 +1382,12 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
 <a href="#sup-assistive">Assistive Touch</a>
 <a href="#sup-display">Display Settings</a>
 <a href="#sup-report">Report System</a>
+
+
+<a href="#sup-github">GitHub & Issues</a> 
+
+
+
 <a href="#sup-webstore">App Store Web</a>
             </aside>
 
@@ -1429,6 +1549,49 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
         <strong>Tip for Developers:</strong> You can check your app's health status in the <a href="#sup-report" onclick="iOS.openApp('builder')">App Builder</a> dashboard at any time.
     </div>
 </div>
+
+
+<div id="sup-github" class="doc-block">
+    <h3>GitHub & Issue Tracking</h3>
+    <p>The iOS Web Ecosystem is open source. We use GitHub to handle bug reports, feature requests, and moderation appeals.</p>
+
+    <div class="cta-group" style="justify-content:flex-start; margin-bottom:30px;">
+        <button class="btn btn-primary" onclick="window.open('https://github.com/AltroWeb/altroweb.github.io/issues', '_blank')">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            Go to Repository
+        </button>
+    </div>
+
+    <h4>How to Submit an Issue</h4>
+    <div class="code-box" style="white-space: normal; font-family: 'Inter', sans-serif;">
+        <strong>1. Navigate to Issues:</strong><br>
+        Click the button above to open our GitHub Issues page.<br><br>
+        
+        <strong>2. Choose a Label:</strong><br>
+        <span style="background:#d73a49; color:white; padding:2px 6px; border-radius:4px; font-size:12px;">bug</span> - For Simulator crashes or API errors.<br>
+        <span style="background:#a2eeef; color:#1a1a1a; padding:2px 6px; border-radius:4px; font-size:12px;">enhancement</span> - For new feature suggestions.<br>
+        <span style="background:#e4e669; color:#1a1a1a; padding:2px 6px; border-radius:4px; font-size:12px;">appeal</span> - For moderation requests (Shadow Bans).<br><br>
+
+        <strong>3. Provide Details:</strong><br>
+        Be specific. If reporting a bug, include browser version and error logs. If appealing a ban, provide your <strong>App ID</strong> and explanation.
+    </div>
+
+    <div class="alert-box">
+        <div class="alert-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <div class="alert-content">
+            <h4>Requesting a Pardon</h4>
+            <p>If your app was <strong>Shadow Banned</strong> by the automated Tripwire system, you must submit a formal appeal on GitHub.</p>
+            <ul style="margin-top:8px;">
+                <li>Title your issue: <code>[Appeal] App ID: YourAppID</code></li>
+                <li>Explain why the reports were false.</li>
+                <li>Admins will review the "Black Box" logs and restore your app if you are innocent.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 
 
 
@@ -1770,7 +1933,16 @@ const searchIndex = [
 
     // GENERAL
     { id: 'view-home', title: 'Home / Overview', category: 'General', text: 'iOS Web Ecosystem, Simulator, App Builder', view: 'home' },
-    { id: 'view-about', title: 'About the Project', category: 'General', text: 'Open source, mission, technology stack, Github', view: 'about' }
+    { id: 'view-about', title: 'About the Project', category: 'General', text: 'Open source, mission, technology stack, Github', view: 'about' },
+    
+    
+    // NEW: App Builder Guide
+    { id: 'doc-builder', title: 'App Builder Guide', category: 'Documentation', text: 'Create app, update app, publish hosted mode, html upload, delete app', view: 'docs' },
+
+    // NEW: GitHub & Issues
+    { id: 'sup-github', title: 'GitHub & Issues', category: 'Support', text: 'Submit bug report, request pardon, appeal ban, feature request, repository', view: 'support' }
+    
+    
 ];
 
 // --- 1. RANDOM TAGS GENERATOR ---
@@ -1999,6 +2171,141 @@ window.navigateToResult = function(view, hash) {
         }
     }, 300);
 };
+        
+        
+        
+        
+        
+        
+        
+// --- 200MB RAM OPTIMIZED NAVIGATION ENGINE ---
+
+(function() {
+    // 1. STYLE INJECTION (Single Paint)
+    const styleId = 'opt-active-styles';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            .footer-nav span.active { color: var(--accent); font-weight: 700; opacity: 1; }
+            .nav-links-desktop a.active { color: var(--accent); font-weight: 700; }
+            .docs-sidebar a.active { color: var(--accent); opacity: 1; border-left: 2px solid var(--accent); padding-left: 12px; font-weight: 600; }
+            .docs-sidebar a { transition: border-left 0.2s, padding-left 0.2s; border-left: 2px solid transparent; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // 2. STATE CACHE (Prevents DOM Thrashing)
+    const Cache = {
+        navButtons: new Map(),      // Maps 'viewName' -> Array of Buttons
+        sidebarLinks: new Map(),    // Maps 'sectionID' -> Link Element
+        activeLink: null,           // Currently highlighted sidebar link
+        observer: null
+    };
+
+    // 3. BUILD CACHE (Run Once)
+    function buildCache() {
+        // Cache Navigation Buttons
+        document.querySelectorAll('[onclick*="switchView"]').forEach(btn => {
+            const match = btn.getAttribute('onclick').match(/'([^']+)'/);
+            if (match) {
+                const view = match[1];
+                if (!Cache.navButtons.has(view)) Cache.navButtons.set(view, []);
+                Cache.navButtons.get(view).push(btn);
+            }
+        });
+
+        // Cache Sidebar Links
+        document.querySelectorAll('.docs-sidebar a').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                Cache.sidebarLinks.set(href.substring(1), link); // Map ID to Link
+            }
+        });
+    }
+
+    // 4. OPTIMIZED VIEW SWITCHER (Frame-Perfect)
+    const _baseSwitch = window.switchView;
+
+    window.switchView = function(viewName) {
+        if (_baseSwitch) _baseSwitch(viewName);
+
+        // Schedule visual updates for the next paint frame
+        requestAnimationFrame(() => {
+            // A. Instantly update Nav Buttons (No loops over document)
+            Cache.navButtons.forEach((btns, view) => {
+                const isActive = (view === viewName);
+                btns.forEach(b => {
+                    // Only touch DOM if classList actually changes
+                    if (isActive && !b.classList.contains('active')) b.classList.add('active');
+                    if (!isActive && b.classList.contains('active')) b.classList.remove('active');
+                });
+            });
+
+            // B. Manage ScrollSpy Lifecycle (Lazy Load)
+            if (viewName === 'docs' || viewName === 'support') {
+                if (!Cache.observer) initScrollSpy();
+            } else {
+                shutdownScrollSpy(); // Save RAM when not needed
+            }
+        });
+    };
+
+    // 5. ZERO-LAG SCROLLSPY (IntersectionObserver)
+    function initScrollSpy() {
+        // Only observe elements that actually exist
+        const targets = [];
+        Cache.sidebarLinks.forEach((_, id) => {
+            const el = document.getElementById(id);
+            if (el) targets.push(el);
+        });
+
+        if (targets.length === 0) return;
+
+        Cache.observer = new IntersectionObserver((entries) => {
+            // Find the first intersecting element
+            const visible = entries.find(e => e.isIntersecting);
+            if (visible) {
+                const link = Cache.sidebarLinks.get(visible.target.id);
+                if (link && link !== Cache.activeLink) {
+                    // Swap classes efficiently
+                    if (Cache.activeLink) Cache.activeLink.classList.remove('active');
+                    link.classList.add('active');
+                    Cache.activeLink = link;
+                }
+            }
+        }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+        targets.forEach(t => Cache.observer.observe(t));
+    }
+
+    function shutdownScrollSpy() {
+        if (Cache.observer) {
+            Cache.observer.disconnect();
+            Cache.observer = null;
+        }
+    }
+
+    // 6. INITIALIZE
+    // Wait for DOM, then build cache and set initial state
+    const init = () => {
+        buildCache();
+        const params = new URLSearchParams(window.location.search);
+        const page = params.get('page') || 'home';
+        // Highlight initial state without triggering full switch logic if unnecessary
+        const btns = Cache.navButtons.get(page);
+        if(btns) btns.forEach(b => b.classList.add('active'));
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();
+        
+        
         
         
     </script>

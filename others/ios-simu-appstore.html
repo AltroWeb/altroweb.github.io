@@ -2355,9 +2355,28 @@ async submitReport(reason) {
 
 
 renderBio(text) {
-    // Replaces ${url} with a clickable link that triggers an alert
-    return (text || "Developer").replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+    if (!text) return "Developer";
+
+    // 1. Sanitize HTML (Security)
+    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+
+    // 2. Apply Bold & Italic (BEFORE links so you can do [**Bold**](url))
+    safe = safe
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // **Bold**
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>');  // *Italic*
+
+    // 3. Standard Markdown Links: [Text](URL) or [](URL)
+    // Uses your EXACT logic, but adapts for Text vs URL
+    safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
+        const label = txt || url; // If text is empty [], show URL
+        return `<a href="#" onclick="event.preventDefault(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent, #007AFF); text-decoration:underline; pointer-events:auto;">${label}</a>`;
+    });
+
+    // 4. Legacy/Raw Links: $[URL]
+    safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
         `<a href="#" onclick="event.preventDefault(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent, #007AFF); text-decoration:underline; pointer-events:auto;">$1</a>`);
+
+    return safe.replace(/\n/g, '<br>');
 }
 
 
