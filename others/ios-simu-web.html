@@ -843,7 +843,7 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
         </div>
         <div class="alert-content">
             <h4>Native App Restrictions</h4>
-            <p>If you try to publish a "Native" app without the <strong>Trusted Badge</strong>, it will automatically be rejected by the store firewall. Please contact an Admin via GitHub Issues to apply for Trusted Status.</p>
+            <p>If you try to publish a "Native" app without the <strong>Trusted Badge</strong>, it will not work as expected on the simulator environment. Please contact an Admin via GitHub Issues to apply for Trusted Status.</p>
         </div>
     </div>
 </div>
@@ -1989,48 +1989,129 @@ function triggerSearch(query) {
     performSearch(query);
 }
 
+// --- PRO SEARCH ENGINE (Smart, Fuzzy & Spaceless) ---
+
+// 1. Levenshtein Distance (Typo Solver)
+const levenshtein = (a, b) => {
+    if(!a || !b) return (a || b).length;
+    const m = [];
+    for(let i=0; i<=b.length; i++){ m[i] = [i]; }
+    for(let j=0; j<=a.length; j++){ m[0][j] = j; }
+    for(let i=1; i<=b.length; i++){
+        for(let j=1; j<=a.length; j++){
+            if(b.charAt(i-1) == a.charAt(j-1)){ m[i][j] = m[i-1][j-1]; }
+            else { m[i][j] = Math.min(m[i-1][j-1]+1, Math.min(m[i][j-1]+1, m[i-1][j]+1)); }
+        }
+    }
+    return m[b.length][a.length];
+};
+
+// 2. Advanced Scoring (The Brain)
+const calculateScore = (item, query) => {
+    let score = 0;
+    const term = query.toLowerCase().trim();
+    const cleanTerm = term.replace(/\s+/g, ''); // "app builder" -> "appbuilder"
+    
+    // Data Prep
+    const title = item.title.toLowerCase();
+    const cleanTitle = title.replace(/\s+/g, ''); // "App Builder Guide" -> "appbuilderguide"
+    const cat = item.category.toLowerCase();
+    const text = item.text.toLowerCase();
+    
+    // Tokens for fuzzy matching
+    const queryTokens = term.split(/\s+/).filter(t => t.length > 0);
+    const itemTokens = (title + " " + cat).split(/\s+/);
+
+    // --- RULE 1: EXACT & SUBSTRING MATCHES (Highest Priority) ---
+    if (title === term) score += 200; // Perfect match
+    else if (title.includes(term)) score += 100; // "App Builder" contains "App"
+    
+    // --- RULE 2: SPACELESS MATCH (Fixes "appbuilder") ---
+    // If the stripped title INCLUDES the stripped query
+    else if (cleanTitle.includes(cleanTerm)) score += 80; 
+
+    // --- RULE 3: TOKEN MATCHING (Handles "app" + "guide") ---
+    queryTokens.forEach(qToken => {
+        let bestTokenScore = 0;
+        
+        itemTokens.forEach(iToken => {
+            // A. Exact Token Match
+            if (iToken === qToken) {
+                bestTokenScore = Math.max(bestTokenScore, 30);
+            }
+            // B. Fuzzy Token Match (Typo: "bulder" -> "builder")
+            else if (Math.abs(iToken.length - qToken.length) < 3) {
+                const dist = levenshtein(iToken, qToken);
+                if (dist <= 1) bestTokenScore = Math.max(bestTokenScore, 20); // Very close
+                else if (dist <= 2) bestTokenScore = Math.max(bestTokenScore, 10); // Close
+            }
+        });
+        
+        // Boost if token found in Category/Text instead
+        if (bestTokenScore === 0) {
+            if (cat.includes(qToken)) bestTokenScore = 15;
+            else if (text.includes(qToken)) bestTokenScore = 5;
+        }
+        
+        score += bestTokenScore;
+    });
+
+    return score;
+};
+
+// 3. MAIN SEARCH FUNCTION
 function performSearch(query) {
     const resultsArea = document.getElementById('search-results-area');
     const shareBtn = document.getElementById('search-share-btn');
     const term = query.toLowerCase().trim();
 
-    // Toggle Share Button Visibility
+    // UI Toggle
     if (term.length > 0) shareBtn.classList.add('visible');
     else shareBtn.classList.remove('visible');
 
-    // Show Random Tags if empty
     if (term.length === 0) {
         renderRandomTags();
         return;
     }
 
-    if (term.length < 2) return; // Wait for 2 chars
+    // --- EXECUTE SEARCH ---
+    let hits = searchIndex.map(item => ({ ...item, score: calculateScore(item, term) }))
+                          .filter(item => item.score > 5) // Must have some relevance
+                          .sort((a, b) => b.score - a.score);
 
-    // Filter Logic
-    const hits = searchIndex.filter(item => 
-        item.title.toLowerCase().includes(term) || 
-        item.text.toLowerCase().includes(term) ||
-        item.category.toLowerCase().includes(term)
-    );
-
+    // --- RENDER RESULTS ---
     if (hits.length === 0) {
-        resultsArea.innerHTML = `<div class="empty-search-state"><h3>No results found for "${query}"</h3></div>`;
+        // Optional: Pro Tip for no results
+        resultsArea.innerHTML = `
+            <div class="empty-search-state">
+                
+                <h3>No results for "${query}"</h3>
+                <p style="font-size:14px; color:var(--text-secondary); margin-top:5px;">
+                    Try removing filters or checking for typos.
+                </p>
+            </div>`;
         return;
     }
 
-    // Group Results
-    const grouped = hits.reduce((acc, item) => {
-        if (!acc[item.category]) acc[item.category] = [];
-        acc[item.category].push(item);
-        return acc;
-    }, {});
+    // Group Results by Category
+    const grouped = {};
+    hits.forEach(item => {
+        if (!grouped[item.category]) grouped[item.category] = [];
+        grouped[item.category].push(item);
+    });
 
-    // Build HTML
     let html = '';
+    
+    // Check if we "Autocorrected" implicitly (High score via fuzzy/spaceless)
+    // We only show "Top Result" highlights if it's a very strong match vs others
+    
     for (const [category, items] of Object.entries(grouped)) {
         html += `<div class="result-category-header">${category}</div>`;
         items.forEach(item => {
-            const snippet = item.text.length > 100 ? item.text.substring(0, 100) + '...' : item.text;
+            // Smart Snippet: Try to highlight the keyword
+            let snippet = item.text;
+            if (snippet.length > 100) snippet = snippet.substring(0, 100) + '...';
+            
             html += `
             <div class="result-card" onclick="navigateToResult('${item.view}', '${item.id}')">
                 <div class="result-path">${category} > ${item.title}</div>
