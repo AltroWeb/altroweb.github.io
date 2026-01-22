@@ -743,6 +743,19 @@
                     <label>Description <span style="color:var(--danger)">*</span></label>
                     <textarea id="edit-desc" rows="3" placeholder="Short description for the App Store..."></textarea>
                 </div>
+                
+                
+                <div class="form-group">
+    <label>Search Tags (Hidden)</label>
+    <textarea id="edit-tags" rows="2" maxlength="1000" 
+        placeholder="e.g. game, shooter, multiplayer, fps (Max 1000 chars)" 
+        oninput="appBuilder.updateTagsCounter(this)"></textarea>
+    
+    <div style="display:flex; justify-content:space-between; margin-top:6px;">
+        <div class="hint" style="margin:0;">Comma separated. Used only for search.</div>
+        <div id="tags-counter" style="font-size:12px; color:var(--text-secondary);">0/1000</div>
+    </div>
+</div>
 
                 <div class="form-group">
                     <label>Content Source <span style="color:var(--danger)">*</span></label>
@@ -981,6 +994,20 @@
                     document.getElementById('icon-preview').src = this.getSafeIconUrl(val);
                 });
             }
+            
+            
+            
+ 
+updateTagsCounter(input) {
+    const count = input.value.length;
+    const counterEl = document.getElementById('tags-counter');
+    if (counterEl) {
+        counterEl.innerText = count + '/1000';
+    }
+}
+            
+            
+            
             
             togglePassword(inputId, iconEl) {
                 const input = document.getElementById(inputId);
@@ -1362,16 +1389,17 @@ async fetchMyApps() {
             }
 
             filterMyApps() {
-                const searchInput = document.getElementById('dashboard-search');
-                const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
-                
-                const filtered = this.myAppsCache.filter(app => {
-                    return app.name.toLowerCase().includes(term) || 
-                           (app.id && app.id.toLowerCase().includes(term));
-                });
-                
-                this.renderMyApps(filtered);
-            }
+    const searchInput = document.getElementById('dashboard-search');
+    const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    
+    const filtered = this.myAppsCache.filter(app => {
+        return app.name.toLowerCase().includes(term) || 
+               (app.id && app.id.toLowerCase().includes(term)) ||
+               (app.tags && app.tags.toLowerCase().includes(term)); // <--- Added Tags Check
+    });
+    
+    this.renderMyApps(filtered);
+}
 
             renderMyApps(apps) {
     const list = document.getElementById('my-apps-list');
@@ -1524,7 +1552,12 @@ async fetchMyApps() {
                 
                 document.getElementById('edit-icon').value = '';
                 document.getElementById('edit-desc').value = '';
-                document.getElementById('edit-embed').value = '';
+         
+const tagInput = document.getElementById('edit-tags');
+tagInput.value = '';
+this.updateTagsCounter(tagInput); // Reset counter to 0/1000
+
+       document.getElementById('edit-embed').value = '';
                 document.getElementById('icon-preview').src = 'grey.png';
                 document.getElementById('edit-file-data').value = '';
                 document.getElementById('file-name-display').innerText = 'Click to select .html file';
@@ -1608,6 +1641,11 @@ async fetchMyApps() {
                     document.getElementById('edit-icon').value = data.iconUrl || '';
                     document.getElementById('icon-preview').src = data.iconUrl || 'grey.png';
                     document.getElementById('edit-desc').value = data.description;
+                    
+                    
+                    const tagInput = document.getElementById('edit-tags');
+tagInput.value = data.tags || ''; // Load tags
+this.updateTagsCounter(tagInput); // Update counter
                     
                     // NEW: Load Analytics Toggle
                     const isAnalyticsEnabled = data.enableAnalytics !== false; // Default true
@@ -1698,6 +1736,9 @@ async fetchMyApps() {
     const icon = document.getElementById('edit-icon').value.trim();
     const desc = document.getElementById('edit-desc').value.trim();
     
+    // Get tags (defaults to empty string if null)
+const tags = document.getElementById('edit-tags').value.trim();
+    
     // Handle Source Mode
     let embedUrl = this.sourceMode === 'url' ? document.getElementById('edit-embed').value.trim() : document.getElementById('edit-file-data').value;
     
@@ -1719,6 +1760,7 @@ async fetchMyApps() {
             storeName: storeNameInput || name,
             iconUrl: icon,
             description: desc,
+            tags: tags,
             embedUrl: embedUrl,
             author: this.devProfile.displayName,
             authorId: this.devProfile.uid,

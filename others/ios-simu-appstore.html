@@ -1991,8 +1991,13 @@ checkUrlParams() {
 
 
 filterApps(query) {
+    // 1. HANDLE EMPTY SEARCH
     if (!query) {
-        this.lockedAppId = null; // Clear lock if search is cleared
+        this.lockedAppId = null;
+        const card = document.getElementById('store-dev-card');
+        const header = document.getElementById('store-dev-header');
+        if (card) card.style.display = 'none';
+        if (header) header.style.display = 'none';
         this.renderStore(this.apps);
         return;
     }
@@ -2002,16 +2007,16 @@ filterApps(query) {
     
     const card = document.getElementById('store-dev-card');
     const header = document.getElementById('store-dev-header');
+    const input = document.getElementById('store-search-input');
 
-    // --- 1. EXACT ID MATCH (The Lock) ---
+    // --- 2. EXACT APP ID MATCH (The Lock) ---
     const exactIdMatch = this.apps.find(a => a.id === rawTerm);
 
     if (exactIdMatch) {
         console.log("Locking Search to ID:", rawTerm);
-        this.lockedAppId = exactIdMatch.id; // SET LOCK
+        this.lockedAppId = exactIdMatch.id;
 
         // UI Swap: ID -> Name
-        const input = document.getElementById('store-search-input');
         const appName = exactIdMatch.storeName || exactIdMatch.name;
         if (input && input.value !== appName) {
             input.value = appName;
@@ -2025,43 +2030,58 @@ filterApps(query) {
         return;
     }
 
-    // --- 2. CHECK LOCK STATE (The Fix) ---
-    // If we have a lock, check if the current query matches the Locked App's Name.
-    // If it does, it means this search was triggered by our own auto-swap or a refresh.
-    // We must IGNORE the fuzzy search and keep showing the specific app.
+    // --- 3. CHECK LOCK STATE ---
     if (this.lockedAppId) {
         const lockedApp = this.apps.find(a => a.id === this.lockedAppId);
         if (lockedApp) {
             const appName = (lockedApp.storeName || lockedApp.name).toLowerCase();
             if (term === appName) {
-                // Query matches the name of our locked app -> Keep Lock
                 this.renderStore([lockedApp]);
                 return;
             }
         }
-        // If query doesn't match ID or Name -> User typed something new -> Break Lock
         this.lockedAppId = null; 
     }
 
-    // --- 3. DEV SEARCH ---
+    // --- 4. DEV SEARCH ---
     if (term.startsWith('dev:')) {
+        const targetDev = rawTerm.substring(4).trim();
         
-        const targetDev = term.substring(4).trim();
+        if (targetDev.length === 0) {
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore([]); 
+            return;
+        }
+
+        // Check for UUID (Author ID)
+        const appsByUUID = this.apps.filter(app => app.authorId === targetDev);
+        if (appsByUUID.length > 0) {
+            const authorName = appsByUUID[0].author;
+            if (input) input.value = "dev:" + authorName;
+            
+            this.updateDevCard(appsByUUID[0]);
+            this.renderStore(appsByUUID);
+            return;
+        }
+
+        // Search by Name
         const devApps = this.apps.filter(app => 
-            (app.author || '').toLowerCase().includes(targetDev)
+            (app.author || '').toLowerCase().includes(targetDev.toLowerCase())
         );
+
         if (devApps.length > 0) {
             this.updateDevCard(devApps[0]);
             this.renderStore(devApps);
         } else {
-            if(card) card.style.display='none';
-            if(header) header.style.display='none';
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
             this.renderStore([]);
         }
         return;
     }
 
-    // --- 4. STANDARD FUZZY SEARCH ---
+    // --- 5. STANDARD SEARCH (Updated with Tags) ---
     if (card) card.style.display = 'none';
     if (header) header.style.display = 'none';
 
@@ -2069,7 +2089,12 @@ filterApps(query) {
         const displayName = (app.storeName || app.name || '').toLowerCase();
         const author = (app.author || '').toLowerCase();
         const desc = (app.description || '').toLowerCase();
-        return displayName.includes(term) || author.includes(term) || desc.includes(term);
+        const tags = (app.tags || '').toLowerCase(); // <--- Added Tags
+
+        return displayName.includes(term) || 
+               author.includes(term) || 
+               desc.includes(term) || 
+               tags.includes(term); // <--- Added Check
     });
     
     this.renderStore(filtered);

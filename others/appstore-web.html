@@ -1052,26 +1052,40 @@ clearSearch() {
                 input.addEventListener('input', (e) => this.filterApps(e.target.value));
             }
 
+
+
+
+
+
             filterApps(query) {
     if (!query) {
-        this.clearSearch();
+        if (typeof this.clearSearch === 'function') this.clearSearch();
+        else {
+            const card = document.getElementById('dev-profile-card');
+            const header = document.getElementById('dev-section-header');
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore(this.apps);
+        }
         return;
     }
 
-    let term = query.trim();
+    let term = query.trim(); // Keep original case for ID checks
+    const lowerTerm = term.toLowerCase();
+    
     const card = document.getElementById('dev-profile-card');
     const header = document.getElementById('dev-section-header');
+    const input = document.getElementById('store-search-input');
 
-    // --- 1. ROBUST ID LOOKUP (NEW) ---
+    // --- 1. ROBUST APP ID LOOKUP (The App Lock) ---
     const exactIdMatch = this.apps.find(a => a.id === term);
 
     if (exactIdMatch) {
         // Visual Swap: ID -> Name
-        const input = document.getElementById('store-search-input');
         const appName = exactIdMatch.storeName || exactIdMatch.name;
         if (input) input.value = appName;
 
-        // Hide Dev UI just in case
+        // Hide Dev UI
         if (card) card.style.display = 'none';
         if (header) header.style.display = 'none';
 
@@ -1080,35 +1094,73 @@ clearSearch() {
         return;
     }
 
-    // --- 2. DEV SEARCH ---
-    if (term.toLowerCase().startsWith('dev:')) {
-        const targetDev = term.substring(4).trim().toLowerCase();
-        if (targetDev.length > 0) {
-            const devApps = this.apps.filter(app => 
-                (app.author || '').toLowerCase().includes(targetDev)
-            );
-            if (devApps.length > 0) {
-                this.updateDevCard(devApps[0]); 
-                this.renderStore(devApps);
-                return;
-            }
+    // --- 2. DEV SEARCH (Fixed: Added UUID Lock) ---
+    if (lowerTerm.startsWith('dev:')) {
+        const targetDevRaw = term.substring(4).trim(); // Case-sensitive ID
+        const targetDevLower = targetDevRaw.toLowerCase(); // Case-insensitive Name
+        
+        // Hide card if empty "dev:" typed
+        if (targetDevRaw.length === 0) {
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore([]); 
+            return;
         }
+
+        // A. UUID MATCH (The Lock Fix)
+        // Check if the typed text matches a Developer's exact ID
+        const appsByUUID = this.apps.filter(app => app.authorId === targetDevRaw);
+        
+        if (appsByUUID.length > 0) {
+            // Found by ID -> Swap to Name in search bar
+            const authorName = appsByUUID[0].author;
+            if (input) input.value = "dev:" + authorName;
+            
+            this.updateDevCard(appsByUUID[0]);
+            this.renderStore(appsByUUID);
+            return;
+        }
+
+        // B. NAME MATCH (Standard)
+        const devApps = this.apps.filter(app => 
+            (app.author || '').toLowerCase().includes(targetDevLower)
+        );
+
+        if (devApps.length > 0) {
+            this.updateDevCard(devApps[0]); 
+            this.renderStore(devApps);
+        } else {
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore([]);
+        }
+        return;
     }
 
-    // --- 3. STANDARD SEARCH ---
+    // --- 3. STANDARD SEARCH (With Tags) ---
     if (card) card.style.display = 'none';
     if (header) header.style.display = 'none';
 
-    term = term.toLowerCase();
     const filtered = this.apps.filter(app => {
         const displayName = (app.storeName || app.name || '').toLowerCase();
         const author = (app.author || '').toLowerCase();
         const desc = (app.description || '').toLowerCase();
-        return displayName.includes(term) || author.includes(term) || desc.includes(term);
+        const tags = (app.tags || '').toLowerCase(); 
+
+        return displayName.includes(lowerTerm) || 
+               author.includes(lowerTerm) || 
+               desc.includes(lowerTerm) || 
+               tags.includes(lowerTerm);
     });
 
     this.renderStore(filtered);
 }
+
+
+
+
+
+
             
   renderBio(text) {
     if (!text) return "Developer";
@@ -1195,7 +1247,7 @@ clearSearch() {
     const shareBtn = document.createElement('button');
     shareBtn.className = 'dev-share-btn';
     shareBtn.setAttribute('title', 'Share Profile');
-    shareBtn.setAttribute('onclick', `appStoreWeb.shareApp('${app.id}')`); // Note: Adapted to shareApp based on your context or keep shareDevProfile
+    shareBtn.setAttribute('onclick', `appStoreWeb.shareDevProfile('${app.author}')`); 
     shareBtn.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
