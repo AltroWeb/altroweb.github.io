@@ -205,7 +205,9 @@
             max-width: 100%;
             transition: all 0.3s var(--ease-apple);
             gap: 10px;
-            position: relative;
+            position: relative; /* Ensure this is set */
+    overflow: visible !important; /* IMPORTANT: Allows dropdown blur to render outside container bounds */
+    z-index: 100;
         }
 
         .search-container:focus-within {
@@ -235,23 +237,37 @@
         }
         .search-clear-btn:hover { color: white; }
         
-        /* Search Suggestions Dropdown */
-        .search-history {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            margin-top: 8px;
-            padding: 8px;
-            display: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .search-history.active { display: block; }
+#searchHistory {
+    position: absolute;
+    top: calc(100% + 8px); /* Gap from search bar */
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    padding: 10px;
+    border-radius: 14px;
+    
+    /* THE FIX: Semi-translucent base is required to see blur */
+    background: rgba(20, 20, 20, 0.6) !important; 
+    
+    /* THE FIX: Force Hardware Acceleration */
+    transform: translateZ(0); 
+    -webkit-transform: translateZ(0);
+    
+    /* THE FIX: High Saturation helps the blur pop against dark backgrounds */
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+    
+    /* THE FIX: Border needs to be translucent white to define the glass edge */
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    z-index: 9999 !important;
+}
+
+/* Ensure history shows as flex when active */
+#searchHistory.active { 
+    display: flex !important; 
+}
         .history-item {
             padding: 10px;
             color: #ccc;
@@ -293,6 +309,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             scroll-behavior: smooth;
+            padding-bottom: 60px !important;
         }
 
         /* Hero Section */
@@ -662,7 +679,22 @@
         }
         
         
-        
+      
+.glass-panel {
+    /* 1. Translucent Dark Base (Lower opacity = More Blur Visibility) */
+    background: rgba(20, 20, 20, 0.65) !important;
+    
+    /* 2. Heavy Blur + Saturation */
+    backdrop-filter: blur(35px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
+    
+    /* 3. Pro Borders & Shadows */
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+    
+    /* 4. Text Readability */
+    color: white !important;
+}  
         
         
         
@@ -727,7 +759,7 @@ z-index: 10 !important; }
     <div id="settingsModal" class="modal-backdrop">
         <div class="modal-content" style="padding: 24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2 style="font-size:1.2rem;">⚙️ Settings</h2>
+                <h2 style="font-size:1.2rem;">Settings</h2>
                 <button onclick="closeSettings()" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x" style="font-size:1.2rem;"></i></button>
             </div>
             
@@ -1232,19 +1264,57 @@ z-index: 10 !important; }
         }
 
         function showSearchHistory() {
-            const hist = JSON.parse(localStorage.getItem('search_history') || '[]');
-            const container = document.getElementById('searchHistory');
-            if(hist.length === 0) return;
-            
-            container.innerHTML = `<div style="padding:4px 10px; font-size:0.7rem; color:#666; text-transform:uppercase;">Recent</div>` + 
-                hist.map(term => `
-                    <div class="history-item">
-                        <span onclick="document.getElementById('searchInput').value='${term}'; handleSmartSearch('${term}')" style="flex:1"><i class="ph ph-clock-counter-clockwise"></i> ${term}</span>
-                        <button class="history-del-btn" onclick="removeFromHistory('${term}')"><i class="ph ph-x"></i></button>
-                    </div>
-                `).join('');
-            container.classList.add('active');
-        }
+    const input = document.getElementById('searchInput');
+    const historyBox = document.getElementById('searchHistory');
+    const hist = JSON.parse(localStorage.getItem('search_history') || '[]');
+
+    if(hist.length === 0) {
+        historyBox.classList.remove('active');
+        return;
+    }
+
+    // --- THE ROBUST FIX: TELEPORTATION ---
+    // Move the history box to <body> so it is not trapped inside the header's blur context
+    if (historyBox.parentElement !== document.body) {
+        document.body.appendChild(historyBox);
+    }
+
+    // Calculate strict position based on the input's current location on screen
+    const rect = input.getBoundingClientRect();
+    
+const r = document.querySelector('.search-container').getBoundingClientRect(); Object.assign(document.getElementById('searchHistory').style, { top: (r.bottom + 15) + 'px', left: r.left + 'px', width: r.width + 'px' });
+
+    // Render Content
+    historyBox.innerHTML = `
+        <div style="padding:6px 12px; font-size:0.75rem; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Recent</div>
+        ${hist.map(term => `
+            <div class="history-item" style="padding:12px; border-radius:8px; display:flex; align-items:center; justify-content:space-between; transition:0.2s;">
+                <span onclick="triggerSearch('${term}')" style="flex:1; cursor:pointer; display:flex; align-items:center; gap:10px; font-size:0.95rem; color:rgba(255,255,255,0.9);">
+                    <i class="ph ph-clock-counter-clockwise" style="color:var(--accent)"></i> ${term}
+                </span>
+                <button onclick="removeFromHistory('${term}')" style="background:none; border:none; color:rgba(255,255,255,0.3); padding:4px; cursor:pointer; display:flex;">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+        `).join('')}
+    `;
+    
+    
+    historyBox.classList.add('active');
+}
+
+// Helper to handle search trigger from the moved element
+function triggerSearch(term) {
+    const input = document.getElementById('searchInput');
+    input.value = term;
+    handleSmartSearch(term);
+    document.getElementById('searchHistory').classList.remove('active');
+}
+
+// Close the floating menu if user scrolls (since it's fixed position)
+window.addEventListener('scroll', () => {
+    document.getElementById('searchHistory').classList.remove('active');
+}, { passive: true });
 
         function removeFromHistory(term) {
             let hist = JSON.parse(localStorage.getItem('search_history') || '[]');
