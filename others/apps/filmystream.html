@@ -14,7 +14,7 @@
     <style>
         :root {
             --bg-main: #000000;
-            --bg-glass: rgba(22, 22, 24, 0.85);
+            --bg-glass: rgba(22, 22, 24, 0.7);
             --bg-card: #1c1c1e;
             --accent: #E50914;
             --text-primary: #FFFFFF;
@@ -34,8 +34,14 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* --- Global Font Application (Fixed) --- */
+        body, button, input, textarea, select {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
         body {
-            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
             height: 100vh;
@@ -53,8 +59,8 @@
         .sidebar {
             width: var(--sidebar-w);
             background: var(--bg-glass);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
             display: flex;
             flex-direction: column;
             border-right: 1px solid rgba(255,255,255,0.08);
@@ -80,7 +86,7 @@
         .brand-highlight { color: var(--accent); }
 
         .close-sidebar-btn {
-            display: none; /* Hidden on Desktop */
+            display: none;
             background: rgba(255,255,255,0.1);
             border: none;
             color: white;
@@ -149,7 +155,7 @@
             flex-direction: column;
             position: relative;
             background: radial-gradient(circle at top right, #1a1a1a 0%, #000 100%);
-            min-width: 0; /* Prevents flex overflow */
+            min-width: 0;
         }
 
         /* Top Bar */
@@ -166,8 +172,9 @@
         }
 
         .top-bar.scrolled {
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(20px);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid rgba(255,255,255,0.05);
             position: sticky;
         }
@@ -188,6 +195,8 @@
             display: flex;
             align-items: center;
             background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
             border: 1px solid rgba(255,255,255,0.05);
             border-radius: 12px;
             height: 40px;
@@ -195,13 +204,12 @@
             width: 320px;
             max-width: 100%;
             transition: all 0.3s var(--ease-apple);
-            backdrop-filter: blur(10px);
             gap: 10px;
             position: relative;
         }
 
         .search-container:focus-within {
-            background: rgba(30,30,30,0.9);
+            background: rgba(40,40,40,0.8);
             border-color: rgba(255,255,255,0.2);
             box-shadow: 0 0 0 2px rgba(229,9,20,0.3);
         }
@@ -212,8 +220,20 @@
             color: white;
             flex: 1;
             font-size: 0.95rem;
-            min-width: 0; /* Critical for wrapping */
+            min-width: 0;
         }
+
+        .search-clear-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .search-clear-btn:hover { color: white; }
         
         /* Search Suggestions Dropdown */
         .search-history {
@@ -221,7 +241,9 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: #1c1c1e;
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
             margin-top: 8px;
@@ -238,12 +260,19 @@
             border-radius: 6px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
         }
         .history-item:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        .history-del-btn {
+            background: none; border: none; color: #666; cursor: pointer; padding: 4px;
+        }
+        .history-del-btn:hover { color: #ff4b59; }
 
         .icon-btn {
             background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
             border: none;
             width: 40px; height: 40px;
             border-radius: 50%;
@@ -276,13 +305,39 @@
             align-items: center;
             background-size: cover;
             background-position: center top;
-            padding: 120px 4% 40px; /* Safe padding prevents cutoff */
+            padding: 120px 4% 40px;
+            overflow: hidden;
+            transition: background-image 0.5s ease;
         }
+
+        /* --- PRO IMMERSIVE VIDEO STYLES --- */
+        .hero-video-wrapper {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-bg-video {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100vw; height: 56.25vw;
+            min-height: 100vh;
+            min-width: 177.77vh;
+            transform: translate(-50%, -50%) scale(1.4);
+            opacity: 0;
+            transition: opacity 1.5s ease; /* Critical for smooth fade */
+        }
+        
+        .hero-bg-video.visible { opacity: 1; }
 
         .hero-gradient {
             position: absolute;
             inset: 0;
-            background: linear-gradient(0deg, var(--bg-main) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.3) 100%);
+            background: linear-gradient(0deg, var(--bg-main) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.4) 100%);
+            z-index: 1;
         }
         .hero-vignette {
             position: absolute;
@@ -323,12 +378,12 @@
             margin-bottom: 16px;
             color: white;
             text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            word-wrap: break-word; /* Ensure title wraps */
+            word-wrap: break-word;
         }
 
         .hero-meta {
             display: flex;
-            flex-wrap: wrap; /* Ensure meta items wrap on small screens */
+            flex-wrap: wrap;
             align-items: center;
             gap: 16px;
             font-size: 0.95rem;
@@ -379,7 +434,7 @@
 
         /* Sections */
         .section {
-            padding: 30px 4%; /* Uniform padding */
+            padding: 30px 4%;
             opacity: 0;
             animation: fadeIn 0.8s ease forwards 0.2s;
         }
@@ -417,7 +472,7 @@
             aspect-ratio: 2/3;
             cursor: pointer;
             transition: transform 0.3s;
-            flex: 0 0 150px; /* For rows */
+            flex: 0 0 150px;
             scroll-snap-align: start;
         }
 
@@ -485,22 +540,25 @@
             object-fit: cover;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .provider-name { font-size: 0.7rem; color: #aaa; }
-
-        .tag-pill {
-            background: rgba(255,255,255,0.1);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: #ccc;
-            border: 1px solid rgba(255,255,255,0.1);
+        
+        .provider-fallback {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            background: #333;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
+
+        .provider-name { font-size: 0.7rem; color: #aaa; }
 
         /* Modals */
         .modal-backdrop {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(15px);
+            position: fixed; 
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5); 
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             z-index: 300;
             display: none;
             justify-content: center;
@@ -510,7 +568,9 @@
         .modal-backdrop.active { display: flex; }
 
         .modal-content {
-            background: #1c1c1e;
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             width: 100%;
             max-width: 500px;
             max-height: 90vh;
@@ -532,6 +592,42 @@
 
         .video-container { width: 100%; height: 100%; }
 
+        /* --- FIXED PRO TOGGLE SWITCH (Robust & Pixel Perfect) --- */
+        .switch {
+            position: relative;
+            display: block;
+            width: 52px; /* Fixed robust width */
+            height: 32px; /* Fixed robust height */
+            flex-shrink: 0;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #3a3a3c;
+            transition: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 28px;
+            width: 28px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input:checked + .slider { background-color: var(--accent); }
+        /* Robust math: 52px (width) - 2px (left) - 2px (right padding) - 28px (circle) = 20px translation */
+        input:checked + .slider:before { transform: translateX(20px); }
+
         /* --- Responsive Logic --- */
         @media (max-width: 768px) {
             .sidebar {
@@ -544,7 +640,6 @@
             .top-bar { padding: 0 16px; gap: 10px; }
             .mobile-menu-btn { display: flex; }
             
-            /* Fluid Search: Shrinks on mobile */
             .search-container { flex: 1; width: auto; min-width: 0; }
             .icon-btn { width: 36px; height: 36px; font-size: 1.2rem; }
             
@@ -573,8 +668,35 @@
                 <h2 style="font-size:1.2rem;">⚙️ Settings</h2>
                 <button onclick="closeSettings()" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x" style="font-size:1.2rem;"></i></button>
             </div>
-            <p style="color:#aaa; font-size:0.9rem; margin-bottom:15px;">Enter TMDB API Key (Optional):</p>
-            <input type="text" id="apiKeyInput" placeholder="API Key" style="width:100%; background:#333; border:none; padding:12px; color:white; border-radius:8px; margin-bottom:20px;">
+            
+            <div style="margin-bottom:25px;">
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">Appearance</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(44, 44, 46, 0.6); padding:15px; border-radius:10px; margin-bottom: 10px; backdrop-filter: blur(10px);">
+                    <div>
+                        <div style="font-weight:600;">Immersive Background</div>
+                        <div style="font-size:0.8rem; color:#888;">Auto-play trailers in hero</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="immersiveToggle" onchange="toggleImmersive(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- Conditional Mute Toggle -->
+                <div id="muteToggleContainer" style="display:none; justify-content:space-between; align-items:center; background:rgba(44, 44, 46, 0.6); padding:15px; border-radius:10px; backdrop-filter: blur(10px);">
+                    <div>
+                        <div style="font-weight:600;">Mute Trailer</div>
+                        <div style="font-size:0.8rem; color:#888;">Play background silently</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="muteToggle" onchange="toggleMute(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:15px;">TMDB API Key (Optional):</p>
+            <input type="text" id="apiKeyInput" placeholder="API Key" style="width:100%; background:rgba(51, 51, 51, 0.6); border:none; padding:12px; color:white; border-radius:8px; margin-bottom:20px;">
             <button class="btn btn-primary" onclick="saveSettings()" style="width:100%;">Save Changes</button>
         </div>
     </div>
@@ -623,6 +745,7 @@
             <div class="search-container">
                 <i class="ph ph-magnifying-glass" style="color:rgba(255,255,255,0.5); font-size:1.2rem;"></i>
                 <input type="text" class="search-input" id="searchInput" placeholder="Search (e.g. Marvel)...">
+                <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()"><i class="ph-fill ph-x-circle"></i></button>
                 <div class="search-history" id="searchHistory">
                     <!-- Dynamic history -->
                 </div>
@@ -643,11 +766,43 @@
         const BACKDROP_URL = 'https://image.tmdb.org/t/p/original';
         
         let API_KEY = localStorage.getItem('tmdb_key') || DEFAULT_KEY;
+        let IMMERSIVE_MODE = localStorage.getItem('immersive_mode') === 'true';
+        let MUTE_TRAILER = localStorage.getItem('mute_trailer') !== 'false'; // Default true
         let debounceTimer;
+
+        // Store current Hero Data for live toggling
+        let currentHeroData = null;
+
+        // Infinite Load States
+        let globalCurrentPage = 1;
+        let globalCurrentEndpoint = '';
+        let globalCurrentType = null;
+
+        // Scroll Observer for Intelligent Playback
+        const heroObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const iframe = entry.target.querySelector('iframe');
+                if(!iframe) return;
+                
+                // Smart Resume/Pause
+                if(entry.isIntersecting) {
+                    iframe.classList.add('visible'); // Fade In
+                    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                } else {
+                    iframe.classList.remove('visible'); // Fade Out to original BG
+                    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                }
+            });
+        }, { threshold: 0.1 });
 
         document.addEventListener('DOMContentLoaded', () => {
             loadPage('home');
             
+            // Sync Toggle UI
+            document.getElementById('immersiveToggle').checked = IMMERSIVE_MODE;
+            document.getElementById('muteToggle').checked = MUTE_TRAILER;
+            updateMuteToggleVisibility();
+
             const scrollArea = document.getElementById('contentArea');
             const topbar = document.getElementById('topbar');
             scrollArea.addEventListener('scroll', () => {
@@ -657,9 +812,12 @@
 
             // Enhanced Search
             const sInput = document.getElementById('searchInput');
+            const sClear = document.getElementById('searchClearBtn');
+
             sInput.addEventListener('input', (e) => {
+                sClear.style.display = e.target.value ? 'flex' : 'none';
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => handleSmartSearch(e.target.value), 400); // 400ms delay
+                debounceTimer = setTimeout(() => handleSmartSearch(e.target.value), 400); 
             });
 
             sInput.addEventListener('focus', showSearchHistory);
@@ -678,12 +836,10 @@
 
         async function getPersonalizedRecs() {
             let prefs = JSON.parse(localStorage.getItem('user_genres') || '{}');
-            // Sort genres by frequency
             const sorted = Object.entries(prefs).sort((a,b) => b[1] - a[1]);
             if(sorted.length === 0) return null;
             
-            const topGenre = sorted[0][0]; // Top genre ID
-            // Fetch personalized row
+            const topGenre = sorted[0][0]; 
             const data = await fetchData(`/discover/movie?with_genres=${topGenre}&sort_by=popularity.desc`);
             if(data && data.results) return { genreId: topGenre, items: data.results };
             return null;
@@ -696,6 +852,9 @@
             content.scrollTo({top:0, behavior:'smooth'});
             content.innerHTML = '<div style="height:100vh; display:flex; justify-content:center; align-items:center;"><i class="ph ph-spinner-gap" style="font-size:2rem; animation:spin 1s infinite linear;"></i></div><style>@keyframes spin {to{transform:rotate(360deg)}}</style>';
             
+            // Reset current hero data
+            currentHeroData = null;
+
             if (page === 'home') await renderHome();
             else if (page === 'movies') await renderGridPage('/movie/popular', 'Popular Movies', 'movie');
             else if (page === 'tv') await renderGridPage('/tv/popular', 'TV Shows', 'tv');
@@ -716,7 +875,6 @@
                 renderHero(details, item.media_type, true);
             }
 
-            // Personalized Row (Algorithm)
             const recs = await getPersonalizedRecs();
             if(recs) {
                 createRow('For You', recs.items);
@@ -732,7 +890,6 @@
             const type = basicItem.media_type || (basicItem.title ? 'movie' : 'tv');
             const details = await fetchData(`/${type}/${basicItem.id}?append_to_response=videos,credits,recommendations,watch/providers`);
             
-            // TRACKING: Update algorithm
             trackUserPreference(details);
 
             const content = document.getElementById('contentArea');
@@ -748,28 +905,35 @@
             const providers = details['watch/providers']?.results?.['IN'] || details['watch/providers']?.results?.['US'];
             let providerHTML = '';
             
-            if (providers && (providers.flatrate || providers.buy || providers.rent)) {
-                const link = providers.link;
+            let uniqueList = [];
+            if (providers) {
                 const list = [...(providers.flatrate || []), ...(providers.buy || []), ...(providers.rent || [])];
-                const uniqueList = Array.from(new Map(list.map(item => [item.provider_id, item])).values()).slice(0, 6);
-
-                if(uniqueList.length > 0) {
-                    providerHTML = `
-                        <div style="margin-bottom: 40px;">
-                            <h3 style="margin-bottom:15px; font-size:1.2rem; display:flex; align-items:center; gap:8px;">
-                                <i class="ph-fill ph-monitor-play" style="color:var(--accent);"></i> Available on
-                            </h3>
-                            <div class="providers-list">
-                                ${uniqueList.map(p => `
-                                    <a href="${link}" target="_blank" class="provider-item" title="Watch on ${p.provider_name}">
-                                        <img src="${IMG_URL + p.logo_path}" class="provider-logo" alt="${p.provider_name}">
-                                    </a>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
+                uniqueList = Array.from(new Map(list.map(item => [item.provider_id, item])).values()).slice(0, 8);
             }
+
+            providerHTML = `
+                <div style="margin-bottom: 40px;">
+                    <h3 style="margin-bottom:15px; font-size:1.2rem; display:flex; align-items:center; gap:8px;">
+                        <i class="ph-fill ph-monitor-play" style="color:var(--accent);"></i> Available on
+                    </h3>
+                    <div class="providers-list">
+                        ${uniqueList.length > 0 ? uniqueList.map(p => {
+                            const title = details.title || details.name;
+                            const link = getProviderDeepLink(p.provider_name, title);
+                            return `
+                            <a href="${link}" target="_blank" class="provider-item" title="Watch on ${p.provider_name}">
+                                <img src="${IMG_URL + p.logo_path}" class="provider-logo" alt="${p.provider_name}">
+                            </a>
+                            `;
+                        }).join('') : ''}
+                        
+                        <a href="${getProviderDeepLink('google', details.title || details.name)}" target="_blank" class="provider-item" title="Find Online">
+                            <div class="provider-fallback"><i class="ph ph-magnifying-glass"></i></div>
+                            <span class="provider-name">Find Online</span>
+                        </a>
+                    </div>
+                </div>
+            `;
 
             let castHTML = '';
             if(details.credits && details.credits.cast) {
@@ -798,8 +962,26 @@
                 createRow('More Like This', details.recommendations.results);
             }
         }
+        
+        // --- SMART DEEP LINK SYSTEM ---
+        function getProviderDeepLink(providerName, title) {
+            const t = encodeURIComponent(title);
+            const p = providerName.toLowerCase();
+            
+            if(p.includes('netflix')) return `https://www.netflix.com/search?q=${t}`;
+            if(p.includes('hotstar') || p.includes('disney')) return `https://www.hotstar.com/in/search?q=${t}`;
+            if(p.includes('prime') || p.includes('amazon')) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${t}`;
+            if(p.includes('jio')) return `https://www.jiocinema.com/search?q=${t}`;
+            if(p.includes('sony')) return `https://www.sonyliv.com/search?query=${t}`;
+            if(p.includes('zee5')) return `https://www.zee5.com/search?q=${t}`;
+            if(p.includes('apple')) return `https://tv.apple.com/search?term=${t}`;
+            if(p.includes('youtube')) return `https://www.youtube.com/results?search_query=${t}`;
+
+            return `https://www.google.com/search?q=watch+${t}+on+${p}+online`;
+        }
 
         function renderHero(data, type, isHome) {
+            currentHeroData = data; // Save for live toggling
             let hero = document.createElement('div');
             hero.className = 'hero';
             
@@ -843,6 +1025,33 @@
             const content = document.getElementById('contentArea');
             if(isHome) content.insertBefore(hero, content.firstChild);
             else content.appendChild(hero);
+
+            // Inject video if mode is active
+            if (IMMERSIVE_MODE && trailerKey) {
+                injectHeroVideo(trailerKey, hero);
+            }
+        }
+
+        // Helper to inject video
+        function injectHeroVideo(key, heroElement) {
+            if (!heroElement) heroElement = document.querySelector('.hero');
+            if (!heroElement) return;
+
+            // Check if already exists
+            if (heroElement.querySelector('.hero-video-wrapper')) return;
+
+            const vidContainer = document.createElement('div');
+            vidContainer.className = 'hero-video-wrapper';
+            const muteParam = MUTE_TRAILER ? '&mute=1' : '';
+            vidContainer.innerHTML = `<iframe 
+                class="hero-bg-video"
+                src="https://www.youtube.com/embed/${key}?autoplay=1${muteParam}&controls=0&disablekb=1&fs=0&loop=1&playlist=${key}&modestbranding=1&rel=0&iv_load_policy=3&enablejsapi=1" 
+                frameborder="0" 
+                allow="autoplay; encrypted-media" 
+                >
+            </iframe>`;
+            heroElement.insertBefore(vidContainer, heroElement.firstChild);
+            heroObserver.observe(heroElement);
         }
 
         function createRow(title, items) {
@@ -879,23 +1088,60 @@
             return el;
         }
 
+        // --- INFINITE GRID LOGIC ---
+        
         async function renderGridPage(endpoint, title, forcedType) {
+            globalCurrentPage = 1;
+            globalCurrentEndpoint = endpoint;
+            globalCurrentType = forcedType;
+
             const content = document.getElementById('contentArea');
             content.innerHTML = `
                 <div class="section" style="padding-top:80px;">
                     <div class="section-header" style="font-size:1.5rem;">${title}</div>
                     <div class="grid-container" id="gridTarget"></div>
+                    <div id="noResultsMsg" style="display:none; text-align:center; padding:40px; color:#aaa;">No results found. But check these out:</div>
+                    <div id="loadMoreContainer" style="display:flex; justify-content:center; padding:40px 0;">
+                        <button class="btn btn-glass" id="loadMoreBtn" onclick="loadNextPage()">Load More</button>
+                    </div>
                 </div>
             `;
-            const data = await fetchData(endpoint);
-            const grid = document.getElementById('gridTarget');
-            if (data && data.results && data.results.length > 0) {
-                data.results.forEach(item => {
-                    if(item.poster_path) grid.appendChild(createCard(item, forcedType));
-                });
+            await loadNextPage();
+        }
+
+        async function loadNextPage() {
+            const btn = document.getElementById('loadMoreBtn');
+            if(btn) {
+                btn.innerHTML = '<i class="ph ph-spinner-gap" style="animation:spin 1s infinite linear"></i> Loading...';
+                btn.style.pointerEvents = 'none';
+            }
+
+            const separator = globalCurrentEndpoint.includes('?') ? '&' : '?';
+            const endpointWithPage = `${globalCurrentEndpoint}${separator}page=${globalCurrentPage}`;
+            
+            let data = await fetchData(endpointWithPage);
+            
+            if(globalCurrentPage === 1 && (!data || !data.results || data.results.length === 0)) {
+                document.getElementById('noResultsMsg').style.display = 'block';
+                data = await fetchData(`/trending/all/day?page=1`);
             } else {
-                // Fallback for empty results
-                 grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#666;">No results found. Try broader terms.</div>';
+                 document.getElementById('noResultsMsg').style.display = 'none';
+            }
+
+            if (data && data.results && data.results.length > 0) {
+                const grid = document.getElementById('gridTarget');
+                data.results.forEach(item => {
+                     if(item.poster_path) grid.appendChild(createCard(item, globalCurrentType));
+                });
+                
+                globalCurrentPage++;
+                
+                if(btn) {
+                    btn.innerHTML = 'Load More';
+                    btn.style.pointerEvents = 'auto';
+                }
+            } else {
+                if(btn) btn.style.display = 'none';
             }
         }
 
@@ -903,7 +1149,6 @@
         async function handleSmartSearch(q) {
             if(!q) return;
             
-            // Save to history
             let hist = JSON.parse(localStorage.getItem('search_history') || '[]');
             if(!hist.includes(q)) {
                 hist.unshift(q);
@@ -921,8 +1166,27 @@
             if(hist.length === 0) return;
             
             container.innerHTML = `<div style="padding:4px 10px; font-size:0.7rem; color:#666; text-transform:uppercase;">Recent</div>` + 
-                hist.map(term => `<div class="history-item" onclick="document.getElementById('searchInput').value='${term}'; handleSmartSearch('${term}')"><i class="ph ph-clock-counter-clockwise"></i> ${term}</div>`).join('');
+                hist.map(term => `
+                    <div class="history-item">
+                        <span onclick="document.getElementById('searchInput').value='${term}'; handleSmartSearch('${term}')" style="flex:1"><i class="ph ph-clock-counter-clockwise"></i> ${term}</span>
+                        <button class="history-del-btn" onclick="removeFromHistory('${term}')"><i class="ph ph-x"></i></button>
+                    </div>
+                `).join('');
             container.classList.add('active');
+        }
+
+        function removeFromHistory(term) {
+            let hist = JSON.parse(localStorage.getItem('search_history') || '[]');
+            hist = hist.filter(h => h !== term);
+            localStorage.setItem('search_history', JSON.stringify(hist));
+            showSearchHistory();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            input.focus();
+            document.getElementById('searchClearBtn').style.display = 'none';
         }
 
         // --- Interactivity ---
@@ -949,11 +1213,65 @@
             const val = document.getElementById('apiKeyInput').value.trim();
             if(val) { localStorage.setItem('tmdb_key', val); API_KEY = val; location.reload(); }
         }
+        
+        // --- Smooth Immersive Toggle ---
+        function toggleImmersive(checked) {
+            IMMERSIVE_MODE = checked;
+            localStorage.setItem('immersive_mode', checked);
+            updateMuteToggleVisibility();
+
+            const hero = document.querySelector('.hero');
+            if (!hero) return; // No hero currently on screen
+
+            if (checked && currentHeroData) {
+                // Find trailer key from stored data and inject
+                let trailerKey = null;
+                if(currentHeroData.videos?.results) {
+                    const t = currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || 
+                              currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+                    if(t) trailerKey = t.key;
+                }
+                if(trailerKey) injectHeroVideo(trailerKey, hero);
+
+            } else {
+                // Smoothly fade out then remove
+                const wrapper = hero.querySelector('.hero-video-wrapper');
+                const video = hero.querySelector('.hero-bg-video');
+                if (wrapper && video) {
+                    video.style.opacity = '0'; // Fade out
+                    setTimeout(() => {
+                        wrapper.remove(); // Remove after fade
+                    }, 1500); // Match CSS transition duration
+                }
+            }
+        }
+
+        // --- Immediate Mute Toggle ---
+        function toggleMute(checked) {
+            MUTE_TRAILER = checked;
+            localStorage.setItem('mute_trailer', checked);
+
+            // Apply immediately to current iframe without reload
+            const iframe = document.querySelector('.hero-bg-video');
+            if (iframe) {
+                const command = checked ? 'mute' : 'unMute';
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    'event': 'command',
+                    'func': command,
+                    'args': ''
+                }), '*');
+            }
+        }
+
+        function updateMuteToggleVisibility() {
+            const container = document.getElementById('muteToggleContainer');
+            container.style.display = IMMERSIVE_MODE ? 'flex' : 'none';
+        }
 
         function playTrailer(key) {
             const overlay = document.getElementById('trailerOverlay');
             overlay.classList.add('active');
-            document.getElementById('videoContainer').innerHTML = `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1&controls=1" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`;
+            document.getElementById('videoContainer').innerHTML = `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1&controls=1" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
         }
         function closeTrailer() {
             document.getElementById('trailerOverlay').classList.remove('active');
@@ -977,12 +1295,15 @@
             }
         }
         
-        function loadBollywood() { renderGridPage('/discover/movie?with_original_language=hi&region=IN&sort_by=popularity.desc', 'Bollywood Hits', 'movie'); }
-        function loadGujarati() { renderGridPage('/discover/movie?with_original_language=gu&sort_by=popularity.desc', 'Gujarati Cinema', 'movie'); }
-        function loadSouthIndian() { renderGridPage('/discover/movie?with_original_language=te|ta&region=IN&sort_by=popularity.desc', 'South Indian Action', 'movie'); }
-        function loadIndianHorror() { renderGridPage('/discover/movie?with_genres=27&with_original_language=hi&sort_by=popularity.desc', 'Indian Horror Files', 'movie'); }
-        function loadAnime() { renderGridPage('/discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc', 'Anime World', 'tv'); }
-        function loadGenre(id, type) { renderGridPage(`/discover/${type}?with_genres=${id}&sort_by=popularity.desc`, 'Top Picks', type); }
+        function loadBollywood() { 
+            closeSidebar();
+            renderGridPage('/discover/movie?with_original_language=hi&region=IN&sort_by=popularity.desc', 'Bollywood Hits', 'movie'); 
+        }
+        function loadGujarati() { closeSidebar(); renderGridPage('/discover/movie?with_original_language=gu&sort_by=popularity.desc', 'Gujarati Cinema', 'movie'); }
+        function loadSouthIndian() { closeSidebar(); renderGridPage('/discover/movie?with_original_language=te|ta&region=IN&sort_by=popularity.desc', 'South Indian Action', 'movie'); }
+        function loadIndianHorror() { closeSidebar(); renderGridPage('/discover/movie?with_genres=27&with_original_language=hi&sort_by=popularity.desc', 'Indian Horror Files', 'movie'); }
+        function loadAnime() { closeSidebar(); renderGridPage('/discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc', 'Anime World', 'tv'); }
+        function loadGenre(id, type) { closeSidebar(); renderGridPage(`/discover/${type}?with_genres=${id}&sort_by=popularity.desc`, 'Top Picks', type); }
     </script>
 </body>
 </html>
