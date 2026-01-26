@@ -164,7 +164,7 @@
             display: flex;
             align-items: center;
             padding: 0 24px;
-            position: absolute;
+            position: fixed !important;
             top: 0; left: 0; right: 0;
             z-index: 50;
             transition: background 0.3s ease;
@@ -861,6 +861,11 @@ z-index: 10 !important; }
         
         let API_KEY = localStorage.getItem('tmdb_key') || DEFAULT_KEY;
         let IMMERSIVE_MODE = localStorage.getItem('immersive_mode') === 'true';
+        
+        
+        let immersiveCleanupTimer = null; // Tracks the removal countdown
+        
+        
         let MUTE_TRAILER = localStorage.getItem('mute_trailer') !== 'false'; // Default true
         let debounceTimer;
 
@@ -1357,35 +1362,77 @@ window.addEventListener('scroll', () => {
         
         // --- Smooth Immersive Toggle ---
         function toggleImmersive(checked) {
-            IMMERSIVE_MODE = checked;
-            localStorage.setItem('immersive_mode', checked);
-            updateMuteToggleVisibility();
+    IMMERSIVE_MODE = checked;
+    localStorage.setItem('immersive_mode', checked);
+    updateMuteToggleVisibility();
 
-            const hero = document.querySelector('.hero');
-            if (!hero) return; // No hero currently on screen
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
 
-            if (checked && currentHeroData) {
-                // Find trailer key from stored data and inject
-                let trailerKey = null;
-                if(currentHeroData.videos?.results) {
-                    const t = currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || 
-                              currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Teaser');
-                    if(t) trailerKey = t.key;
-                }
-                if(trailerKey) injectHeroVideo(trailerKey, hero);
+    // 1. CRITICAL: Cancel any pending removal if user toggled back ON quickly
+    if (immersiveCleanupTimer) {
+        clearTimeout(immersiveCleanupTimer);
+        immersiveCleanupTimer = null;
+    }
 
-            } else {
-                // Smoothly fade out then remove
-                const wrapper = hero.querySelector('.hero-video-wrapper');
-                const video = hero.querySelector('.hero-bg-video');
-                if (wrapper && video) {
-                    video.style.opacity = '0'; // Fade out
-                    setTimeout(() => {
-                        wrapper.remove(); // Remove after fade
-                    }, 1500); // Match CSS transition duration
-                }
+    const wrapper = hero.querySelector('.hero-video-wrapper');
+    const video = hero.querySelector('.hero-bg-video');
+
+    if (checked) {
+        // --- STATE: ON ---
+        
+        // Scenario A: Video exists (maybe fading out). Resurrect it immediately.
+        if (wrapper && video) {
+            video.style.transition = 'opacity 0.5s ease'; // Ensure fast transition
+            // Force browser to accept the change next tick
+            requestAnimationFrame(() => {
+                video.style.opacity = '1';
+                video.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            });
+            return;
+        }
+
+        // Scenario B: No video. Create it from scratch.
+        if (currentHeroData) {
+            let trailerKey = null;
+            if (currentHeroData.videos?.results) {
+                const t = currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || 
+                          currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+                if (t) trailerKey = t.key;
+            }
+
+            if (trailerKey) {
+                injectHeroVideo(trailerKey, hero);
+                
+                // FORCE START: Don't wait for Observer. Manually trigger immediately.
+                setTimeout(() => {
+                    const newVideo = hero.querySelector('.hero-bg-video');
+                    if (newVideo && IMMERSIVE_MODE) {
+                        newVideo.classList.add('visible'); // Trigger CSS Fade
+                        newVideo.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                    }
+                }, 100); // 100ms delay ensures DOM is ready for the message
             }
         }
+
+    } else {
+        // --- STATE: OFF ---
+        if (wrapper && video) {
+            // 1. Fade out visually
+            video.style.opacity = '0';
+            
+            // 2. Mute/Pause immediately so audio stops while fading
+            video.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+
+            // 3. Remove from DOM after fade (Saved to timer so we can cancel if user clicks ON)
+            immersiveCleanupTimer = setTimeout(() => {
+                if (!IMMERSIVE_MODE) { // Final check
+                    wrapper.remove();
+                }
+            }, 1500); // Matches your CSS transition
+        }
+    }
+}
 
         // --- Immediate Mute Toggle ---
         function toggleMute(checked) {
