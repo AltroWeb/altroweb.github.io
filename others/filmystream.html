@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Filmystream Pro</title>
+    
+    <!-- Fonts: SF Pro Display (Apple System Clone) -->
+    <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
+    
+    <!-- Icons: Phosphor Icons (Professional Grade) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --bg-main: #000000;
+            --bg-glass: rgba(22, 22, 24, 0.7);
+            --bg-card: #1c1c1e;
+            --accent: #E50914;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(235, 235, 245, 0.6);
+            --sidebar-w: 260px;
+            --header-h: 64px;
+            --radius-card: 12px;
+            --radius-btn: 8px;
+            --ease-apple: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- Global Font Application (Fixed) --- */
+        body, button, input, textarea, select {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 16px;
+        }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-glass);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.08);
+            z-index: 200;
+            flex-shrink: 0;
+            transition: transform 0.4s var(--ease-apple);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-text {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: white;
+            cursor: pointer;
+        }
+        .brand-highlight { color: var(--accent); }
+
+        .close-sidebar-btn {
+            display: none;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .nav-scroller {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 16px;
+        }
+
+        .menu-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin: 24px 12px 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border-radius: var(--radius-btn);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+            gap: 12px;
+        }
+
+        .nav-item i { font-size: 1.2rem; }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .surprise-btn {
+            background: linear-gradient(135deg, var(--accent), #ff4b59);
+            color: white !important;
+            margin-top: 20px;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+        }
+
+        /* --- Main Content --- */
+        .main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at top right, #1a1a1a 0%, #000 100%);
+            min-width: 0;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            position: fixed !important;
+            top: 0; left: 0; right: 0;
+            z-index: 50;
+            transition: background 0.3s ease;
+            gap: 16px;
+        }
+
+        .top-bar.scrolled {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: sticky;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.6rem;
+            cursor: pointer;
+            padding: 0;
+            align-items: center;
+        }
+
+        /* Fluid Search Container */
+        .search-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            height: 40px;
+            padding: 0 12px;
+            width: 320px;
+            max-width: 100%;
+            transition: all 0.3s var(--ease-apple);
+            gap: 10px;
+            position: relative; /* Ensure this is set */
+    overflow: visible !important; /* IMPORTANT: Allows dropdown blur to render outside container bounds */
+    z-index: 100;
+        }
+
+        .search-container:focus-within {
+            background: rgba(40,40,40,0.8);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 0 0 2px rgba(229,9,20,0.3);
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            color: white;
+            flex: 1;
+            font-size: 0.95rem;
+            min-width: 0;
+        }
+
+        .search-clear-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .search-clear-btn:hover { color: white; }
+        
+#searchHistory {
+    position: absolute;
+    top: calc(100% + 8px); /* Gap from search bar */
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    padding: 10px;
+    border-radius: 14px;
+    
+    /* THE FIX: Semi-translucent base is required to see blur */
+    background: rgba(20, 20, 20, 0.6) !important; 
+    
+    /* THE FIX: Force Hardware Acceleration */
+    transform: translateZ(0); 
+    -webkit-transform: translateZ(0);
+    
+    /* THE FIX: High Saturation helps the blur pop against dark backgrounds */
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+    
+    /* THE FIX: Border needs to be translucent white to define the glass edge */
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    z-index: 9999 !important;
+}
+
+/* Ensure history shows as flex when active */
+#searchHistory.active { 
+    display: flex !important; 
+}
+        .history-item {
+            padding: 10px;
+            color: #ccc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .history-item:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        .history-del-btn {
+            background: none; border: none; color: #666; cursor: pointer; padding: 4px;
+        }
+        .history-del-btn:hover { color: #ff4b59; }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            transition: 0.2s;
+        }
+        .icon-btn:hover { background: white; color: black; }
+
+        /* Content Area */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            padding-bottom: 60px !important;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            width: 100%;
+            min-height: 550px;
+            height: 80vh;
+            display: flex;
+            align-items: center;
+            background-size: cover;
+            background-position: center top;
+            padding: 120px 4% 40px;
+            overflow: hidden;
+            transition: background-image 0.5s ease;
+        }
+
+        /* --- PRO IMMERSIVE VIDEO STYLES --- */
+        .hero-video-wrapper {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-bg-video {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 100vw; height: 56.25vw;
+            min-height: 100vh;
+            min-width: 177.77vh;
+            transform: translate(-50%, -50%) scale(1.4);
+            opacity: 0;
+            transition: opacity 1.5s ease; /* Critical for smooth fade */
+        }
+        
+        .hero-bg-video.visible { opacity: 1; }
+
+        .hero-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, var(--bg-main) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.4) 100%);
+            z-index: 1;
+        }
+        .hero-vignette {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,0.95) 0%, transparent 60%);
+            z-index: 1;
+            background: linear-gradient(90deg, rgba(0,0,0,0.7) 0%, transparent 60%) !important;
+}
+
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 650px;
+            width: 100%;
+            animation: fadeUp 0.8s var(--ease-apple) forwards;
+        }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(229, 9, 20, 0.15);
+            color: var(--accent);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(229,9,20,0.2);
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            color: white;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            word-wrap: break-word;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 24px;
+        }
+
+        .meta-item { display: flex; align-items: center; gap: 6px; }
+
+        .hero-desc {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 32px;
+            max-width: 600px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .hero-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-btn);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary { background: #fff; color: #000; }
+        .btn-primary:hover { transform: scale(1.02); background: #f0f0f0; }
+
+        .btn-glass { background: rgba(255,255,255,0.15); color: #fff; backdrop-filter: blur(10px); }
+        .btn-glass:hover { transform: scale(1.02); background: rgba(255,255,255,0.25); }
+
+        /* Sections */
+        .section {
+            padding: 30px 4%;
+            opacity: 0;
+            animation: fadeIn 0.8s ease forwards 0.2s;
+        }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        .section-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Grids & Rows */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .row-scroll {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            scroll-snap-type: x mandatory;
+        }
+
+        .card {
+            position: relative;
+            background: var(--bg-card);
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            aspect-ratio: 2/3;
+            cursor: pointer;
+            transition: transform 0.3s;
+            flex: 0 0 150px;
+            scroll-snap-align: start;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent 60%);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        @media (hover: hover) {
+            .card:hover { transform: scale(1.05); z-index: 10; }
+            .card:hover .card-overlay { opacity: 1; }
+        }
+        @media (hover: none) {
+            .card-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent 50%); }
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.2;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+        .card-meta { font-size: 0.75rem; color: #ccc; }
+
+        /* Details Page Specifics */
+        .details-container {
+            padding: 40px 4%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .providers-list {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .provider-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        .provider-item:hover { transform: scale(1.1); }
+        .provider-logo {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .provider-fallback {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            background: #333;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .provider-name { font-size: 0.7rem; color: #aaa; }
+
+        /* Modals */
+        .modal-backdrop {
+            position: fixed; 
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5); 
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            z-index: 300;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-backdrop.active { display: flex; }
+
+        .modal-content {
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: modalUp 0.3s var(--ease-apple);
+        }
+        @keyframes modalUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-close-abs {
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(0,0,0,0.5); color: white;
+            border: none; width: 32px; height: 32px; border-radius: 50%;
+            cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;
+        }
+
+        .video-container { width: 100%; height: 100%; }
+
+        /* --- FIXED PRO TOGGLE SWITCH (Robust & Pixel Perfect) --- */
+        .switch {
+            position: relative;
+            display: block;
+            width: 52px; /* Fixed robust width */
+            height: 32px; /* Fixed robust height */
+            flex-shrink: 0;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #3a3a3c;
+            transition: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 28px;
+            width: 28px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input:checked + .slider { background-color: var(--accent); }
+        /* Robust math: 52px (width) - 2px (left) - 2px (right padding) - 28px (circle) = 20px translation */
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* --- Responsive Logic --- */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed; left: -100%; height: 100%;
+                box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+            }
+            .sidebar.active { left: 0; }
+            .close-sidebar-btn { display: flex; }
+            
+            .top-bar { padding: 0 16px; gap: 10px; }
+            .mobile-menu-btn { display: flex; }
+            
+            .search-container { flex: 1; width: auto; min-width: 0; }
+            .icon-btn { width: 36px; height: 36px; font-size: 1.2rem; }
+            
+            .hero-title { font-size: 2.2rem; }
+            .hero-btns { width: 100%; }
+            .btn { flex: 1; }
+            
+            .card { flex: 0 0 130px; }
+            .grid-container { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+        }
+
+        @media (max-width: 480px) {
+            .hero { min-height: 450px; }
+            .section { padding: 24px 16px; }
+            .card { flex: 0 0 120px; }
+            .grid-container { grid-template-columns: 1fr 1fr; gap: 12px; }
+        }
+        
+        
+      
+.glass-panel {
+    /* 1. Translucent Dark Base (Lower opacity = More Blur Visibility) */
+    background: rgba(20, 20, 20, 0.65) !important;
+    
+    /* 2. Heavy Blur + Saturation */
+    backdrop-filter: blur(35px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
+    
+    /* 3. Pro Borders & Shadows */
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+    
+    /* 4. Text Readability */
+    color: white !important;
+}  
+        
+        
+        
+        
+        
+
+/* --- FIX 2: The exact glass recipe used by your working Search Bar --- */
+.btn-glass-pro {
+    /* Milky white tint (same as search bar) */
+    background: rgba(255, 255, 255, 0.1); 
+    
+    /* The blur engine */
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    
+    /* Thin, crisp border */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    
+    /* Text shadow for readability against the now lighter background */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    
+    /* Smooth transition */
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.btn-glass-pro:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
+}
+
+/* Disabled State (No Trailer) */
+.btn-glass-disabled {
+    background: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+        
+        /* --- Z-INDEX STACK FIX --- */
+/* This forces the text & buttons above the black fade layer */
+.hero-content { z-index: 10 !important; } 
+
+.hero-tag { 
+backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+z-index: 10 !important; } 
+
+/* Optional: Ensure these stay below */
+.hero-vignette { z-index: 1 !important; }
+.hero-video-wrapper { z-index: 0 !important; }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-backdrop">
+        <div class="modal-content" style="padding: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="font-size:1.2rem;">Settings</h2>
+                <button onclick="closeSettings()" style="background:none; border:none; color:white; cursor:pointer;"><i class="ph ph-x" style="font-size:1.2rem;"></i></button>
+            </div>
+            
+            <div style="margin-bottom:25px;">
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:10px;">Appearance</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(44, 44, 46, 0.6); padding:15px; border-radius:10px; margin-bottom: 10px; backdrop-filter: blur(10px);">
+                    <div>
+                        <div style="font-weight:600;">Immersive Background</div>
+                        <div style="font-size:0.8rem; color:#888;">Auto-play trailers in hero</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="immersiveToggle" onchange="toggleImmersive(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- Conditional Mute Toggle -->
+                <div id="muteToggleContainer" style="display:none; justify-content:space-between; align-items:center; background:rgba(44, 44, 46, 0.6); padding:15px; border-radius:10px; backdrop-filter: blur(10px);">
+                    <div>
+                        <div style="font-weight:600;">Mute Trailer</div>
+                        <div style="font-size:0.8rem; color:#888;">Play background silently</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="muteToggle" onchange="toggleMute(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <p style="color:#aaa; font-size:0.9rem; margin-bottom:15px;">TMDB API Key (Optional):</p>
+            <input type="text" id="apiKeyInput" placeholder="API Key" style="width:100%; background:rgba(51, 51, 51, 0.6); border:none; padding:12px; color:white; border-radius:8px; margin-bottom:20px;">
+            <button class="btn btn-primary" onclick="saveSettings()" style="width:100%;">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- Trailer Overlay -->
+    <div id="trailerOverlay" class="modal-backdrop" style="background:black;">
+        <button class="modal-close-abs" style="top:20px; right:20px;" onclick="closeTrailer()"><i class="ph ph-x" style="font-size:1.5rem;"></i></button>
+        <div id="videoContainer" class="video-container"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-text" onclick="loadPage('home')">Filmy<span class="brand-highlight">stream</span></div>
+            <button class="close-sidebar-btn" onclick="toggleSidebar()"><i class="ph ph-x"></i></button>
+        </div>
+        
+        <div class="nav-scroller">
+            <div class="menu-label">Menu</div>
+            <div class="nav-item active" onclick="loadPage('home')"><i class="ph ph-house"></i> Home</div>
+            <div class="nav-item" onclick="loadPage('movies')"><i class="ph ph-film-strip"></i> Movies</div>
+            <div class="nav-item" onclick="loadPage('tv')"><i class="ph ph-television"></i> TV Shows</div>
+            <div class="nav-item" onclick="loadPage('upcoming')"><i class="ph ph-fire"></i> Trending</div>
+            
+            <div class="menu-label">Discover India</div>
+            <div class="nav-item" onclick="loadBollywood()"><i class="ph ph-film-strip"></i> Bollywood Hits</div>
+            <div class="nav-item" onclick="loadSouthIndian()"><i class="ph ph-lightning"></i> South Indian Action</div>
+            <div class="nav-item" onclick="loadGujarati()"><i class="ph ph-video"></i> Gujarati Cinema</div>
+            <div class="nav-item" onclick="loadIndianHorror()"><i class="ph ph-skull"></i> Indian Horror</div>
+            
+            <div class="menu-label">Global</div>
+            <div class="nav-item" onclick="loadAnime()"><i class="ph ph-magic-wand"></i> Anime World</div>
+            <div class="nav-item" onclick="loadGenre(878, 'movie')"><i class="ph ph-rocket"></i> Sci-Fi Universe</div>
+
+            <div class="nav-item surprise-btn" onclick="surpriseMe()">
+                <i class="ph ph-dice-five"></i> Surprise Me
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main View -->
+    <div class="main-view">
+        <header class="top-bar" id="topbar">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ph ph-list"></i></button>
+            
+            <div class="search-container">
+                <i class="ph ph-magnifying-glass" style="color:rgba(255,255,255,0.5); font-size:1.2rem;"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search (e.g. Marvel)...">
+                <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearch()"><i class="ph-fill ph-x-circle"></i></button>
+                <div class="search-history" id="searchHistory">
+                    <!-- Dynamic history -->
+                </div>
+            </div>
+            
+            <button class="icon-btn" onclick="openSettings()"><i class="ph ph-gear"></i></button>
+        </header>
+
+        <div class="content-scroll" id="contentArea">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_KEY = '3fd2be6f0c70a2a598f084ddfb75487c'; 
+        const BASE_URL = 'https://api.themoviedb.org/3';
+        const IMG_URL = 'https://image.tmdb.org/t/p/w500';
+        const BACKDROP_URL = 'https://image.tmdb.org/t/p/original';
+        
+        let API_KEY = localStorage.getItem('tmdb_key') || DEFAULT_KEY;
+        let IMMERSIVE_MODE = localStorage.getItem('immersive_mode') === 'true';
+        
+        
+        let immersiveCleanupTimer = null; // Tracks the removal countdown
+        
+        
+        let MUTE_TRAILER = localStorage.getItem('mute_trailer') !== 'false'; // Default true
+        let debounceTimer;
+
+        // Store current Hero Data for live toggling
+        let currentHeroData = null;
+
+        // Infinite Load States
+        let globalCurrentPage = 1;
+        let globalCurrentEndpoint = '';
+        let globalCurrentType = null;
+
+        // Scroll Observer for Intelligent Playback
+        const heroObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const iframe = entry.target.querySelector('iframe');
+                if(!iframe) return;
+                
+                // Smart Resume/Pause
+                if(entry.isIntersecting) {
+                    iframe.classList.add('visible'); // Fade In
+                    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                } else {
+                    iframe.classList.remove('visible'); // Fade Out to original BG
+                    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPage('home');
+            
+            // Sync Toggle UI
+            document.getElementById('immersiveToggle').checked = IMMERSIVE_MODE;
+            document.getElementById('muteToggle').checked = MUTE_TRAILER;
+            updateMuteToggleVisibility();
+
+            const scrollArea = document.getElementById('contentArea');
+            const topbar = document.getElementById('topbar');
+            scrollArea.addEventListener('scroll', () => {
+                if (scrollArea.scrollTop > 10) topbar.classList.add('scrolled');
+                else topbar.classList.remove('scrolled');
+            });
+
+            // Enhanced Search
+            const sInput = document.getElementById('searchInput');
+            const sClear = document.getElementById('searchClearBtn');
+
+            sInput.addEventListener('input', (e) => {
+                sClear.style.display = e.target.value ? 'flex' : 'none';
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => handleSmartSearch(e.target.value), 400); 
+            });
+
+            sInput.addEventListener('focus', showSearchHistory);
+            sInput.addEventListener('blur', () => setTimeout(() => document.getElementById('searchHistory').classList.remove('active'), 200));
+        });
+
+        // --- Recommendation Algorithm ---
+        function trackUserPreference(details) {
+            if(!details.genres) return;
+            let prefs = JSON.parse(localStorage.getItem('user_genres') || '{}');
+            details.genres.forEach(g => {
+                prefs[g.id] = (prefs[g.id] || 0) + 1;
+            });
+            localStorage.setItem('user_genres', JSON.stringify(prefs));
+        }
+
+        async function getPersonalizedRecs() {
+            let prefs = JSON.parse(localStorage.getItem('user_genres') || '{}');
+            const sorted = Object.entries(prefs).sort((a,b) => b[1] - a[1]);
+            if(sorted.length === 0) return null;
+            
+            const topGenre = sorted[0][0]; 
+            const data = await fetchData(`/discover/movie?with_genres=${topGenre}&sort_by=popularity.desc`);
+            if(data && data.results) return { genreId: topGenre, items: data.results };
+            return null;
+        }
+
+        // --- Navigation ---
+        async function loadPage(page, data = null) {
+            closeSidebar();
+            const content = document.getElementById('contentArea');
+            content.scrollTo({top:0, behavior:'smooth'});
+            content.innerHTML = '<div style="height:100vh; display:flex; justify-content:center; align-items:center;"><i class="ph ph-spinner-gap" style="font-size:2rem; animation:spin 1s infinite linear;"></i></div><style>@keyframes spin {to{transform:rotate(360deg)}}</style>';
+            
+            // Reset current hero data
+            currentHeroData = null;
+
+            if (page === 'home') await renderHome();
+            else if (page === 'movies') await renderGridPage('/movie/popular', 'Popular Movies', 'movie');
+            else if (page === 'tv') await renderGridPage('/tv/popular', 'TV Shows', 'tv');
+            else if (page === 'upcoming') await renderGridPage('/trending/all/week', 'Trending Now', null);
+            else if (page === 'details' && data) await renderDetailsPage(data);
+        }
+
+        // --- Renderers ---
+        async function renderHome() {
+            const content = document.getElementById('contentArea');
+            content.innerHTML = ''; 
+
+            const trending = await fetchData('/trending/all/day');
+            if (trending && trending.results.length > 0) {
+                const idx = Math.floor(Math.random() * 5);
+                const item = trending.results[idx] || trending.results[0];
+                const details = await fetchData(`/${item.media_type}/${item.id}?append_to_response=videos,images`);
+                renderHero(details, item.media_type, true);
+            }
+
+            const recs = await getPersonalizedRecs();
+            if(recs) {
+                createRow('For You', recs.items);
+            }
+
+            createRow('Trending Now', trending.results);
+            await loadRowAsync('Top Rated Movies', '/movie/top_rated', 'movie');
+            await loadRowAsync('Netflix Popular', '/discover/tv?with_networks=213&sort_by=popularity.desc', 'tv');
+            await loadRowAsync('Bollywood Hits', '/discover/movie?with_original_language=hi&region=IN&sort_by=popularity.desc', 'movie');
+        }
+
+        async function renderDetailsPage(basicItem) {
+            const type = basicItem.media_type || (basicItem.title ? 'movie' : 'tv');
+            const details = await fetchData(`/${type}/${basicItem.id}?append_to_response=videos,credits,recommendations,watch/providers`);
+            
+            trackUserPreference(details);
+
+            const content = document.getElementById('contentArea');
+            content.innerHTML = '';
+
+            renderHero(details, type, false);
+
+            const container = document.createElement('div');
+            container.className = 'details-container';
+            container.style.animation = 'fadeIn 0.5s ease 0.3s forwards';
+            container.style.opacity = '0';
+
+            const providers = details['watch/providers']?.results?.['IN'] || details['watch/providers']?.results?.['US'];
+            let providerHTML = '';
+            
+            let uniqueList = [];
+            if (providers) {
+                const list = [...(providers.flatrate || []), ...(providers.buy || []), ...(providers.rent || [])];
+                uniqueList = Array.from(new Map(list.map(item => [item.provider_id, item])).values()).slice(0, 8);
+            }
+
+            providerHTML = `
+                <div style="margin-bottom: 40px;">
+                    <h3 style="margin-bottom:15px; font-size:1.2rem; display:flex; align-items:center; gap:8px;">
+                        <i class="ph-fill ph-monitor-play" style="color:var(--accent);"></i> Available on
+                    </h3>
+                    <div class="providers-list">
+                        ${uniqueList.length > 0 ? uniqueList.map(p => {
+                            const title = details.title || details.name;
+                            const link = getProviderDeepLink(p.provider_name, title);
+                            return `
+                            <a href="${link}" target="_blank" class="provider-item" title="Watch on ${p.provider_name}">
+                                <img src="${IMG_URL + p.logo_path}" class="provider-logo" alt="${p.provider_name}">
+                            </a>
+                            `;
+                        }).join('') : ''}
+                        
+                        <a href="${getProviderDeepLink('google', details.title || details.name)}" target="_blank" class="provider-item" title="Find Online">
+                            <div class="provider-fallback"><i class="ph ph-magnifying-glass"></i></div>
+                            <span class="provider-name">Find Online</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            let castHTML = '';
+            if(details.credits && details.credits.cast) {
+                const topCast = details.credits.cast.slice(0, 8);
+                castHTML = `
+                     <div style="margin-bottom: 40px;">
+                        <h3 style="margin-bottom:15px; font-size:1.2rem;">Top Cast</h3>
+                        <div style="display:flex; gap:15px; overflow-x:auto; padding-bottom:10px;">
+                            ${topCast.map(c => `
+                                <div style="min-width:100px; text-align:center;">
+                                    <img src="${c.profile_path ? IMG_URL + c.profile_path : 'https://via.placeholder.com/100x150/333/fff?text=No+Img'}" 
+                                         style="width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom:8px; box-shadow:0 4px 10px rgba(0,0,0,0.3);">
+                                    <div style="font-size:0.8rem; font-weight:600;">${c.name}</div>
+                                    <div style="font-size:0.75rem; color:#888;">${c.character}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = providerHTML + castHTML;
+            content.appendChild(container);
+
+            if (details.recommendations && details.recommendations.results.length > 0) {
+                createRow('More Like This', details.recommendations.results);
+            }
+        }
+        
+        // --- SMART DEEP LINK SYSTEM ---
+        function getProviderDeepLink(providerName, title) {
+            const t = encodeURIComponent(title);
+            const p = providerName.toLowerCase();
+            
+            if(p.includes('netflix')) return `https://www.netflix.com/search?q=${t}`;
+            if(p.includes('hotstar') || p.includes('disney')) return `https://www.hotstar.com/in/search?q=${t}`;
+            if(p.includes('prime') || p.includes('amazon')) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${t}`;
+            if(p.includes('jio')) return `https://www.jiocinema.com/search?q=${t}`;
+            if(p.includes('sony')) return `https://www.sonyliv.com/search?query=${t}`;
+            if(p.includes('zee5')) return `https://www.zee5.com/search?q=${t}`;
+            if(p.includes('apple')) return `https://tv.apple.com/search?term=${t}`;
+            if(p.includes('youtube')) return `https://www.youtube.com/results?search_query=${t}`;
+
+            return `https://www.google.com/search?q=watch+${t}+on+${p}+online`;
+        }
+
+        function renderHero(data, type, isHome) {
+            currentHeroData = data; // Save for live toggling
+            let hero = document.createElement('div');
+            hero.className = 'hero';
+            
+            const bg = data.backdrop_path ? BACKDROP_URL + data.backdrop_path : (data.poster_path ? IMG_URL + data.poster_path : '');
+            hero.style.backgroundImage = `url('${bg}')`;
+            
+            const title = data.title || data.name;
+            const desc = data.overview || 'No overview available.';
+            const year = (data.release_date || data.first_air_date || '').substring(0,4);
+            const rating = data.vote_average ? data.vote_average.toFixed(1) : 'N/A';
+            const genres = data.genres ? data.genres.map(g => g.name).slice(0,3).join(' • ') : '';
+
+            let trailerKey = null;
+            if(data.videos?.results) {
+                const t = data.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || 
+                          data.videos.results.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+                if(t) trailerKey = t.key;
+            }
+
+            hero.innerHTML = `
+                <div class="hero-gradient"></div>
+                <div class="hero-vignette"></div>
+                <div class="hero-content">
+                    ${isHome ? '<div class="hero-tag">#1 Suggestion</div>' : ''}
+                    <div class="hero-title">${title}</div>
+                    <div class="hero-meta">
+                        <span class="meta-item" style="color:#46d369; font-weight:700;">${Math.round(data.vote_average * 10)}% Match</span>
+                        <span class="meta-item">${year}</span>
+                        <span class="meta-item"><i class="ph-fill ph-star" style="color:gold;"></i> ${rating}</span>
+                        <span style="border:1px solid rgba(255,255,255,0.4); padding:0 4px; border-radius:3px; font-size:0.7rem;">HD</span>
+                    </div>
+                    <div style="font-size:0.9rem; color:#aaa; margin-bottom:12px;">${genres}</div>
+                    <div class="hero-desc">${desc}</div>
+<div class="hero-btns">
+    ${trailerKey 
+        ? `<button class="btn btn-primary" onclick="playTrailer('${trailerKey}')"><i class="ph-fill ph-play"></i> Play Trailer</button>` 
+        
+        : `<button class="btn btn-glass-disabled"><i class="ph-fill ph-prohibit"></i> No Trailer</button>`
+    }
+
+    ${isHome 
+        /* Use the new pro glass class */
+        ? `<button class="btn btn-glass-pro" onclick='loadPage("details", ${JSON.stringify(data).replace(/'/g, "&#39;")})'><i class="ph ph-info"></i> More Info</button>` 
+        : ''
+    }
+</div>
+                </div>
+            `;
+            
+            const content = document.getElementById('contentArea');
+            if(isHome) content.insertBefore(hero, content.firstChild);
+            else content.appendChild(hero);
+
+            // Inject video if mode is active
+            if (IMMERSIVE_MODE && trailerKey) {
+                injectHeroVideo(trailerKey, hero);
+            }
+        }
+
+        // Helper to inject video
+        function injectHeroVideo(key, heroElement) {
+            if (!heroElement) heroElement = document.querySelector('.hero');
+            if (!heroElement) return;
+
+            // Check if already exists
+            if (heroElement.querySelector('.hero-video-wrapper')) return;
+
+            const vidContainer = document.createElement('div');
+            vidContainer.className = 'hero-video-wrapper';
+            const muteParam = MUTE_TRAILER ? '&mute=1' : '';
+            vidContainer.innerHTML = `<iframe 
+                class="hero-bg-video"
+                src="https://www.youtube.com/embed/${key}?autoplay=1${muteParam}&controls=0&disablekb=1&fs=0&loop=1&playlist=${key}&modestbranding=1&rel=0&iv_load_policy=3&enablejsapi=1" 
+                frameborder="0" 
+                allow="autoplay; encrypted-media" 
+                >
+            </iframe>`;
+            heroElement.insertBefore(vidContainer, heroElement.firstChild);
+            heroObserver.observe(heroElement);
+        }
+
+        function createRow(title, items) {
+            const section = document.createElement('div');
+            section.className = 'section';
+            section.innerHTML = `
+                <div class="section-header">
+                    <span>${title}</span>
+                </div>
+                <div class="row-scroll"></div>
+            `;
+            const container = section.querySelector('.row-scroll');
+            items.forEach(item => {
+                if(item.poster_path) container.appendChild(createCard(item, null));
+            });
+            document.getElementById('contentArea').appendChild(section);
+        }
+
+        function createCard(item, forcedType) {
+            const el = document.createElement('div');
+            el.className = 'card';
+            const title = item.title || item.name;
+            const date = (item.release_date || item.first_air_date || '').substring(0,4);
+            if(!item.media_type && forcedType) item.media_type = forcedType;
+
+            el.innerHTML = `
+                <img src="${IMG_URL + item.poster_path}" loading="lazy" class="card-img" alt="${title}">
+                <div class="card-overlay">
+                    <div class="card-title">${title}</div>
+                    <div class="card-meta">${date}</div>
+                </div>
+            `;
+            el.addEventListener('click', () => loadPage('details', item));
+            return el;
+        }
+
+        // --- INFINITE GRID LOGIC ---
+        
+        async function renderGridPage(endpoint, title, forcedType) {
+            globalCurrentPage = 1;
+            globalCurrentEndpoint = endpoint;
+            globalCurrentType = forcedType;
+
+            const content = document.getElementById('contentArea');
+            content.innerHTML = `
+                <div class="section" style="padding-top:80px;">
+                    <div class="section-header" style="font-size:1.5rem;">${title}</div>
+                    <div class="grid-container" id="gridTarget"></div>
+                    <div id="noResultsMsg" style="display:none; text-align:center; padding:40px; color:#aaa;">No results found. But check these out:</div>
+                    <div id="loadMoreContainer" style="display:flex; justify-content:center; padding:40px 0;">
+                        <button class="btn btn-glass" id="loadMoreBtn" onclick="loadNextPage()">Load More</button>
+                    </div>
+                </div>
+            `;
+            await loadNextPage();
+        }
+
+        async function loadNextPage() {
+            const btn = document.getElementById('loadMoreBtn');
+            if(btn) {
+                btn.innerHTML = '<i class="ph ph-spinner-gap" style="animation:spin 1s infinite linear"></i> Loading...';
+                btn.style.pointerEvents = 'none';
+            }
+
+            const separator = globalCurrentEndpoint.includes('?') ? '&' : '?';
+            const endpointWithPage = `${globalCurrentEndpoint}${separator}page=${globalCurrentPage}`;
+            
+            let data = await fetchData(endpointWithPage);
+            
+            if(globalCurrentPage === 1 && (!data || !data.results || data.results.length === 0)) {
+                document.getElementById('noResultsMsg').style.display = 'block';
+                data = await fetchData(`/trending/all/day?page=1`);
+            } else {
+                 document.getElementById('noResultsMsg').style.display = 'none';
+            }
+
+            if (data && data.results && data.results.length > 0) {
+                const grid = document.getElementById('gridTarget');
+                data.results.forEach(item => {
+                     if(item.poster_path) grid.appendChild(createCard(item, globalCurrentType));
+                });
+                
+                globalCurrentPage++;
+                
+                if(btn) {
+                    btn.innerHTML = 'Load More';
+                    btn.style.pointerEvents = 'auto';
+                }
+            } else {
+                if(btn) btn.style.display = 'none';
+            }
+        }
+
+        // --- Pro Search Features ---
+        async function handleSmartSearch(q) {
+            if(!q) return;
+            
+            let hist = JSON.parse(localStorage.getItem('search_history') || '[]');
+            if(!hist.includes(q)) {
+                hist.unshift(q);
+                if(hist.length > 5) hist.pop();
+                localStorage.setItem('search_history', JSON.stringify(hist));
+            }
+            
+            closeSidebar();
+            await renderGridPage(`/search/multi?query=${encodeURIComponent(q)}`, `Results for: "${q}"`, null);
+        }
+
+        function showSearchHistory() {
+    const input = document.getElementById('searchInput');
+    const historyBox = document.getElementById('searchHistory');
+    const hist = JSON.parse(localStorage.getItem('search_history') || '[]');
+
+    if(hist.length === 0) {
+        historyBox.classList.remove('active');
+        return;
+    }
+
+    // --- THE ROBUST FIX: TELEPORTATION ---
+    // Move the history box to <body> so it is not trapped inside the header's blur context
+    if (historyBox.parentElement !== document.body) {
+        document.body.appendChild(historyBox);
+    }
+
+    // Calculate strict position based on the input's current location on screen
+    const rect = input.getBoundingClientRect();
+    
+const r = document.querySelector('.search-container').getBoundingClientRect(); Object.assign(document.getElementById('searchHistory').style, { top: (r.bottom + 15) + 'px', left: r.left + 'px', width: r.width + 'px' });
+
+    // Render Content
+    historyBox.innerHTML = `
+        <div style="padding:6px 12px; font-size:0.75rem; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Recent</div>
+        ${hist.map(term => `
+            <div class="history-item" style="padding:12px; border-radius:8px; display:flex; align-items:center; justify-content:space-between; transition:0.2s;">
+                <span onclick="triggerSearch('${term}')" style="flex:1; cursor:pointer; display:flex; align-items:center; gap:10px; font-size:0.95rem; color:rgba(255,255,255,0.9);">
+                    <i class="ph ph-clock-counter-clockwise" style="color:var(--accent)"></i> ${term}
+                </span>
+                <button onclick="removeFromHistory('${term}')" style="background:none; border:none; color:rgba(255,255,255,0.3); padding:4px; cursor:pointer; display:flex;">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+        `).join('')}
+    `;
+    
+    
+    historyBox.classList.add('active');
+}
+
+// Helper to handle search trigger from the moved element
+function triggerSearch(term) {
+    const input = document.getElementById('searchInput');
+    input.value = term;
+    handleSmartSearch(term);
+    document.getElementById('searchHistory').classList.remove('active');
+}
+
+// Close the floating menu if user scrolls (since it's fixed position)
+window.addEventListener('scroll', () => {
+    document.getElementById('searchHistory').classList.remove('active');
+}, { passive: true });
+
+        function removeFromHistory(term) {
+            let hist = JSON.parse(localStorage.getItem('search_history') || '[]');
+            hist = hist.filter(h => h !== term);
+            localStorage.setItem('search_history', JSON.stringify(hist));
+            showSearchHistory();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            input.focus();
+            document.getElementById('searchClearBtn').style.display = 'none';
+        }
+
+        // --- Interactivity ---
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+        function closeSidebar() { document.getElementById('sidebar').classList.remove('active'); }
+
+        async function surpriseMe() {
+            closeSidebar();
+            const content = document.getElementById('contentArea');
+            content.innerHTML = '<div style="height:100vh; display:flex; justify-content:center; align-items:center;"><i class="ph ph-dice-five" style="font-size:3rem; animation:spin 0.5s infinite;"></i></div>';
+            try {
+                const randomPage = Math.floor(Math.random() * 10) + 1;
+                const listData = await fetchData(`/trending/all/week?page=${randomPage}`);
+                if (listData && listData.results.length > 0) {
+                    const randomItem = listData.results[Math.floor(Math.random() * listData.results.length)];
+                    loadPage('details', randomItem);
+                } else { loadPage('home'); }
+            } catch(e) { loadPage('home'); }
+        }
+
+        function openSettings() { document.getElementById('settingsModal').classList.add('active'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
+        function saveSettings() {
+            const val = document.getElementById('apiKeyInput').value.trim();
+            if(val) { localStorage.setItem('tmdb_key', val); API_KEY = val; location.reload(); }
+        }
+        
+        // --- Smooth Immersive Toggle ---
+        function toggleImmersive(checked) {
+    IMMERSIVE_MODE = checked;
+    localStorage.setItem('immersive_mode', checked);
+    updateMuteToggleVisibility();
+
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
+
+    // 1. CRITICAL: Cancel any pending removal if user toggled back ON quickly
+    if (immersiveCleanupTimer) {
+        clearTimeout(immersiveCleanupTimer);
+        immersiveCleanupTimer = null;
+    }
+
+    const wrapper = hero.querySelector('.hero-video-wrapper');
+    const video = hero.querySelector('.hero-bg-video');
+
+    if (checked) {
+        // --- STATE: ON ---
+        
+        // Scenario A: Video exists (maybe fading out). Resurrect it immediately.
+        if (wrapper && video) {
+            video.style.transition = 'opacity 0.5s ease'; // Ensure fast transition
+            // Force browser to accept the change next tick
+            requestAnimationFrame(() => {
+                video.style.opacity = '1';
+                video.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            });
+            return;
+        }
+
+        // Scenario B: No video. Create it from scratch.
+        if (currentHeroData) {
+            let trailerKey = null;
+            if (currentHeroData.videos?.results) {
+                const t = currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Trailer') || 
+                          currentHeroData.videos.results.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+                if (t) trailerKey = t.key;
+            }
+
+            if (trailerKey) {
+                injectHeroVideo(trailerKey, hero);
+                
+                // FORCE START: Don't wait for Observer. Manually trigger immediately.
+                setTimeout(() => {
+                    const newVideo = hero.querySelector('.hero-bg-video');
+                    if (newVideo && IMMERSIVE_MODE) {
+                        newVideo.classList.add('visible'); // Trigger CSS Fade
+                        newVideo.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                    }
+                }, 100); // 100ms delay ensures DOM is ready for the message
+            }
+        }
+
+    } else {
+        // --- STATE: OFF ---
+        if (wrapper && video) {
+            // 1. Fade out visually
+            video.style.opacity = '0';
+            
+            // 2. Mute/Pause immediately so audio stops while fading
+            video.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+
+            // 3. Remove from DOM after fade (Saved to timer so we can cancel if user clicks ON)
+            immersiveCleanupTimer = setTimeout(() => {
+                if (!IMMERSIVE_MODE) { // Final check
+                    wrapper.remove();
+                }
+            }, 1500); // Matches your CSS transition
+        }
+    }
+}
+
+        // --- Immediate Mute Toggle ---
+        function toggleMute(checked) {
+            MUTE_TRAILER = checked;
+            localStorage.setItem('mute_trailer', checked);
+
+            // Apply immediately to current iframe without reload
+            const iframe = document.querySelector('.hero-bg-video');
+            if (iframe) {
+                const command = checked ? 'mute' : 'unMute';
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    'event': 'command',
+                    'func': command,
+                    'args': ''
+                }), '*');
+            }
+        }
+
+        function updateMuteToggleVisibility() {
+            const container = document.getElementById('muteToggleContainer');
+            container.style.display = IMMERSIVE_MODE ? 'flex' : 'none';
+        }
+
+        function playTrailer(key) {
+            const overlay = document.getElementById('trailerOverlay');
+            overlay.classList.add('active');
+            document.getElementById('videoContainer').innerHTML = `<iframe src="https://www.youtube.com/embed/${key}?autoplay=1&controls=1" style="width:100%; height:100%; border:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+        }
+        function closeTrailer() {
+            document.getElementById('trailerOverlay').classList.remove('active');
+            document.getElementById('videoContainer').innerHTML = '';
+        }
+
+        async function fetchData(endpoint) {
+            const separator = endpoint.includes('?') ? '&' : '?';
+            const url = `${BASE_URL}${endpoint}${separator}api_key=${API_KEY}&language=en-US&include_adult=false`;
+            try {
+                const res = await fetch(url);
+                return await res.json();
+            } catch (e) { return null; }
+        }
+        
+        async function loadRowAsync(title, endpoint, type) {
+            const data = await fetchData(endpoint);
+            if(data && data.results) {
+                if(type) data.results.forEach(i => i.media_type = type);
+                createRow(title, data.results);
+            }
+        }
+        
+        function loadBollywood() { 
+            closeSidebar();
+            renderGridPage('/discover/movie?with_original_language=hi&region=IN&sort_by=popularity.desc', 'Bollywood Hits', 'movie'); 
+        }
+        function loadGujarati() { closeSidebar(); renderGridPage('/discover/movie?with_original_language=gu&sort_by=popularity.desc', 'Gujarati Cinema', 'movie'); }
+        function loadSouthIndian() { closeSidebar(); renderGridPage('/discover/movie?with_original_language=te|ta&region=IN&sort_by=popularity.desc', 'South Indian Action', 'movie'); }
+        function loadIndianHorror() { closeSidebar(); renderGridPage('/discover/movie?with_genres=27&with_original_language=hi&sort_by=popularity.desc', 'Indian Horror Files', 'movie'); }
+        function loadAnime() { closeSidebar(); renderGridPage('/discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc', 'Anime World', 'tv'); }
+        function loadGenre(id, type) { closeSidebar(); renderGridPage(`/discover/${type}?with_genres=${id}&sort_by=popularity.desc`, 'Top Picks', type); }
+    </script>
+</body>
+</html>
