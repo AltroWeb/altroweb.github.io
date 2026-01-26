@@ -614,7 +614,7 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
 <div class="mobile-menu" id="mobile-menu">
     <a onclick="mobileNavigate('home')">Overview</a>
     
-    <a onclick="switchView('search'); triggerSearch('')" id="link-search">Search</a>
+    <a onclick="switchView('search'); triggerSearch('')">Search</a>
     
     <a onclick="mobileNavigate('docs')">Documentation</a>
     <a onclick="mobileNavigate('support')">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
@@ -822,11 +822,11 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
             
             <li><strong>Icon:</strong> Provide a direct URL to a square image (PNG/JPG).</li>
             <li><strong>Source Code:</strong> Select your method based on the types above:
-                <ul style="margin-top:5px; color:var(--text-secondary);">
-                    <li><em>Embed URL:</em> Paste your https:// link.</li>
-                    <li><em>Code Upload:</em> Paste raw HTML. (Select "Native" checkbox only if you have verification).</li>
-                </ul>
-            </li>
+    <ul style="margin-top:5px; color:var(--text-secondary);">
+        <li><em>Embed URL:</em> Paste your https:// link.</li>
+        <li><em>Code Upload:</em> Paste raw HTML. (Select "Native" checkbox only if you have verification).</li>
+    </ul>
+</li>
             <li>Click <strong>Publish</strong>. Your app is now live in the Store!</li>
         </ol>
     </div>
@@ -1277,24 +1277,13 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
                             <strong>No Persistence Abuse:</strong> Do not use <code>localStorage</code> to make your mod impossible to remove. Users must be able to fix issues by clearing data or using Safe Mode.
                         </li>
                     </ul>
-                </div>
-
-
-
-<br>
+                    
+                    
+                    
                     <strong>Console Defense</strong>
                     <p>For security, the Simulator automatically revokes <code>Root</code> privileges when the system is idle. If you try to run `iOS.injectMod()` from the browser console, it will fail. You must open a <strong>Sideloaded App</strong> (which grants temporary Root access) to execute system-level commands.</p>
 
-
-
-
-            
-            
-            
-                    
-                    
-                    
-                   <div id="doc-iap" class="doc-block">
+                </div> <div id="doc-iap" class="doc-block">
     <h3>The .IAP Package System</h3>
     <p>The <strong>iOS App Package (.iap)</strong> is a secure, encrypted file format designed for sharing apps offline. Unlike standard HTML files, .iap packages are tamper-proof and cryptographically signed.</p>
 
@@ -1315,13 +1304,16 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
         </div>
     </div>
 
-    <h4>How to Use</h4>
+<h4>How to Use</h4>
     <p>Installing a package is simple and works entirely offline.</p>
-    <div class="code-box" style="white-space: normal;">
-        1. Open the <strong>Sideloader</strong> app.<br>
-        2. Tap <strong>"Import .iap Package"</strong> at the top of the list.<br>
-        3. Select the file from your device.<br>
-        4. Review the App Name, Author, and Permissions before confirming.
+    
+    <div class="info-box">
+        <ol style="margin: 0; padding-left: 20px; line-height: 1.6;">
+            <li style="margin-bottom: 5px;">Open the <strong>Sideloader</strong> app.</li>
+            <li style="margin-bottom: 5px;">Tap <strong>"Import .iap Package"</strong> at the top of the list.</li>
+            <li style="margin-bottom: 5px;">Select the file from your device.</li>
+            <li>Review the App Name, Author, and Permissions before confirming.</li>
+        </ol>
     </div>
 
     <h4>Creating Packages</h4>
@@ -1343,9 +1335,9 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
     </div>
 </div> 
                     
-  </main>                  
+  
                     
-                    
+                    </main>                  
                     
             
         </div>
@@ -2304,6 +2296,10 @@ window.navigateToResult = function(view, hash) {
             const href = link.getAttribute('href');
             if (href && href.startsWith('#')) {
                 Cache.sidebarLinks.set(href.substring(1), link); // Map ID to Link
+                
+                
+                link.addEventListener('click', () => { document.querySelectorAll('.docs-sidebar a').forEach(el => el.classList.remove('active')); link.classList.add('active'); Cache.activeLink = link; });
+                
             }
         });
     }
