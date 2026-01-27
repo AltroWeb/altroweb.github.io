@@ -7179,6 +7179,81 @@ window.sideloader = new Sideloader();
     }
 })();
 
+
+
+
+
+// --- FIX: RESTORE NAVBAR STATE ON APP OPEN ---
+
+
+(function upgradeMemorySystem() {
+    // 1. Initialize Memory Bank
+    iOS.scrollMemory = {};
+
+    // 2. Patch 'killAppFrame' (The logic that enforces the Max 3 Limit)
+    // We extend this to also wipe the scroll memory when an app is killed.
+    const originalKill = iOS.killAppFrame.bind(iOS);
+    iOS.killAppFrame = function(appId) {
+        // Run original logic (removes iframes)
+        originalKill(appId);
+        
+        // NEW: Wipe the memory for this specific app
+        // This ensures that if it's re-opened later, it starts fresh at 0
+        if (this.scrollMemory[appId] !== undefined) {
+            console.log(`Memory: Purging state for ${appId} (Background Limit Reached)`);
+            delete this.scrollMemory[appId];
+        }
+    };
+
+    // 3. Patch 'closeApp' to SAVE state
+    const originalClose = iOS.closeApp.bind(iOS);
+    iOS.closeApp = function() {
+        if (this.activeWindow) {
+            const appName = this.activeWindow.getAttribute('data-app');
+            // Support both main window scrolling and iframe scrolling
+            const mainScroller = this.activeWindow.querySelector('.app-content-scroll');
+            const iframe = this.activeWindow.querySelector(`iframe[data-app-id="${appName}"]`);
+            
+            // Priority: Save Iframe scroll (if accessible) -> Main Scroller -> 0
+            let scrollTop = 0;
+            if (mainScroller) {
+                scrollTop = mainScroller.scrollTop;
+            }
+            
+            // Only save if we have a valid app name
+            if (appName) {
+                this.scrollMemory[appName] = scrollTop;
+            }
+        }
+        originalClose();
+    };
+
+    // 4. Patch 'openApp' to RESTORE state
+    const originalOpen = iOS.openApp.bind(iOS);
+    iOS.openApp = function(el, appName, theme) {
+        originalOpen(el, appName, theme);
+
+        setTimeout(() => {
+            if (this.activeWindow) {
+                const currentApp = this.activeWindow.getAttribute('data-app');
+                const scroller = this.activeWindow.querySelector('.app-content-scroll');
+
+                if (scroller) {
+                    // Check if memory exists (it might have been deleted by killAppFrame)
+                    // If it exists, restore it. If not, default to 0.
+                    const savedPos = (this.scrollMemory[currentApp] !== undefined) ? this.scrollMemory[currentApp] : 0;
+                    
+                    scroller.scrollTop = savedPos;
+                    
+                    // Trigger Scroll Event (Updates Navbar transparency immediately)
+                    scroller.dispatchEvent(new Event('scroll'));
+                }
+            }
+        }, 10); // Tiny delay to ensure DOM is swapped
+    };
+})();
+
+
         
         
     </script>
