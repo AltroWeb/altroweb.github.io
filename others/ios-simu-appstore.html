@@ -4358,6 +4358,11 @@ if (this.isDarkMode) {
                 if (savedWallpaper && this.wallpaper) {
                     this.wallpaper.style.backgroundImage = `url('${savedWallpaper}')`;
                 }
+                
+                
+                this.checkWallpaperBrightness();
+                
+                
                 // -----------------------------
                 this.initGestures();
                 this.initScrollEffects();
@@ -5284,13 +5289,14 @@ initMessageListeners() {
                          this.statusBar.classList.remove('dark-text');
                          this.gestureBar.classList.remove('dark-bar');
                     } else {
-                        if (this.isDarkMode) {
-                            this.statusBar.classList.remove('dark-text');
-                            this.gestureBar.classList.remove('dark-bar');
-                        } else {
-                            this.statusBar.classList.add('dark-text');
-                            this.gestureBar.classList.add('dark-bar');
-                        }
+                        
+if (this.isDarkMode) document.body.classList.add('dark-mode');
+else document.body.classList.remove('dark-mode');
+
+
+this.checkWallpaperBrightness();
+
+
                     }
                 }
             }
@@ -5743,7 +5749,57 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 }
             }
             
+checkWallpaperBrightness() {
+    // 1. IGNORE if Dark Mode is active (Keep text white)
+    if (this.isDarkMode) {
+        this.statusBar.classList.remove('dark-text');
+        this.gestureBar.classList.remove('dark-bar');
+        return;
+    }
 
+    // 2. Get current wallpaper URL
+    let url = this.wallpaper.style.backgroundImage;
+    if (!url || url === 'none') return;
+    
+    // Clean URL syntax
+    url = url.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+
+    // 3. Process Image
+    const img = new Image();
+    img.crossOrigin = "Anonymous"; // Required for Unsplash/External images
+    img.src = url;
+
+    img.onload = () => {
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1;
+            canvas.height = 1;
+            
+            // 4. Sample ONLY the top 50px (Status Bar area)
+            // We squash the top strip into a single pixel to get the average color
+            ctx.drawImage(img, 0, 0, img.width, 50, 0, 0, 1, 1);
+            
+            const p = ctx.getImageData(0, 0, 1, 1).data;
+            // Calculate Luminance (Human perception formula)
+            const luma = 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2];
+
+            // 5. Apply Contrast
+            // Threshold 150: If brighter than grey, use black text. Else white.
+            if (luma > 150) {
+                this.statusBar.classList.add('dark-text');
+                this.gestureBar.classList.add('dark-bar');
+            } else {
+                this.statusBar.classList.remove('dark-text');
+                this.gestureBar.classList.remove('dark-bar');
+            }
+        } catch (e) {
+            // Fallback for CORS errors (Security blocks): Default to White Text
+            console.warn("Wallpaper analysis blocked by CORS. Defaulting to white.");
+            this.statusBar.classList.remove('dark-text');
+        }
+    };
+}
 
 
 
@@ -6932,6 +6988,198 @@ window.sideloader = new Sideloader();
         
         
         window.addEventListener('click', e => { if (!e.target.closest('#assistive-menu') && !e.target.closest('#assistive-touch')) { document.getElementById('assistive-menu')?.classList.remove('active'); const btn = document.getElementById('assistive-touch'); if(btn) { btn.style.opacity='1'; btn.style.pointerEvents='auto'; } } });
+        
+        
+        
+    (function upgradeSystem() {
+    // 1. Intelligent Analyzer with Caching (Prevents Lag)
+    iOS.wallpaperCache = null;
+
+    iOS.checkWallpaperBrightness = function() {
+        // If Dark Mode is on, always use white text
+        if (this.isDarkMode) {
+            this.setBarTheme('light'); 
+            return;
+        }
+
+        // Use Cache if available (Instant Response)
+        if (this.wallpaperCache) {
+            this.setBarTheme(this.wallpaperCache);
+            return;
+        }
+
+        // Calculate Fresh (Runs once per wallpaper load)
+        let url = this.wallpaper.style.backgroundImage;
+        if (!url || url === 'none') return;
+        url = url.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = url;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, img.width, 50, 0, 0, 1, 1);
+            const p = ctx.getImageData(0, 0, 1, 1).data;
+            
+            // Contrast Threshold (150)
+            const mode = (0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] > 150) ? 'dark' : 'light';
+            
+            this.wallpaperCache = mode; 
+            this.setBarTheme(mode);
+        };
+    };
+
+    // 2. Theme Helper
+    iOS.setBarTheme = function(mode) {
+        if (mode === 'dark') {
+            this.statusBar.classList.add('dark-text');
+            this.gestureBar.classList.add('dark-bar');
+        } else {
+            this.statusBar.classList.remove('dark-text');
+            this.gestureBar.classList.remove('dark-bar');
+        }
+    };
+
+    // 3. Reset Cache on Dark Mode Toggle
+    const oldToggle = iOS.toggleDarkMode.bind(iOS);
+    iOS.toggleDarkMode = function(el) {
+        this.wallpaperCache = null; // Clear cache
+        oldToggle(el);
+        this.checkWallpaperBrightness();
+    };
+
+    // 4. OVERWRITE closeApp to use Intelligent Logic
+    iOS.closeApp = function() {
+        this.currentAppPrivilege = 'user';
+        if (this.state === 'IDLE' || this.state === 'CLOSING') return;
+        this.state = 'CLOSING';
+
+        const currentAppName = this.activeWindow.getAttribute('data-app');
+        this.activeWindow.style.borderRadius = 'var(--app-radius)';
+        
+        // --- THE FIX: Intelligent Check instead of Blind Reset ---
+        this.checkWallpaperBrightness(); 
+        // --------------------------------------------------------
+
+        this.gestureBar.classList.add('on-home');
+        this.statusBar.classList.remove('dark-text'); // Safety reset before check applies
+        if(this.wallpaperCache === 'dark' && !this.isDarkMode) this.statusBar.classList.add('dark-text');
+
+        // Handle Receded Windows
+        if (this.activeWindow === this.musicWindow) {
+            this.mainWindow.classList.remove('receded');
+            this.storeWindow.classList.remove('receded');
+            this.sideloaderWindow.classList.remove('receded');
+            
+            this.mainWindow.style.opacity = '0';
+            this.mainWindow.style.display = 'none';
+            this.mainWindow.style.transform = '';
+            this.storeWindow.style.display = 'none';
+            this.sideloaderWindow.style.display = 'none';
+        }
+
+        this.homescreenGroup.classList.remove('minimized');
+        this.wallpaper.classList.remove('active-app');
+
+        document.querySelectorAll('.app-icon').forEach(icon => icon.classList.remove('hidden-source'));
+
+        if (!this.activeAppIcon || !this.activeAppIcon.isConnected) {
+            this.activeAppIcon = this.getVisibleIconElement(currentAppName);
+        }
+
+        // Vacuum Animation Logic
+        if (this.openedFromIsland && this.activeWindow.getAttribute('data-app') === 'Music') {
+            const islandRect = this.island.getBoundingClientRect();
+            const screenRect = this.screen.getBoundingClientRect();
+            const dx = ((islandRect.left + islandRect.width/2) - (screenRect.left + screenRect.width/2)) / this.currentScale;
+            let dy = ((islandRect.top + islandRect.height/2) - (screenRect.top + screenRect.height/2)) / this.currentScale;
+            dy += 28; 
+
+            this.activeWindow.classList.add('vacuum-active');
+            this.activeWindow.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.1)`; 
+            this.activeWindow.style.borderRadius = '50px'; 
+            this.activeWindow.style.opacity = '0'; 
+
+            if (this.activeAppIcon) {
+                this.activeAppIcon.classList.remove('hidden-source');
+                this.activeAppIcon.style.opacity = '1';
+                this.activeAppIcon.style.transform = 'scale(1)';
+            }
+
+            setTimeout(() => {
+                this.island.classList.add('compact');
+                this.island.classList.add('island-impact'); 
+                setTimeout(() => this.island.classList.remove('island-impact'), 600);
+                this.statusBar.classList.add('squished');
+                clearTimeout(this.autoCollapseTimer);
+                this.autoCollapseTimer = setTimeout(() => {
+                    this.islandContent.classList.add('blur-out');
+                    setTimeout(() => {
+                        this.island.classList.remove('compact');
+                        this.statusBar.classList.remove('squished');
+                        setTimeout(() => { this.islandContent.classList.remove('blur-out'); }, 300); 
+                    }, 200); 
+                }, 3000);
+            }, 280); 
+            this.openedFromIsland = false;
+        } else {
+            // Standard Close Animation
+            if (this.activeAppIcon) {
+                const tf = this.getIconTransform(this.activeAppIcon);
+                this.activeAppIcon.classList.remove('hidden-source');
+                this.activeAppIcon.style.transition = 'none';
+                this.activeAppIcon.style.transform = `scale(${1/tf.scaleX})`;
+                this.activeAppIcon.style.opacity = '0';
+                this.activeAppIcon.offsetHeight;
+
+                this.activeWindow.style.transformOrigin = 'center center'; 
+                this.activeAppIcon.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
+                this.activeAppIcon.style.transform = 'scale(1)';
+                this.activeAppIcon.style.opacity = '1';
+
+                this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), border-radius 0.5s var(--ease-close), opacity 0.2s ease 0.3s';
+                this.activeWindow.style.transform = `translate3d(${tf.transX}px, ${tf.transY}px, 0) scale(${tf.scaleX}, ${tf.scaleY})`;
+                this.activeWindow.style.borderRadius = `${16 / tf.scaleX}px`;
+                this.activeWindow.style.opacity = '0'; 
+            } else {
+                this.activeWindow.style.transition = 'transform 0.5s var(--ease-close), opacity 0.2s ease';
+                this.activeWindow.style.transform = 'scale(0.5)';
+                this.activeWindow.style.opacity = '0';
+            }
+        }
+    };
+
+    // Initial Run
+    iOS.checkWallpaperBrightness();
+})();
+    
+        (function enableRealTimeContrast() {
+    const wallpaperLayer = document.getElementById('wallpaper');
+
+    // 1. Create the Watcher
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+            if (m.attributeName === 'style' && window.iOS) {
+                // 2. Clear the old cache immediately
+                window.iOS.wallpaperCache = null; 
+                
+                // 3. Force re-calculation
+                window.iOS.checkWallpaperBrightness();
+            }
+        });
+    });
+
+    // 4. Start Watching the Wallpaper
+    if (wallpaperLayer) {
+        observer.observe(wallpaperLayer, { 
+            attributes: true, 
+            attributeFilter: ['style'] 
+        });
+    }
+})();
+
+        
         
     </script>
 </body>
