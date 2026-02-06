@@ -273,17 +273,22 @@
 
     <!-- SCRIPTS -->
     
-    <script src="acebase-client.js"></script>
+    <script src="./acebase-client.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/acebase-client@latest/dist/browser.min.js"></script>
     <script>
-        if(typeof Neutralino !== 'undefined') Neutralino.init();
+    
 
         const host = localStorage.getItem('server_ip') || '2c6bc07b8445cf5b-106-215-150-178.serveousercontent.com';
         document.getElementById('server-ip').value = host;
-        const SERVER_URL = `http://${host}`;
+        
+        
+        const useHttps = host.includes("serveousercontent.com") || location.protocol === 'https:';
+        
+        const SERVER_URL = `https://${host}`;
         const DB_NAME = 'mydb';
 
         const db = new AceBaseClient({ 
-            dbname: DB_NAME, host: host, port: '', https: false,
+            dbname: DB_NAME, host: host, port: '', https: useHttps,
             cache: { enabled: false }, autoConnect: true
         });
 
