@@ -225,6 +225,28 @@ gap: 6px;
 / Subtle glass effect */backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);}
         
         
+        /* Zen Pro Refresh Button Styling */
+.sync-icon {
+    transition: color 0.3s ease;
+    transform-origin: center;
+}
+
+#refreshBtn:hover .sync-icon {
+    color: #00f2ff; /* Neon cyan glow */
+    filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.5));
+}
+
+/* The Smooth "Zen" Spin */
+.spinning {
+    animation: zen-spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes zen-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+        
+        
     </style>
 </head>
 <body>
@@ -294,6 +316,18 @@ gap: 6px;
         <div class="top-nav">
             <h2>My Files</h2>
             <div style="display:flex; gap:8px;">
+            	
+            <button id="refreshBtn" class="icon-btn" title="Sync & Refresh">
+    <svg class="sync-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"></path>
+        <path d="M1 20v-6h6"></path>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+    </svg>
+</button>
+            
+            
+            
+            
                 <button class="icon-btn" onclick="triggerFileUpload()" title="Upload File (.txt, .md)" id="btn-upload">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 </button>
@@ -787,6 +821,40 @@ setLoading(btn, false);
             }
         }
         function toggleServerConfig() { const el=document.getElementById('server-config'); el.style.display=el.style.display==='none'?'block':'none'; }
+        
+        
+        
+        // --- ZEN PRO SYNC LOGIC ---
+document.getElementById('refreshBtn').addEventListener('click', async function() {
+    const icon = this.querySelector('.sync-icon');
+    
+    // 1. Start the visual spin
+    icon.classList.add('spinning');
+    this.disabled = true; // Prevent double-clicking
+
+    try {
+        console.log("Zen Pro: Handshaking with Cloudbox...");
+        
+        // 2. Force AceBase to check connection & reload
+        showConnectionStatus(true);
+        await loadFiles(); 
+        
+        // 3. Success Feedback
+        toast("Cloudbox Synced", "success");
+        
+    } catch (err) {
+        console.error("Sync Failed:", err);
+        toast("Sync Failed: Check Server", "error");
+    } finally {
+        // 4. Smooth exit: stop spin and re-enable
+        setTimeout(() => {
+            icon.classList.remove('spinning');
+            this.disabled = false;
+        }, 800);
+    }
+});
+        
+        
     </script>
 </body>
 </html>
