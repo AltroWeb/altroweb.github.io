@@ -19,6 +19,7 @@
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
@@ -27,8 +28,13 @@
             margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
         }
 
-        .screen { display: none; height: 100%; width: 100%; flex-direction: column; padding: 20px; opacity: 0; transition: opacity 0.2s; overflow-y: auto; position: relative; }
+        /* SCREEN LAYOUTS */
+        .screen { display: none; height: 100%; width: 100%; flex-direction: column; opacity: 0; transition: opacity 0.2s; position: relative; overflow: hidden; }
         .screen.active { display: flex; opacity: 1; }
+        
+        #login-screen { overflow-y: auto; padding: 20px; }
+        #dashboard-screen { padding: 20px; }
+        #settings-screen { padding: 20px; overflow-y: auto; }
 
         /* TYPOGRAPHY */
         h2 { font-size: 18px; font-weight: 600; color: white; margin: 0; }
@@ -39,31 +45,64 @@
             background: var(--surface); color: var(--text); border: 1px solid var(--border);
             padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;
             display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; flex-shrink: 0;
+            position: relative; overflow: hidden;
         }
-        button:hover { background: var(--surface-hover); border-color: var(--text-muted); }
-        button:active { transform: translateY(1px); }
+        button:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--text-muted); }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
         button.primary { background: var(--primary); border-color: var(--primary); color: white; }
-        button.primary:hover { background: var(--primary-hover); }
+        button.primary:hover:not(:disabled) { background: var(--primary-hover); }
+        
         button.danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
-        button.danger:hover { background: var(--danger); color: white; }
+        button.danger:hover:not(:disabled) { background: var(--danger); color: white; }
+        
         button.icon-btn { padding: 6px; width: 32px; height: 32px; border-radius: 50%; border: none; background: transparent; }
-        button.icon-btn:hover { background: var(--surface-hover); }
+        button.icon-btn:hover:not(:disabled) { background: var(--surface-hover); }
 
-        /* INPUTS */
-        .input-group { margin-bottom: 15px; width: 100%; }
+        /* LOADING SPINNER */
+        .loader {
+            width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+            border-bottom-color: white; border-radius: 50%; display: none;
+            animation: spin 0.8s linear infinite;
+        }
+        button.loading .loader { display: block; }
+        button.loading span, button.loading svg:not(.loader) { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* INPUTS & PASSWORD TOGGLE */
+        .input-group { margin-bottom: 15px; width: 100%; position: relative; }
+        .input-wrapper { position: relative; width: 100%; display: flex; align-items: center; }
+        
         input, textarea {
             background: var(--surface); border: 1px solid var(--border); color: white;
             padding: 10px; border-radius: 6px; font-family: var(--font-ui); font-size: 14px; width: 100%; outline: none; transition: 0.2s;
         }
+        
+        /* Pro Fix: Add padding to right so text doesn't go behind icon */
+        .input-wrapper input { padding-right: 42px; }
+
         input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
-        .error-msg { color: var(--danger); font-size: 11px; margin-top: 4px; display: none; }
+        
+        .password-toggle {
+            position: absolute; right: 10px; height: 100%;
+            color: var(--text-muted); cursor: pointer; padding: 0 4px; display: flex; align-items: center; justify-content: center;
+            z-index: 5; transition: color 0.2s;
+        }
+        .password-toggle:hover { color: var(--text); }
+        .password-toggle svg { width: 18px; height: 18px; }
+        
+        .error-msg { color: var(--danger); font-size: 11px; margin-top: 4px; display: none; text-align: left; }
         .input-error input { border-color: var(--danger); }
         .input-error .error-msg { display: block; }
 
         /* DASHBOARD GRID */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; width: 100%; }
         
-        .dashboard-content { flex-grow: 1; position: relative; overflow-y: auto; display: flex; flex-direction: column; }
+        .dashboard-content { 
+            flex-grow: 1; position: relative; overflow-y: auto; 
+            display: flex; flex-direction: column; width: 100%;
+        }
         
         .file-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -71,7 +110,7 @@
         }
         
         #empty-state {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             text-align: center; opacity: 0.5; width: 100%; pointer-events: none;
         }
 
@@ -86,7 +125,7 @@
         .file-date { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 2px; }
 
         /* EDITOR */
-        #editor-screen { padding: 0; overflow: hidden; }
+        #editor-screen { padding: 0; }
         .toolbar { 
             height: 50px; border-bottom: 1px solid var(--border); display: flex; 
             align-items: center; padding: 0 15px; gap: 10px; background: var(--bg); flex-shrink: 0;
@@ -95,16 +134,17 @@
         .toolbar::-webkit-scrollbar { display: none; }
         
         .doc-title { background: transparent; border: none; font-size: 14px; font-weight: 600; width: 150px; padding: 5px; color: white; flex-shrink: 0; }
-        .split-view { display: flex; flex: 1; height: calc(100% - 50px); position: relative; }
-        #editor-area { flex: 1; background: var(--bg); border: none; padding: 20px; font-family: var(--font-code); line-height: 1.6; resize: none; font-size: 14px; }
+        .split-view { display: flex; flex: 1; height: calc(100% - 50px); position: relative; overflow: hidden; }
+        #editor-area { flex: 1; background: var(--bg); border: none; padding: 20px; font-family: var(--font-code); line-height: 1.6; resize: none; font-size: 14px; outline: none; }
         #preview-area { flex: 1; background: var(--surface); padding: 20px; overflow-y: auto; border-left: 1px solid var(--border); display: none; }
         #preview-area.visible { display: block; }
         
         /* MARKDOWN */
-        #preview-area h1 { border-bottom: 1px solid var(--border); padding-bottom: 10px; font-size: 24px; }
-        #preview-area h2 { font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        #preview-area h1 { border-bottom: 1px solid var(--border); padding-bottom: 10px; font-size: 24px; color: var(--text); }
+        #preview-area h2 { font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text); }
         #preview-area code { background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px; color: #f87171; font-family: var(--font-code); font-size: 0.9em; }
         #preview-area blockquote { border-left: 3px solid var(--primary); padding-left: 15px; color: var(--text-muted); margin: 15px 0; }
+        #preview-area ul, #preview-area ol { padding-left: 20px; color: var(--text-muted); }
 
         /* AUTH SCREEN */
         #login-screen { justify-content: center; align-items: center; background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 60%); }
@@ -125,6 +165,19 @@
         .toast.success svg { color: #22c55e; } .toast.error svg { color: #ef4444; }
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+        /* CONNECTION INDICATOR */
+        #connection-status {
+            position: fixed; top: 15px; left: 15px; z-index: 2000;
+            background: var(--surface); border: 1px solid var(--border);
+            padding: 5px 10px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            display: flex; align-items: center; gap: 6px;
+            opacity: 0; transform: translateY(-10px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        #connection-status.visible { opacity: 1; transform: translateY(0); }
+        .status-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
+        .status-text { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
         /* ICONS */
         .svg-icon { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
         .svg-lg { width: 40px; height: 40px; stroke-width: 1.5; }
@@ -132,7 +185,46 @@
         @media (max-width: 600px) {
             #preview-area.visible { position: absolute; inset: 0; z-index: 50; }
             .file-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            #connection-status { top: 10px; left: 10px; }
         }
+        
+        
+        
+        
+        /* 1. Add this to your :root variables /
+:root {
+/ ... existing vars ... */--safe-top: max(20px, env(safe-area-inset-top));}/* 2. Replace your .screen class to include dynamic top spacing /
+.screen {
+display: none;
+height: 100%;
+width: 100%;
+flex-direction: column;
+opacity: 0;
+transition: opacity 0.2s;
+position: relative;
+overflow: hidden;
+padding-top: calc(var(--safe-top) + 15px) !important; / Forces consistent gap for status bar */}/* 3. Replace the Password Toggle & Input logic for professional flex /
+.input-wrapper {
+position: relative;
+width: 100%;
+display: flex;
+align-items: stretch; / Ensures height matches */}.input-wrapper input {padding-right: 48px !important; /* Guaranteed clearance for the icon */flex: 1;}.password-toggle {position: absolute;right: 0;top: 0;bottom: 0;width: 44px; /* Professional touch target size */color: var(--text-muted);cursor: pointer;display: flex;align-items: center;justify-content: center;z-index: 10;background: transparent;transition: color 0.2s;}/* 4. Refined Synced Indicator /
+#connection-status {
+position: fixed;
+top: var(--safe-top);
+left: 20px;
+z-index: 2000;
+background: var(--surface);
+border: 1px solid var(--border);
+padding: 4px 10px;
+border-radius: 20px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+display: flex;
+align-items: center;
+gap: 6px;
+/ Subtle glass effect */backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);}
+        
+        
     </style>
 </head>
 <body>
@@ -149,6 +241,12 @@
             </div>
         </div>
     </div>
+    
+    <!-- CONNECTION STATUS -->
+    <div id="connection-status">
+        <div class="status-dot"></div>
+        <span class="status-text">Synced</span>
+    </div>
 
     <!-- 1. LOGIN -->
     <div id="login-screen" class="screen active">
@@ -164,19 +262,27 @@
                 <span class="error-msg" id="err-user">Required</span>
             </div>
             <div class="input-group" id="grp-pass">
-                <input type="password" id="auth-pass" placeholder="Password">
+                <div class="input-wrapper">
+                    <input type="password" id="auth-pass" placeholder="Password">
+                    <div class="password-toggle" onclick="togglePassword('auth-pass')">
+                        <svg class="svg-icon" viewBox="0 0 24 24" id="icon-auth-pass"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                </div>
                 <span class="error-msg" id="err-pass">Required</span>
             </div>
 
-            <button onclick="handleLogin()" class="primary" style="width:100%">Login</button>
+            <button onclick="handleLogin()" class="primary" id="btn-login" style="width:100%">
+                <div class="loader"></div><span>Login</span>
+            </button>
             <button onclick="toggleAuthMode()" class="secondary" style="width:100%; margin-top:10px;" id="auth-toggle-text">Create Account</button>
             
             <div style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer;" onclick="toggleServerConfig()">
                 Server Options
             </div>
             <div id="server-config" style="display:none; margin-top:10px;">
+                <p style="font-size:11px; margin-bottom:5px; text-align:left; color:var(--text-muted);">Enter full server URL</p>
                 <div style="display:flex; gap:5px;">
-                    <input id="server-ip" placeholder="localhost">
+                    <input id="server-url-input" placeholder="https://your-server.com">
                     <button onclick="saveServerConfig()">Save</button>
                 </div>
             </div>
@@ -188,7 +294,7 @@
         <div class="top-nav">
             <h2>My Files</h2>
             <div style="display:flex; gap:8px;">
-                <button class="icon-btn" onclick="triggerFileUpload()" title="Upload File (.txt, .md)">
+                <button class="icon-btn" onclick="triggerFileUpload()" title="Upload File (.txt, .md)" id="btn-upload">
                     <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                 </button>
                 <input type="file" id="upload-input" style="display:none" accept=".txt,.md" onchange="handleFileUpload(event)">
@@ -235,7 +341,8 @@
             <button class="icon-btn danger" onclick="deleteCurrentFile()" title="Delete">
                 <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
-            <button class="primary" onclick="saveFile()">
+            <button class="primary" onclick="saveFile()" id="btn-save">
+                <div class="loader"></div>
                 <svg class="svg-icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                 <span>Save</span>
             </button>
@@ -259,7 +366,6 @@
 
         <div style="max-width:500px; margin:0 auto; width:100%;">
             
-
             <div style="background:rgba(239, 68, 68, 0.05); padding:20px; border-radius:12px; border:1px solid rgba(239, 68, 68, 0.3);">
                 <h3 style="color:var(--danger); margin:0 0 10px 0; font-size:16px;">Danger Zone</h3>
                 <p>Deleting account removes all files permanently.</p>
@@ -272,36 +378,53 @@
     </div>
 
     <!-- SCRIPTS -->
-    
-    <script src="./acebase-client.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/acebase-client@latest/dist/browser.min.js"></script>
-    <script>
     
-
-        const host = localStorage.getItem('server_ip') || '2c6bc07b8445cf5b-106-215-150-178.serveousercontent.com';
-        document.getElementById('server-ip').value = host;
+    <script>
+        // --- CONFIG & INIT ---
+        const DEFAULT_URL = 'https://ztext-cloudbox.serveousercontent.com';
+        const storedUrl = localStorage.getItem('server_url');
+        const SERVER_URL = storedUrl && storedUrl.trim() !== '' ? storedUrl : DEFAULT_URL;
         
-        
-        const useHttps = host.includes("serveousercontent.com") || location.protocol === 'https:';
-        
-        const SERVER_URL = `https://${host}`;
+        document.getElementById('server-url-input').value = SERVER_URL;
         const DB_NAME = 'mydb';
 
+        let dbHost, dbHttps, dbPort;
+        try {
+            const urlObj = new URL(SERVER_URL);
+            dbHost = urlObj.hostname;
+            dbHttps = urlObj.protocol === 'https:';
+            dbPort = urlObj.port || (dbHttps ? 443 : 80);
+        } catch(e) {
+            console.error("Invalid Server URL", e);
+            dbHost = 'localhost'; dbHttps = false; dbPort = 3000;
+        }
+
         const db = new AceBaseClient({ 
-            dbname: DB_NAME, host: host, port: '', https: useHttps,
+            dbname: DB_NAME, host: dbHost, port: dbPort, https: dbHttps,
             cache: { enabled: false }, autoConnect: true
         });
 
         let currentUser = null;
         let currentFileId = null;
         let isSignup = false;
-        let masterKey = null; // Raw Key for current session
+        let masterKey = null;
 
+        // --- CONNECTION STATUS ---
         db.ready(() => {
+            showConnectionStatus(true);
             if(db.user) {
                 doLogout(); 
             }
         });
+        
+        function showConnectionStatus(active) {
+            const el = document.getElementById('connection-status');
+            if(active) {
+                el.classList.add('visible');
+                setTimeout(() => el.classList.remove('visible'), 3000); 
+            }
+        }
 
         // --- CRYPTO ENGINE ---
         const ENC = {
@@ -354,19 +477,25 @@
         // --- AUTH ---
         function toggleAuthMode() {
             isSignup = !isSignup;
-            const btn = document.querySelector('#login-screen .primary');
+            const btn = document.querySelector('#btn-login span');
+            const mainBtn = document.getElementById('btn-login');
             const link = document.getElementById('auth-toggle-text');
+            
             btn.innerText = isSignup ? "Sign Up" : "Login";
-            btn.onclick = isSignup ? handleSignup : handleLogin;
+            mainBtn.onclick = isSignup ? handleSignup : handleLogin;
             link.innerText = isSignup ? "Back to Login" : "Create Account";
             clearErrors();
         }
 
         async function handleLogin() {
             if(!validateAuth()) return;
+            const btn = document.getElementById('btn-login');
+            setLoading(btn, true);
+            
             const u = val('auth-user'); const p = val('auth-pass');
             try {
                 const res = await db.auth.signIn(u, p);
+                showConnectionStatus(true);
                 const uid = res.user.uid;
                 const snap = await db.ref(`users/${uid}/security/key_vault`).get();
                 if(!snap.exists()) throw new Error("Security vault missing.");
@@ -374,11 +503,21 @@
                 const passKey = await ENC.deriveKeyFromPass(p, vault.salt);
                 masterKey = await ENC.unwrap(vault.wrappedKey, passKey);
                 onAuthSuccess(res.user);
-            } catch(e) { toast("Login Failed: " + e.message, "error"); db.auth.signOut(); }
+            } catch(e) { 
+                toast("Login Failed: " + e.message, "error"); 
+                db.auth.signOut(); 
+            } finally {
+                setLoading(btn, false);
+            }
         }
 
         async function handleSignup() {
             if(!validateAuth()) return;
+            
+            // 1. Get button and start loading
+            const btn = document.getElementById('btn-login');
+            setLoading(btn, true);
+            
             const u = val('auth-user'); const p = val('auth-pass');
             try {
                 const email = u + "@ztext.local"; 
@@ -393,8 +532,10 @@
                     body: JSON.stringify({ username: u, password: p, email: email, displayName: u })
                 });
                 if(!res.ok) {
-                    await db.auth.signIn('admin', 'admin');
-                    await db.auth.signUp(email, p, { username: u, displayName: u });
+                    // THE FIX: Remove the admin sign-in block and simply call signUp. 
+// The server config 'allowUserSignup: true' handles the permissions.
+await db.auth.signUp(email, password, { username, displayName: username });
+                    
                     await db.auth.signOut();
                 }
                 const login = await db.auth.signIn(u, p);
@@ -402,7 +543,11 @@
                 masterKey = mKey;
                 toast("Account created!", "success");
                 onAuthSuccess(login.user);
-            } catch(e) { toast("Signup Failed: " + e.message, "error"); }
+                setLoading(btn, false);
+            } catch(e) { toast("Signup Failed: " + e.message, "error");
+setLoading(btn, false);
+ }
+            
         }
 
         function onAuthSuccess(user) {
@@ -422,9 +567,11 @@
 
         // --- FILES & UPLOAD/DOWNLOAD ---
         async function loadFiles() {
+            showConnectionStatus(true);
             const grid = document.getElementById('file-grid');
             const empty = document.getElementById('empty-state');
-            grid.innerHTML = '<p style="padding:20px; color:#666">Decrypting...</p>';
+            grid.innerHTML = '<div style="width:100%; text-align:center; padding:20px; color:#666"><div class="loader" style="display:inline-block; border-color:rgba(139, 92, 246, 0.3); border-bottom-color:#8b5cf6"></div></div>';
+            
             try {
                 const snap = await db.ref(`users/${currentUser.uid}/docs`).get();
                 grid.innerHTML = '';
@@ -448,7 +595,7 @@
                         grid.appendChild(card);
                     }
                 }
-            } catch(e) { grid.innerHTML = `<p style="color:red">Error: ${e.message}</p>`; }
+            } catch(e) { grid.innerHTML = `<p style="color:red; text-align:center">Error: ${e.message}</p>`; }
         }
 
         function triggerFileUpload() { document.getElementById('upload-input').click(); }
@@ -458,6 +605,10 @@
             if (!file) return;
             if (file.size > 1024 * 1024) return toast("File exceeds 1MB limit", "error");
             
+            const btn = document.getElementById('btn-upload');
+            toast("Encrypting & Uploading...", "success"); 
+            showConnectionStatus(true);
+
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const content = e.target.result;
@@ -474,7 +625,7 @@
                 } catch(err) { toast("Encryption/Upload failed", "error"); }
             };
             reader.readAsText(file);
-            event.target.value = ''; // Reset input
+            event.target.value = ''; 
         }
 
         function downloadFile() {
@@ -512,6 +663,10 @@
         }
 
         async function saveFile() {
+            const btn = document.getElementById('btn-save');
+            setLoading(btn, true);
+            showConnectionStatus(true);
+            
             const name = val('file-name');
             const content = document.getElementById('editor-area').value;
             if(!currentFileId) currentFileId = db.ref().push().key;
@@ -524,31 +679,16 @@
                 toast("Encrypted & Saved!", "success");
                 loadFiles();
             } catch(e) { toast("Save failed: " + e.message, "error"); }
+            finally { setLoading(btn, false); }
         }
 
         function deleteCurrentFile() {
             if(!currentFileId) return goDashboard();
             confirmDialog("Delete File?", "Confirm deletion", async () => {
+                showConnectionStatus(true);
                 await db.ref(`users/${currentUser.uid}/docs/${currentFileId}`).remove();
                 toast("Deleted", "success");
                 goDashboard(); loadFiles();
-            });
-        }
-
-        // --- SETTINGS ---
-        async function performChangePassword() {
-            const oldPass = val('set-old-pass'); const newPass = val('set-new-pass');
-            if(!oldPass || !newPass) return toast("Both fields required", "error");
-            confirmDialog("Change Password?", "Re-encrypt vault?", async () => {
-                try {
-                    await db.auth.changePassword(oldPass, newPass);
-                    const newSalt = Array.from(window.crypto.getRandomValues(new Uint8Array(16)));
-                    const newPassKey = await ENC.deriveKeyFromPass(newPass, newSalt);
-                    const newWrappedKey = await ENC.wrap(masterKey, newPassKey);
-                    await db.ref(`users/${currentUser.uid}/security/key_vault`).set({ salt: newSalt, wrappedKey: newWrappedKey });
-                    toast("Success!", "success");
-                    val('set-old-pass', ''); val('set-new-pass', '');
-                } catch(e) { toast("Failed: " + e.message, "error"); }
             });
         }
 
@@ -557,6 +697,7 @@
             if(confirmName !== currentUser.username) return toast("Username mismatch", "error");
             confirmDialog("DELETE ACCOUNT?", "All data lost.", async () => {
                 try {
+                    showConnectionStatus(true);
                     await db.ref(`users/${currentUser.uid}`).remove();
                     await db.auth.deleteAccount();
                     toast("Account Deleted", "success");
@@ -567,6 +708,30 @@
         }
 
         // --- UTILS ---
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><line x1="1" y1="1" x2="23" y2="23"/>';
+                icon.style.stroke = "var(--primary)";
+            } else {
+                input.type = "password";
+                icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+                icon.style.stroke = "currentColor";
+            }
+        }
+
+        function setLoading(btn, isLoading) {
+            if(isLoading) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
         function togglePreview() {
             const area = document.getElementById('preview-area');
             area.classList.toggle('visible');
@@ -575,6 +740,8 @@
                     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
                     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                     .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
+                    .replace(/`(.*?)`/gim, '<code>$1</code>')
+                    .replace(/> (.*$)/gim, '<blockquote>$1</blockquote>')
                     .replace(/\n/gim, '<br>');
             }
         }
@@ -584,8 +751,8 @@
             if(!val('auth-pass')) { setError('pass'); valid=false; }
             return valid;
         }
-        function setError(f) { document.getElementById('err-'+f).style.display='block'; }
-        function clearErrors() { document.querySelectorAll('.error-msg').forEach(e=>e.style.display='none'); }
+        function setError(f) { document.getElementById('err-'+f).style.display='block'; document.getElementById('grp-'+f).classList.add('input-error'); }
+        function clearErrors() { document.querySelectorAll('.error-msg').forEach(e=>e.style.display='none'); document.querySelectorAll('.input-group').forEach(e=>e.classList.remove('input-error')); }
         function confirmDialog(t, m, cb) {
             const el = document.getElementById('modal-overlay');
             document.getElementById('modal-title').innerText = t;
@@ -609,7 +776,16 @@
         }
         function openSettings() { showScreen('settings-screen'); }
         function goDashboard() { showScreen('dashboard-screen'); }
-        function saveServerConfig() { localStorage.setItem('server_ip', val('server-ip')); location.reload(); }
+        
+        function saveServerConfig() { 
+            const url = val('server-url-input');
+            if(url) {
+                localStorage.setItem('server_url', url); 
+                location.reload(); 
+            } else {
+                toast("Enter a valid URL", "error");
+            }
+        }
         function toggleServerConfig() { const el=document.getElementById('server-config'); el.style.display=el.style.display==='none'?'block':'none'; }
     </script>
 </body>
