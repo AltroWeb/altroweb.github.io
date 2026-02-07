@@ -328,6 +328,31 @@ backdrop-filter: blur(8px);
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 } 
+
+
+
+
+.z-text-link {
+        color: #8b949e;              /* Pro Muted Grey */
+        text-decoration: none;       /* Clean look initially */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 14px;
+        padding: 10px 5px;           /* Perfect touch area */
+        margin: 5px 0;               /* Spacing */
+        display: inline-block;
+        transition: color 0.2s ease;
+    }
+    .z-text-link:hover {
+        color: #c9d1d9;              /* Brightens slightly on hover */
+        text-decoration: underline;  /* Adds underline */
+        text-underline-offset: 4px;  /* Modern "Pro" gap */
+    }
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -379,9 +404,14 @@ backdrop-filter: blur(8px);
             </button>
             <button onclick="toggleAuthMode()" class="secondary" style="width:100%; margin-top:10px;" id="auth-toggle-text">Create Account</button>
             
+  
+            
             <div style="margin-top:20px; font-size:12px; color:var(--text-muted); cursor:pointer;" onclick="toggleServerConfig()">
                 Server Options
             </div>
+            
+            
+            
             <div id="server-config" style="display:none; margin-top:10px;">
                 <p style="font-size:11px; margin-bottom:5px; text-align:left; color:var(--text-muted);">Enter full server URL</p>
                 <div style="display:flex; gap:5px;">
@@ -389,6 +419,9 @@ backdrop-filter: blur(8px);
                     <button onclick="saveServerConfig()">Save</button>
                 </div>
             </div>
+            <br><br>
+            <a href="https://altroweb.github.io/ztext-status" class="z-text-link" target="_blank">Check Z-Text Cloud database server status</a>
+            
         </div>
     </div>
 
@@ -490,6 +523,10 @@ backdrop-filter: blur(8px);
         <h2>Settings</h2>
         <div style="width:40px"></div>
     </div>
+    
+    
+    
+    
 
     <div style="max-width:500px; margin:0 auto; width:100%;">
         <div style="background:var(--surface); padding:20px; border-radius:12px; border:1px solid var(--border); margin-bottom: 20px;">
@@ -523,6 +560,10 @@ backdrop-filter: blur(8px);
             <button class="danger" onclick="performDeleteAccount()" style="width:100%">Delete Account</button>
         </div>
     </div>
+    <br><br>
+    <a href="https://altroweb.github.io/ztext-status" class="z-text-link" target="_blank">Check Z-Text Cloud database server status</a>
+    
+    
 </div>
 
     <!-- SCRIPTS -->
