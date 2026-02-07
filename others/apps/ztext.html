@@ -15,6 +15,9 @@
             --primary: #8b5cf6; --primary-hover: #7c3aed; --danger: #ef4444;
             --text: #e4e4e7; --text-muted: #a1a1aa;
             --font-ui: 'Inter', sans-serif; --font-code: 'JetBrains Mono', monospace;
+            
+            --safe-top: max(20px, env(safe-area-inset-top));
+            
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -25,11 +28,19 @@
 
         body {
             background-color: var(--bg); color: var(--text); font-family: var(--font-ui);
-            margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            margin: 0; height: 100vh; display: flex; flex-direction: column;
         }
 
         /* SCREEN LAYOUTS */
-        .screen { display: none; height: 100%; width: 100%; flex-direction: column; opacity: 0; transition: opacity 0.2s; position: relative; overflow: hidden; }
+        .screen {
+display: none;
+height: 100%;
+width: 100%;
+flex-direction: column;
+opacity: 0;
+transition: opacity 0.2s;
+position: relative;
+}
         .screen.active { display: flex; opacity: 1; }
         
         #login-screen { overflow-y: auto; padding: 20px; }
@@ -78,6 +89,28 @@
             background: var(--surface); border: 1px solid var(--border); color: white;
             padding: 10px; border-radius: 6px; font-family: var(--font-ui); font-size: 14px; width: 100%; outline: none; transition: 0.2s;
         }
+        
+        
+        /* --- SETTINGS TOGGLE (Pixel Perfect) --- */
+.toggle-switch {
+    position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--border); transition: .3s; border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background-color: white; transition: .3s; border-radius: 50%;
+}
+input:checked + .slider { background-color: var(--primary); }
+input:checked + .slider:before { transform: translateX(20px); }
+
+
+        
+        
+        
         
         /* Pro Fix: Add padding to right so text doesn't go behind icon */
         .input-wrapper input { padding-right: 42px; }
@@ -191,24 +224,32 @@
         
         
         
-        /* 1. Add this to your :root variables /
-:root {
-/ ... existing vars ... */--safe-top: max(20px, env(safe-area-inset-top));}/* 2. Replace your .screen class to include dynamic top spacing /
-.screen {
-display: none;
-height: 100%;
-width: 100%;
-flex-direction: column;
-opacity: 0;
-transition: opacity 0.2s;
-position: relative;
-overflow: hidden;
-padding-top: calc(var(--safe-top) + 15px) !important; / Forces consistent gap for status bar */}/* 3. Replace the Password Toggle & Input logic for professional flex /
+  
+
+
+/* 3. Replace the Password Toggle & Input logic for professional flex */
+
 .input-wrapper {
 position: relative;
 width: 100%;
 display: flex;
-align-items: stretch; / Ensures height matches */}.input-wrapper input {padding-right: 48px !important; /* Guaranteed clearance for the icon */flex: 1;}.password-toggle {position: absolute;right: 0;top: 0;bottom: 0;width: 44px; /* Professional touch target size */color: var(--text-muted);cursor: pointer;display: flex;align-items: center;justify-content: center;z-index: 10;background: transparent;transition: color 0.2s;}/* 4. Refined Synced Indicator /
+align-items: stretch;}
+
+
+.input-wrapper input {padding-right: 48px !important; 
+flex: 1;}
+
+.password-toggle {position: absolute;right: 0;top: 0;bottom: 0;width: 44px; /* Professional touch target size */color: var(--text-muted);
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 10;
+background: transparent;transition: color 0.2s;
+}
+
+/* 4. Refined Synced Indicator */
+
 #connection-status {
 position: fixed;
 top: var(--safe-top);
@@ -222,7 +263,8 @@ box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 display: flex;
 align-items: center;
 gap: 6px;
-/ Subtle glass effect */backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);}
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);}
         
         
         /* Zen Pro Refresh Button Styling */
@@ -246,7 +288,46 @@ gap: 6px;
     to { transform: rotate(360deg); }
 }
         
-        
+       /* FIX: Custom Select Dropdown */
+#autosave-interval {
+    /* 1. Remove ugly native browser arrow */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    
+    /* 2. Styling */
+    width: 100%;
+    background-color: var(--surface);
+    color: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    
+    /* 3. Padding-right makes space for the icon so text doesn't overlap */
+    padding-right: 40px; 
+    
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: 0.2s border-color;
+
+    /* 4. THE PRO FIX: Custom SVG Arrow as Background */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    
+    /* 5. Perfectly position the icon: 12px from right, centered vertically */
+    background-position: right 12px center;
+    background-size: 16px;
+}
+
+#autosave-interval:hover {
+    border-color: var(--primary);
+}
+
+#autosave-interval:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+} 
     </style>
 </head>
 <body>
@@ -360,56 +441,89 @@ gap: 6px;
 
     <!-- 3. EDITOR -->
     <div id="editor-screen" class="screen">
-        <div class="toolbar">
-            <button class="icon-btn secondary" onclick="goDashboard()">
-                <svg class="svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    <div class="toolbar">
+        <button class="icon-btn secondary" onclick="goDashboard()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        
+        <input type="text" class="doc-title" id="file-name" placeholder="Untitled.txt">
+
+        <div style="display:flex; gap:4px; border-left:1px solid var(--border); padding-left:8px; margin-left:4px;">
+            <button class="icon-btn" onclick="document.execCommand('undo')" title="Undo">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
             </button>
-            <input type="text" class="doc-title" id="file-name" placeholder="Untitled.txt">
-            <div style="flex:1"></div>
-            <button class="icon-btn secondary" onclick="togglePreview()" title="Preview">
-                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-            <button class="icon-btn secondary" onclick="downloadFile()" title="Download File">
-                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </button>
-            <button class="icon-btn danger" onclick="deleteCurrentFile()" title="Delete">
-                <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
-            <button class="primary" onclick="saveFile()" id="btn-save">
-                <div class="loader"></div>
-                <svg class="svg-icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                <span>Save</span>
+            <button class="icon-btn" onclick="document.execCommand('redo')" title="Redo">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 3.7"/></svg>
             </button>
         </div>
-        <div class="split-view">
-            <textarea id="editor-area" placeholder="Write in Markdown..."></textarea>
-            <div id="preview-area"></div>
-        </div>
+
+        <div style="flex:1; min-width: 20px;"></div>
+
+        <button class="icon-btn secondary" onclick="togglePreview()" title="Preview">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="icon-btn secondary" onclick="downloadFile()" title="Download">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="icon-btn danger" onclick="deleteCurrentFile()" title="Delete">
+            <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+        <button class="primary" onclick="saveFile()" id="btn-save">
+            <svg class="svg-icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg>
+            <span style="margin-left:4px;">Save</span>
+        </button>
     </div>
+
+    <div class="split-view" id="main-split-view">
+        <textarea id="editor-area" placeholder="Write in Markdown..."></textarea>
+        <div id="preview-area"></div>
+    </div>
+</div>
 
     <!-- 4. SETTINGS -->
     <div id="settings-screen" class="screen">
-        <div class="top-nav">
-            <button class="secondary" onclick="goDashboard()">
-                <svg class="svg-icon" style="margin-right:5px;" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                Back
-            </button>
-            <h2>Settings</h2>
-            <div style="width:40px"></div>
-        </div>
+    <div class="top-nav">
+        <button class="secondary" onclick="goDashboard()">
+            <svg class="svg-icon" style="margin-right:5px;" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Back
+        </button>
+        <h2>Settings</h2>
+        <div style="width:40px"></div>
+    </div>
 
-        <div style="max-width:500px; margin:0 auto; width:100%;">
-            
-            <div style="background:rgba(239, 68, 68, 0.05); padding:20px; border-radius:12px; border:1px solid rgba(239, 68, 68, 0.3);">
-                <h3 style="color:var(--danger); margin:0 0 10px 0; font-size:16px;">Danger Zone</h3>
-                <p>Deleting account removes all files permanently.</p>
-                <div class="input-group">
-                     <input type="text" id="del-confirm-user" placeholder="Type username to confirm">
+    <div style="max-width:500px; margin:0 auto; width:100%;">
+        <div style="background:var(--surface); padding:20px; border-radius:12px; border:1px solid var(--border); margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0px;">
+                <div>
+                    <h3 style="margin:0 0 4px 0; font-size:15px; color: white;">Auto-Save</h3>
+                    <p style="margin:0; font-size: 12px; color: var(--text-muted);">Sync changes automatically</p>
                 </div>
-                <button class="danger" onclick="performDeleteAccount()" style="width:100%">Delete Account</button>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autosave-toggle" onchange="toggleAutoSaveUI()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div id="autosave-options" style="display:none; padding-top:10px; margin-top:10px; border-top:1px solid var(--border);">
+                <select id="autosave-interval" onchange="updateAutoSaveConfig()" style="width:100%; background:var(--bg); color:white; border:1px solid var(--border); padding:8px; border-radius:6px; outline:none; font-size: 13px;">
+                    <option value="60000">Every 1 Minute</option>
+                    <option value="120000">Every 2 Minutes</option>
+                    <option value="300000">Every 5 Minutes</option>
+                    <option value="600000">Every 10 Minutes</option>
+                </select>
             </div>
         </div>
+
+        <div style="background:rgba(239, 68, 68, 0.05); padding:20px; border-radius:12px; border:1px solid rgba(239, 68, 68, 0.3);">
+            <h3 style="color:var(--danger); margin:0 0 10px 0; font-size:16px;">Danger Zone</h3>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Deleting account removes all files permanently.</p>
+            <div class="input-group">
+                 <input type="text" id="del-confirm-user" placeholder="Type username to confirm">
+            </div>
+            <button class="danger" onclick="performDeleteAccount()" style="width:100%">Delete Account</button>
+        </div>
     </div>
+</div>
 
     <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/acebase-client@latest/dist/browser.min.js"></script>
@@ -634,33 +748,98 @@ setLoading(btn, false);
 
         function triggerFileUpload() { document.getElementById('upload-input').click(); }
 
-        async function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            if (file.size > 1024 * 1024) return toast("File exceeds 1MB limit", "error");
-            
-            const btn = document.getElementById('btn-upload');
-            toast("Encrypting & Uploading...", "success"); 
-            showConnectionStatus(true);
+        /* --- STRICT PRO UPLOAD (Binary Detector) --- */
 
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const content = e.target.result;
-                const name = file.name;
-                const id = db.ref().push().key;
-                try {
-                    const nameEnc = await ENC.encrypt(name, masterKey);
-                    const contentEnc = await ENC.encrypt(content, masterKey);
-                    await db.ref(`users/${currentUser.uid}/docs/${id}`).set({
-                        nameEnc, contentEnc, updated: new Date().toISOString()
-                    });
-                    toast(`Uploaded: ${name}`, "success");
-                    loadFiles();
-                } catch(err) { toast("Encryption/Upload failed", "error"); }
-            };
-            reader.readAsText(file);
-            event.target.value = ''; 
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Reset input immediately
+    event.target.value = '';
+
+    // 1. EXTENSION CHECK (The First Gate)
+    if (!/\.(txt|md|json|js|css|html|py|c|cpp|h|java)$/i.test(file.name)) {
+        toast("Supported text files only", "error");
+        return;
+    }
+
+    // 2. SIZE CHECK (1MB Limit)
+    if (file.size > 1024 * 1024) {
+        toast("File too large (Max 1MB)", "error");
+        return;
+    }
+
+    toast("Analyzing file...", "success");
+
+    try {
+        // 3. BINARY SNIFFER (The Pro Security Check)
+        // We read the first 512 bytes to see if it's actually an image/binary
+        const isBinary = await checkIsBinary(file);
+        
+        if (isBinary) {
+            console.error("Binary content detected.");
+            toast("Rejected: File is binary/image disguised as text.", "error");
+            return; // HARD STOP
         }
+
+        // 4. PROCEED WITH UPLOAD
+        toast("Encrypting...", "success");
+        showConnectionStatus(true);
+        
+        const content = await readFileAsText(file);
+        const id = db.ref().push().key;
+        
+        const nameEnc = await ENC.encrypt(file.name, masterKey);
+        const contentEnc = await ENC.encrypt(content, masterKey);
+        
+        await db.ref(`users/${currentUser.uid}/docs/${id}`).set({
+            nameEnc, 
+            contentEnc, 
+            updated: new Date().toISOString()
+        });
+
+        toast("Securely Uploaded", "success");
+        loadFiles();
+
+    } catch(err) {
+        console.error(err);
+        toast("Upload Error: " + err.message, "error");
+    }
+}
+
+/* --- HELPER: BINARY DETECTOR --- */
+function checkIsBinary(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        // Only read the first 512 bytes (Fast!)
+        const blob = file.slice(0, 512); 
+        
+        reader.onload = () => {
+            const buffer = new Uint8Array(reader.result);
+            // Look for NULL bytes (0). Text files almost NEVER have them.
+            // Images/Executables ALWAYS have them.
+            for (let i = 0; i < buffer.length; i++) {
+                if (buffer[i] === 0) {
+                    resolve(true); // It IS binary (Found a null byte)
+                    return;
+                }
+            }
+            resolve(false); // No null bytes, likely safe text
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(blob);
+    });
+}
+
+/* --- HELPER: TEXT READER --- */
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
 
         function downloadFile() {
             const name = val('file-name') || 'download.txt';
@@ -679,9 +858,15 @@ setLoading(btn, false);
             toast("Download started", "success");
         }
 
-        function createNewFile() { openEditor(null, { nameEnc: null, contentEnc: null }); }
+        function createNewFile() { 
+    currentFileId = null; // IMPORTANT: Reset this to null!
+    openEditor(null, { nameEnc: null, contentEnc: null }); 
+}
 
         async function openEditor(id, file) {
+        	
+        
+
             currentFileId = id;
             if(file.nameEnc && file.contentEnc) {
                 try {
@@ -694,6 +879,8 @@ setLoading(btn, false);
             }
             document.getElementById('preview-area').classList.remove('visible');
             showScreen('editor-screen');
+            
+            loadAutoSaveSettings(); // Start the timer logic
         }
 
         async function saveFile() {
@@ -809,7 +996,16 @@ setLoading(btn, false);
             setTimeout(()=>el.classList.add('active'), 10);
         }
         function openSettings() { showScreen('settings-screen'); }
-        function goDashboard() { showScreen('dashboard-screen'); }
+        
+        function goDashboard() { 
+
+stopAutoSave(); // Stop timer
+
+showScreen('dashboard-screen');
+
+loadFiles();
+
+ }
         
         function saveServerConfig() { 
             const url = val('server-url-input');
@@ -854,6 +1050,131 @@ document.getElementById('refreshBtn').addEventListener('click', async function()
     }
 });
         
+        
+// --- PRO AUTO-SAVE SYSTEM (Draft Support) ---
+
+let autoSaveTimer = null;
+const DEFAULT_AUTOSAVE = { enabled: false, interval: 60000 }; 
+
+// 1. Load Settings (Call this in openEditor)
+function loadAutoSaveSettings() {
+    const config = JSON.parse(localStorage.getItem('ztext_autosave')) || DEFAULT_AUTOSAVE;
+    
+    // Update UI
+    const toggle = document.getElementById('autosave-toggle');
+    const select = document.getElementById('autosave-interval');
+    if(toggle) toggle.checked = config.enabled;
+    if(select) select.value = config.interval;
+    
+    toggleAutoSaveUI();
+    
+    // Start timer if enabled (Even for new files now!)
+    if (config.enabled) {
+        startAutoSave(config.interval);
+    }
+}
+
+// 2. Toggle UI Visibility
+function toggleAutoSaveUI() {
+    const toggle = document.getElementById('autosave-toggle');
+    const options = document.getElementById('autosave-options');
+    if (toggle && options) {
+        options.style.display = toggle.checked ? 'block' : 'none';
+        updateAutoSaveConfig(); 
+    }
+}
+
+// 3. Save Config & Restart
+function updateAutoSaveConfig() {
+    const toggle = document.getElementById('autosave-toggle');
+    const select = document.getElementById('autosave-interval');
+    
+    const enabled = toggle.checked;
+    const interval = parseInt(select.value);
+    
+    localStorage.setItem('ztext_autosave', JSON.stringify({ enabled, interval }));
+    
+    if (enabled) {
+        startAutoSave(interval);
+    } else {
+        stopAutoSave();
+    }
+}
+
+// 4. Timer Logic
+function startAutoSave(ms) {
+    stopAutoSave(); 
+    console.log("Auto-save active: " + ms + "ms");
+    
+    autoSaveTimer = setInterval(() => {
+        const editorScreen = document.getElementById('editor-screen');
+        // Save if editor is open
+        if (editorScreen.style.display !== 'none') {
+            performAutoSave();
+        }
+    }, ms);
+}
+
+function stopAutoSave() {
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+        autoSaveTimer = null;
+    }
+}
+
+// 5. THE NEW "DRAFT SAVING" FUNCTION
+async function performAutoSave() {
+    // A. Grab fresh values
+    const nameInput = document.getElementById('file-name');
+    const editorArea = document.getElementById('editor-area');
+    
+    if (!nameInput || !editorArea) return;
+
+    let name = nameInput.value.trim();
+    const content = editorArea.value; 
+    
+    // B. Smart Check: Don't save completely empty new files
+    // (Prevents spamming DB with blank "Untitled" files if you just open and close)
+    if (!currentFileId && content.length === 0 && name.length === 0) {
+        return; 
+    }
+
+    // C. Default Name if empty
+    if (name.length === 0) {
+        name = "Untitled Draft"; 
+        // Optional: Update the input so user sees it
+        // nameInput.value = name; 
+    }
+    
+    try {
+        // D. Create ID if it doesn't exist (THE MAGIC FIX)
+        if (!currentFileId) {
+            currentFileId = db.ref().push().key;
+            // Optional: Update URL without reloading (Advanced)
+            // history.pushState({}, '', '?id=' + currentFileId); 
+            console.log("Created new draft ID:", currentFileId);
+        }
+
+        // E. Encrypt
+        const nameEnc = await ENC.encrypt(name, masterKey);
+        const contentEnc = await ENC.encrypt(content, masterKey);
+        
+        // F. Push to DB
+        await db.ref(`users/${currentUser.uid}/docs/${currentFileId}`).update({
+            nameEnc, 
+            contentEnc, 
+            updated: new Date().toISOString()
+        });
+        
+        // G. Feedback
+        toast("Saved to Cloud", "success");
+        
+    } catch(e) {
+        console.error("Auto-save failed", e);
+        // Only show error toast if it's a real network error, not just a cancelled request
+        toast("Auto-save failed!", "error");
+    }
+}
         
     </script>
 </body>
