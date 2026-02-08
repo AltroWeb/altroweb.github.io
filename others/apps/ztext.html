@@ -525,7 +525,48 @@ backdrop-filter: blur(8px);
     </div>
     
     
-    
+    <!-- ACCOUNT SECURITY SECTION -->
+<div style="background:var(--surface); padding:20px; border-radius:12px; border:1px solid var(--border); margin-bottom: 20px;">
+    <h3 style="margin:0 0 15px 0; font-size:15px; color: white;">Account Security</h3>
+
+    <!-- CHANGE USERNAME -->
+    <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:8px;">Change Username</label>
+        <div class="input-group">
+            <div class="input-wrapper">
+                <input type="text" id="set-new-user" placeholder="New Username">
+            </div>
+        </div>
+        <button class="primary" onclick="performChangeUsername()" style="width:100%">Update Username</button>
+    </div>
+
+    <!-- CHANGE PASSWORD -->
+    <div>
+        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:8px;">Change Password</label>
+        
+        <!-- Old Password -->
+        <div class="input-group">
+            <div class="input-wrapper">
+                <input type="password" id="set-old-pass" placeholder="Current Password">
+                <div class="password-toggle" onclick="togglePassword('set-old-pass')">
+                    <svg class="svg-icon" viewBox="0 0 24 24" id="icon-set-old-pass"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Password -->
+        <div class="input-group">
+            <div class="input-wrapper">
+                <input type="password" id="set-new-pass" placeholder="New Password">
+                <div class="password-toggle" onclick="togglePassword('set-new-pass')">
+                    <svg class="svg-icon" viewBox="0 0 24 24" id="icon-set-new-pass"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <button class="primary" onclick="performChangePassword()" id="btn-change-pass" style="width:100%">Update Password</button>
+    </div>
+</div>
     
 
     <div style="max-width:500px; margin:0 auto; width:100%;">
@@ -1036,17 +1077,26 @@ function readFileAsText(file) {
             const el = document.getElementById(id); el.style.display='flex'; 
             setTimeout(()=>el.classList.add('active'), 10);
         }
-        function openSettings() { showScreen('settings-screen'); }
+        function openSettings() { 
+loadAutoSaveSettings();
+showScreen('settings-screen'); }
         
         function goDashboard() { 
+            // 1. Check if we are currently inside the Editor
+            if (document.getElementById('editor-screen').style.display !== 'none') {
+                confirmDialog("Close File?", "Unsaved changes will be lost.", performExit);
+            } else {
+                // 2. If in Settings/Auth, exit immediately
+                performExit();
+            }
 
-stopAutoSave(); // Stop timer
-
-showScreen('dashboard-screen');
-
-loadFiles();
-
- }
+            // Helper to execute the actual exit
+            function performExit() {
+                stopAutoSave(); 
+                showScreen('dashboard-screen'); 
+                loadFiles(); 
+            }
+        }
         
         function saveServerConfig() { 
             const url = val('server-url-input');
@@ -1092,130 +1142,282 @@ document.getElementById('refreshBtn').addEventListener('click', async function()
 });
         
         
-// --- PRO AUTO-SAVE SYSTEM (Draft Support) ---
+// --- PRO AUTO-SAVE SYSTEM (Cloud Synced) ---
+        
+        let autoSaveTimer = null;
+        const DEFAULT_AUTOSAVE = { enabled: false, interval: 60000 }; 
 
-let autoSaveTimer = null;
-const DEFAULT_AUTOSAVE = { enabled: false, interval: 60000 }; 
+        // 1. Load Settings (Call this in openEditor AND openSettings)
+        async function loadAutoSaveSettings() {
+            if (!currentUser) return;
 
-// 1. Load Settings (Call this in openEditor)
-function loadAutoSaveSettings() {
-    const config = JSON.parse(localStorage.getItem('ztext_autosave')) || DEFAULT_AUTOSAVE;
-    
-    // Update UI
-    const toggle = document.getElementById('autosave-toggle');
-    const select = document.getElementById('autosave-interval');
-    if(toggle) toggle.checked = config.enabled;
-    if(select) select.value = config.interval;
-    
-    toggleAutoSaveUI();
-    
-    // Start timer if enabled (Even for new files now!)
-    if (config.enabled) {
-        startAutoSave(config.interval);
-    }
-}
+            try {
+                // A. Force Fetch config from Cloud DB (Not LocalStorage)
+                const snap = await db.ref(`users/${currentUser.uid}/settings/autosave`).get();
+                
+                // B. Use Cloud config or Default
+                const config = snap.exists() ? snap.val() : DEFAULT_AUTOSAVE;
+                
+                // C. Update UI Elements to match Cloud State
+                const toggle = document.getElementById('autosave-toggle');
+                const select = document.getElementById('autosave-interval');
+                const options = document.getElementById('autosave-options');
 
-// 2. Toggle UI Visibility
-function toggleAutoSaveUI() {
-    const toggle = document.getElementById('autosave-toggle');
-    const options = document.getElementById('autosave-options');
-    if (toggle && options) {
-        options.style.display = toggle.checked ? 'block' : 'none';
-        updateAutoSaveConfig(); 
-    }
-}
-
-// 3. Save Config & Restart
-function updateAutoSaveConfig() {
-    const toggle = document.getElementById('autosave-toggle');
-    const select = document.getElementById('autosave-interval');
-    
-    const enabled = toggle.checked;
-    const interval = parseInt(select.value);
-    
-    localStorage.setItem('ztext_autosave', JSON.stringify({ enabled, interval }));
-    
-    if (enabled) {
-        startAutoSave(interval);
-    } else {
-        stopAutoSave();
-    }
-}
-
-// 4. Timer Logic
-function startAutoSave(ms) {
-    stopAutoSave(); 
-    console.log("Auto-save active: " + ms + "ms");
-    
-    autoSaveTimer = setInterval(() => {
-        const editorScreen = document.getElementById('editor-screen');
-        // Save if editor is open
-        if (editorScreen.style.display !== 'none') {
-            performAutoSave();
-        }
-    }, ms);
-}
-
-function stopAutoSave() {
-    if (autoSaveTimer) {
-        clearInterval(autoSaveTimer);
-        autoSaveTimer = null;
-    }
-}
-
-// 5. THE NEW "DRAFT SAVING" FUNCTION
-async function performAutoSave() {
-    // A. Grab fresh values
-    const nameInput = document.getElementById('file-name');
-    const editorArea = document.getElementById('editor-area');
-    
-    if (!nameInput || !editorArea) return;
-
-    let name = nameInput.value.trim();
-    const content = editorArea.value; 
-    
-    // B. Smart Check: Don't save completely empty new files
-    // (Prevents spamming DB with blank "Untitled" files if you just open and close)
-    if (!currentFileId && content.length === 0 && name.length === 0) {
-        return; 
-    }
-
-    // C. Default Name if empty
-    if (name.length === 0) {
-        name = "Untitled Draft"; 
-        // Optional: Update the input so user sees it
-        // nameInput.value = name; 
-    }
-    
-    try {
-        // D. Create ID if it doesn't exist (THE MAGIC FIX)
-        if (!currentFileId) {
-            currentFileId = db.ref().push().key;
-            // Optional: Update URL without reloading (Advanced)
-            // history.pushState({}, '', '?id=' + currentFileId); 
-            console.log("Created new draft ID:", currentFileId);
+                if (toggle) toggle.checked = config.enabled;
+                if (select) select.value = config.interval;
+                
+                // D. Set Visibility
+                if (options) options.style.display = config.enabled ? 'block' : 'none';
+                
+                // E. Start/Stop Timer based on Cloud Config
+                console.log("Cloud Autosave Config Loaded:", config);
+                if (config.enabled) {
+                    startAutoSave(config.interval);
+                } else {
+                    stopAutoSave();
+                }
+            } catch(e) { 
+                console.error("Settings sync error", e); 
+            }
         }
 
-        // E. Encrypt
-        const nameEnc = await ENC.encrypt(name, masterKey);
-        const contentEnc = await ENC.encrypt(content, masterKey);
-        
-        // F. Push to DB
-        await db.ref(`users/${currentUser.uid}/docs/${currentFileId}`).update({
-            nameEnc, 
-            contentEnc, 
-            updated: new Date().toISOString()
-        });
-        
-        // G. Feedback
-        toast("Saved to Cloud", "success");
-        
-    } catch(e) {
-        console.error("Auto-save failed", e);
-        // Only show error toast if it's a real network error, not just a cancelled request
-        toast("Auto-save failed!", "error");
-    }
+        // 2. Toggle UI Visibility (Triggered by user click)
+        function toggleAutoSaveUI() {
+            const toggle = document.getElementById('autosave-toggle');
+            const options = document.getElementById('autosave-options');
+            if (toggle && options) {
+                options.style.display = toggle.checked ? 'block' : 'none';
+                // Immediately save the new state to the cloud
+                updateAutoSaveConfig(); 
+            }
+        }
+
+        // 3. Save Config to Cloud & Restart Timer
+        async function updateAutoSaveConfig() {
+            const toggle = document.getElementById('autosave-toggle');
+            const select = document.getElementById('autosave-interval');
+            
+            const enabled = toggle.checked;
+            const interval = parseInt(select.value);
+            
+            // A. Save directly to User Account in DB
+            try {
+                await db.ref(`users/${currentUser.uid}/settings/autosave`).set({ 
+                    enabled: enabled, 
+                    interval: interval 
+                });
+                console.log("Autosave settings synced to cloud.");
+            } catch(e) {
+                console.error("Failed to sync settings", e);
+                toast("Settings Sync Failed", "error");
+            }
+            
+            // B. Adjust Timer
+            if (enabled) {
+                startAutoSave(interval);
+            } else {
+                stopAutoSave();
+            }
+        }
+
+        // 4. Timer Logic
+        function startAutoSave(ms) {
+            stopAutoSave(); 
+            console.log("Auto-save timer started: " + ms + "ms");
+            
+            autoSaveTimer = setInterval(() => {
+                const editorScreen = document.getElementById('editor-screen');
+                // Only save if the editor is actually visible
+                if (editorScreen.style.display !== 'none') {
+                    performAutoSave();
+                }
+            }, ms);
+        }
+
+        function stopAutoSave() {
+            if (autoSaveTimer) {
+                clearInterval(autoSaveTimer);
+                autoSaveTimer = null;
+                console.log("Auto-save timer stopped");
+            }
+        }
+
+        // 5. THE DRAFT SAVING FUNCTION
+        async function performAutoSave() {
+            // A. Grab fresh values
+            const nameInput = document.getElementById('file-name');
+            const editorArea = document.getElementById('editor-area');
+            
+            if (!nameInput || !editorArea) return;
+
+            let name = nameInput.value.trim();
+            const content = editorArea.value; 
+            
+            // B. Don't save completely empty new files
+            if (!currentFileId && content.length === 0 && name.length === 0) {
+                return; 
+            }
+
+            // C. Default Name if empty
+            if (name.length === 0) {
+                name = "Untitled Draft"; 
+            }
+            
+            try {
+                // D. Create ID if it doesn't exist
+                if (!currentFileId) {
+                    currentFileId = db.ref().push().key;
+                    console.log("Created new draft ID:", currentFileId);
+                }
+
+                // E. Encrypt
+                const nameEnc = await ENC.encrypt(name, masterKey);
+                const contentEnc = await ENC.encrypt(content, masterKey);
+                
+                // F. Push to Cloud
+                await db.ref(`users/${currentUser.uid}/docs/${currentFileId}`).update({
+                    nameEnc, 
+                    contentEnc, 
+                    updated: new Date().toISOString()
+                });
+                
+                // G. Feedback (Optional: remove toast to be less annoying)
+                toast("Auto-Saved", "success");
+                
+            } catch(e) {
+                console.error("Auto-save execution failed", e);
+            }
+        }
+
+
+async function performChangeUsername() {
+    const newName = val('set-new-user');
+    
+    // 1. Validation
+    if (!newName) return toast("Enter new username", "error");
+    if (newName === currentUser.username) return toast("Same username", "error");
+    if (newName.length < 3) return toast("Too short (min 3)", "error");
+
+    // 2. Confirmation
+    confirmDialog("Change Username?", `Change to "${newName}"?`, async () => {
+        showConnectionStatus(true);
+        try {
+            // A. Change Username
+            await db.auth.changeUsername(newName);
+            
+            // B. Change Email (to match username@ztext.local pattern)
+            try {
+                const newEmail = newName + "@ztext.local";
+                await db.auth.changeEmail(newEmail);
+            } catch(e) {
+                console.warn("Email update warning:", e);
+                // We don't stop here, username is the priority
+            }
+
+            // C. Update Local State
+            toast("Username Updated!", "success");
+            val('set-new-user', ''); // Clear input
+            
+            // D. Refresh UI (optional, closes settings to refresh title/logic)
+            goDashboard();
+
+        } catch (err) {
+            if (err.code === 'conflict') {
+                toast("Username already taken", "error");
+            } else {
+                toast("Error: " + err.message, "error");
+            }
+        }
+    });
 }
+
+
+/* --- PRO PASSWORD CHANGE LOGIC (STRICT) --- */
+async function performChangePassword() {
+    const oldPass = val('set-old-pass');
+    const newPass = val('set-new-pass');
+    const btn = document.getElementById('btn-change-pass');
+
+    // 1. STRICT VALIDATION (Matches Server Security Policy)
+    if (!oldPass || !newPass) return toast("Fill all fields", "error");
+    
+    // Rule: At least 8 chars
+    if (newPass.length < 8) return toast("Password must be 8+ chars", "error");
+    
+    // Rule: Uppercase, Lowercase, Number
+    const hasUpper = /[A-Z]/.test(newPass);
+    const hasLower = /[a-z]/.test(newPass);
+    const hasNumber = /[0-9]/.test(newPass);
+    
+    if (!hasUpper || !hasLower || !hasNumber) {
+        // e.g., "Pass1234" works, "pass1234" fails
+        return toast("Req: Upper, Lower & Number (e.g. Pass123)", "error");
+    }
+
+    if (oldPass === newPass) return toast("New password is same as old", "error");
+
+    confirmDialog("Update Password?", "This will re-encrypt your vault.", async () => {
+        setLoading(btn, true);
+        showConnectionStatus(true);
+
+        try {
+            // STEP A: VERIFY OLD PASSWORD & REFRESH SESSION
+            // This is crucial. It refreshes the token to prevent "422" errors on the API call.
+            try {
+                const verifyLogin = await db.auth.signIn(currentUser.username, oldPass);
+                currentUser = verifyLogin.user; // Update session
+            } catch (e) {
+                throw new Error("Incorrect Old Password"); 
+            }
+
+            // STEP B: RE-WRAP CRYPTO KEYS
+            if (!masterKey) throw new Error("Security Violation: Key missing. Relogin.");
+
+            // 1. Generate fresh salt
+            const newSalt = Array.from(window.crypto.getRandomValues(new Uint8Array(16)));
+            
+            // 2. Derive key from NEW password
+            const newPassKey = await ENC.deriveKeyFromPass(newPass, newSalt);
+            
+            // 3. Wrap the existing Master Key with the NEW password key
+            const newWrappedKey = await ENC.wrap(masterKey, newPassKey);
+            
+            const newVault = {
+                salt: newSalt,
+                wrappedKey: newWrappedKey
+            };
+
+            // STEP C: EXECUTE SERVER CHANGE
+            // The server will accept this now because we passed client-side validation
+            await db.auth.changePassword(oldPass, newPass);
+
+            // STEP D: SAVE THE NEW VAULT
+            // Critical: Update the DB so the new password unlocks data next time
+            await db.ref(`users/${currentUser.uid}/security/key_vault`).set(newVault);
+
+            // STEP E: SUCCESS
+            toast("Password Updated Successfully", "success");
+            val('set-old-pass', '');
+            val('set-new-pass', '');
+
+        } catch (e) {
+            console.error("Change Password Error:", e);
+            
+            if (e.message === "Incorrect Old Password") {
+                toast("Incorrect Old Password", "error");
+            } else if (e.message.includes("422") || e.message.includes("Unprocessable Entity")) {
+                toast("Server rejected: Password too weak", "error");
+            } else {
+                toast("Error: " + e.message, "error");
+            }
+        } finally {
+            setLoading(btn, false);
+        }
+    });
+}
+
+
+
         
     </script>
 </body>
