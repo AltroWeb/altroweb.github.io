@@ -969,6 +969,9 @@ function readFileAsText(file) {
 
         async function saveFile() {
             const btn = document.getElementById('btn-save');
+            
+            // loading indicator
+            if (!btn.querySelector('.loader')) btn.insertAdjacentHTML('afterbegin', '<div class="loader"></div>');
             setLoading(btn, true);
             showConnectionStatus(true);
             
