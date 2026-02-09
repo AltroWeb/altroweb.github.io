@@ -2757,6 +2757,7 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
         }
 
             async saveSettings() {
+            	let passwordChanged = false; // password state
                 const newName = document.getElementById('set-name').value.trim();
                 const newIcon = document.getElementById('set-icon').value.trim();
                 const newBio = document.getElementById('set-bio').value.trim();
@@ -2804,26 +2805,42 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
                         this.devProfile.displayName = newName;
                     }
                     
-                    // --- STEP 2: PASSWORD LOGIC ---
+                   // --- STEP 2: PASSWORD LOGIC (THE FIX) ---
                     if (newPass) {
                         const passError = this.validatePassword(newPass);
                         if (passError) throw new Error(passError);
+                        
+                        // 1. Re-Auth & Update Password
                         try {
                             await this.user.updatePassword(newPass);
                         } catch(e) {
                             if (e.code === 'auth/requires-recent-login') {
-                                // REPLACED NATIVE PROMPT WITH CUSTOM PASSWORD PROMPT
-                                const currentPass = await this.showPrompt("Security Check", "Please enter your CURRENT password to confirm changes:", "", "password");
-                                
+                                const currentPass = await this.showPrompt("Security Check", "Please enter your CURRENT password:", "", "password");
                                 if (currentPass) {
                                     const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPass);
                                     await this.user.reauthenticateWithCredential(credential);
                                     await this.user.updatePassword(newPass);
-                                } else {
-                                    throw new Error("Re-authentication cancelled.");
-                                }
+                                } else throw new Error("Cancelled.");
                             } else throw e;
                         }
+
+                        // [CRITICAL FIX START] ---------------------------
+                        // 2. STOP the security listener on THIS device only.
+                        // This prevents the "Session Expired" popup from hitting YOU while you save.
+                        if (this.securityUnsub) this.securityUnsub();
+
+                        // 3. TRIGGER KILL SWITCH for everyone else.
+                        // All OTHER devices will see this and die instantly.
+                        await this.db.collection('artifacts').doc(this.appId)
+                            .collection('public').doc('data')
+                            .collection('user_info').doc(this.user.uid)
+                            .update({
+                                lastRevokeTime: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        
+                        console.log("Secure: Kill Switch sent to other devices.");
+                        passwordChanged = true; // Mark flag to log us out cleanly later
+                        
                     }
 
                     // --- STEP 3: UPDATE USER INFO DOC ---
@@ -2857,8 +2874,13 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
                     // --- STEP 5: FINALIZE ---
                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
                     document.getElementById('nav-username').innerText = newName;
-                    await this.showAlert("Saved", "Settings Saved Successfully!");
-                    this.showDashboard();
+                    if (passwordChanged) {
+                        await this.showAlert("Success", "Settings saved & Password changed.\n\nYou will now be logged out.");
+                        this.logout(); // Clean logout (No error popup)
+                    } else {
+                        await this.showAlert("Saved", "Settings Saved Successfully!");
+                        this.showDashboard();
+                    }
                     
                 } catch(e) {
                     console.error(e);
@@ -2892,13 +2914,28 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
                                 .catch(e => console.warn("Name lock already gone", e));
                         }
 
-                        // --- 2. DELETE USER INFO ---
+                        // --- 2. DELETE SESSIONS (The Missing Step!) ---
+                        // Firestore DOES NOT auto-delete sub-collections. We must do it manually.
+                        const sessionsRef = this.db.collection('artifacts').doc(this.appId)
+                            .collection('public').doc('data')
+                            .collection('user_info').doc(uid)
+                            .collection('sessions');
+                        
+                        const sessionSnap = await sessionsRef.get();
+                        if (!sessionSnap.empty) {
+                            const sessionBatch = this.db.batch();
+                            sessionSnap.forEach(doc => sessionBatch.delete(doc.ref));
+                            await sessionBatch.commit();
+                            console.log("Deleted user sessions.");
+                        }
+
+                        // --- 3. DELETE USER INFO ---
                         await this.db.collection('artifacts').doc(this.appId)
                             .collection('public').doc('data')
                             .collection('user_info').doc(uid).delete()
                             .catch(e => console.warn("User info already gone", e));
 
-                        // --- 3. DELETE APPS (Batch) ---
+                        // --- 4. DELETE APPS (Batch) ---
                         const snapshot = await this.db.collection('artifacts').doc(this.appId)
                             .collection('public').doc('data')
                             .collection('store_apps').where('authorId', '==', uid).get();
@@ -2912,7 +2949,7 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
 
                         if (count > 0) await batch.commit();
                         
-                        // --- 4. DELETE AUTH ACCOUNT ---
+                        // --- 5. DELETE AUTH ACCOUNT ---
                         await this.user.delete();
 
                         localStorage.removeItem('ios_builder_session');
