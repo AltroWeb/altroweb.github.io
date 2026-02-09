@@ -1428,34 +1428,52 @@ async register() {
 // --- SECURITY MODULE ---
 
 // 1. Register Device ID on Login
+// 1. Register Device & Run Janitor
 async registerCurrentDevice(uid) {
     try {
+        // --- A. REGISTER CURRENT DEVICE ---
         let deviceId = localStorage.getItem('app_device_id');
         if (!deviceId) {
             deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('app_device_id', deviceId);
         }
 
-        // Detect Browser
         const ua = navigator.userAgent;
         let bName = "Unknown Device";
         if(ua.indexOf("Chrome") > -1) bName = "Chrome";
         else if(ua.indexOf("Safari") > -1) bName = "Safari";
         else if(ua.indexOf("Firefox") > -1) bName = "Firefox";
         if(navigator.platform.indexOf("iPhone") > -1) bName += " (iPhone)";
-        else if(navigator.platform.indexOf("Win") > -1) bName += " (Windows)";
-        else if(navigator.platform.indexOf("Mac") > -1) bName += " (Mac)";
         else if(navigator.platform.indexOf("Android") > -1) bName += " (Android)";
 
-        // Save to Firestore
-        await this.db.collection('artifacts').doc(this.appId)
+        const sessionsRef = this.db.collection('artifacts').doc(this.appId)
             .collection('public').doc('data')
             .collection('user_info').doc(uid)
-            .collection('sessions').doc(deviceId).set({
-                name: bName,
-                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                userAgent: ua
-            }, { merge: true });
+            .collection('sessions');
+
+        // Update Heartbeat
+        await sessionsRef.doc(deviceId).set({
+            name: bName,
+            lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+            userAgent: ua
+        }, { merge: true });
+
+        // --- B. THE JANITOR (Self-Cleaning) ---
+        // "Next time it gets a chance, it clears pending ghosts"
+        const SEVEN_DAYS_AGO = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        const cutoffTimestamp = firebase.firestore.Timestamp.fromMillis(SEVEN_DAYS_AGO);
+
+        // Find orphaned sessions older than 7 days
+        sessionsRef.where('lastActive', '<', cutoffTimestamp).get()
+            .then(snapshot => {
+                if (!snapshot.empty) {
+                    const batch = this.db.batch();
+                    snapshot.forEach(doc => batch.delete(doc.ref));
+                    batch.commit().then(() => console.log("Janitor: Cleaned up " + snapshot.size + " ghost sessions."));
+                }
+            })
+            .catch(e => console.warn("Janitor skipped (permissions/offline)", e));
+
     } catch(e) { console.warn("Sec: Device reg failed", e); }
 }
 
@@ -1516,18 +1534,18 @@ async fetchActiveDevices(uid) {
                 list.style.opacity = '0.5';
                 
                 try {
-                    // 1. Fetch User Data (for Revoke Time) AND Sessions in parallel
+                    // 1. Fetch User (for Revoke Time) & Sessions
                     const userRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('user_info').doc(uid);
                     
                     const [userDoc, sessionSnap] = await Promise.all([
                         userRef.get(),
-                        userRef.collection('sessions').orderBy('lastActive', 'desc').limit(10).get()
+                        userRef.collection('sessions').orderBy('lastActive', 'desc').limit(15).get()
                     ]);
 
-                    // 2. Get the Kill Timestamp (Default to 0 if never revoked)
-                    const revokeTime = userDoc.exists && userDoc.data().lastRevokeTime 
-                        ? userDoc.data().lastRevokeTime.toMillis() 
-                        : 0;
+                    // 2. Security Timestamps
+                    const revokeTime = userDoc.exists && userDoc.data().lastRevokeTime ? userDoc.data().lastRevokeTime.toMillis() : 0;
+                    const now = Date.now();
+                    const STALE_THRESHOLD = 7 * 24 * 60 * 60 * 1000; // 7 Days in millis
 
                     let html = '';
                     const currentId = localStorage.getItem('app_device_id');
@@ -1538,22 +1556,24 @@ async fetchActiveDevices(uid) {
 
                     sessionSnap.forEach(doc => {
                         const d = doc.data();
-                        
-                        // 3. THE GHOST FILTER: Skip if session is older than the last "Sign Out All"
                         const sessionTime = d.lastActive ? d.lastActive.toMillis() : 0;
-                        if (sessionTime <= revokeTime) return; 
+
+                        // --- PRO FILTERS ---
+                        // 1. Kill Switch: Hide if older than "Sign Out All"
+                        if (sessionTime <= revokeTime) return;
+                        
+                        // 2. Stale Filter: Hide if inactive for > 7 Days (Cleans up Guest Mode ghosts)
+                        if ((now - sessionTime) > STALE_THRESHOLD) return;
 
                         const isMe = (doc.id === currentId);
-                        const timeStr = d.lastActive ? new Date(d.lastActive.toMillis()).toLocaleString() : 'Unknown';
-                        
+                        const timeStr = d.lastActive ? new Date(sessionTime).toLocaleString() : 'Unknown';
                         const isMobile = d.name.includes('iPhone') || d.name.includes('Android');
-                        const iconSvg = isMobile ? iconMobile : iconDesktop;
-                        
+
                         html += `
                             <li style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
                                 <div style="display:flex; align-items:center; gap:12px;">
                                     <div style="width:36px; height:36px; background:var(--bg-color); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); border:1px solid var(--border);">
-                                        ${iconSvg}
+                                        ${isMobile ? iconMobile : iconDesktop}
                                     </div>
                                     <div>
                                         <div style="font-weight:600; font-size:14px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
@@ -1602,19 +1622,40 @@ async confirmSignOutAll() {
 
 
 
-            logout(forced = false) {
-    if(this.securityUnsub) this.securityUnsub(); // Stop listening
-    this.auth.signOut();
-    localStorage.removeItem('ios_builder_session');
-    this.user = null;
-    this.devProfile = null;
-    document.getElementById('login-email').value = '';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('navbar').style.display = 'none';
-    
-    if(!forced) this.updateUIState('login');
-    else document.getElementById('login-view').classList.add('active');
-}
+            async logout(forced = false) {
+                // 1. PRO CLEANUP: Delete this session from Firestore (Only if manual logout)
+                // We do this BEFORE signOut so we still have write permissions.
+                if (!forced && this.user) {
+                    const deviceId = localStorage.getItem('app_device_id');
+                    if (deviceId) {
+                        try {
+                           // Fire and forget (awaiting ensures reliability but we don't block UI too long)
+                           await this.db.collection('artifacts').doc(this.appId)
+                                .collection('public').doc('data')
+                                .collection('user_info').doc(this.user.uid)
+                                .collection('sessions').doc(deviceId).delete();
+                        } catch(e) { console.warn("Session cleanup error (likely offline):", e); }
+                    }
+                }
+
+                // 2. Stop Listeners
+                if(this.securityUnsub) this.securityUnsub(); 
+                
+                // 3. Destroy Local Auth
+                await this.auth.signOut();
+                localStorage.removeItem('ios_builder_session');
+                
+                // 4. Reset Memory State
+                this.user = null;
+                this.devProfile = null;
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-pass').value = '';
+                document.getElementById('navbar').style.display = 'none';
+                
+                // 5. Navigate
+                if(!forced) this.updateUIState('login');
+                else document.getElementById('login-view').classList.add('active');
+            }
 
             showLogin() { this.updateUIState('login'); }
             showRegister() { this.updateUIState('register'); }
