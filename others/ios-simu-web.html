@@ -134,16 +134,22 @@
         .mobile-menu {
             position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             background: rgba(255,255,255,0.98); backdrop-filter: blur(15px);
-            z-index: 2001; display: flex; flex-direction: column;
-            padding-top: 100px; padding-left: 40px;
+            z-index: 2001; display: block; flex-direction: column;
+            padding-top: 100px; padding-left: 40px; overflow-y: auto;
             opacity: 0; pointer-events: none; transition: opacity 0.3s ease, background-color 0.3s ease;
         }
         .mobile-menu.open { opacity: 1; pointer-events: auto; }
 
         .mobile-menu a {
-            font-size: 28px; font-weight: 600; margin-bottom: 24px; color: #1D1D1F;
+            font-size: 28px; font-weight: 600; margin-bottom: 24px; color: #1D1D1F; 
             transform: translateX(-20px); transition: transform 0.4s var(--transition), opacity 0.4s, color 0.3s;
             opacity: 0;
+            white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;           /* Force width constraint */
+    display: block;        /* Required for ellipsis */
+    padding-right: 40px;
         }
         .mobile-menu.open a { transform: translateX(0); opacity: 1; }
         .mobile-menu.open a:nth-child(1) { transition-delay: 0.05s; }
@@ -153,6 +159,7 @@
         .mobile-menu.open a:nth-child(5) { transition-delay: 0.25s; }
         .mobile-menu.open a:nth-child(6) { transition-delay: 0.30s; }
         .mobile-menu.open a:nth-child(7) { transition-delay: 0.35s; }
+        .mobile-menu.open a:nth-child(8) { transition-delay: 0.40s; }
 
         /* --- HERO SECTION --- */
         .hero {
@@ -444,7 +451,7 @@ body.dark-mode .alert-box { background: rgba(255, 59, 48, 0.1); border-color: rg
         /* 4. Visuals & Layering */
         background: var(--bg-card) !important;
         z-index: 9999 !important; /* Sits on top of EVERYTHING */
-        box-shadow: 5px 0 30px rgba(0,0,0,0.2) !important;
+      /*  box-shadow: 5px 0 30px rgba(0,0,0,0.2) !important; */
         
         /* 5. Animation State */
         transform: translateX(-100%);
@@ -577,8 +584,66 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
 }
 
 
+/* Container for the "More" button */
+.nav-dropdown-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    cursor: pointer;
+}
 
+/* The "More" text */
+.nav-more-trigger {
+    font-size: 12px;
+    color: #333;
+    transition: color 0.3s;
+}
+.nav-dropdown-container:hover .nav-more-trigger { color: var(--accent); }
 
+/* The Dropdown Menu Box */
+.nav-dropdown-menu {
+    position: absolute;
+    top: 100%; /* Directly below */
+    right: 0;
+    width: 200px; /* Fixed width */
+    max-height: 400px;
+    overflow-y: auto; /* Scrollable if too many items */
+    background: var(--bg-nav);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    padding: 10px;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Show on Hover */
+.nav-dropdown-container:hover .nav-dropdown-menu {
+    display: flex;
+}
+
+/* Links inside dropdown */
+.nav-dropdown-menu a {
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.nav-dropdown-menu a:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--accent);
+}
+body.dark-mode .nav-dropdown-menu a:hover { background: rgba(255,255,255,0.1); }
+
+body.dark-mode .nav-more-trigger {
+    color: #E5E5E5;              /* Light Text for "More" */
+}
 
 
     </style>
@@ -594,13 +659,31 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
             
             <div class="nav-links-desktop">
     <a onclick="switchView('home')" id="link-home" class="active">Overview</a>
-    
     <a onclick="switchView('search'); triggerSearch('')" id="link-search">Search</a>
     
+    
+    
     <a onclick="switchView('docs')" id="link-docs">Documentation</a>
-    <a onclick="switchView('support')" id="link-support">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
-    <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator ↗</a>
+    
+    <a onclick="switchView('support')" id="link-support">Support Center</a>
+    
+    
+    
+    <div class="nav-dropdown-container">
+        <span class="nav-more-trigger">More ▾</span>
+        <div class="nav-dropdown-menu">
+            
+            <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
+            <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator ↗</a>
+            
+            <a onclick="window.open('appstore-web.html', '_blank')">App Store Web</a>
+            
+        </div>
+    </div>
+    
     <a class="dm-toggle" onclick="toggleDarkMode()">Dark Mode</a>
+    
+    
 </div>
 
             <!-- 2-BAR HAMBURGER -->
@@ -619,6 +702,7 @@ body.dark-mode .toast-msg { background: rgba(255, 255, 255, 0.9); color: black; 
     <a onclick="mobileNavigate('docs')">Documentation</a>
     <a onclick="mobileNavigate('support')">Support Center</a> <a onclick="window.open('appbuilder.html', '_blank')">App Builder</a>
     <a onclick="window.open('ios-simu-appstore.html', '_blank')">Simulator</a>
+    <a onclick="window.open('appstore-web.html', '_blank')">App Store Web</a>
     <a onclick="toggleDarkMode()">Dark Mode</a>
 </div>
 

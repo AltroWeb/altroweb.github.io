@@ -423,6 +423,80 @@
 }
 
 
+/* --- PRO AUTO-CENTERED CHECKBOX --- */
+#login-guest {
+    /* 1. FORCE RESET (Overrides global 100% width/padding) */
+    -webkit-appearance: none; appearance: none;
+    width: 18px !important;
+    height: 18px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+
+    /* 2. Container Layout & Style */
+    display: grid;              /* The Magic: Enables auto-centering */
+    place-content: center;      /* Centers content (the tick) perfectly */
+    
+    background-color: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;         /* Smooth App Store-like corners */
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Checked State */
+#login-guest:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* The White Tick */
+#login-guest::after {
+    content: "";
+    width: 3px; 
+    height: 7px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    opacity: 0;
+    /* Visual balance correction (checks look lower visually due to rotation) */
+    margin-bottom: 2px; 
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animate Tick */
+#login-guest:checked::after {
+    transform: rotate(45deg) scale(1);
+    opacity: 1;
+}
+
+/* --- PRO APPEARANCE VARIABLE --- */
+:root { --text-tertiary: #D2D2D7; } /* Dark Gray for Light Mode */
+body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
+
+
+.login-dark-mode {
+    /* 1. Force the variable color at start */
+    color: var(--text-tertiary) !important; 
+    
+    /* 2. Layout & Typos */
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: opacity 0.2s ease;
+}
+
+
+.login-dark-mode:hover {
+    color: var(--text-secondary);
+}
+	
+	
+
     </style>
 </head>
 <body>
@@ -479,10 +553,21 @@
                             <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                         </div>
                     </div>
-                    <div style="text-align: right; margin-top: 8px;">
-                         <span class="auth-link" style="font-size: 13px; font-weight:500;" onclick="appBuilder.forgotPassword()">Forgot Password?</span>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 24px;">
+                        
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="login-guest" style="width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer;">
+                            <label for="login-guest" style="margin: 0; font-size: 13px; color: var(--text-secondary); cursor: pointer; font-weight: 500; text-transform: none; letter-spacing: 0;">Guest Mode</label>
+                        </div>
+
+                        <span class="auth-link" style="font-size: 13px; font-weight: 600;" onclick="appBuilder.forgotPassword()">Forgot Password?</span>
                     </div>
                 </div>
+                
+                
+                
+                
+                
                 <button class="btn block" id="btn-login" onclick="appBuilder.login()">
                     <span>Sign In</span>
                     <div class="loader"></div>
@@ -490,6 +575,14 @@
                 <div class="auth-switch">
                     Don't have an account? <span class="auth-link" onclick="appBuilder.showRegister()">Create Account</span>
                 </div>
+                
+                <div style="text-align: center; margin-top: 25px; margin-bottom:10px;">
+    <span class="login-dark-mode"  onclick="appBuilder.toggleDarkMode()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        Change Appearance
+    </span>
+</div>
+                
             </div>
         </div>
 
@@ -531,6 +624,15 @@
                 <div class="auth-switch">
                     Already have an account? <span class="auth-link" onclick="appBuilder.showLogin()">Sign In</span>
                 </div>
+                
+                
+                <div style="text-align: center; margin-top: 25px; margin-bottom:10px;">
+    <span class="login-dark-mode" onclick="appBuilder.toggleDarkMode()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        Change Appearance
+    </span>
+</div>
+                
             </div>
         </div>
 
@@ -896,14 +998,38 @@
                     </div>
                 </div>
                 
+ <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()" style="width:100%; margin-bottom: 20px;">
+             <span>Save Changes</span>
+             <div class="loader"></div>
+         </button>               
+                
+         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin: 30px 0 10px 0; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                    <h3 style="font-size: 18px; margin: 0; color: var(--text-primary);">Security & Devices</h3>
+                    <button class="btn secondary sm" onclick="appBuilder.fetchActiveDevices(appBuilder.user.uid)" style="padding: 4px 10px; font-size: 12px; height: 28px;">
+                        Refresh List
+                    </button>
+                </div>
+
+<div style="background: var(--bg-color); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 600; text-transform: uppercase;">Active Sessions</div>
+    <ul id="device-list" style="list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 220px; padding-right: 4px;">
+        <li style="color: var(--text-secondary); font-size: 13px;">Loading active devices...</li>
+    </ul>
+</div>
+
+<button class="btn block" onclick="appBuilder.confirmSignOutAll()" style="background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); margin-bottom: 30px;">
+    Sign Out of All Devices
+</button>       
+                
+                
+                
+                
+                
         <div class="settings-footer">
      <button class="btn danger" onclick="appBuilder.confirmDeleteAccount()">Delete Account</button>
      <div class="settings-controls">
          <button class="btn secondary" onclick="appBuilder.confirmLogout()">Sign Out</button>
-         <button class="btn" id="btn-save-settings" onclick="appBuilder.saveSettings()">
-             <span>Save Changes</span>
-             <div class="loader"></div>
-         </button>
+         
      </div>
 </div>
                 
@@ -1081,55 +1207,38 @@ updateTagsCounter(input) {
             }
 
 async performFirebaseAuth(isInteractive) {
-                this.user = this.auth.currentUser;
-                
-                if (this.user) {
-                     // 1. Try to load valid session from LocalStorage first
-                     let savedProfile = null;
-                     try {
-                         const stored = localStorage.getItem('ios_builder_session');
-                         if (stored) savedProfile = JSON.parse(stored);
-                     } catch(e) {}
+    this.user = this.auth.currentUser;
+    
+    if (this.user) {
+         // 1. Session & Display Name Logic
+         let savedProfile = null;
+         try { savedProfile = JSON.parse(localStorage.getItem('ios_builder_session')); } catch(e) {}
 
-                     // 2. Determine Display Name Priority:
-                     // Priority 1: The name currently in Firebase Auth (if set)
-                     // Priority 2: The name in LocalStorage (if set and UID matches)
-                     // Priority 3: Fallback to Email
-                     let finalName = this.user.displayName;
-                     
-                     if (!finalName && savedProfile && savedProfile.uid === this.user.uid) {
-                         finalName = savedProfile.displayName;
-                     }
-                     if (!finalName) {
-                         finalName = this.user.email.split('@')[0];
-                     }
+         let finalName = this.user.displayName;
+         if (!finalName && savedProfile && savedProfile.uid === this.user.uid) finalName = savedProfile.displayName;
+         if (!finalName) finalName = this.user.email.split('@')[0];
 
-                     // 3. Update the Profile
-                     this.devProfile = {
-                         email: this.user.email,
-                         displayName: finalName,
-                         uid: this.user.uid
-                     };
-                     
-                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
-                     
-                     if(this.devProfile) {
-                        document.getElementById('nav-username').innerText = this.devProfile.displayName;
-                        document.getElementById('navbar').style.display = 'flex';
-                        
-                        const onAuthPage = document.getElementById('login-view').classList.contains('active') || 
-                                         document.getElementById('register-view').classList.contains('active');
-                                         
-                        if(onAuthPage) {
-                            this.showDashboard();
-                        }
-                     }
-                } else {
-                    if (!isInteractive && !document.getElementById('register-view').classList.contains('active')) {
-                        this.showLogin();
-                    }
-                }
-            }
+         this.devProfile = { email: this.user.email, displayName: finalName, uid: this.user.uid };
+         localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
+         
+         if(this.devProfile) {
+            document.getElementById('nav-username').innerText = this.devProfile.displayName;
+            document.getElementById('navbar').style.display = 'flex';
+            const onAuthPage = document.getElementById('login-view').classList.contains('active') || 
+                             document.getElementById('register-view').classList.contains('active');
+            if(onAuthPage) this.showDashboard();
+         }
+
+         // 2. SECURITY: Start Monitoring & Register Device
+         this.initSecurityMonitor(this.user.uid);
+         this.registerCurrentDevice(this.user.uid);
+
+    } else {
+        if (!isInteractive && !document.getElementById('register-view').classList.contains('active')) {
+            this.showLogin();
+        }
+    }
+}
 
             validatePassword(password) {
                 // Min 6 chars, at least 1 number or special char
@@ -1144,6 +1253,7 @@ async performFirebaseAuth(isInteractive) {
             async login() {
                 const email = document.getElementById('login-email').value.trim();
                 const pass = document.getElementById('login-pass').value.trim();
+                const isGuest = document.getElementById('login-guest').checked; // Small checkbox
 
                 if (!email || !pass) { 
                     await this.showAlert("Missing Info", "Please enter email and password.", true); 
@@ -1154,13 +1264,31 @@ async performFirebaseAuth(isInteractive) {
                 btn.classList.add('loading');
 
                 try {
-                    await this.auth.signInWithEmailAndPassword(email, pass);
+                    // 1. Set Persistence
+                    const persistence = isGuest 
+                        ? firebase.auth.Auth.Persistence.SESSION 
+                        : firebase.auth.Auth.Persistence.LOCAL;
+                    await this.auth.setPersistence(persistence);
+                    
+                    // 2. Perform Login
+                    const cred = await this.auth.signInWithEmailAndPassword(email, pass);
+                    
+                    // 3. SECURITY: Stamp the "Last Login" to the DB
+                    // This creates the "Sound" that other devices will "Hear"
+                    const now = Date.now();
+                    localStorage.setItem('auth_session_start', now); // Save LOCAL reference
+                    
+                    await this.db.collection('artifacts').doc(this.appId)
+                        .collection('public').doc('data')
+                        .collection('user_info').doc(cred.user.uid).set({
+                            lastLoginTime: firebase.firestore.FieldValue.serverTimestamp() // TAMPER PROOF SERVER TIME
+                        }, { merge: true });
+
                 } catch (e) {
                     console.error(e);
                     let msg = "Login Failed: " + e.message;
-                    if (e.code === 'auth/user-not-found') msg = "No account found with this email.";
+                    if (e.code === 'auth/user-not-found') msg = "No account found.";
                     if (e.code === 'auth/wrong-password') msg = "Incorrect password.";
-                    if (e.code === 'auth/invalid-email') msg = "Invalid email format.";
                     await this.showAlert("Login Failed", msg, true);
                 } finally {
                     btn.classList.remove('loading');
@@ -1288,16 +1416,205 @@ async register() {
                 }
             }
 
-            logout() {
-                this.auth.signOut();
-                localStorage.removeItem('ios_builder_session');
-                this.user = null;
-                this.devProfile = null;
-                document.getElementById('login-email').value = '';
-                document.getElementById('login-pass').value = '';
-                document.getElementById('navbar').style.display = 'none';
-                this.updateUIState('login');
+
+
+
+
+
+
+
+
+
+// --- SECURITY MODULE ---
+
+// 1. Register Device ID on Login
+async registerCurrentDevice(uid) {
+    try {
+        let deviceId = localStorage.getItem('app_device_id');
+        if (!deviceId) {
+            deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('app_device_id', deviceId);
+        }
+
+        // Detect Browser
+        const ua = navigator.userAgent;
+        let bName = "Unknown Device";
+        if(ua.indexOf("Chrome") > -1) bName = "Chrome";
+        else if(ua.indexOf("Safari") > -1) bName = "Safari";
+        else if(ua.indexOf("Firefox") > -1) bName = "Firefox";
+        if(navigator.platform.indexOf("iPhone") > -1) bName += " (iPhone)";
+        else if(navigator.platform.indexOf("Win") > -1) bName += " (Windows)";
+        else if(navigator.platform.indexOf("Mac") > -1) bName += " (Mac)";
+        else if(navigator.platform.indexOf("Android") > -1) bName += " (Android)";
+
+        // Save to Firestore
+        await this.db.collection('artifacts').doc(this.appId)
+            .collection('public').doc('data')
+            .collection('user_info').doc(uid)
+            .collection('sessions').doc(deviceId).set({
+                name: bName,
+                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                userAgent: ua
+            }, { merge: true });
+    } catch(e) { console.warn("Sec: Device reg failed", e); }
+}
+
+// 2. Monitor for "Sign Out All" Command
+initSecurityMonitor(uid) {
+                if(this.securityUnsub) this.securityUnsub(); 
+                
+                this.securityUnsub = this.db.collection('artifacts').doc(this.appId)
+                    .collection('public').doc('data')
+                    .collection('user_info').doc(uid)
+                    .onSnapshot((doc) => {
+                        if(doc.exists) {
+                            const data = doc.data();
+
+                            // 1. KILL SWITCH (Revoke Access)
+                            if (data.lastRevokeTime) {
+                                const revokeTime = data.lastRevokeTime.toMillis();
+                                const sessionStart = parseInt(localStorage.getItem('auth_session_start') || '0');
+                                
+                                if (revokeTime > sessionStart) {
+                                    this.logout(true);
+                                    this.showAlert("Session Expired", "Signed out.", true);
+                                    return; // Stop here
+                                }
+                            }
+
+                            // 2. INTRUSION ALERT (New Login Detected)
+                            if (data.lastLoginTime) {
+                                const lastGlobalLogin = data.lastLoginTime.toMillis();
+                                const myLogin = parseInt(localStorage.getItem('auth_session_start') || Date.now());
+
+                                // TOLERANCE CHECK: 
+                                // If the DB login time is significantly NEWER than my login time (e.g. > 5 seconds later),
+                                // it means someone else logged in *after* me.
+                                if (lastGlobalLogin > (myLogin + 5000)) {
+                                    // Check if we already showed alert for THIS specific event to avoid loops
+                                    const lastSeenAlert = parseInt(sessionStorage.getItem('last_alert_timestamp') || '0');
+                                    
+                                    if (lastGlobalLogin > lastSeenAlert) {
+                                        sessionStorage.setItem('last_alert_timestamp', lastGlobalLogin);
+                                        // TRIGGER POPUP
+                                        document.getElementById('security-modal').style.display = 'flex';
+                                    }
+                                }
+                            }
+
+                            // 3. Refresh Device List (if Settings is open)
+                            if (document.getElementById('settings-view').classList.contains('active')) {
+                                this.fetchActiveDevices(uid);
+                            }
+                        }
+                    });
             }
+
+// 3. Fetch List for Settings
+async fetchActiveDevices(uid) {
+                const list = document.getElementById('device-list');
+                list.style.opacity = '0.5';
+                
+                try {
+                    // 1. Fetch User Data (for Revoke Time) AND Sessions in parallel
+                    const userRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('user_info').doc(uid);
+                    
+                    const [userDoc, sessionSnap] = await Promise.all([
+                        userRef.get(),
+                        userRef.collection('sessions').orderBy('lastActive', 'desc').limit(10).get()
+                    ]);
+
+                    // 2. Get the Kill Timestamp (Default to 0 if never revoked)
+                    const revokeTime = userDoc.exists && userDoc.data().lastRevokeTime 
+                        ? userDoc.data().lastRevokeTime.toMillis() 
+                        : 0;
+
+                    let html = '';
+                    const currentId = localStorage.getItem('app_device_id');
+                    
+                    // SVG Icons
+                    const iconDesktop = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
+                    const iconMobile = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
+
+                    sessionSnap.forEach(doc => {
+                        const d = doc.data();
+                        
+                        // 3. THE GHOST FILTER: Skip if session is older than the last "Sign Out All"
+                        const sessionTime = d.lastActive ? d.lastActive.toMillis() : 0;
+                        if (sessionTime <= revokeTime) return; 
+
+                        const isMe = (doc.id === currentId);
+                        const timeStr = d.lastActive ? new Date(d.lastActive.toMillis()).toLocaleString() : 'Unknown';
+                        
+                        const isMobile = d.name.includes('iPhone') || d.name.includes('Android');
+                        const iconSvg = isMobile ? iconMobile : iconDesktop;
+                        
+                        html += `
+                            <li style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div style="width:36px; height:36px; background:var(--bg-color); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); border:1px solid var(--border);">
+                                        ${iconSvg}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600; font-size:14px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+                                            ${d.name} 
+                                            ${isMe ? '<span class="tag" style="background:var(--success); color:#fff; font-size:10px; padding:2px 6px; border-radius:4px;">THIS DEVICE</span>' : ''}
+                                        </div>
+                                        <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${timeStr}</div>
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+                    });
+
+                    list.innerHTML = html || '<li style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">No active sessions found.</li>';
+
+                } catch(e) {
+                    console.error(e);
+                    list.innerHTML = '<li style="color:var(--danger); font-size:13px; padding:10px;">Error loading devices.</li>';
+                } finally {
+                    list.style.opacity = '1';
+                }
+            }
+
+// 4. Action: Sign Out All
+async confirmSignOutAll() {
+    const ok = await this.showConfirm("Sign Out Everywhere?", "This will log out ALL devices including this one.", "Sign Out All");
+    if(ok) {
+        try {
+            await this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('user_info').doc(this.user.uid).set({
+                    lastRevokeTime: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            
+            // Wait for listener to catch it, or force logout manually
+            setTimeout(() => this.logout(), 500);
+        } catch(e) { this.showAlert("Error", e.message, true); }
+    }
+}
+
+
+
+
+
+
+
+
+
+            logout(forced = false) {
+    if(this.securityUnsub) this.securityUnsub(); // Stop listening
+    this.auth.signOut();
+    localStorage.removeItem('ios_builder_session');
+    this.user = null;
+    this.devProfile = null;
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('navbar').style.display = 'none';
+    
+    if(!forced) this.updateUIState('login');
+    else document.getElementById('login-view').classList.add('active');
+}
 
             showLogin() { this.updateUIState('login'); }
             showRegister() { this.updateUIState('register'); }
@@ -2373,6 +2690,10 @@ document.getElementById('set-bio').dispatchEvent(new Event('input'));
                 } catch(e) {
                     console.warn("Failed to load extended profile", e);
                 }
+                
+                
+if(this.user) this.fetchActiveDevices(this.user.uid);
+                
             }
             
             async sendPasswordReset() {
@@ -2678,7 +2999,29 @@ function renderBio(text) {
     </div>
 </div>
 
-  
+  <div id="security-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 20000;">
+        <div style="background: var(--card-bg); width: 90%; max-width: 380px; padding: 24px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); text-align: center; border: 1px solid var(--danger);">
+            <div style="width: 50px; height: 50px; background: rgba(255, 59, 48, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF3B30"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <h2 style="margin: 0 0 8px; font-size: 20px; color: var(--text-primary);">New Login Detected</h2>
+            <p style="margin: 0 0 24px; color: var(--text-secondary); font-size: 14px; line-height: 1.5;">
+                Your account was just accessed from a new device or browser. Was this you?
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn danger block" onclick="appBuilder.confirmSignOutAll(); document.getElementById('security-modal').style.display='none'">
+                    No, Secure My Account (Sign Out All)
+                </button>
+                <button class="btn secondary block" onclick="appBuilder.showSettings(); document.getElementById('security-modal').style.display='none'">
+                    Review Active Devices
+                </button>
+                <button class="btn block" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--border);" onclick="document.getElementById('security-modal').style.display='none'">
+                    Yes, It Was Me
+                </button>
+            </div>
+        </div>
+    </div>
     
 </body>
 </html>
