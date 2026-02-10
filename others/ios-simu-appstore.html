@@ -1193,6 +1193,53 @@ body.dark-mode #store-dev-header {
     
 }
 
+
+
+
+/* --- FIX: UNIFIED BUTTON STYLING --- */
+/* This ensures Sideloader buttons match App Store buttons exactly */
+.sl-btn {
+    background: #F2F2F7; 
+    color: #007AFF; 
+    font-weight: 700; 
+    font-size: 13px;
+    border-radius: 20px; /* Fixes the square edges */
+    padding: 6px 20px; 
+    border: none; 
+    cursor: pointer;
+    min-width: 72px; 
+    transition: all 0.2s;
+    width: 100%; /* Stacks perfectly */
+}
+
+.sl-btn.danger { color: #FF3B30; }
+
+/* Dark Mode Support for Sideloader */
+body.dark-mode .sl-btn { background: #2C2C2E; }
+body.dark-mode .sl-btn:active { background: #3a3a3c; }
+
+/* Fix specific spacing in Sideloader stack */
+.sl-action-stack {
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+    width: 85px;
+}
+
+
+/* --- PRO FIX: VISIBILITY SHIELD --- */
+/* This overrides ANY inline style or JS bug that tries to hide the window */
+.app-window.force-visible {
+    display: flex !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+
+
+
     </style>
 </head>
 <body>
@@ -2683,24 +2730,34 @@ const reportBtn = this.isNetworkStrict() ?
         <span>Report</span>
     </button>` : '';
                     
-                    // Inside renderStore(appList) loop:
+                    // --- INSIDE AppStore.renderStore() ---
+// Replace the existing actionHTML logic with this:
+
 let actionHTML = '';
+
+// 1. UPDATE AVAILABLE STATE
 if (isUpdateAvailable) {
     actionHTML = `
         <div class="store-actions">
-            <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
+            <button class="store-get-btn update-mode" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
                 <span>UPDATE</span>
                 <div class="spinner"></div>
             </button>
-            <button class="store-get-btn" style="background:#F2F2F7; color:#007AFF; margin-top:4px;" onclick="appStore.directOpen('${app.id}')">
+            <button class="store-get-btn" onclick="appStore.directOpen('${app.id}')">
                 <span>OPEN</span>
             </button>
-            <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+             <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
                 <span>UNINSTALL</span>
             </button>
         </div>`;
-} else {
-    const openBtn = isInstalled ? `<button class="store-get-btn" style="background:#F2F2F7; color:#007AFF; margin-bottom:4px;" onclick="appStore.directOpen('${app.id}')"><span>OPEN</span></button>` : '';
+} 
+// 2. STANDARD STATE
+else {
+    // FIX: "OPEN" button is now standard Grey/Blue (No more Green #34C759)
+    const openBtn = isInstalled 
+        ? `<button class="store-get-btn" onclick="appStore.directOpen('${app.id}')"><span>OPEN</span></button>` 
+        : '';
+        
     actionHTML = `
     <div class="store-actions">
         ${openBtn}
@@ -2870,12 +2927,34 @@ async removeAppById(appId) {
             
  
             
-    directOpen(appId) {
-    // Identify which window is currently opening the app
-    const activeWindow = window.iOS.activeWindow; 
-    const mainWindow = document.getElementById('main-window');
+    // --- INSIDE AppStore Class ---
 
-    // 1. Pre-Navigate Home Screen in background
+
+
+// --- REPLACE AppStore.directOpen() [ULTIMATE POLISH] ---
+directOpen(appId) {
+    // 1. MUTEX LOCK
+    window.iOS.state = 'OPENING';
+    
+    // 2. INTELLIGENT TARGET RESOLUTION
+    // Determine which DOM element is the target based on the App ID
+    let targetId = 'main-window';
+    if (appId === 'AppStore') targetId = 'appstore-window';
+    else if (appId === 'Sideloader') targetId = 'sideloader-window';
+    else if (appId === 'Music') targetId = 'music-window';
+    
+    const targetWindow = document.getElementById(targetId);
+    
+    // 3. DYNAMIC "RECEDE" LIST
+    // Find ALL windows that are currently visible (display != none) BUT are not the target.
+    // This guarantees we catch EVERYTHING (Store, Sideloader, Main, Music, etc.)
+    const allWindows = Array.from(document.querySelectorAll('.app-window'));
+    const windowsToRecede = allWindows.filter(win => {
+        const style = window.getComputedStyle(win);
+        return style.display !== 'none' && win !== targetWindow;
+    });
+
+    // 4. NAVIGATION SYNC (Background)
     const sourceApps = window.iOS.allApps;
     const iconsPerPage = (Math.floor((window.innerHeight - 280) / 120)) * 3;
     const appIndex = sourceApps.findIndex(el => el.getAttribute('data-app-id') === appId);
@@ -2884,31 +2963,68 @@ async removeAppById(appId) {
         window.iOS.updatePageScroll();
     }
 
-    // 2. Prepare App Memory & Visuals
+    // 5. PREPARE CONTENT
     window.iOS.routeContent(appId); 
-    window.iOS.statusBar.classList.add('dark-text');
-    mainWindow.classList.add('slide-right-init');
-    mainWindow.style.display = 'flex';
 
-    // 3. Trigger Synchronized Animation
+    // 6. NUCLEAR SANITIZATION (Target)
+    targetWindow.removeAttribute('style'); 
+    targetWindow.classList.remove('recede-morph', 'vacuum-active', 'slide-right-active');
+    
+    // >>> PRO POLISH: Z-INDEX BOOST <<<
+    // Ensure the entering window slides OVER the receding one.
+    // We set a high Z-Index temporarily.
+    targetWindow.style.zIndex = '9999';
+
+    // 7. STATUS BAR LOGIC
+    if (!window.iOS.isDarkMode && appId !== 'Music') {
+        window.iOS.statusBar.classList.add('dark-text');
+        document.getElementById('gesture-bar').classList.add('dark-bar');
+    } else {
+        window.iOS.statusBar.classList.remove('dark-text');
+        document.getElementById('gesture-bar').classList.remove('dark-bar');
+    }
+
+    // 8. ANIMATION SETUP (Frame 0)
+    targetWindow.style.transition = 'none';
+    targetWindow.classList.add('slide-right-init');
+    targetWindow.style.display = 'flex'; 
+    void targetWindow.offsetWidth; // Force Paint
+
+    // 9. ANIMATION EXECUTION
     requestAnimationFrame(() => {
-        if (activeWindow) activeWindow.classList.add('recede-morph');
-        mainWindow.classList.add('slide-right-active');
+        targetWindow.style.transition = ''; 
+        
+        requestAnimationFrame(() => {
+            // >>> UNIVERSAL RECEDE ANIMATION <<<
+            // Force every other visible window to shrink and fade back
+            windowsToRecede.forEach(win => {
+                win.classList.add('recede-morph');
+            });
+
+            // Slide in Target
+            targetWindow.classList.add('slide-right-active');
+            
+            // 10. ENGINE SYNC
+            window.iOS.activeWindow = targetWindow;
+            window.iOS.state = 'ACTIVE';
+            window.iOS.activeWindow.setAttribute('data-app', appId);
+            window.iOS.activeAppIcon = window.iOS.getVisibleIconElement(appId);
+        });
     });
 
-    // 4. Engine Sync
-    window.iOS.activeWindow = mainWindow;
-    window.iOS.state = 'ACTIVE';
-    window.iOS.activeWindow.setAttribute('data-app', appId);
-    window.iOS.activeAppIcon = window.iOS.getVisibleIconElement(appId);
-
-    // 5. Cleanup
+    // 11. CLEANUP (750ms later)
     setTimeout(() => {
-        if (activeWindow) {
-            activeWindow.style.display = 'none';
-            activeWindow.classList.remove('recede-morph');
-        }
-        mainWindow.classList.remove('slide-right-init', 'slide-right-active');
+        // Hide all the receded windows
+        windowsToRecede.forEach(win => {
+            win.style.display = 'none';
+            win.classList.remove('recede-morph');
+        });
+        
+        // Clean up the target window state
+        targetWindow.classList.remove('slide-right-init', 'slide-right-active');
+        
+        // Remove the Z-Index boost so standard layering returns
+        targetWindow.style.zIndex = ''; 
     }, 750);
 }
             
@@ -3197,7 +3313,7 @@ async performInstall(app, btn, isUpdate = false, forceBackfill = false) {
             if (!btn.parentElement.querySelector('button[onclick*="directOpen"]')) {
                 const openBtn = document.createElement('button');
                 openBtn.className = 'store-get-btn';
-                openBtn.style.cssText = 'background:#34C759; color:white; margin-bottom:4px;';
+                openBtn.style.cssText = 'margin-bottom:4px;';
                 openBtn.onclick = () => this.directOpen(app.id);
                 openBtn.innerHTML = '<span>OPEN</span>';
                 btn.parentElement.insertBefore(openBtn, btn);
@@ -4059,20 +4175,23 @@ async generatePackage(name, icon, type, payload, size, author) {
         if (app.isPacked) badge = ' <span style="font-size:10px; background:#E5E5EA; padding:2px 4px; border-radius:4px; color:#000;">IAP</span>';
         else if (app.type === 'native') badge = ' <span style="font-size:10px; background:#34C759; color:white; padding:2px 4px; border-radius:4px; display: none;">NATIVE</span>';
 
-        // Inside sideloader.renderList()
+        // --- INSIDE Sideloader.renderList() ---
+// Replace the actionsHTML logic with this:
+
 let actionsHTML = '';
+
 if (app.isPacked) {
     actionsHTML = `
         <div class="sl-action-stack">
-            <button style="background:#E9E9EA; color:#007AFF; border:none; font-weight:600; cursor:pointer;" onclick="appStore.directOpen('${app.id}')">OPEN</button>
-            <button style="background:#E9E9EA; color:#FF3B30; border:none; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+            <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+            <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
         </div>`;
 } else {
     actionsHTML = `
         <div class="sl-action-stack">
-            <button style="background:#E9E9EA; color:#007AFF; border:none; font-weight:600; cursor:pointer;" onclick="appStore.directOpen('${app.id}')">OPEN</button>
-            <button style="background:#E9E9EA; color:#007AFF; border:none; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">EDIT</button>
-            <button style="background:#E9E9EA; color:#FF3B30; border:none; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+            <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+            <button class="sl-btn" onclick="sideloader.showForm('${app.id}')">EDIT</button>
+            <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
         </div>`;
 }
 
