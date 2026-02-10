@@ -128,15 +128,41 @@
             justify-items: center; max-width: 100%; margin: 0 auto; padding-top: 130px; 
         }
 
-        .page-indicators {
-            position: absolute; bottom: 155px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; z-index: 25; transition: opacity 0.3s; pointer-events: none;
-        }
-        .dot {
-            width: 8px; height: 8px; background: rgba(255,255,255,0.3); 
-            border-radius: 50%; transition: background 0.3s;
-        }
-        .dot.active { background: #fff; }
+
+
+  
+.page-indicators {
+    position: absolute; 
+    bottom: 155px; 
+    left: 0; 
+    right: 0;
+    margin: 0 auto; /* Pure CSS centering */
+    display: flex; 
+    justify-content: flex-start; /* Internal dots start from left */
+    align-items: center;
+    gap: 8px; 
+    z-index: 25; 
+    
+    /* Constraint Logic */
+    width: fit-content;
+    max-width: calc(100% - 80px); 
+    overflow-x: auto; 
+    padding: 10px 20px;
+    
+    /* Clean UI */
+    scrollbar-width: none; 
+    scroll-behavior: smooth; 
+    pointer-events: auto;
+}
+.page-indicators::-webkit-scrollbar { display: none; }
+.dot {
+    width: 8px; height: 8px; background: rgba(255,255,255,0.3); 
+    border-radius: 50%; transition: all 0.3s ease; flex-shrink: 0; cursor: pointer;
+}
+.dot.active { background: #fff; transform: scale(1.3); }
+
+
+
 
         /* --- DOCK --- */
  .dock-container {
@@ -1112,6 +1138,60 @@ body.dark-mode #store-dev-header {
     pointer-events: none;
 }
 
+/* Pro Morphing & Sliding */
+.app-window.recede-morph {
+    transform: translateX(-30%) scale(0.92) !important;
+    filter: blur(20px) brightness(0.8) !important;
+    opacity: 0 !important;
+    border-radius: 44px !important;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                opacity 0.5s ease, 
+                border-radius 0.6s ease,
+                filter 0.7s ease !important;
+}
+
+.app-window.slide-right-init {
+    display: flex !important;
+    transform: translateX(100%) !important;
+    border-radius: 44px !important; 
+    filter: blur(15px);
+    opacity: 1 !important;
+    z-index: 500 !important;
+}
+
+.app-window.slide-right-active {
+    transform: translateX(0) !important;
+    border-radius: 0px !important; /* Force Square */
+    filter: blur(0px) !important;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                border-radius 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+                filter 0.6s ease !important;
+}
+
+/* Ensure no ghost borders during the transition */
+#main-window, #appstore-window {
+    overflow: hidden;
+    backface-visibility: hidden;
+}
+
+/* Unified Pro Button Stacking */
+.store-actions, .sl-action-stack { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    gap: 8px !important; /* Perfected equal spacing for all buttons */
+    align-items: stretch !important; 
+    width: 85px !important; 
+    flex-shrink: 0 !important;
+}
+
+/* Ensure all buttons inside stacks are identical in size and radius */
+.store-actions button, .sl-action-stack button {
+    width: 100% !important;
+    margin: 0 !important; /* Removes the "slightly far" offset from your screenshot */
+    font-size: 11px !important;
+    padding: 6px 0 !important;
+    
+}
 
     </style>
 </head>
@@ -2603,29 +2683,34 @@ const reportBtn = this.isNetworkStrict() ?
         <span>Report</span>
     </button>` : '';
                     
-                    let actionHTML = '';
-                    if (isUpdateAvailable) {
-                        actionHTML = `
-                            <div class="store-actions">
-                                <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
-                                    <span>UPDATE</span>
-                                    <div class="spinner"></div>
-                                </button>
-                                <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
-                                    <span>UNINSTALL</span>
-                                    <div class="spinner"></div>
-                                </button>
-                                ${reportBtn}
-                            </div>`;
-                    } else {
-                        actionHTML = `
-                        <div class="store-actions">
-                            <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                                <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
-                                <div class="spinner"></div>
-                            </button>
-${reportBtn} </div>`;
-                    }
+                    // Inside renderStore(appList) loop:
+let actionHTML = '';
+if (isUpdateAvailable) {
+    actionHTML = `
+        <div class="store-actions">
+            <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
+                <span>UPDATE</span>
+                <div class="spinner"></div>
+            </button>
+            <button class="store-get-btn" style="background:#F2F2F7; color:#007AFF; margin-top:4px;" onclick="appStore.directOpen('${app.id}')">
+                <span>OPEN</span>
+            </button>
+            <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+                <span>UNINSTALL</span>
+            </button>
+        </div>`;
+} else {
+    const openBtn = isInstalled ? `<button class="store-get-btn" style="background:#F2F2F7; color:#007AFF; margin-bottom:4px;" onclick="appStore.directOpen('${app.id}')"><span>OPEN</span></button>` : '';
+    actionHTML = `
+    <div class="store-actions">
+        ${openBtn}
+        <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+            <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+            <div class="spinner"></div>
+        </button>
+        ${reportBtn} 
+    </div>`;
+}
 
                     // Escape Author Name for JS safety
                     const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
@@ -2785,7 +2870,47 @@ async removeAppById(appId) {
             
  
             
-            
+    directOpen(appId) {
+    // Identify which window is currently opening the app
+    const activeWindow = window.iOS.activeWindow; 
+    const mainWindow = document.getElementById('main-window');
+
+    // 1. Pre-Navigate Home Screen in background
+    const sourceApps = window.iOS.allApps;
+    const iconsPerPage = (Math.floor((window.innerHeight - 280) / 120)) * 3;
+    const appIndex = sourceApps.findIndex(el => el.getAttribute('data-app-id') === appId);
+    if (appIndex !== -1) {
+        window.iOS.currentPage = Math.floor(appIndex / (iconsPerPage || 1));
+        window.iOS.updatePageScroll();
+    }
+
+    // 2. Prepare App Memory & Visuals
+    window.iOS.routeContent(appId); 
+    window.iOS.statusBar.classList.add('dark-text');
+    mainWindow.classList.add('slide-right-init');
+    mainWindow.style.display = 'flex';
+
+    // 3. Trigger Synchronized Animation
+    requestAnimationFrame(() => {
+        if (activeWindow) activeWindow.classList.add('recede-morph');
+        mainWindow.classList.add('slide-right-active');
+    });
+
+    // 4. Engine Sync
+    window.iOS.activeWindow = mainWindow;
+    window.iOS.state = 'ACTIVE';
+    window.iOS.activeWindow.setAttribute('data-app', appId);
+    window.iOS.activeAppIcon = window.iOS.getVisibleIconElement(appId);
+
+    // 5. Cleanup
+    setTimeout(() => {
+        if (activeWindow) {
+            activeWindow.style.display = 'none';
+            activeWindow.classList.remove('recede-morph');
+        }
+        mainWindow.classList.remove('slide-right-init', 'slide-right-active');
+    }, 750);
+}
             
             
             
@@ -3013,6 +3138,10 @@ async removeAppById(appId) {
             `Delete "${app.name}"?`,
             "Deleting this app will also delete its data.",
             () => {
+            	
+           btn.parentElement.querySelectorAll('button').forEach(b => { if(b !== btn) b.style.display = 'none'; });
+            
+            
                 // LOCK immediately on confirm
                 btn.classList.add('loading');
                 btn.disabled = true;
@@ -3060,6 +3189,22 @@ async performInstall(app, btn, isUpdate = false, forceBackfill = false) {
             btn.classList.add('installed');
             btn.querySelector('span').innerText = 'UNINSTALL';
             btn.disabled = false;
+            
+            
+            
+            // >>> PRO FIX: INSTANT OPEN BUTTON INJECTION <<<
+            // This ensures the button appears immediately without a page refresh
+            if (!btn.parentElement.querySelector('button[onclick*="directOpen"]')) {
+                const openBtn = document.createElement('button');
+                openBtn.className = 'store-get-btn';
+                openBtn.style.cssText = 'background:#34C759; color:white; margin-bottom:4px;';
+                openBtn.onclick = () => this.directOpen(app.id);
+                openBtn.innerHTML = '<span>OPEN</span>';
+                btn.parentElement.insertBefore(openBtn, btn);
+            }
+            
+            
+            
         }
 
         // --- STEP 3: ANALYTICS CORE ---
@@ -3914,17 +4059,22 @@ async generatePackage(name, icon, type, payload, size, author) {
         if (app.isPacked) badge = ' <span style="font-size:10px; background:#E5E5EA; padding:2px 4px; border-radius:4px; color:#000;">IAP</span>';
         else if (app.type === 'native') badge = ' <span style="font-size:10px; background:#34C759; color:white; padding:2px 4px; border-radius:4px; display: none;">NATIVE</span>';
 
-        // Conditional Edit Button
-        // If isPacked (IAP), show ONLY Delete. If normal, show Edit + Delete.
-        let actionsHTML = '';
-        if (app.isPacked) {
-            actionsHTML = `<button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Uninstall</button>`;
-        } else {
-            actionsHTML = `
-                <button style="background:#E9E9EA; color:#007AFF; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">Edit</button>
-                <button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Delete</button>
-            `;
-        }
+        // Inside sideloader.renderList()
+let actionsHTML = '';
+if (app.isPacked) {
+    actionsHTML = `
+        <div class="sl-action-stack">
+            <button style="background:#E9E9EA; color:#007AFF; border:none; font-weight:600; cursor:pointer;" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+            <button style="background:#E9E9EA; color:#FF3B30; border:none; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+        </div>`;
+} else {
+    actionsHTML = `
+        <div class="sl-action-stack">
+            <button style="background:#E9E9EA; color:#007AFF; border:none; font-weight:600; cursor:pointer;" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+            <button style="background:#E9E9EA; color:#007AFF; border:none; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">EDIT</button>
+            <button style="background:#E9E9EA; color:#FF3B30; border:none; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+        </div>`;
+}
 
         row.innerHTML = `
         <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
@@ -5200,8 +5350,12 @@ initMessageListeners() {
                     this.pagesWrapper.appendChild(pageEl);
                     if (this.totalPages > 1) {
                         const dot = document.createElement('div');
-                        dot.className = 'dot';
-                        if (index === 0) dot.classList.add('active');
+                        dot.className = 'dot' + (index === 0 ? ' active' : '');
+        dot.onclick = (e) => { 
+            e.stopPropagation(); 
+            this.currentPage = index; 
+            this.updatePageScroll(); 
+        };
                         this.pageIndicators.appendChild(dot);
                     }
                 });
@@ -5220,6 +5374,9 @@ initMessageListeners() {
                 const wrapper = this.pagesWrapper;
 
                 const start = (e) => {
+                	
+                if (e.target.classList.contains('dot') || e.target.id === 'page-indicators') return;
+                
                     if (this.state !== 'IDLE') return;
                     isDragging = true;
                     isRealSwipe = false; 
@@ -5285,13 +5442,28 @@ initMessageListeners() {
             }
 
             updatePageScroll() {
-                this.pagesWrapper.style.transform = `translateX(-${this.currentPage * 100}%)`;
-                const dots = this.pageIndicators.querySelectorAll('.dot');
-                dots.forEach((dot, idx) => {
-                    if (idx === this.currentPage) dot.classList.add('active');
-                    else dot.classList.remove('active');
-                });
-            }
+    // 1. Standard page translation
+    this.pagesWrapper.style.transform = `translateX(-${this.currentPage * 100}%)`;
+    
+    // 2. Dot state management
+    const dots = this.pageIndicators.querySelectorAll('.dot');
+    dots.forEach((dot, idx) => {
+        const isActive = idx === this.currentPage;
+        dot.classList.toggle('active', isActive);
+        
+        // 3. Stable Centering Logic
+        if (isActive) {
+            const container = this.pageIndicators;
+            const dotOffset = dot.offsetLeft;
+            const dotWidth = dot.offsetWidth;
+            const containerWidth = container.offsetWidth;
+
+            // Calculate the scroll position to keep dot in the middle of the bar
+            const scrollPos = dotOffset - (containerWidth / 2) + (dotWidth / 2);
+            container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+        }
+    });
+}
 
             toggleDarkMode(toggle) {
     this.isDarkMode = toggle.checked;
@@ -6597,32 +6769,52 @@ if (this.activeWindow === this.musicWindow) {
 
             /* --- UPDATED FINISH CLOSING (Background Support) --- */
             finishClosing() {
-                if(this.state !== 'CLOSING') return;
-                
-                this.activeWindow.classList.remove('vacuum-active'); 
-                
-                // BACKGROUND LOGIC:
-                // We do NOT remove the iframe from DOM here.
-                // We just hide the main container window.
-                // Because we use routeContent() in openApp, it will automatically hide
-                // non-active iframes when a different app opens, keeping only the 
-                // relevant ones in the DOM based on manageBackgroundApps logic.
-                
-                this.activeWindow.style.display = 'none';
-                this.activeWindow.style.transform = 'none';
-                this.activeWindow.style.opacity = '1';
-                this.activeWindow.style.filter = 'blur(0px)';
-                
-                if (this.activeAppIcon) {
-                    this.activeAppIcon.style.transition = '';
-                    this.activeAppIcon.style.transform = '';
-                    this.activeAppIcon.style.opacity = '';
-                }
-                
-                this.activeAppIcon = null;
-                this.state = 'IDLE';
-                this.activeWindow = null;
-            }
+    if(this.state !== 'CLOSING') return;
+    
+    this.activeWindow.classList.remove('vacuum-active'); 
+    
+    // BACKGROUND LOGIC:
+    // We do NOT remove the iframe from DOM here.
+    // We just hide the main container window.
+    // Because we use routeContent() in openApp, it will automatically hide
+    // non-active iframes when a different app opens, keeping only the 
+    // relevant ones in the DOM based on manageBackgroundApps logic.
+    
+    this.activeWindow.style.display = 'none';
+    this.activeWindow.style.transform = 'none';
+    this.activeWindow.style.opacity = '1';
+    this.activeWindow.style.filter = 'blur(0px)';
+
+    // PRO FIX: Reset border radius to 0px to ensure the next launch 
+    // doesn't show "ghost" rounded corners.
+    this.activeWindow.style.borderRadius = '0px';
+    this.mainWindow.style.borderRadius = '0px';
+    this.storeWindow.style.borderRadius = '0px';
+    
+    if (this.activeAppIcon) {
+        // Ensure the source icon is visible again on the home screen.
+        this.activeAppIcon.classList.remove('hidden-source');
+        this.activeAppIcon.style.transition = '';
+        this.activeAppIcon.style.transform = '';
+        this.activeAppIcon.style.opacity = '';
+    }
+    
+    this.activeAppIcon = null;
+    
+    // NEW: Global Re-initialization
+    // Global Re-initialization for Slide/Morph features
+    this.mainWindow.classList.remove('recede-morph', 'slide-right-init', 'slide-right-active');
+    this.storeWindow.classList.remove('recede-morph', 'slide-right-init', 'slide-right-active');
+    this.mainWindow.style.transform = '';
+    this.storeWindow.style.transform = '';
+    this.mainWindow.style.display = 'none';
+    
+    // Reset indicators and background states
+    this.gestureBar.classList.add('on-home');
+    
+    this.state = 'IDLE';
+    this.activeWindow = null;
+}
 
             handleIslandClick() {
                 // --- FIX: BLOCK INTERACTION FOR ALERTS ---
