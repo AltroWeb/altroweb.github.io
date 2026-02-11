@@ -1772,7 +1772,7 @@ body.dark-mode .sl-btn:active { background: #3a3a3c; }
 
     <script>
     	
- console.log = function() {};
+console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -5049,53 +5049,48 @@ handleDeepLinks() {
 
 
 initMessageListeners() {
-                window.addEventListener('message', (event) => {
-                    // 1. SECURITY: IDENTIFY THE SENDER
-                    let senderAppId = null;
-                    const iframes = document.querySelectorAll('iframe');
-                    for (const iframe of iframes) {
-                        if (iframe.contentWindow === event.source) {
-                            senderAppId = iframe.getAttribute('data-app-id');
-                            break;
-                        }
-                    }
-
-                    // 2. SECURITY: CHECK PRIVILEGES
-                    // If we can't identify the sender, ignore it (unless it's system internal)
-                    if (!senderAppId) return;
-
-                    // Re-calculate the Safe List
-                    const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
-                    const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
-                    const isTrusted = SAFE_LIST.includes(senderAppId);
-
-                    // 3. HANDLE COMMANDS
-                    
-                    // A. Dynamic Island (Trusted Only)
-                    if (event.data && event.data.type === 'IOS_ISLAND_TRIGGER') {
-                        if (!isTrusted) {
-                            console.warn(`⛔ BLOCKED: Restricted app '${senderAppId}' tried to use Dynamic Island.`);
-                            return; 
-                        }
-                        const { icon, title, text, color, duration, mode } = event.data;
-                        this.triggerSystemNotification(icon, title, text, color, duration, mode);
-                    }
-
-                    if (event.data && event.data.type === 'IOS_ISLAND_DISMISS') {
-                        if (!isTrusted) return; 
-                        this.dismissSystemNotification();
-                    }
-
-                    // B. Audio Manager (All Apps Allowed)
-                    if (event.data.type === 'IOS_AUDIO_REQUEST') {
-                        this.audioManager.requestFocus(senderAppId);
-                    }
-
-                    if (event.data.type === 'IOS_AUDIO_RELEASE') {
-                        this.audioManager.releaseFocus(senderAppId);
-                    }
-                });
+    window.addEventListener('message', (event) => {
+        // 1. IDENTIFY SENDER
+        let senderAppId = null;
+        const iframes = document.querySelectorAll('iframe');
+        for (const iframe of iframes) {
+            if (iframe.contentWindow === event.source) {
+                senderAppId = iframe.getAttribute('data-app-id');
+                break;
             }
+        }
+        if (!senderAppId) return;
+
+        // 2. DEFINE PERMISSIONS
+        const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+        const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
+        const isNativeSideload = window.sideloader && window.sideloader.apps.some(a => a.id === senderAppId && a.type === 'native');
+        
+        // 3. ZERO TRUST POLICY (The "Jail" Logic)
+        // If Safe Mode is ON, 'canTrigger' is ALWAYS FALSE. No exceptions.
+        const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isNativeSideload);
+
+        // 4. EXECUTE
+        if (event.data.type === 'IOS_ISLAND_TRIGGER') {
+            if (canTrigger) {
+                const { icon, title, text, color, duration, mode } = event.data;
+                this.triggerSystemNotification(icon, title, text, color, duration, mode);
+            } else {
+                console.warn(`🔒 Safe Mode: Blocked Island Trigger from '${senderAppId}'`);
+            }
+        }
+
+        // Allow dismissals even in Safe Mode to clear stuck UI
+        if (event.data.type === 'IOS_ISLAND_DISMISS') {
+            if (SAFE_LIST.includes(senderAppId) || isNativeSideload) this.dismissSystemNotification();
+        }
+
+        if (event.data.type === 'IOS_AUDIO_REQUEST') this.audioManager.requestFocus(senderAppId);
+        if (event.data.type === 'IOS_AUDIO_RELEASE') this.audioManager.releaseFocus(senderAppId);
+    });
+}
+
+
 
             // 2. TRIGGER: Handles Animation & Live Updates
             triggerSystemNotification(iconSVG, title, text, iconColor = '#fff', duration = 3000, mode = 'compact') {
