@@ -7122,6 +7122,21 @@ if (this.activeWindow === this.musicWindow) {
     
     this.state = 'IDLE';
     this.activeWindow = null;
+    
+    
+  // this.initPagination(); 
+
+    // 2. Hard Clamp: Ensure we never land on Page 5 if only 3 pages exist
+    if (this.currentPage >= this.totalPages) {
+        this.currentPage = Math.max(0, this.totalPages - 1);
+    }
+    
+    // 3. Visual Snap: Force the slider to jump to the valid page immediately
+    this.updatePageScroll();
+    
+    
+    
+    
 }
 
             handleIslandClick() {
