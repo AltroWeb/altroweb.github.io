@@ -1430,7 +1430,7 @@ body.reduce-effects .homescreen-group {
                             </div>
                             <div class="ios-row">
                                 <span>Bluetooth</span>
-                                <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">On <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
+                                <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">Off <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
                             </div>
                         </div>
 
@@ -1469,6 +1469,18 @@ body.reduce-effects .homescreen-group {
     </div>
 </div>
 
+
+
+<div class="section-header">Display Mode</div>
+<div class="ios-list">
+    <div class="ios-row">
+        <span>Immersive Fullscreen</span>
+        <input type="checkbox" class="ios-switch" id="setting-fullscreen" onchange="iOS.toggleFullscreen(this)">
+    </div>
+</div>
+
+
+
 <div class="section-header">Developer</div>
 <div class="ios-list">
     <div class="ios-row">
@@ -1493,7 +1505,7 @@ body.reduce-effects .homescreen-group {
 </div>
                         
                         <div class="ios-list" style="background:transparent;">
-                            <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date 🚀')">Check for Updates</button>
+                            <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date.')">Check for Updates</button>
                             <div style="height:10px;"></div>
                             <button class="ios-btn secondary">Reset Network Settings</button>
                         </div>
@@ -4812,6 +4824,10 @@ this.initSettings();
 
 this.handleDeepLinks();
 
+
+this.initFullscreenListener();
+
+
             }
             
             
@@ -5368,6 +5384,84 @@ toggleReduceEffects(toggle) {
         document.body.classList.remove('reduce-effects');
     }
 }
+
+
+
+
+
+
+
+toggleFullscreen(el) {
+    const doc = document.documentElement;
+    const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+
+    // 1. Feature Detection Guard
+    const canFullscreen = doc.requestFullscreen || doc.webkitRequestFullscreen;
+    if (!canFullscreen) {
+        if (el) el.checked = false;
+        this.showAlert("Not Supported", "Your browser does not support the Fullscreen API.");
+        return;
+    }
+
+    // 2. Create the "Pro" Transition Shield
+    const shield = document.createElement('div');
+    shield.style.cssText = "position:fixed; inset:0; background:black; z-index:99999; transition:opacity 0.3s; pointer-events:none;";
+    document.body.appendChild(shield);
+
+    // 3. Execution with Robust Error Handling
+    if (el?.checked && !isFS) {
+        const request = doc.requestFullscreen ? doc.requestFullscreen() : doc.webkitRequestFullscreen();
+        
+        if (request) {
+            request.then(() => {
+                // Fade out shield once context switch is done
+                setTimeout(() => {
+                    shield.style.opacity = '0';
+                    setTimeout(() => shield.remove(), 300);
+                }, 100);
+            }).catch(err => {
+                shield.remove();
+                if (el) el.checked = false;
+                this.showAlert("Permission Denied", "Browser blocked immersive mode. Please try again.");
+            });
+        }
+    } 
+    else {
+        try {
+            // Only exit if the document is actually active/fullscreen
+            if (isFS) {
+                const exit = document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen();
+                if (exit) exit.catch(() => {});
+            }
+        } catch (err) {
+            console.warn("Fullscreen Exit Failed:", err.message);
+        } finally {
+            shield.remove();
+        }
+    }
+}
+
+
+
+
+
+initFullscreenListener() {
+    const syncToggle = () => {
+        const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        const toggle = document.getElementById('setting-fullscreen');
+        if (toggle) toggle.checked = isFS;
+    };
+
+    // Standard and Webkit (Safari/iOS) event listeners
+    document.addEventListener('fullscreenchange', syncToggle);
+    document.addEventListener('webkitfullscreenchange', syncToggle);
+}
+
+
+
+
+
+
 
 
 
