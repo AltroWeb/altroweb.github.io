@@ -644,9 +644,11 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                 <h1 style="margin: 0; min-width: 120px;">My Apps</h1>
                 
                 <div style="flex: 1; min-width: 200px; position: relative;">
-                    <svg width="16" height="16" fill="var(--text-secondary)" viewBox="0 0 24 24" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;">
-                        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                    </svg>
+                    <svg onclick="const i=document.getElementById('dashboard-search'); i.value=''; i.blur(); appBuilder.fetchMyApps();" 
+     style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: auto; cursor: pointer; z-index: 5;" 
+     width="16" height="16" fill="var(--text-secondary)" viewBox="0 0 24 24">
+    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+</svg>
                     <input type="text" id="dashboard-search" placeholder="Search apps..." oninput="appBuilder.filterMyApps()" 
                            style="padding-left: 36px; height: 42px; width: 100%; font-size: 15px;">
                 </div>

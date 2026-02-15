@@ -1239,6 +1239,25 @@ body.dark-mode .sl-btn:active { background: #3a3a3c; }
 
 
 
+/* --- PRO PERFORMANCE MODE --- */
+body.reduce-effects * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+/* Force transitions to be near-instant so logic doesn't break */
+body.reduce-effects .app-window, 
+body.reduce-effects .wallpaper-layer,
+body.reduce-effects .homescreen-group {
+    transition-duration: 0.01s !important;
+    animation-duration: 0.01s !important;
+}
+
+
+
+
 
     </style>
 </head>
@@ -1431,6 +1450,14 @@ body.dark-mode .sl-btn:active { background: #3a3a3c; }
 
 <div class="section-header">Accessibility</div>
 <div class="ios-list">
+	
+	<div class="ios-row">
+        <span>Reduce Effects</span>
+        <input type="checkbox" class="ios-switch" id="setting-reduce-effects" onchange="iOS.toggleReduceEffects(this)">
+    </div>
+	
+	
+	
     <div class="ios-row">
         <span>Assistive Touch</span>
         <input type="checkbox" class="ios-switch" id="setting-assistive" onchange="iOS.toggleAssistiveTouch(this)">
@@ -1505,8 +1532,11 @@ body.dark-mode .sl-btn:active { background: #3a3a3c; }
                 <div class="scroll-inner-padding">
                     <h1 class="app-header-large">Search</h1>
                     <div class="ios-search-bar">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                        <input type="text" id="store-search-input" placeholder="Games, Apps, Stories" style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;">
+                        <svg onclick="document.getElementById('store-search-input').value=''; appStore.clearSearch(); appStore.fetchApps();" 
+     style="cursor:pointer;" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+</svg>
+                        <input type="text" id="store-search-input" placeholder="Games, Apps, Tools" style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;">
                     </div>
                     
                     
@@ -4927,6 +4957,21 @@ initNetworkListeners() {
                 if (save) localStorage.setItem('ios_airplane_mode', isActive);
                 
                 // Add this inside initSettings() method
+                
+                
+                
+                
+      // Inside initSettings() 
+const savedReduce = localStorage.getItem('ios_reduce_effects') === 'true';
+this.toggleReduceEffects({ checked: savedReduce }); // Apply class
+const reduceSwitch = document.getElementById('setting-reduce-effects');
+if (reduceSwitch) reduceSwitch.checked = savedReduce; // Sync UI,,          
+                
+                
+                
+                
+                
+                
 
 // 4. Load Island Preference (Default: true)
 const savedIsland = localStorage.getItem('ios_island_enabled') !== 'false';
@@ -5299,6 +5344,33 @@ initMessageListeners() {
         }, 300); // Wait for shrink transition
     }, 200); // Wait for text fade
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Add this inside the IOSEngine class
+toggleReduceEffects(toggle) {
+    const isEnabled = toggle.checked;
+    localStorage.setItem('ios_reduce_effects', isEnabled);
+    
+    if (isEnabled) {
+        document.body.classList.add('reduce-effects');
+    } else {
+        document.body.classList.remove('reduce-effects');
+    }
+}
+
+
+
 
 
 
