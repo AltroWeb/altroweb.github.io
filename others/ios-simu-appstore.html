@@ -1477,6 +1477,10 @@ body.reduce-effects .homescreen-group {
         <span>Immersive Fullscreen</span>
         <input type="checkbox" class="ios-switch" id="setting-fullscreen" onchange="iOS.toggleFullscreen(this)">
     </div>
+    <div class="ios-row" id="row-fullscreen-always" style="display:none;">
+        <span>Always Fullscreen</span>
+        <input type="checkbox" class="ios-switch" id="setting-fullscreen-always" onchange="iOS.toggleAlwaysFullscreen(this)">
+    </div>
 </div>
 
 
@@ -7788,7 +7792,94 @@ window.sideloader = new Sideloader();
 })();
 
 
+    
+
+
+
+
+
+
+
+(function fixFullscreenSystem() {
+    // 1. Silent Toggle Logic (NO ALERT)
+    window.iOS.toggleAlwaysFullscreen = function(el) {
+        localStorage.setItem('ios_fullscreen_always', el.checked);
+        // Instant check: if turning ON, force fullscreen immediately to be safe
+        if (el.checked && !document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(()=>{});
+        }
+    };
+
+    // 2. Main Toggle Wrapper (Controls visibility of sub-toggle)
+    const originalToggle = window.iOS.toggleFullscreen.bind(window.iOS);
+    window.iOS.toggleFullscreen = function(el) {
+        originalToggle(el); // Run original logic
         
+        // Show/Hide the "Always" row based on the main switch
+        const subRow = document.getElementById('row-fullscreen-always');
+        if (subRow) subRow.style.display = el.checked ? 'flex' : 'none';
+        
+        // If main toggle is turned OFF, force "Always" to OFF too
+        if (!el.checked) {
+            localStorage.setItem('ios_fullscreen_always', 'false');
+            const subSwitch = document.getElementById('setting-fullscreen-always');
+            if (subSwitch) subSwitch.checked = false;
+        }
+    };
+
+    // 3. THE ENFORCER (The "Touch to Focus" Fix)
+    const reEnterFullscreen = (e) => {
+        // Check if "Always Fullscreen" is enabled in storage
+        const isAlwaysOn = localStorage.getItem('ios_fullscreen_always') === 'true';
+        const isCurrentlyFS = document.fullscreenElement || document.webkitFullscreenElement;
+
+        // If enabled, but we dropped out of fullscreen...
+        if (isAlwaysOn && !isCurrentlyFS) {
+            // STOP if the user is actually clicking the toggle to turn it off
+            if (e.target.closest('#setting-fullscreen-always') || e.target.closest('#setting-fullscreen')) {
+                return;
+            }
+
+            // Otherwise, FORCE entry
+            const doc = document.documentElement;
+            const req = doc.requestFullscreen ? doc.requestFullscreen() : doc.webkitRequestFullscreen();
+            if (req) req.catch(() => {});
+        }
+    };
+
+    // Listen on BODY to catch bubbles. This is the most stable method for re-entry.
+    document.body.addEventListener('click', reEnterFullscreen);
+    document.body.addEventListener('touchstart', reEnterFullscreen);
+
+    // 4. UI Sync on Load/Change
+    const syncUI = () => {
+        const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        const mainSwitch = document.getElementById('setting-fullscreen');
+        const subRow = document.getElementById('row-fullscreen-always');
+        const alwaysSwitch = document.getElementById('setting-fullscreen-always');
+
+        // Sync Main Switch visual state
+        if (mainSwitch) mainSwitch.checked = isFS;
+        
+        // Sync Sub-Row visibility (Show if FS is active OR if main switch is checked)
+        if (subRow) subRow.style.display = (isFS || (mainSwitch && mainSwitch.checked)) ? 'flex' : 'none';
+
+        // Restore "Always" switch state from storage
+        if (alwaysSwitch) alwaysSwitch.checked = localStorage.getItem('ios_fullscreen_always') === 'true';
+    };
+
+    // Run Sync on load and on change
+    document.addEventListener('fullscreenchange', syncUI);
+    document.addEventListener('webkitfullscreenchange', syncUI);
+    
+    // Initial Run (Delayed to ensure DOM is ready)
+    setTimeout(syncUI, 500);
+})();
+
+
+
+
+    
         
     </script>
 </body>
