@@ -32,6 +32,8 @@
             padding: 0;
             outline: none;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+  -webkit-user-select: none;
         }
 
         /* --- Global Font Application (Fixed) --- */
@@ -751,6 +753,49 @@ z-index: 10 !important; }
 .hero-vignette { z-index: 1 !important; }
 .hero-video-wrapper { z-index: 0 !important; }
         
+        
+        
+        
+        
+        
+        
+        
+.read-more-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    margin: -20px 0 24px 0; 
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.95rem;
+    transition: opacity 0.2s ease;
+}
+
+.read-more-btn:hover { opacity: 0.8; }
+
+/* The magic containment class */
+.hero-desc.expanded {
+    -webkit-line-clamp: unset;
+    max-height: 120px; /* Keeps it strictly contained */
+    overflow-y: auto; /* Adds an internal scroll */
+    padding-right: 10px; /* Breathing room for the scrollbar */
+    pointer-events: auto; /* Allows user to scroll the text */
+}
+
+/* Custom mini-scrollbar for the description */
+.hero-desc.expanded::-webkit-scrollbar { width: 4px; }
+.hero-desc.expanded::-webkit-scrollbar-track { background: transparent; }
+.hero-desc.expanded::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+        
+        
+        
+        
+        
+        
     </style>
 </head>
 <body>
@@ -1113,7 +1158,8 @@ z-index: 10 !important; }
                         <span style="border:1px solid rgba(255,255,255,0.4); padding:0 4px; border-radius:3px; font-size:0.7rem;">HD</span>
                     </div>
                     <div style="font-size:0.9rem; color:#aaa; margin-bottom:12px;">${genres}</div>
-                    <div class="hero-desc">${desc}</div>
+                    <div class="hero-desc" id="heroDesc_${data.id}">${desc}</div>
+${desc.length > 140 ? `<button class="read-more-btn" onclick="document.getElementById('heroDesc_${data.id}').classList.add('expanded'); this.style.display='none';">Read More <i class="ph ph-caret-down"></i></button>` : ''}
 <div class="hero-btns">
     ${trailerKey 
         ? `<button class="btn btn-primary" onclick="playTrailer('${trailerKey}')"><i class="ph-fill ph-play"></i> Play Trailer</button>` 
