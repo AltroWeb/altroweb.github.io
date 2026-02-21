@@ -6,6 +6,7 @@
     <title>iMessage</title>
     <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         :root {
             --bg-color: #000000;
@@ -21,8 +22,8 @@
             --danger: #FF453A;
             --success: #32D74B;
             --alert-bg: rgba(30, 30, 30, 0.9);
-            --menu-bg: rgba(45, 45, 45, 0.95);
-            --context-bg: rgba(50, 50, 50, 0.95);
+            --menu-bg: rgba(45, 45, 45, 0.65); /* Adjusted for stronger blur visibility */
+            --context-bg: rgba(50, 50, 50, 0.65); /* Adjusted for stronger blur visibility */
             --modal-overlay: rgba(0, 0, 0, 0.5);
         }
 
@@ -37,8 +38,8 @@
             --input-bg: #ffffff;
             --search-bg: #E3E3E8;
             --alert-bg: rgba(245, 245, 245, 0.9);
-            --menu-bg: rgba(250, 250, 250, 0.95);
-            --context-bg: rgba(240, 240, 240, 0.95);
+            --menu-bg: rgba(240, 240, 240, 0.65); /* Adjusted for stronger blur visibility */
+            --context-bg: rgba(230, 230, 230, 0.65); /* Adjusted for stronger blur visibility */
             --modal-overlay: rgba(0, 0, 0, 0.2);
         }
 
@@ -144,7 +145,7 @@
         .message .time { font-size: 10px; opacity: 0.6; margin-top: 4px; text-align: right; user-select: none; }
         
         /* Reply Styles */
-        .reply-bar { width: 100%; background: var(--header-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--separator); padding: 8px 12px; display: none; align-items: center; justify-content: space-between; position: absolute; bottom: 100%; left: 0; z-index: 35; animation: slideUp 0.2s ease-out; }
+        .reply-bar { width: 100%; background: var(--menu-bg); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%); border-bottom: 1px solid var(--separator); padding: 8px 12px; display: none; align-items: center; justify-content: space-between; left: 0; z-index: 35; animation: slideUp 0.2s ease-out; }
         .reply-bar.active { display: flex; }
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .reply-content { flex: 1; border-left: 3px solid var(--bubble-blue); padding-left: 8px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; gap: 2px; }
@@ -159,7 +160,7 @@
         .reply-quote-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
 
         /* Message Context Menu */
-        .msg-context-menu { position: absolute; z-index: 1000; background: var(--context-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 14px; display: none; box-shadow: 0 8px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; min-width: 140px; animation: menuFade 0.2s ease-out; }
+        .msg-context-menu { position: absolute; z-index: 1000; background: var(--context-bg); backdrop-filter: blur(25px) saturate(200%); -webkit-backdrop-filter: blur(25px) saturate(200%); border-radius: 14px; display: none; box-shadow: 0 8px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; min-width: 140px; animation: menuFade 0.2s ease-out; }
         .msg-context-item { padding: 12px 16px; font-size: 16px; color: var(--text-primary); cursor: pointer; border-bottom: 1px solid rgba(128,128,128,0.2); text-align: center; font-weight: 400; }
         .msg-context-item:last-child { border-bottom: none; }
         .msg-context-item:active { background: rgba(128,128,128,0.2); }
@@ -245,7 +246,7 @@
         .ios-modal-btn.bold { font-weight: 600; }
 
         /* Chat Menu */
-        .chat-menu { position: absolute; top: 52px; right: 10px; background: var(--menu-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 12px; z-index: 100; display: none; width: 200px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); animation: menuFade 0.2s ease-out; }
+        .chat-menu { position: absolute; top: 52px; right: 10px; background: var(--menu-bg); backdrop-filter: blur(25px) saturate(200%); -webkit-backdrop-filter: blur(25px) saturate(200%); border-radius: 12px; z-index: 100; display: none; width: 200px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); animation: menuFade 0.2s ease-out; }
         @keyframes menuFade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .chat-menu-item { padding: 14px 16px; font-size: 16px; cursor: pointer; border-bottom: 1px solid rgba(128,128,128,0.1); display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); }
         .chat-menu-item:last-child { border-bottom: none; }
@@ -253,7 +254,7 @@
         .chat-menu-item.action { color: var(--bubble-blue); }
 
         /* Settings */
-        .settings-item { padding: 14px 16px; border-bottom: 1px solid var(--separator); display: flex; justify-content: space-between; align-items: center; font-size: 16px; background: var(--bg-color); }
+        .settings-item { padding: 14px 16px; border-bottom: 1px solid var(--separator); display: flex; justify-content: space-between; align-items: center; font-size: 16px; background: var(--bg-color); cursor: pointer; }
         .settings-header { padding: 30px 16px 8px; font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -268,6 +269,55 @@
 
         .hidden { display: none !important; }
         svg { display: block; }
+        
+        
+        
+        
+        .scroll-bottom-btn {
+    position: absolute;
+    bottom: 80px; /* Sits just above the input area */
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--menu-bg);
+    backdrop-filter: blur(25px) saturate(200%);
+    -webkit-backdrop-filter: blur(25px) saturate(200%);
+    color: var(--bubble-blue);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 35;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.scroll-bottom-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+.scroll-bottom-btn:active { transform: scale(0.9); }
+        
+        #chat-view:has(.reply-bar.active) .scroll-bottom-btn {
+    bottom: 135px; /* Shifts it perfectly above the reply banner */
+}
+        
+        
+      .read-more-btn {
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    opacity: 0.8;
+    margin-left: 5px;
+}
+.read-more-btn:active { opacity: 0.5; }  
+        
+        
+        
     </style>
 </head>
 <body>
@@ -300,26 +350,45 @@
                     <button id="chat-call-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
                     <button id="chat-menu-btn" class="icon-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
                 </div>
-                <div id="chat-menu" class="chat-menu">
+                
+            </div>
+            
+            <div id="chat-menu" class="chat-menu">
                     <div class="chat-menu-item" id="view-peer-id">View Peer ID</div>
+                    <div class="chat-menu-item" id="edit-peer-id">Edit Peer ID</div>
                     <div class="chat-menu-item" id="rename-contact">Change Name</div>
+                    <div class="chat-menu-item" id="export-chat">Export Chat</div>
                     <div class="chat-menu-item danger" id="clear-history">Clear History</div>
                     <div class="chat-menu-item danger" id="block-toggle-btn">Block User</div>
                     <div class="chat-menu-item danger" id="delete-chat">Delete Chat</div>
                 </div>
-            </div>
+            
+            
             <div id="messages-container"></div>
             <div class="typing-bubble" id="typing-bubble">
                 <div class="dot"></div><div class="dot"></div><div class="dot"></div>
             </div>
-            <div class="input-area">
-                <div id="reply-bar" class="reply-bar">
+            
+            
+            
+            <button id="scroll-bottom-btn" class="scroll-bottom-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+</button>
+            
+            
+            
+              <div id="reply-bar" class="reply-bar">
                     <div class="reply-content">
                         <div class="reply-title" id="reply-to-name">Sender</div>
                         <div id="reply-to-text">Message</div>
                     </div>
                     <div class="close-reply" onclick="cancelReply()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
                 </div>
+            
+            
+            
+            <div class="input-area">
+              
                 <button id="file-btn" class="icon-btn" style="width: 36px; height: 36px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
                 <input type="file" id="file-input" hidden>
                 <div class="input-wrapper">
@@ -365,7 +434,18 @@
                     <span>Blocked</span>
                     <span id="blocklist-count" style="color: var(--text-secondary);">0</span>
                 </div>
-                <div class="settings-item" id="reset-btn" style="color: var(--danger);">Reset All Data</div>
+
+                <div class="settings-header">Data & Backup</div>
+                <div class="settings-item" id="export-all-btn" style="color: var(--bubble-blue);">
+                    <span>Export All Chats</span>
+                </div>
+                <div class="settings-item upload-wrapper" style="color: var(--bubble-blue);">
+                    <span>Import Chats (.zip)</span>
+                    <input type="file" id="import-chats-upload" accept=".zip">
+                </div>
+                <div class="settings-item" id="reset-btn" style="color: var(--danger);">
+                    <span>Reset All Data</span>
+                </div>
                 
                 <div class="settings-header">About</div>
                 <div class="settings-item">
@@ -374,7 +454,7 @@
                 </div>
                 <div class="settings-item">
                     <span>Version</span>
-                    <span style="color: var(--text-secondary);">1.2.2 Refer</span>
+                    <span style="color: var(--text-secondary);">1.3.0 Pro</span>
                 </div>
             </div>
         </div>
@@ -439,6 +519,7 @@
                     <div class="ios-modal-title" id="m-title">Title</div>
                     <div class="ios-modal-msg" id="m-msg">Message</div>
                     <input type="text" id="m-input" class="ios-input hidden">
+                    	<textarea id="m-textarea" class="ios-input hidden" rows="4" style="resize: none; max-height: 120px; overflow-y: auto; font-family: inherit;"></textarea>
                 </div>
                 <div class="ios-modal-btns" id="m-btns"></div>
             </div>
@@ -674,7 +755,7 @@
                 initPeer();
             } catch (e) {
                 console.error("DB Init Failed", e);
-                alert("Database error. Please reload.");
+                showModal("Database error. Please reload.");
             }
         })();
 
@@ -732,43 +813,55 @@
         };
         document.body.addEventListener('click', () => { if (Ringer.audioCtx && Ringer.audioCtx.state === 'suspended') Ringer.audioCtx.resume(); }, { once: true });
 
-        function showModal(title, msg, inputPlaceholder, buttons, inputType = 'text') {
-            $('m-title').textContent = title;
-            $('m-msg').textContent = msg;
-            
-            const inp = $('m-input');
-            inp.classList.toggle('hidden', !inputPlaceholder);
-            inp.value = '';
-            inp.placeholder = inputPlaceholder || '';
-            
-            if (inputType === 'numeric') {
-                inp.type = "tel";
-                inp.pattern = "[0-9]*";
-                inp.maxLength = 8;
-                inp.inputMode = "numeric";
-                inp.oninput = function() {
-                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8);
-                };
-            } else {
-                inp.type = "text";
-                inp.removeAttribute('pattern');
-                inp.removeAttribute('maxLength');
-                inp.removeAttribute('inputMode');
-                inp.oninput = null;
-            }
+        function showModal(title, msg, inputPlaceholder, buttons, inputType = 'text', initialValue = '') {
+    $('m-title').textContent = title;
+    $('m-msg').textContent = msg;
+    
+    const inp = $('m-input');
+    const txtArea = $('m-textarea');
+    inp.classList.add('hidden');
+    txtArea.classList.add('hidden');
+    
+    let activeInput = inp; // Default to single-line
+    
+    if (inputPlaceholder) {
+        // Switch to textarea if requested
+        activeInput = (inputType === 'textarea') ? txtArea : inp;
+        activeInput.classList.remove('hidden');
+        activeInput.value = initialValue; // LOAD THE ACTUAL MESSAGE HERE
+        activeInput.placeholder = inputPlaceholder || '';
+    }
+    
+    // Setup specific input rules
+    if (inputType === 'numeric') {
+        inp.type = "tel";
+        inp.pattern = "[0-9]*";
+        inp.maxLength = 8;
+        inp.inputMode = "numeric";
+        inp.oninput = function() { this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8); };
+    } else if (inputType === 'text') {
+        inp.type = "text";
+        inp.removeAttribute('pattern');
+        inp.removeAttribute('maxLength');
+        inp.removeAttribute('inputMode');
+        inp.oninput = null;
+    }
 
-            const btns = $('m-btns');
-            btns.innerHTML = '';
-            buttons.forEach(b => {
-                const btn = document.createElement('div');
-                btn.className = `ios-modal-btn ${b.bold?'bold':''} ${b.danger?'danger':''}`;
-                btn.textContent = b.text;
-                btn.onclick = () => { if (b.onClick) b.onClick($('m-input').value.trim()); $('ios-modal-overlay').classList.remove('active'); };
-                btns.appendChild(btn);
-            });
-            $('ios-modal-overlay').classList.add('active');
-            if (inputPlaceholder) setTimeout(() => $('m-input').focus(), 100);
-        }
+    const btns = $('m-btns');
+    btns.innerHTML = '';
+    buttons.forEach(b => {
+        const btn = document.createElement('div');
+        btn.className = `ios-modal-btn ${b.bold?'bold':''} ${b.danger?'danger':''}`;
+        btn.textContent = b.text;
+        btn.onclick = () => { 
+            if (b.onClick) b.onClick(activeInput.value.trim()); 
+            $('ios-modal-overlay').classList.remove('active'); 
+        };
+        btns.appendChild(btn);
+    });
+    $('ios-modal-overlay').classList.add('active');
+    if (inputPlaceholder) setTimeout(() => activeInput.focus(), 100);
+}
 
         /* --- PEER & SIGNALING --- */
         function initPeer() {
@@ -1081,11 +1174,30 @@
 
         /* --- MESSAGING & ACTIONS --- */
         function escapeHtml(str) {
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\n/g, '<br>');
+}
+
+
+
+function formatText(str) {
+    // 1. First, make it safe and add the <br> tags (using your existing function)
+    let text = escapeHtml(str); 
+    
+    // 2. Apply Markdown rules
+    text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');   // Bold: **text**
+    text = text.replace(/__(.*?)__/g, '<u>$1</u>');       // Underline: __text__
+    text = text.replace(/\*(.*?)\*/g, '<i>$1</i>');       // Italic: *text*
+    text = text.replace(/_(.*?)_/g, '<i>$1</i>');         // Italic alt: _text_
+    text = text.replace(/~(.*?)~/g, '<del>$1</del>');     // Strikethrough: ~text~
+    
+    return text;
+}
+
+
+
         function escapeAttribute(str) {
-            return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '\\n').replace(/\r/g, '');
+}
 
         function createMessageElement(m, animate = false) {
             const div = document.createElement('div');
@@ -1125,7 +1237,21 @@
             } else if (m.format === 'file') {
                 contentHtml = `<div class="file-attach"><div class="file-icon">DOC</div><div class="file-details"><div class="file-name">${safeName}</div><div class="file-size">Attachment</div></div><a href="${safeDataAttr}" download="${safeNameAttr}" class="download-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></a></div>`;
             } else {
-                contentHtml = `<span class="msg-text">${safeText}</span>`;
+                const rawText = m.content != null ? String(m.content) : '';
+                
+                if (rawText.length > 500) {
+                    // Truncate long messages
+                    const shortText = formatText(rawText.substring(0, 500)) + '...';
+                    const fullText = formatText(rawText);
+                    
+                    contentHtml = `
+                        <span class="msg-short">${shortText} <span class="read-more-btn" onclick="this.parentElement.style.display='none'; this.parentElement.nextElementSibling.style.display='inline';">Read More</span></span>
+                        <span class="msg-full" style="display:none;">${fullText}</span>
+                    `;
+                } else {
+                    // Standard length messages
+                    contentHtml = `<span class="msg-text">${formatText(rawText)}</span>`;
+                }
             }
 
             const statusHtml = m.sender === 'me' ? `<div class="tick-container ${m.seen ? 'seen' : ''}"><svg class="tick-svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>` : '';
@@ -1240,7 +1366,7 @@
             let x = e.clientX || e.touches[0].clientX;
             let y = e.clientY || e.touches[0].clientY;
             if (x + 140 > window.innerWidth) x -= 140;
-            if (y + 100 > window.innerHeight) y -= 100;
+            if (y + 160 > window.innerHeight) y -= 160;
 
             menu.style.left = x + 'px';
             menu.style.top = y + 'px';
@@ -1282,24 +1408,40 @@
             const msg = state.currentMessages.find(m => m.id === ctxMsgId);
             if (!msg) return;
 
-            showModal('Edit Message', '', msg.content, [{text:'Cancel'}, {text:'Save', bold:true, onClick: (newText) => {
-                if (newText && newText !== msg.content) {
-                    handleEdit(currentChatId, ctxMsgId, newText);
-                    sendData('msg-edit', null, null, { id: ctxMsgId, newContent: newText });
-                }
-            }}]);
+            showModal('Edit Message', '', 'Edit your message...', [{text:'Cancel'}, {text:'Save', bold:true, onClick: (newText) => {
+            if (newText && newText !== msg.content) {
+                handleEdit(currentChatId, ctxMsgId, newText);
+                sendData('msg-edit', null, null, { id: ctxMsgId, newContent: newText });
+            }
+        }}], 'textarea', msg.content); // <--- 'textarea' mode and the loaded message!
         };
 
         async function handleUnsend(chatId, msgId) {
-            if (currentChatId === chatId) {
-                state.currentMessages = state.currentMessages.filter(m => m.id !== msgId);
-                const el = document.getElementById(`msg-${msgId}`);
-                if (el) el.remove();
-            }
+    if (currentChatId === chatId) {
+        state.currentMessages = state.currentMessages.filter(m => m.id !== msgId);
+        const el = document.getElementById(`msg-${msgId}`);
+        if (el) el.remove();
+    }
 
-            await IDB.delete('messages', msgId);
-            saveState(); renderContacts();
+    await IDB.delete('messages', msgId);
+    
+    // NEW LOGIC: Fetch the new last message to update the preview
+    const msgs = await IDB.getAllFromIndex('messages', 'chatId', chatId);
+    msgs.sort((a,b) => a.time - b.time);
+    
+    const c = state.contacts.find(x => x.id === chatId);
+    if (c) {
+        if (msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1];
+            c.lastMsg = lastMsg.format === 'text' ? lastMsg.content : (lastMsg.format === 'image' ? 'Sent a photo' : 'Attachment');
+        } else {
+            c.lastMsg = ''; // Chat is empty now
         }
+    }
+    
+    saveState(); 
+    renderContacts();
+}
 
         async function handleEdit(chatId, msgId, newContent) {
             const msg = await IDB.get('messages', msgId);
@@ -1311,16 +1453,23 @@
             if (currentChatId === chatId) {
                  const m = state.currentMessages.find(x => x.id === msgId);
                  if(m) m.content = newContent;
-                 const el = document.querySelector(`#msg-${msgId} .msg-text`);
-                 if (el) el.textContent = newContent;
+                 document.getElementById(`msg-${msgId}`).replaceWith(createMessageElement(m, false));
             }
             
-            const c = state.contacts.find(x => x.id === chatId);
-            if (c) {
-                c.lastMsg = newContent;
-                saveState(); renderContacts();
-            }
-        }
+            // Fetch all messages to find the TRUE last message
+    const msgs = await IDB.getAllFromIndex('messages', 'chatId', chatId);
+    msgs.sort((a,b) => a.time - b.time);
+
+    const c = state.contacts.find(x => x.id === chatId);
+    if (c && msgs.length > 0) {
+        const lastMsg = msgs[msgs.length - 1];
+        // Safely set the preview to the actual last message
+        c.lastMsg = lastMsg.format === 'text' ? lastMsg.content : (lastMsg.format === 'image' ? 'Sent a photo' : 'Attachment');
+        
+        saveState(); 
+        renderContacts();
+    }
+}
 
         /* --- UTILS --- */
         async function ensureContact(id) {
@@ -1457,6 +1606,35 @@
                 showModal('Success', 'Ringtone updated.', null, [{text:'OK'}]);
             }).catch(() => showModal('Error', 'Failed to save.', null, [{text:'OK'}]));
         };
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const msgContainer = $('messages-container');
+const scrollBtn = $('scroll-bottom-btn');
+
+msgContainer.addEventListener('scroll', () => {
+    // Show button if we are scrolled up more than 150px from the bottom
+    const isScrolledUp = msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight > 150;
+    scrollBtn.classList.toggle('visible', isScrolledUp);
+});
+
+scrollBtn.onclick = () => {
+    msgContainer.scrollTo({ top: msgContainer.scrollHeight, behavior: 'smooth' });
+};
+        
+        
+        
+        
+        
+        
+        
+        
 
         async function saveState() {
             for (const c of state.contacts) await IDB.put('contacts', c);
@@ -1502,6 +1680,58 @@
 
         $('rename-contact').onclick = () => showModal('Rename', 'New name:', 'Name', [{text:'Cancel'}, {text:'Save', bold:true, onClick: (n) => { if(n) { const c = state.contacts.find(x=>x.id===currentChatId); if(c) c.name = n; saveState(); renderContacts(); $('chat-title').textContent = n; }}}]);
         
+        $('edit-peer-id').onclick = () => {
+            showModal('Edit Peer ID', 'Enter new 8-digit ID:', 'New ID', [
+                {text: 'Cancel'}, 
+                {text: 'Save', bold: true, onClick: async (newId) => {
+                    if (!/^\d{8}$/.test(newId)) {
+                        showModal('Invalid ID', 'Peer ID must be exactly 8 digits.', null, [{text: 'OK'}]);
+                        return;
+                    }
+                    if (newId === currentChatId) return;
+
+                    const existing = state.contacts.find(c => c.id === newId);
+                    if (existing) {
+                        showModal('Peer ID mismatch', `Peer ID already exists in your contacts.`, null, [{text: 'OK', bold: true}]);
+                        return;
+                    }
+
+                    // Deep IDB Update
+                    const c = state.contacts.find(x => x.id === currentChatId);
+                    if (c) {
+                        await IDB.delete('contacts', currentChatId);
+                        c.id = newId;
+                        await IDB.put('contacts', c);
+                    }
+
+                    const msgs = await IDB.getAllFromIndex('messages', 'chatId', currentChatId);
+                    for (const m of msgs) {
+                        m.chatId = newId;
+                        await IDB.put('messages', m);
+                    }
+
+                    state.contacts = state.contacts.map(x => x.id === currentChatId ? c : x);
+                    
+                    if(state.blocklist.includes(currentChatId)) {
+                        state.blocklist = state.blocklist.filter(x => x !== currentChatId);
+                        state.blocklist.push(newId);
+                        await saveState();
+                    }
+
+                    if (connections[currentChatId]) {
+                        connections[currentChatId].close();
+                        delete connections[currentChatId];
+                    }
+
+                    currentChatId = newId;
+                    renderContacts();
+                    $('chat-menu').style.display = 'none';
+                    $('chat-back-btn').click();
+                    setTimeout(() => openChat(newId), 100);
+                }}
+            ], 'numeric');
+        };
+
         $('block-toggle-btn').onclick = () => {
             const blocked = state.blocklist.includes(currentChatId);
             showModal(blocked ? 'Unblock?' : 'Block?', blocked ? 'Allow messages?' : 'Block this user?', null, [{text:'Cancel'}, {text: blocked?'Unblock':'Block', danger:true, onClick: () => {
@@ -1527,7 +1757,7 @@
              }}]);
         };
 
-        $('delete-chat').onclick = () => showModal('Delete?', 'Cannot be undone.', null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: async () => { 
+        $('delete-chat').onclick = () => showModal('Delete?', 'This can't be undone.', null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: async () => { 
              const msgs = await IDB.getAllFromIndex('messages', 'chatId', currentChatId);
              for(const m of msgs) await IDB.delete('messages', m.id);
              await IDB.delete('contacts', currentChatId);
@@ -1538,6 +1768,132 @@
 
         $('chat-call-btn').onclick = startCall;
         window.renderBlocklist = () => $('blocklist-content').innerHTML = state.blocklist.map(id => `<div class=\"settings-item\"><span>${getContactName(id)}</span><button style=\"color:var(--bubble-blue)\" onclick=\"state.blocklist=state.blocklist.filter(x=>x!=='${id}');saveState();renderBlocklist();renderContacts()\">Unblock</button></div>`).join('');
+
+        /* --- EXPORT / IMPORT CHATS --- */
+        async function exportChats(specificChatId = null) {
+            if (!window.JSZip) return showModal('Loading', `ZIP Library is still loading. Please try again later.`, null, [{text: 'OK', bold: true}]);
+            
+            const zip = new JSZip();
+            let contactsToExport = state.contacts;
+            
+            if (specificChatId) {
+                contactsToExport = contactsToExport.filter(c => c.id === specificChatId);
+            }
+
+            if (contactsToExport.length === 0) return showModal('Cannot Export', `Nothing to export.`, null, [{text: 'OK', bold: true}]);
+
+            const exportData = { contacts: contactsToExport, messages: [] };
+
+            for (const contact of contactsToExport) {
+                const folderName = `${contact.name.replace(/[^a-z0-9]/gi, '_')}_${contact.id}`;
+                const chatFolder = zip.folder(folderName);
+                const mediaFolder = chatFolder.folder('Media');
+                
+                const msgs = await IDB.getAllFromIndex('messages', 'chatId', contact.id);
+                exportData.messages.push(...msgs);
+
+                msgs.sort((a,b) => a.time - b.time);
+
+                let txtContent = "";
+                for (const m of msgs) {
+                    const date = new Date(m.time).toLocaleString();
+                    const senderName = m.sender === 'me' ? state.settings.name : contact.name;
+                    
+                    if (m.format === 'text') {
+                        txtContent += `[${date}] ${senderName}: ${m.content}\r\n`;
+                    } else if (m.format === 'image' || m.format === 'file') {
+                        try {
+                            let base64Data = m.content.data || m.content;
+                            let fileName = m.content.name || (m.format === 'image' ? `IMG_${m.time}.jpg` : `FILE_${m.time}`);
+                            
+                            const base64Arr = base64Data.split(',');
+                            if (base64Arr.length > 1) {
+                                mediaFolder.file(fileName, base64Arr[1], {base64: true});
+                            }
+                            txtContent += `[${date}] ${senderName}: <attached: Media/${fileName}>\r\n`;
+                        } catch(e) {
+                            txtContent += `[${date}] ${senderName}: <attachment error>\r\n`;
+                        }
+                    } else if (m.format === 'call') {
+                        txtContent += `[${date}] ${senderName}: ${m.content}\r\n`;
+                    }
+                }
+                chatFolder.file("_chat.txt", txtContent);
+            }
+
+            // Hidden JSON file guarantees 100% accurate identical restores
+            zip.file("data.json", JSON.stringify(exportData));
+
+            const blob = await zip.generateAsync({type:"blob"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = specificChatId ? `iMessage_Export_${specificChatId}.zip` : `iMessage_Export_All.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        $('export-all-btn').onclick = () => exportChats();
+        $('export-chat').onclick = () => { exportChats(currentChatId); $('chat-menu').style.display = 'none'; };
+
+        $('import-chats-upload').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!window.JSZip) return showModal('Library not loaded', `Failed to load the ZIP library.`, null, [{text: 'OK', bold: true}]);
+
+            try {
+                const zip = await JSZip.loadAsync(file);
+                if (!zip.file("data.json")) {
+                    showModal('Invalid Backup', `Couldn't find data.json in the backup file.`, null, [{text: 'OK', bold: true}]);
+                    return;
+                }
+
+                const jsonData = await zip.file("data.json").async("string");
+                const data = JSON.parse(jsonData);
+
+                let importedContacts = 0;
+                let importedMsgs = 0;
+
+                if (data.contacts && Array.isArray(data.contacts)) {
+                    for (const c of data.contacts) {
+                        if (!state.contacts.find(x => x.id === c.id)) {
+                            state.contacts.unshift(c);
+                            importedContacts++;
+                        } else {
+                            const existing = state.contacts.find(x => x.id === c.id);
+                            if (c.time > existing.time) {
+                                existing.lastMsg = c.lastMsg;
+                                existing.time = c.time;
+                            }
+                        }
+                        await IDB.put('contacts', c); 
+                    }
+                }
+
+                if (data.messages && Array.isArray(data.messages)) {
+                    for (const m of data.messages) {
+                        const existingMsg = await IDB.get('messages', m.id);
+                        if (!existingMsg) {
+                            await IDB.put('messages', m);
+                            importedMsgs++;
+                        }
+                    }
+                }
+
+                renderContacts();
+                showModal('Success', `Restored ${importedContacts} contacts and ${importedMsgs} messages.`, null, [{text: 'OK', bold: true}]);
+                
+                if (currentChatId) openChat(currentChatId);
+                
+            } catch(err) {
+                console.error(err);
+                showModal('Error', `Failed to read the ZIP file. Please ensure it is a valid iMessage export.`, null, [{text: 'OK', bold: true}]);
+            }
+            e.target.value = ''; 
+        };
+
     </script>
 </body>
 </html>
