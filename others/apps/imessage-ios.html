@@ -1757,7 +1757,7 @@ scrollBtn.onclick = () => {
              }}]);
         };
 
-        $('delete-chat').onclick = () => showModal('Delete?', 'This can't be undone.', null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: async () => { 
+        $('delete-chat').onclick = () => showModal('Delete?', "This can't be undone.", null, [{text:'Cancel'}, {text:'Delete', danger:true, onClick: async () => { 
              const msgs = await IDB.getAllFromIndex('messages', 'chatId', currentChatId);
              for(const m of msgs) await IDB.delete('messages', m.id);
              await IDB.delete('contacts', currentChatId);
