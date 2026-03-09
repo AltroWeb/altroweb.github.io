@@ -470,6 +470,16 @@
 .checkbox-row input:checked + .custom-box::after { transform: rotate(45deg) scale(1); }
         
         
+        
+.profile-top { display: grid; grid-template-columns: auto 1fr; align-items: start; }
+.profile-top img { grid-row: 1 / 10; }
+.profile-top .profile-btn { grid-column: 2; justify-self: end; margin-bottom: 8px; width: fit-content; }
+.profile-top .profile-btn:last-child { margin-bottom: 0; }
+        
+        
+        
+        
+        
     </style>
 </head>
 <body>
@@ -584,6 +594,13 @@
                 if (user) {
                     await loadUserProfile(user.uid);
                     renderApp();
+                    
+                    
+                    // PRO FIX: Claim this device as authorized to stop the alert loop
+                    if (currentProfile && currentProfile.lastLoginDevice !== myDeviceId) {
+                        updateDoc(getPublicDoc('profiles', user.uid), { lastLoginDevice: myDeviceId, lastLoginAt: Date.now() });
+                    }
+                    
 
                     if (unsubscribeSecurity) unsubscribeSecurity();
                     unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), (doc) => {
@@ -591,16 +608,16 @@
                         if (data) {
                             // Intrusion Engine (Only alerts if a DIFFERENT device logged in recently)
                             if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (Date.now() - 86400000)) {
-                                if (!sessionStorage.getItem('gibbl_alerted_' + data.lastLoginDevice)) {
-                                    sessionStorage.setItem('gibbl_alerted_' + data.lastLoginDevice, 'true');
-                                    window.showModal('Security Alert', 'A new device recently logged into your account. Was this you?', null, false, `
-                                        <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
-                                            <button class="btn-primary" style="background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="window.closeModal()">Yes, it was me</button>
-                                        </div>
-                                    `);
-                                    document.getElementById('modal-actions-container').style.display = 'none';
-                                }
-                            }
+                        const alertKey = 'gibbl_alerted_' + data.lastLoginDevice;
+                        if (!sessionStorage.getItem(alertKey)) {
+                            window.showModal('Security Alert', 'A new device recently logged into your account. If this wasn\'t you, you should take actions immediately.', null, false, `
+                                <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
+                                    <button class="btn-primary" onclick="sessionStorage.setItem('${alertKey}', 'true'); window.closeModal();">OK</button>
+                                </div>
+                            `);
+                            document.getElementById('modal-actions-container').style.display = 'none';
+                        }
+                    }
                         }
                     }, (err) => {});
 
@@ -967,8 +984,13 @@
             
             const urlParams = new URLSearchParams(window.location.search);
             const linkedPostId = urlParams.get('post');
+            const linkedUserId = urlParams.get('u');
+
             if (linkedPostId) {
                 window.setView('thread', linkedPostId);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (linkedUserId) {
+                window.setView('profile', linkedUserId);
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else {
                 window.setView('home');
@@ -1376,7 +1398,7 @@
                 const isVerified = await window.checkVerified(uid);
 
                 container.innerHTML = `
-                    <div class="profile-header">
+  <div class="profile-header">
                         <div class="profile-top">
                             <img src="${window.getAvatar(user.pfp, user.displayName)}" class="pfp-lg pfp-uid-${uid}">
                             ${isMe ? `
@@ -1386,8 +1408,15 @@
                                     ${amFollowing ? 'Following' : 'Follow'}
                                 </button>
                             `}
+                            
+                            <button class="profile-btn flex items-center gap-2" style="font-size: 0.85rem; padding: 0.5rem 0.8rem;" onclick="window.shareProfile('${uid}')">${getIcon('share')} <span style="font-weight:600;">Share</span></button>
+                            
+                            
                         </div>
                         <div>
+                    
+                    
+                    
                             <div class="display-name name-uid-${uid}" style="font-size:1.4rem; font-weight:800; display:flex; align-items:center; gap:6px; letter-spacing:-0.5px;">
                                 <span class="display-name-text">${user.displayName}</span> ${isVerified ? getIcon('badge-check') : ''}
                             </div>
@@ -2069,6 +2098,17 @@
                 return d.exists() && d.data().verified === true;
             } catch(e) { return false; }
         };
+        
+        
+        
+        
+        window.shareProfile = (uid) => {
+    const url = `${window.location.origin}${window.location.pathname}?u=${uid}`;
+    navigator.clipboard.writeText(url);
+    window.showModal('Copied', 'Profile link copied to clipboard.');
+};
+        
+        
 
     </script>
 </body>
