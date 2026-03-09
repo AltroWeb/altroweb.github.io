@@ -437,6 +437,39 @@
             cursor: pointer; font-weight: bold; transition: 0.2s; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);
         }
         .rm-img:hover { background: rgba(0,0,0,0.9); transform: scale(1.05); }
+        
+        
+        
+        /* Custom Checkbox Component */
+.checkbox-row { display: flex; align-items: center; gap: 12px; cursor: pointer; margin-bottom: 1.5rem; user-select: none; }
+.checkbox-row:hover .custom-box { border-color: var(--text); }
+
+/* This hides the native box completely while keeping it functional for the browser */
+.checkbox-row input { 
+    position: absolute; 
+    opacity: 0; 
+    width: 0; height: 0; 
+    pointer-events: none; 
+} 
+
+.custom-box { 
+    width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 5px; 
+    background: var(--bg); display: flex; align-items: center; justify-content: center; 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0;
+}
+
+/* Logic: When hidden input is checked, style the sibling custom-box */
+.checkbox-row input:checked + .custom-box { background: var(--text); border-color: var(--text); }
+
+/* The white tick inside the box */
+.custom-box::after { 
+    content: ''; width: 4px; height: 8px; border: solid var(--bg); border-width: 0 2px 2px 0; 
+    transform: rotate(45deg) scale(0); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    margin-bottom: 2px;
+}
+.checkbox-row input:checked + .custom-box::after { transform: rotate(45deg) scale(1); }
+        
+        
     </style>
 </head>
 <body>
@@ -467,7 +500,7 @@
     <!-- SCRIPTS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         // --- CONFIG ---
@@ -836,6 +869,15 @@
                             <input type="password" id="login-pass" class="custom-input" placeholder="Password">
                             <div class="password-toggle" onclick="window.togglePass('login-pass')">${getIcon('eye')}</div>
                         </div>
+                        
+                        <div class="flex items-center gap-2" style="margin-bottom: 1.5rem; justify-content: flex-start; width: 100%;">
+                         <label class="checkbox-row">
+    <input type="checkbox" id="login-guest">
+    <div class="custom-box"></div>
+    <span class="text-dim text-sm bold" style="line-height: 1;">Guest Mode</span>
+</label>
+                        </div>
+
                         <button class="btn-primary" onclick="window.handleLogin(this)">Log In</button>
                         <button class="btn-secondary" onclick="window.switchAuth('reset')" style="text-decoration: underline;">Forgot Password?</button>
                     </div>
@@ -1827,9 +1869,18 @@
         window.handleLogin = async (btn) => {
             const e = document.getElementById('login-email').value;
             const p = document.getElementById('login-pass').value;
+            
+            // Look for the guest checkbox (if it exists in the DOM)
+            const guestCheckbox = document.getElementById('login-guest');
+            const isGuest = guestCheckbox ? guestCheckbox.checked : false;
+
             if(!e || !p) { window.showModal('Error', 'Please fill in all fields.'); return; }
             window.setLoading(btn, true);
             try { 
+                // PRO FIX: Native Session Persistence Control
+                const persistenceType = isGuest ? browserSessionPersistence : browserLocalPersistence;
+                await setPersistence(auth, persistenceType);
+                
                 await signInWithEmailAndPassword(auth, e, p); 
                 window.SESSION_START = Date.now();
                 await updateDoc(getPublicDoc('profiles', auth.currentUser.uid), { lastLoginDevice: localStorage.getItem('gibbl_device_id'), lastLoginAt: Date.now() });
