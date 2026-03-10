@@ -2469,6 +2469,11 @@ async toggleGlobalAnalytics(toggleEl) {
                 totalEl.innerText = '...';
                 activeEl.innerText = '...';
                 
+                
+                document.getElementById('ana-title').innerText = "Loading..."; document.getElementById('ana-id').innerText = "ID: ..."; document.getElementById('ana-icon').src = "grey.png";
+                
+                
+                
                 document.getElementById('ana-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Refreshing...</div>';
 
                 try {
