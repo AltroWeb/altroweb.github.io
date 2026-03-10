@@ -1837,20 +1837,22 @@
             const badge = document.getElementById('nav-badge');
             if(badge) badge.classList.remove('show');
 
-            onSnapshot(query(getPublicCollection('notifications'), limit(window.LIMITS.notifs)), (snap) => {
+            // PRO FIX: Explicitly query ONLY the current user's notifications, then paginate locally.
+            onSnapshot(query(getPublicCollection('notifications'), where('receiverId', '==', currentUser.uid)), (snap) => {
                 const list = document.getElementById('notif-list');
                 if(!list || currentView !== 'notifications') return;
 
-                let notifs = [];
+                let allNotifs = [];
                 let unreadDocs = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    if (data.receiverId === currentUser.uid) {
-                        notifs.push({id: d.id, ...data});
-                        if (data.read === false) unreadDocs.push(d.id);
-                    }
+                    allNotifs.push({id: d.id, ...data});
+                    if (data.read === false) unreadDocs.push(d.id);
                 });
-                notifs.sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+                
+                // Sort newest first, then cut the list to the current limit
+                allNotifs.sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+                let notifs = allNotifs.slice(0, window.LIMITS.notifs);
                 
                 if (unreadDocs.length > 0) {
                     const batch = writeBatch(db);

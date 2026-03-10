@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About | gibbl.</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --surface: #f7f7f7;
+            --border: #e6e6e6;
+            --dim: #536471; 
+            
+            --font-head: 'Syne', sans-serif;
+            --font-body: 'Sora', sans-serif;
+            
+            --radius-md: 16px;
+            --radius-full: 9999px;
+            
+            /* Pro Solid Colors for Cards */
+            --card-pink: #ff90e8;
+            --card-yellow: #fffc54;
+            --card-green: #23e87a;
+            --card-purple: #c399ff;
+        }
+
+        [data-theme="dark"] {
+            --bg: #000000;
+            --text: #ffffff;
+            --surface: #16181c;
+            --border: #2f3336;
+            --dim: #71767b; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            transition: background 0.2s, color 0.2s;
+            overflow-x: hidden;
+            font-size: 16px;
+            line-height: 1.6;
+            width: 100%;
+        }
+
+        /* Prevent Text Bleed Globally */
+        .break-words { 
+            overflow-wrap: break-word; 
+            word-break: break-word; 
+            word-wrap: break-word; 
+            hyphens: auto; 
+            max-width: 100%;
+        }
+
+        h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 800; letter-spacing: -1px; line-height: 1.1; max-width: 100%; }
+        h1 { font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 1rem; }
+        h2 { font-size: clamp(1.8rem, 6vw, 2.2rem); margin-bottom: 1rem; margin-top: 3rem; }
+        h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        p { margin-bottom: 1.5rem; color: var(--dim); max-width: 100%; }
+        
+        a { color: inherit; text-decoration: none; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit;}
+
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .w-full { width: 100%; }
+
+        /* --- LAYOUT --- */
+        .app-container {
+            max-width: 700px;
+            margin: 0 auto;
+            min-height: 100vh;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            padding-bottom: 70px;
+            overflow: hidden; /* Hard lock to prevent horizontal scrolling */
+        }
+
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(var(--bg), 0.85);
+            backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
+
+        .content-wrap { padding: 3rem 1.5rem; max-width: 100%; }
+
+        .btn-primary {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem 2.5rem;
+            background: var(--text);
+            color: var(--bg);
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+            text-decoration: none;
+            max-width: 100%;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+
+        /* --- PRO STYLE CARDS (Neo-Brutalism) --- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 3rem 0;
+            width: 100%;
+        }
+
+        .style-card {
+            padding: 2rem;
+            border-radius: var(--radius-md);
+            border: 3px solid #000;
+            box-shadow: 6px 6px 0px #000;
+            color: #000;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 180px;
+            width: 100%;
+            /* Rigid text containment for cards */
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* Keep text black inside colored cards, but change outer border/shadow for Dark Mode */
+        [data-theme="dark"] .style-card {
+            border-color: #ffffff;
+            box-shadow: 6px 6px 0px #ffffff;
+        }
+
+        .style-card:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0px #000; }
+        [data-theme="dark"] .style-card:hover { box-shadow: 8px 8px 0px #ffffff; }
+
+        .card-pink { background-color: var(--card-pink); }
+        .card-yellow { background-color: var(--card-yellow); }
+        .card-green { background-color: var(--card-green); }
+        .card-purple { background-color: var(--card-purple); }
+
+        .style-card h3 { font-size: 1.8rem; margin: 0; line-height: 1.1; color: #000; }
+        .style-card p { color: rgba(0,0,0,0.8); margin-top: 0.5rem; margin-bottom: 0; font-weight: 700; }
+
+        /* Responsive Grid Collapse */
+        @media (max-width: 550px) {
+            .card-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .style-card { min-height: auto; padding: 1.5rem; }
+        }
+
+        /* --- TECH INFO & FAQ --- */
+        .info-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+        
+        .info-box .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: var(--text);
+            color: var(--bg);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .faq-item { margin-bottom: 1.5rem; width: 100%; }
+        .faq-q { font-weight: 700; font-size: 1.2rem; color: var(--text); margin-bottom: 0.3rem; }
+        .faq-a { color: var(--dim); }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAV -->
+        <div class="top-bar flex justify-between items-center">
+            <div class="logo">gibbl.</div>
+            <button class="pointer" id="theme-toggle" style="color:var(--text); padding: 5px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+        </div>
+
+        <div class="content-wrap">
+            <!-- HERO -->
+            <h1 class="break-words">Built differently.</h1>
+            <p style="font-size: 1.15rem;" class="break-words">Welcome to gibbl. A minimalist, lightning-fast space for thoughts, engineered without bloat, algorithms, or noise. Just people connecting in real-time.</p>
+            
+            <a href="index.html" class="btn-primary" style="margin-top: 0.5rem;">Try gibbl.</a>
+
+            <!-- STYLE CARDS (Neo-Brutalism) -->
+            <div class="card-grid">
+                <div class="style-card card-pink">
+                    <h3 class="break-words">we're gibblin'</h3>
+                    <p class="break-words">pure vibes only.</p>
+                </div>
+                <div class="style-card card-yellow">
+                    <h3 class="break-words">gibblers, assemble!</h3>
+                    <p class="break-words">the community is growing.</p>
+                </div>
+                <div class="style-card card-green">
+                    <h3 class="break-words">1 file.</h3>
+                    <p class="break-words">an engineering breakthrough.</p>
+                </div>
+                <div class="style-card card-purple">
+                    <h3 class="break-words">zero noise.</h3>
+                    <p class="break-words">no algorithms. chronological.</p>
+                </div>
+            </div>
+
+            <!-- ABOUT & TECH -->
+            <h2 class="break-words">Full Transparency.</h2>
+            <p class="break-words">We believe in open architecture. gibbl. isn't built on heavy, sluggish frameworks. It is an engineering experiment pushed to the absolute limit.</p>
+
+            <div class="info-box">
+                <div class="badge">Architecture</div>
+                <h3 class="break-words">The Single-File Micro-Platform</h3>
+                <p style="margin-bottom: 0;" class="break-words">Most social networks require hundreds of thousands of files and heavy Node.js backends. <strong>gibbl. is completely housed within a single HTML file.</strong> The rendering, security protocols, routing, and UI state are all managed locally using ultra-optimized Vanilla JS and DOM diffing.</p>
+            </div>
+
+            <div class="info-box">
+                <div class="badge">Backend</div>
+                <h3 class="break-words">Serverless & Secure</h3>
+                <p style="margin-bottom: 0;" class="break-words">Powered by <strong>Firebase Firestore & Authentication</strong>. Your data connects directly and securely from your device to the cloud. We utilize rigorous Firestore Security Rules and Intrusion Detection engines right on the client side to keep your account safe.</p>
+            </div>
+
+            <!-- FAQ SECTION -->
+            <h2 style="margin-top: 4rem;">FAQ</h2>
+            
+            <div class="faq-item">
+                <div class="faq-q break-words">Is my data secure?</div>
+                <div class="faq-a break-words">Absolutely. All passwords are encrypted by Google's Firebase Auth. Our database rules are strictly locked down—only your authorized devices can edit your profile.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q break-words">Is there an algorithm?</div>
+                <div class="faq-a break-words">No. The feed is strictly chronological, and the "Top" feed is purely based on likes. We don't track your behavior to serve you addictive content.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q break-words">Is it open source?</div>
+                <div class="faq-a break-words">The concept and frontend architecture are completely open by nature (you can literally inspect the page source to see the entire app engine).</div>
+            </div>
+
+            <!-- FOOTER -->
+            <div style="margin-top: 4rem; text-align: center; border-top: 1px solid var(--border); padding-top: 3rem;">
+                <div class="logo" style="font-size: 2.5rem; margin-bottom: 1rem;">gibbl.</div>
+                <p class="text-dim" style="font-size: 0.9rem; margin-bottom: 2rem;">© gibbl Social. All rights reserved.</p>
+                <a href="index.html" class="btn-primary" style="padding: 1rem 3rem;">Open App</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- THEME SCRIPT -->
+    <script>
+        // Sync dark mode perfectly with the main app's local storage
+        let isDarkMode = localStorage.getItem('gibbl_dark') === 'true';
+        const body = document.body;
+        const themeIcon = document.getElementById('theme-icon');
+
+        const icons = {
+            moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>',
+            sun: '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>'
+        };
+
+        const updateTheme = () => {
+            if (isDarkMode) {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.innerHTML = icons.sun;
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.innerHTML = icons.moon;
+            }
+        };
+
+        document.getElementById('theme-toggle').onclick = () => {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('gibbl_dark', isDarkMode);
+            updateTheme();
+        };
+
+        // Initialize theme on load
+        updateTheme();
+    </script>
+</body>
+</html>
