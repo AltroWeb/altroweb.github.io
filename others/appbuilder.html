@@ -835,13 +835,28 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                 <!-- END NEW FIELD -->
 
                 <div class="form-group">
-                    <label>App Icon URL (Optional)</label>
-                    <input type="text" id="edit-icon" placeholder="https://...">
-                    <div style="display:flex; align-items:center; gap:15px; margin-top:10px;">
-                        <img id="icon-preview" src="" style="width:60px; height:60px; border-radius:14px; background:linear-gradient(45deg, #ddd, #bbb); object-fit: cover;">
-                        <div class="hint">If left empty, a default icon will be used.</div>
-                    </div>
-                </div>
+    <label>App Icon (Optional)</label>
+    <div style="display: flex; gap: 15px; align-items: flex-start; margin-top: 5px;">
+        
+        <div style="position: relative; cursor: pointer; flex-shrink: 0;" onclick="document.getElementById('app-icon-upload-input').click()" title="Click to upload">
+            <img id="icon-preview" src="grey.png" style="width: 60px; height: 60px; border-radius: 14px; object-fit: cover; background: linear-gradient(45deg, #ddd, #bbb); border: 1px solid var(--border); transition: transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            
+            <div style="position: absolute; bottom: -4px; right: -4px; background: var(--accent); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid var(--card-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+        </div>
+        
+        <input type="file" id="app-icon-upload-input" accept="image/png, image/jpeg, image/webp" style="display: none;" onchange="appBuilder.handleAppIconUpload(this)">
+        
+        <div style="flex: 1;">
+            <input type="text" id="edit-icon" placeholder="https://... or click icon to upload">
+            <div class="hint">Max 100KB for local uploads to stay safely under database limits.</div>
+        </div>
+    </div>
+</div>
+
+
+
 
                 <div class="form-group">
                     <label>Description <span style="color:var(--danger)">*</span></label>
@@ -930,15 +945,25 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                 </div>
 
                 <div class="form-group">
-                    <label>Developer Icon URL (Optional)</label>
-                    <div style="display: flex; gap: 15px; align-items: flex-start;">
-                        <img id="set-icon-preview" src="grey.png" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #eee; flex-shrink: 0; border: 1px solid var(--border);">
-                        <div style="flex: 1;">
-                            <input type="text" id="set-icon" placeholder="https://..." oninput="appBuilder.updateSettingsIconPreview(this.value)">
-                            <div class="hint">Appears on your Developer Profile Card.</div>
-                        </div>
-                    </div>
-                </div>
+    <label>Developer Icon (Optional)</label>
+    <div style="display: flex; gap: 15px; align-items: flex-start;">
+        
+        <div style="position: relative; cursor: pointer; flex-shrink: 0;" onclick="document.getElementById('profile-upload-input').click()" title="Click to upload">
+            <img id="set-icon-preview" src="grey.png" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; background: #eee; border: 1px solid var(--border); transition: transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            
+            <div style="position: absolute; bottom: -4px; right: -4px; background: var(--accent); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid var(--card-bg);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+        </div>
+        
+        <input type="file" id="profile-upload-input" accept="image/png, image/jpeg, image/webp" style="display: none;" onchange="appBuilder.handleProfileUpload(this)">
+        
+        <div style="flex: 1;">
+            <input type="text" id="set-icon" placeholder="https://... or click icon to upload" oninput="appBuilder.updateSettingsIconPreview(this.value)">
+            <div class="hint">Appears on your Developer Profile Card. Max 500KB.</div>
+        </div>
+    </div>
+</div>
 
                 <div style="margin-bottom: 24px; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;">
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
@@ -1159,6 +1184,12 @@ updateTagsCounter(input) {
             updateSettingsIconPreview(url) {
                 document.getElementById('set-icon-preview').src = this.getSafeIconUrl(url);
             }
+            
+            
+            
+           
+            
+            
             
             
             
@@ -1675,7 +1706,19 @@ async confirmSignOutAll() {
             showSettings() { this.updateUIState('settings'); }
 
             updateUIState(viewName) {
-                document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+             
+
+// 1. Only snap to top if we are navigating to a NEW screen
+        const targetView = document.getElementById(viewName + '-view');
+        if (targetView && !targetView.classList.contains('active')) window.scrollTo(0, 0);
+
+
+   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+                
+                
+                
+                
+                
                 switch(viewName) {
                     case 'login': document.getElementById('login-view').classList.add('active'); break;
                     case 'register': document.getElementById('register-view').classList.add('active'); break;
@@ -3056,6 +3099,150 @@ function renderBio(text) {
         
         
         document.addEventListener('DOMContentLoaded', () => setBioMode('write'));
+        
+        
+        
+        
+        
+        
+        
+        
+        // --- 1-STEP PRO FIX PATCH ---
+
+        // 1. Unblock Data URIs so the preview doesn't vanish on reload
+        const originalGetSafeIconUrl = AppBuilder.prototype.getSafeIconUrl;
+        AppBuilder.prototype.getSafeIconUrl = function(url) {
+            if (typeof url === 'string' && url.trim().toLowerCase().startsWith('data:image/')) {
+                return url.trim(); 
+            }
+            return originalGetSafeIconUrl.call(this, url);
+        };
+
+        // 2. Keep the heavy text OUT of the visible text box when loading
+        const originalLoadSettings = AppBuilder.prototype.loadSettings;
+        AppBuilder.prototype.loadSettings = async function() {
+            await originalLoadSettings.call(this);
+            const iconInput = document.getElementById('set-icon');
+            if (iconInput.value.startsWith('data:image/')) {
+                iconInput.dataset.realB64 = iconInput.value;
+                iconInput.value = "Local Image Uploaded";
+            }
+        };
+
+        // 3. Briefly reveal the heavy text to your save function, then hide it again
+        const originalSaveSettings = AppBuilder.prototype.saveSettings;
+        AppBuilder.prototype.saveSettings = async function() {
+            const iconInput = document.getElementById('set-icon');
+            const isLocal = iconInput.value.startsWith('') && iconInput.dataset.realB64;
+            
+            if (isLocal) {
+                iconInput.value = iconInput.dataset.realB64; // Reveal for database
+            }
+            
+            try {
+                await originalSaveSettings.call(this); // Save happens here
+            } finally {
+                if (isLocal) {
+                    iconInput.value = "Local Image Uploaded"; // Hide it again
+                }
+            }
+        };
+
+        // 4. Fast, native upload handler (No Compression, No Lag)
+        AppBuilder.prototype.handleProfileUpload = async function(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            
+            if (file.size > 500 * 1024) {
+                await this.showAlert("File Too Large", "Please select an image under 500KB.", true);
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUri = e.target.result;
+                const iconInput = document.getElementById('set-icon');
+                
+                // Store the heavy payload safely, show clean UI text
+                iconInput.dataset.realB64 = dataUri;
+                iconInput.value = "Local Image Uploaded";
+                
+                this.updateSettingsIconPreview(dataUri);
+            };
+            reader.readAsDataURL(file);
+            input.value = ''; 
+        };
+        
+        
+        
+        
+      
+
+// --- APP ICON LOGIC (100KB LIMIT) ---
+
+        // 5. Native handler for App Icons
+        AppBuilder.prototype.handleAppIconUpload = async function(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            
+            if (file.size > 100 * 1024) {
+                await this.showAlert("File Too Large", "App icons must be under 100KB to ensure smooth database syncing.", true);
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUri = e.target.result;
+                const iconInput = document.getElementById('edit-icon');
+                
+                // Store heavy payload, show clean text
+                iconInput.dataset.realB64 = dataUri;
+                iconInput.value = "Local App Icon Uploaded";
+                
+                document.getElementById('icon-preview').src = dataUri;
+            };
+            reader.readAsDataURL(file);
+            input.value = ''; 
+        };
+
+        // 6. Keep heavy text out of Editor when loading an existing app
+        const originalEditApp = AppBuilder.prototype.editApp;
+        AppBuilder.prototype.editApp = async function(appId) {
+            await originalEditApp.call(this, appId);
+            const iconInput = document.getElementById('edit-icon');
+            if (iconInput.value.startsWith('data:image/')) {
+                iconInput.dataset.realB64 = iconInput.value;
+                iconInput.value = "Local App Icon Uploaded";
+            }
+        };
+
+        // 7. Reveal real data during Publishing, then hide it again
+        const originalPublishApp = AppBuilder.prototype.publishApp;
+        AppBuilder.prototype.publishApp = async function() {
+            const iconInput = document.getElementById('edit-icon');
+            const isLocal = iconInput.value.startsWith('') && iconInput.dataset.realB64;
+            
+            if (isLocal) {
+                iconInput.value = iconInput.dataset.realB64; 
+            }
+            
+            try {
+                await originalPublishApp.call(this); 
+            } finally {
+                if (isLocal) {
+                    iconInput.value = "Local App Icon Uploaded"; 
+                }
+            }
+        };
+
+
+
+
+  
+        
+        
         
     </script>
     
