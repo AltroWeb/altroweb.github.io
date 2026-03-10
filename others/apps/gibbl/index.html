@@ -477,7 +477,18 @@
 .profile-top .profile-btn:last-child { margin-bottom: 0; }
         
         
-        .bio-text { margin-top: 0.8rem; color: var(--text); font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; }
+       .bio-text { margin-top: 0.8rem; color: var(--text); font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; } 
+       
+       
+       
+       
+       /* Pro Image Modal Fix: Ensures tall images never cut off the close button */
+#img-modal { padding: 60px 20px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+#img-modal > div { position: relative !important; max-width: 100% !important; max-height: 100% !important; display: flex !important; flex-direction: column !important; }
+#img-close-btn { position: absolute !important; top: -50px !important; right: 0 !important; z-index: 210 !important; }
+#full-img { max-height: calc(100vh - 140px) !important; max-width: 90vw !important; width: auto !important; height: auto !important; object-fit: contain !important; border-radius: 12px !important; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+       
+       
         
         
     </style>
