@@ -522,7 +522,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
         // --- CONFIG ---
         const firebaseConfig = {
@@ -1041,10 +1041,10 @@
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('landing')">${getIcon('arrow-left')} Back</div>
                         <h2 style="text-align: left; margin-bottom: 1.5rem; font-size: 2rem;">Create Account.</h2>
                         <div class="input-group">
-                            <input type="text" id="reg-name" class="custom-input" placeholder="Display Name" maxlength="100">
+                            <input type="text" id="reg-name" class="custom-input" placeholder="Display Name" maxlength="50">
                         </div>
                         <div class="input-group">
-                            <input type="text" id="reg-handle" class="custom-input" placeholder="@username (no spaces/emojis)" maxlength="100">
+                            <input type="text" id="reg-handle" class="custom-input" placeholder="@username (no spaces/emojis)" maxlength="20">
                         </div>
                         <div class="input-group">
                             <input type="email" id="reg-email" class="custom-input" placeholder="Email">
@@ -1156,6 +1156,11 @@
             if(fab) fab.style.display = (view === 'home' || view === 'profile') ? 'flex' : 'none';
 
             if (view === 'home') renderFeed(content);
+            
+            
+            if (view === 'connections') renderConnections(content, param);
+            
+            
             if (view === 'thread') renderThread(content, param);
             if (view === 'profile') renderProfile(content, param);
             if (view === 'search') renderSearch(content);
@@ -1540,6 +1545,11 @@
                 const user = docRef.data();
                 const isMe = uid === currentUser.uid;
                 const amFollowing = currentProfile.following?.includes(uid);
+                
+                
+                const isFollowingMe = currentProfile.followers?.includes(uid);
+                
+                
                 const isVerified = await window.checkVerified(uid);
 
                 container.innerHTML = `
@@ -1547,12 +1557,19 @@
                         <div class="profile-top">
                             <img src="${window.getAvatar(user.pfp, user.displayName)}" class="pfp-lg pfp-uid-${uid}">
                             ${isMe ? `
-                                <button class="profile-btn" onclick="window.setView('settings')">Edit Profile</button>
-                            ` : `
-                                <button class="profile-btn ${amFollowing ? '' : 'primary'}" onclick="window.handleFollow('${uid}')">
-                                    ${amFollowing ? 'Following' : 'Follow'}
-                                </button>
-                            `}
+    <button class="profile-btn" onclick="window.setView('settings')">Edit Profile</button>
+` : `
+    <div class="flex gap-2" style="grid-column: 2; justify-self: end; margin-bottom: 8px;">
+        <button class="profile-btn ${amFollowing ? '' : 'primary'}" style="margin: 0;" onclick="window.handleFollow('${uid}', '${user.handle}')">
+            ${amFollowing ? 'Following' : 'Follow'}
+        </button>
+        ${isFollowingMe ? `
+            <button class="profile-btn flex items-center justify-center" style="margin: 0; color: var(--error); border-color: var(--error); padding: 0.4rem 0.6rem;" onclick="window.removeFollower('${uid}', '${user.handle}')" title="Remove Follower">
+                ${getIcon('trash-2')}
+            </button>
+        ` : ''}
+    </div>
+`}
                             
                             <button class="profile-btn flex items-center gap-2" style="font-size: 0.85rem; padding: 0.5rem 0.8rem;" onclick="window.shareProfile('${uid}')">${getIcon('share')} <span style="font-weight:600;">Share</span></button>
                             
@@ -1568,10 +1585,10 @@
                             <div style="color:var(--dim); margin-top: -2px;" class="handle-uid-${uid}">${user.handle}</div>
                         </div>
                         <div class="bio-text break-words">${markdown(user.bio)}</div>
-                        <div class="stats-row">
-                            <div class="stat-item"><span class="stat-val">${formatNum(user.following?.length || 0)}</span> <span class="stat-label">Following</span></div>
-                            <div class="stat-item"><span class="stat-val">${formatNum(user.followers?.length || 0)}</span> <span class="stat-label">Followers</span></div>
-                        </div>
+                     <div class="stats-row">
+    <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'following')"` : ''}><span class="stat-val">${formatNum(user.following?.length || 0)}</span> <span class="stat-label">Following</span></div>
+    <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'followers')"` : ''}><span class="stat-val">${formatNum(user.followers?.length || 0)}</span> <span class="stat-label">Followers</span></div>
+</div>
                     </div>
                     <div style="padding:1rem; border-bottom:1px solid var(--border); font-weight:700; font-family:var(--font-head); font-size:1.1rem;">Posts & Replies</div>
                     <div id="profile-posts">
@@ -1637,15 +1654,15 @@
                     <h3 style="margin-bottom:1rem;">Edit Profile</h3>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Display Name</label>
-                        <input id="edit-name" class="custom-input" value="${currentProfile.displayName}" maxlength="100">
+                        <input id="edit-name" class="custom-input" value="${currentProfile.displayName}" maxlength="50">
                     </div>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Handle</label>
-                        <input id="edit-handle" class="custom-input" value="${currentProfile.handle}" maxlength="100" placeholder="@username (no spaces)">
+                        <input id="edit-handle" class="custom-input" value="${currentProfile.handle}" maxlength="20" placeholder="@username (no spaces)">
                     </div>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Bio</label>
-                        <textarea id="edit-bio" class="custom-input break-words" rows="4" maxlength="1000">${currentProfile.bio || ''}</textarea>
+                        <textarea id="edit-bio" class="custom-input break-words" rows="4" maxlength="200">${currentProfile.bio || ''}</textarea>
                         
                         <div style="background: var(--surface); padding: 1rem; border-radius: var(--radius-md); margin-top: 0.5rem; font-size: 0.85rem; color: var(--dim); border: 1px solid var(--border);">
                             <div class="bold" style="margin-bottom: 4px; color: var(--text);">Markdown Formatting Guide</div>
@@ -1944,6 +1961,150 @@
             }, true, html);
         };
 
+
+
+
+
+
+// A reusable component to keep our HTML clean
+window.buildUserRow = (u) => {
+    const safeName = u.displayName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `
+         <div class="user-row pointer" onclick="window.setView('profile', '${u.uid}')">
+             <div class="user-info-row">
+                 <img src="${window.getAvatar(u.pfp, u.displayName)}" class="pfp-sm">
+                 <div>
+                    <div class="bold display-name" style="width:200px;"><span class="display-name-text">${safeName}</span></div>
+                    <div class="text-xs text-dim handle" style="width:200px;">${u.handle}</div>
+                 </div>
+             </div>
+         </div>
+    `;
+};
+
+const renderConnections = async (container, type) => {
+    const isFollowers = type === 'followers';
+    const title = isFollowers ? 'Followers' : 'Following';
+    const userList = isFollowers ? (currentProfile.followers || []) : (currentProfile.following || []);
+
+    // 1. Reset our tracking variables
+    window.currentConnIndex = 0;
+    window.connectionCache = [];
+    window.isSearchActive = false;
+
+    // 2. Base UI with the Search Bar
+    container.innerHTML = `
+        <div style="display:flex; align-items:center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(var(--bg), 0.85); backdrop-filter: blur(12px); z-index: 10;">
+            <div class="back-btn" style="margin:0; padding:0;" onclick="window.setView('profile', '${currentUser.uid}')">${getIcon('arrow-left')} <span style="margin-left: 6px;">${title}</span></div>
+        </div>
+        <div class="search-bar-container">
+            <input type="text" id="conn-search" class="custom-input" placeholder="Search ${title.toLowerCase()}..." oninput="window.handleConnSearch(this.value, '${type}')">
+        </div>
+        <div id="conn-list" class="list-results"></div>
+        <div id="conn-load-area"></div>
+    `;
+
+    if (userList.length === 0) {
+        document.getElementById('conn-list').innerHTML = `<div class="text-dim" style="text-align:center; margin-top: 2rem;">No ${title.toLowerCase()} yet.</div>`;
+        return;
+    }
+
+    // Load the first batch
+    await window.loadMoreConnections(type);
+};
+
+// --- THE SMOOTH BATCH LOADER ---
+window.loadMoreConnections = async (type) => {
+    const userList = type === 'followers' ? (currentProfile.followers || []) : (currentProfile.following || []);
+    const listDiv = document.getElementById('conn-list');
+    const loadArea = document.getElementById('conn-load-area');
+    
+    // Stop loading normally if a search is actively crawling
+    if (!listDiv || !loadArea || window.isSearchActive) return;
+
+    loadArea.innerHTML = '<div style="padding:1.5rem; text-align:center;"><div class="spinner text-dim"></div></div>';
+
+    try {
+        const uidsToFetch = userList.slice(window.currentConnIndex, window.currentConnIndex + 20);
+        const userSnaps = await Promise.all(uidsToFetch.map(id => getDoc(getPublicDoc('profiles', id))));
+
+        let html = '';
+        userSnaps.forEach(d => {
+            if(!d.exists()) return;
+            const u = d.data();
+            window.connectionCache.push(u); // Add to local RAM
+            html += window.buildUserRow(u);
+        });
+
+        listDiv.insertAdjacentHTML('beforeend', html);
+        window.currentConnIndex += 20;
+
+        if (window.currentConnIndex < userList.length) {
+            loadArea.innerHTML = `<div class="load-more-btn" onclick="window.loadMoreConnections('${type}')">Load More</div>`;
+        } else {
+            loadArea.innerHTML = '';
+        }
+    } catch (e) {
+        loadArea.innerHTML = `<div class="text-error" style="text-align:center; padding: 1rem;">Failed to load.</div>`;
+    }
+};
+
+// --- THE SILENT CRAWLER SEARCH ---
+window.handleConnSearch = async (val, type) => {
+    const q = val.trim().toLowerCase();
+    const listDiv = document.getElementById('conn-list');
+    const loadArea = document.getElementById('conn-load-area');
+    const userList = type === 'followers' ? (currentProfile.followers || []) : (currentProfile.following || []);
+
+    // If search is cleared, restore the exact list we had loaded
+    if (!q) {
+        window.isSearchActive = false;
+        listDiv.innerHTML = window.connectionCache.map(u => window.buildUserRow(u)).join('');
+        loadArea.innerHTML = window.currentConnIndex < userList.length ? `<div class="load-more-btn" onclick="window.loadMoreConnections('${type}')">Load More</div>` : '';
+        return;
+    }
+
+    window.isSearchActive = true;
+    loadArea.innerHTML = '<div class="text-dim text-xs" style="text-align:center; padding: 1rem;">Crawling database...</div>';
+
+    // 1. Instantly search what is already in RAM
+    const renderMatches = () => {
+        const matches = window.connectionCache.filter(u => u.displayName.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q));
+        listDiv.innerHTML = matches.length ? matches.map(u => window.buildUserRow(u)).join('') : `<div class="text-dim" style="text-align:center; margin-top: 2rem;">No matches yet...</div>`;
+    };
+    renderMatches();
+
+    // 2. The Silent Crawler Loop
+    // While the search is active, the text hasn't changed, and there are still unloaded users...
+    while (window.isSearchActive && document.getElementById('conn-search')?.value.trim().toLowerCase() === q && window.currentConnIndex < userList.length) {
+        
+        // Quietly grab the next 20 in the background
+        const uidsToFetch = userList.slice(window.currentConnIndex, window.currentConnIndex + 20);
+        const userSnaps = await Promise.all(uidsToFetch.map(id => getDoc(getPublicDoc('profiles', id))));
+        
+        userSnaps.forEach(d => {
+            if(d.exists()) window.connectionCache.push(d.data());
+        });
+        
+        window.currentConnIndex += 20;
+        
+        // Instantly re-filter and pop new matches onto the screen
+        renderMatches(); 
+    }
+    
+    // Done crawling all batches!
+    if (window.isSearchActive && document.getElementById('conn-search')?.value.trim().toLowerCase() === q) {
+        loadArea.innerHTML = ''; 
+    }
+};
+
+
+
+
+
+
+
+
         const renderSearch = async (container) => {
              container.innerHTML = `
                 <div class="search-bar-container">
@@ -1965,8 +2126,14 @@
             
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(async () => {
-                // PRO FIX: Cap query limit to 150 to prevent massive quota drain on huge apps
-                const snap = await getDocs(query(getPublicCollection('profiles'), limit(150))); 
+                
+                
+                
+                
+                const qStr = val.trim().toLowerCase().startsWith('@') ? val.trim().toLowerCase() : '@' + val.trim().toLowerCase();
+const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handle'), startAt(qStr), endAt(qStr + '\uf8ff'), limit(20)));
+
+
                 res.innerHTML = '';
                 let matches = 0;
                 
@@ -2261,25 +2428,69 @@
             window.showModal('Copied', 'Post Link copied to clipboard.');
         };
 
-        window.handleFollow = async (targetUid) => {
+
+
+
+
+window.removeFollower = (targetUid, targetHandle) => {
+    window.showModal('Remove Follower', `Remove ${targetHandle} from your followers? They won't be notified.`, async () => {
+        try {
             const myRef = getPublicDoc('profiles', currentUser.uid);
             const targetRef = getPublicDoc('profiles', targetUid);
             
-            if(!currentProfile.following.includes(targetUid)) {
-                currentProfile.following.push(targetUid);
-                await updateDoc(myRef, { following: arrayUnion(targetUid) });
-                await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
-                await addDoc(getPublicCollection('notifications'), {
-                    receiverId: targetUid, senderId: currentUser.uid, senderName: currentProfile.displayName,
-                    type: 'follow', read: false, timestamp: new Date().toISOString()
-                });
-            } else {
-                currentProfile.following = currentProfile.following.filter(id => id !== targetUid);
-                await updateDoc(myRef, { following: arrayRemove(targetUid) });
-                await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
-            }
+            // 1. Update your local cache instantly
+            currentProfile.followers = currentProfile.followers.filter(id => id !== targetUid);
+            
+            // 2. Remove them from your followers, and remove you from their following list
+            await updateDoc(myRef, { followers: arrayRemove(targetUid) });
+            await updateDoc(targetRef, { following: arrayRemove(currentUser.uid) });
+            
+            window.closeModal();
+            window.setView('profile', targetUid); // Refresh the UI
+        } catch(e) {
+            window.closeModal();
+            setTimeout(() => window.showModal('Error', getGibblError(e)), 300);
+        }
+    }, true);
+};
+
+
+
+
+
+
+
+        window.handleFollow = async (targetUid, targetHandle = 'this user') => {
+    const myRef = getPublicDoc('profiles', currentUser.uid);
+    const targetRef = getPublicDoc('profiles', targetUid);
+    
+    if(!currentProfile.following.includes(targetUid)) {
+        // Follow (No confirmation needed)
+        currentProfile.following.push(targetUid);
+        await updateDoc(myRef, { following: arrayUnion(targetUid) });
+        await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
+        await addDoc(getPublicCollection('notifications'), {
+            receiverId: targetUid, senderId: currentUser.uid, senderName: currentProfile.displayName,
+            type: 'follow', read: false, timestamp: new Date().toISOString()
+        });
+        window.setView('profile', targetUid); 
+    } else {
+        // Unfollow (WITH confirmation)
+        window.showModal('Unfollow', `Are you sure you want to unfollow ${targetHandle}?`, async () => {
+            currentProfile.following = currentProfile.following.filter(id => id !== targetUid);
+            await updateDoc(myRef, { following: arrayRemove(targetUid) });
+            await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
+            
+            window.closeModal();
             window.setView('profile', targetUid); 
-        };
+        }, true);
+    }
+};
+
+
+
+
+
 
         window.checkVerified = async (uid) => {
             try {
