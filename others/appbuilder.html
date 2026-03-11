@@ -2809,6 +2809,10 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
             }
             
             async sendPasswordReset() {
+            	
+            if (!await this.showConfirm("Reset Password", `Send a password reset link to ${this.devProfile.email}?`, "Send Email")) return;
+            
+            
                  try {
                      await this.auth.sendPasswordResetEmail(this.devProfile.email);
                      await this.showAlert("Check Mail", "Password reset email sent to " + this.devProfile.email);
