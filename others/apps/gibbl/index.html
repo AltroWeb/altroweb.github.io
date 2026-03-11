@@ -573,7 +573,13 @@
                 'message-square': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
                 share: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>',
                 'trash-2': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
-          'badge-check': '<svg viewBox="0 0 12 12" class="verified-badge" style="width: 1.15em; height: 1.15em; vertical-align: -0.15em; margin-left: 2px;"><circle cx="6" cy="6" r="6" fill="currentColor"></circle><path d="M4 6.2 L5.2 7.5 L8 4.2" fill="none" stroke="var(--bg)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+                
+                
+'badge-official': '<svg viewBox="0 0 12 12" class="verified-badge" style="width: 1.15em; height: 1.15em; vertical-align: middle; position: relative; top: -1px; margin-left: 2px;"><circle cx="6" cy="6" r="6" fill="currentColor"></circle><path d="M4 6.2 L5.2 7.5 L8 4.2" fill="none" stroke="var(--bg)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+
+
+
+'badge-checked': '<svg viewBox="0 0 12 12" class="verified-badge" style="width: 1.15em; height: 1.15em; vertical-align: -0.15em; margin-left: 2px;"><path d="M2 6.5 L4.5 9 L10 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
                 image: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>',
                 moon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
                 sun: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>',
@@ -1194,7 +1200,7 @@
                         </div>
                         <div class="post-right-col">
                             <div class="user-header pointer" onclick="event.stopPropagation(); window.setView('profile', '${post.authorId}')">
-                                <span class="display-name name-uid-${post.authorId}"><span class="display-name-text">${post.authorName}</span> ${isVerified ? getIcon('badge-check') : ''}</span>
+                                <span class="display-name name-uid-${post.authorId}"><span class="display-name-text">${post.authorName}</span> ${isVerified}</span>
                                 <span class="handle handle-uid-${post.authorId}">${post.authorHandle}</span>
                                 <span class="text-dim" style="font-size:0.85rem; flex-shrink: 0;">· ${timeAgo(post.timestamp)}</span>
                             </div>
@@ -1580,7 +1586,7 @@
                     
                     
                             <div class="display-name name-uid-${uid}" style="font-size:1.4rem; font-weight:800; display:flex; align-items:center; gap:6px; letter-spacing:-0.5px;">
-                                <span class="display-name-text">${user.displayName}</span> ${isVerified ? getIcon('badge-check') : ''}
+                                <span class="display-name-text">${user.displayName}</span> ${isVerified}
                             </div>
                             <div style="color:var(--dim); margin-top: -2px;" class="handle-uid-${uid}">${user.handle}</div>
                         </div>
@@ -1801,7 +1807,7 @@
 
                 const isVerified = await window.checkVerified(currentUser.uid);
                 document.querySelectorAll(`.pfp-uid-${currentUser.uid}`).forEach(el => el.src = window.getAvatar(pfp, name));
-                document.querySelectorAll(`.name-uid-${currentUser.uid}`).forEach(el => el.innerHTML = `<span class="display-name-text">${name}</span> ${isVerified ? getIcon('badge-check') : ''}`);
+                document.querySelectorAll(`.name-uid-${currentUser.uid}`).forEach(el => el.innerHTML = `<span class="display-name-text">${name}</span> ${isVerified}`);
                 document.querySelectorAll(`.handle-uid-${currentUser.uid}`).forEach(el => el.innerText = newHandle);
 
                 // PRO FIX: Chunked Batching for Profile Sync
@@ -2493,11 +2499,14 @@ window.removeFollower = (targetUid, targetHandle) => {
 
 
         window.checkVerified = async (uid) => {
-            try {
-                const d = await getDoc(getPublicDoc('verified', uid));
-                return d.exists() && d.data().verified === true;
-            } catch(e) { return false; }
-        };
+    try {
+        const d = await getDoc(getPublicDoc('verified', uid));
+        if (!d.exists()) return '';
+        if (d.data().verified === true) return getIcon('badge-official');
+        if (d.data().checked === true) return getIcon('badge-checked');
+        return '';
+    } catch(e) { return ''; }
+};
         
         
         
