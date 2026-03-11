@@ -607,30 +607,63 @@
                     renderApp();
                     
                     
-                    // PRO FIX: Claim this device as authorized to stop the alert loop
-                    if (currentProfile && currentProfile.lastLoginDevice !== myDeviceId) {
-                        updateDoc(getPublicDoc('profiles', user.uid), { lastLoginDevice: myDeviceId, lastLoginAt: Date.now() });
-                    }
+                    
+                        
                     
 
+                    // 1. REGISTER DEVICE SESSION IN DB
+                    if (!localStorage.getItem('gibbl_session_start')) localStorage.setItem('gibbl_session_start', Date.now());
+                    const sessionStart = parseInt(localStorage.getItem('gibbl_session_start'));
+                    
+                    const bName = (() => { const ua = navigator.userAgent; let b = "Unknown"; if(ua.includes("Chrome")) b = "Chrome"; else if(ua.includes("Safari")) b = "Safari"; else if(ua.includes("Firefox")) b = "Firefox"; if(ua.includes("iPhone")) b += " (iPhone)"; else if(ua.includes("Android")) b += " (Android)"; else if(ua.includes("Mac")) b += " (Mac)"; else if(ua.includes("Win")) b += " (Windows)"; return b; })();
+                    
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid, 'sessions', myDeviceId), {
+                        name: bName, lastActive: Date.now(), userAgent: navigator.userAgent
+                    }, { merge: true });
+
+                    // THE SECURITY LISTENER
                     if (unsubscribeSecurity) unsubscribeSecurity();
-                    unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), (doc) => {
-                        const data = doc.data();
+                    unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), (docSnap) => {
+                        const data = docSnap.data();
                         if (data) {
-                            // Intrusion Engine (Only alerts if a DIFFERENT device logged in recently)
-                            if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (Date.now() - 86400000)) {
-                        const alertKey = 'gibbl_alerted_' + data.lastLoginDevice;
-                        if (!sessionStorage.getItem(alertKey)) {
-                            window.showModal('Security Alert', 'A new device recently logged into your account. If this wasn\'t you, you should take actions immediately.', null, false, `
-                                <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
-                                    <button class="btn-primary" onclick="sessionStorage.setItem('${alertKey}', 'true'); window.closeModal();">OK</button>
-                                </div>
-                            `);
-                            document.getElementById('modal-actions-container').style.display = 'none';
-                        }
-                    }
+                            const sessionStart = parseInt(localStorage.getItem('gibbl_session_start') || '0');
+                            
+                            // A. THE BULLETPROOF KILL SWITCH
+                            if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
+                                window.handleLogout(true);
+                                window.showModal('Session Expired', 'You have been signed out because your account was secured from another device.', () => { window.location.reload(); }, false);
+                                document.getElementById('modal-cancel').classList.add('hidden');
+                                return;
+                            }
+
+                            // B. TRUE INTRUSION ENGINE (Like App Store Connect)
+                            if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (sessionStart + 5000)) {
+                                const alertKey = 'gibbl_alerted_' + data.lastLoginAt; 
+                                if (!sessionStorage.getItem(alertKey)) {
+                                    sessionStorage.setItem(alertKey, 'true'); 
+                                    window.showModal('New Login Detected', 'Your account was just accessed from a new device. Was this you?', null, false, `
+                                        <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
+                                            <button class="btn-danger" style="margin:0; width:100%;" onclick="window.closeModal(); window.confirmSignOutAll();">No, Secure Account (Sign Out All)</button>
+                                            <button class="btn-secondary" style="margin:0; width:100%; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full); color:var(--text);" onclick="window.closeModal(); window.setView('settings');">Review Active Devices</button>
+                                            
+                                            <!-- THE FIX: This button now resets your local anchor so it trusts the login! -->
+                                            <button class="btn-primary" style="margin:0; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal();">Yes, It Was Me</button>
+                                        </div>
+                                    `);
+                                    document.getElementById('modal-actions-container').style.display = 'none';
+                                }
+                            }
+                            
+                            // Auto-refresh device list if settings are open
+                            if (currentView === 'settings' && window.fetchActiveDevices) window.fetchActiveDevices();
                         }
                     }, (err) => {});
+                    
+                    
+                    
+                    
+                    
+                    
 
                     // Global Unread Notification Daemon
                     // PRO FIX: Scalable Global Unread Notification Daemon
@@ -679,6 +712,94 @@
                 await setDoc(getPublicDoc('profiles', uid), currentProfile);
             }
         }
+        
+        
+        
+        
+        
+        // --- PRO SECURITY LOGIC ---
+        window.fetchActiveDevices = async () => {
+            const list = document.getElementById('device-list');
+            if(!list || !currentUser) return;
+            list.style.opacity = '0.5';
+            try {
+                const snap = await getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'profiles', currentUser.uid, 'sessions')));
+                let html = '';
+                const myId = localStorage.getItem('gibbl_device_id');
+                const revokeTime = currentProfile.lastRevokeTime || 0;
+                const now = Date.now();
+
+                let sessions = [];
+                snap.forEach(d => sessions.push({id: d.id, ...d.data()}));
+                sessions.sort((a,b) => b.lastActive - a.lastActive);
+
+                sessions.forEach(d => {
+                    if (d.lastActive <= revokeTime) return; // Hide revoked ghosts
+                    if ((now - d.lastActive) > (7 * 24 * 60 * 60 * 1000)) return; // Hide inactive > 7 days
+                    
+                    const isMe = d.id === myId;
+                    const timeStr = new Date(d.lastActive).toLocaleString();
+                    html += `
+                        <li style="padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="bold text-sm" style="color:var(--text); display:flex; align-items:center; gap:6px;">
+                                    ${d.name} 
+                                    ${isMe ? '<span style="font-size:10px; background:var(--success); color:#fff; padding:2px 6px; border-radius:4px; font-weight:800;">THIS DEVICE</span>' : ''}
+                                </div>
+                                <div class="text-xs text-dim" style="margin-top:4px;">Last active: ${timeStr}</div>
+                            </div>
+                        </li>
+                    `;
+                });
+                list.innerHTML = html || '<li class="text-dim text-sm" style="padding:10px 0;">No active sessions.</li>';
+            } catch(e) { list.innerHTML = '<li class="text-error text-sm">Failed to load devices.</li>'; }
+            list.style.opacity = '1';
+        };
+
+
+
+
+
+
+
+
+        window.confirmSignOutAll = () => {
+            window.showModal('Sign Out Everywhere?', 'This will instantly log out ALL devices, including this one.', async () => {
+                try {
+                    // 1. Mute our own alarm
+                    if (window.unsubscribeSecurity) window.unsubscribeSecurity();
+                    
+                    // 2. Drop the bomb in the database
+                    await updateDoc(getPublicDoc('profiles', currentUser.uid), { 
+                        lastRevokeTime: Date.now(),
+                        handle: currentProfile.handle 
+                    });
+                    
+                    
+                    // 4. Sign out and hard reload
+                    await signOut(auth);
+                    
+                    
+                    window.setLoading(document.getElementById('modal-confirm'), false); window.closeModal();
+                    
+                    
+                    window.location.reload();
+                    
+                    
+                    
+                } catch(e) { 
+                    window.closeModal();
+                    setTimeout(() => window.showModal('Error', e.message), 300);
+                }
+            }, true);
+        };
+        
+        
+        
+        
+        
+        
+        
 
         // --- PRO UTILS ---
         const getGibblError = (err) => {
@@ -833,6 +954,12 @@
             
             const btnCancel = document.getElementById('modal-cancel');
             const btnConfirm = document.getElementById('modal-confirm');
+            
+            
+            
+            btnConfirm.innerHTML = 'OK'; btnConfirm.disabled = false; btnConfirm.style.opacity = '1'; delete btnConfirm.dataset.originalText;
+            
+            
             
             if (showCancel) btnCancel.classList.remove('hidden');
             else btnCancel.classList.add('hidden');
@@ -1032,7 +1159,14 @@
             if (view === 'thread') renderThread(content, param);
             if (view === 'profile') renderProfile(content, param);
             if (view === 'search') renderSearch(content);
-            if (view === 'settings') renderSettings(content);
+            
+            
+            if (view === 'settings') {
+                renderSettings(content);
+                window.fetchActiveDevices();
+            }
+            
+            
             if (view === 'notifications') renderNotifications(content);
             window.scrollTo(0, 0);
         };
@@ -1549,7 +1683,18 @@
                         </label>
                     </div>
 
-                    <h3 style="margin-bottom:1rem; margin-top:2rem;">Security</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                        <h3 style="margin: 0;">Security & Devices</h3>
+                        <button class="btn-secondary" style="margin:0; font-size: 0.85rem; padding: 4px 12px; border: 1px solid var(--border); border-radius: var(--radius-full);" onclick="window.fetchActiveDevices()">Refresh List</button>
+                    </div>
+
+                    <div style="background: var(--surface); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; border: 1px solid var(--border);">
+                        <div class="bold text-xs" style="color: var(--dim); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Active Sessions</div>
+                        <ul id="device-list" style="list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto;">
+                            <li class="text-dim text-sm" style="padding:10px 0;">Loading active devices...</li>
+                        </ul>
+                    </div>
+
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">New Password</label>
                         <div style="position:relative;">
@@ -1559,8 +1704,11 @@
                     </div>
                     <button class="btn-primary" onclick="window.saveProfile(this)">Save Changes</button>
                     <button class="btn-secondary" style="margin: 1.5rem auto; display:block; font-size:0.85rem; text-decoration:underline;" onclick="window.sendResetFromSettings(this)">Send Password Reset Link</button>
+                    
+                    <button class="btn-secondary" style="display:block; width:100%; text-align:center; margin-top: 1.5rem; border: 1px solid var(--text); padding: 1rem; border-radius: var(--radius-full); color: var(--text); font-weight: 700;" onclick="window.confirmSignOutAll()">Sign Out of All Devices</button>
 
                     <hr style="border:0; border-top:1px solid var(--border); margin:2rem 0;">
+                    	
                     
                     <h3 style="margin-bottom:1rem; color:var(--error);">Danger Zone</h3>
                     <button class="btn-secondary" style="display:block; width:100%; text-align:center; margin-bottom:1rem; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full);" onclick="window.confirmLogout()">Log Out Device</button>
@@ -1580,6 +1728,19 @@
                 document.getElementById('edit-pfp-prev').src = base64;
             }
         };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         window.saveProfile = async (btn) => {
             let name = document.getElementById('edit-name').value.trim();
@@ -1618,7 +1779,8 @@
             }
 
             try {
-                if (pass) await updatePassword(currentUser, pass);
+                let passwordChanged = false;
+                if (pass) { if (unsubscribeSecurity) unsubscribeSecurity(); await updateDoc(getPublicDoc('profiles', currentUser.uid), { lastRevokeTime: Date.now() }); await updatePassword(currentUser, pass); passwordChanged = true; }
 
                 const isVerified = await window.checkVerified(currentUser.uid);
                 document.querySelectorAll(`.pfp-uid-${currentUser.uid}`).forEach(el => el.src = window.getAvatar(pfp, name));
@@ -1633,12 +1795,15 @@
                     operations.push({ type: 'delete', ref: getPublicDoc('handleRegistry', currentProfile.handle) });
                 }
                 
+                const profileUpdateData = { displayName: name, handle: newHandle, bio: bio, pfp: pfp, mentionsEnabled: mentionsEnabled };
+                if (passwordChanged) profileUpdateData.lastRevokeTime = Date.now(); // KILL SWITCH
+                
                 operations.push({ 
                     type: 'update', ref: getPublicDoc('profiles', currentUser.uid), 
-                    data: { displayName: name, handle: newHandle, bio: bio, pfp: pfp, mentionsEnabled: mentionsEnabled }
+                    data: profileUpdateData
                 });
 
-                // PRO FIX: Targeted Query (No massive quota drain)
+                // PRO FIX: Targeted Query
                 const myPostsQ = query(getPublicCollection('posts'), where('authorId', '==', currentUser.uid));
                 const postsSnap = await getDocs(myPostsQ);
                 postsSnap.forEach(d => {
@@ -1662,12 +1827,20 @@
                 window.tempPfpData = null; document.getElementById('edit-pass').value = '';
                 
                 window.setLoading(btn, false);
-                window.showModal('Success', 'Profile updated successfully!', () => {
-                    window.setView('profile', currentUser.uid);
-                    window.closeModal();
-                });
-            } catch(e) {
                 
+                if (passwordChanged) {
+                    window.showModal('Security Update', 'Settings saved & Password changed.\n\nFor your security, you will now be signed out of all devices.', () => {
+                        window.closeModal();
+                        window.handleLogout(false);
+                    });
+                    document.getElementById('modal-cancel').classList.add('hidden');
+                } else {
+                    window.showModal('Success', 'Profile updated successfully!', () => {
+                        window.setView('profile', currentUser.uid);
+                        window.closeModal();
+                    });
+                }
+            } catch(e) {
                 window.setLoading(btn, false);
                 if (e.code === 'auth/requires-recent-login') window.promptReauth(pass);
                 else window.showModal('Error', 'Failed to update: ' + getGibblError(e));
@@ -1924,7 +2097,7 @@
                 await setPersistence(auth, persistenceType);
                 
                 await signInWithEmailAndPassword(auth, e, p); 
-                window.SESSION_START = Date.now();
+                localStorage.setItem('gibbl_session_start', Date.now());
                 await updateDoc(getPublicDoc('profiles', auth.currentUser.uid), { lastLoginDevice: localStorage.getItem('gibbl_device_id'), lastLoginAt: Date.now() });
             } 
             catch(err) { window.showModal('Login Failed', getGibblError(err)); window.setLoading(btn, false); }
@@ -1976,7 +2149,7 @@
                 batch.set(getPublicDoc('profiles', uid), profile);
                 await batch.commit();
 
-                window.SESSION_START = Date.now();
+                localStorage.setItem('gibbl_session_start', Date.now());
                 await updateProfile(cred.user, { displayName: n });
                 currentUser = cred.user; currentProfile = profile; renderApp();
             } catch(err) { window.showModal('Error', getGibblError(err)); window.setLoading(btn, false); }
@@ -1994,6 +2167,9 @@
         };
 
         window.handleLogout = async (silent = false) => {
+        	
+        window.closeModal(); 
+        
             if(unsubscribeFeed) unsubscribeFeed();
             if(unsubscribeThread) unsubscribeThread();
             if(window.unsubscribeReplies) window.unsubscribeReplies();
