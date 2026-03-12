@@ -275,18 +275,19 @@
         }
         .create-post-fab:active { transform: scale(0.9); }
 
-        .post-card {
+ .post-card {
             position: relative;
             padding: 1rem 1.2rem;
             border-bottom: 1px solid var(--border);
             animation: fadeIn 0.3s ease;
             transition: background 0.2s;
-            
-            contain: layout paint style; /* Isolates the card completely */
-    will-change: transform, opacity; /* Prompts the GPU to handle this element */
-    transform: translateZ(0);
-            
+            /* PRO GPU CRASH FIX */
+            contain: layout style paint;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
+        
+        
         .post-card:not(.main-post):hover { background: var(--surface); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -337,6 +338,15 @@
     cursor: pointer;
     border: 1px solid var(--border); 
 }
+        
+        
+        
+        .post-content video {
+            max-height: 60vh; /* Stops massive videos from blowing up RAM */
+            object-fit: contain;
+        }
+        
+        
         
         /* Pro Thread Action Bar Spacing */
         .post-card.main-post { cursor: default; border-bottom: none; padding-bottom: 0; }
@@ -615,7 +625,44 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
     
     
-    
+   
+
+// --- PRO GPU MEMORY MANAGER (KILLS ZOMBIE VIDEOS) ---
+        window.videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const vid = entry.target;
+                if (!entry.isIntersecting && !vid.paused) {
+                    vid.pause(); // Instantly frees video decoder RAM when scrolled away
+                }
+            });
+        }, { threshold: 0.1 });
+
+        // Auto-attach to any video that ever loads on the screen
+        new MutationObserver((mutations) => {
+            mutations.forEach(m => {
+                m.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) {
+                        if (node.tagName === 'VIDEO') window.videoObserver.observe(node);
+                        const vids = node.querySelectorAll('video');
+                        if (vids) vids.forEach(v => window.videoObserver.observe(v));
+                    }
+                });
+            });
+        }).observe(document.body, { childList: true, subtree: true });
+
+        // --- FULL-SCREEN GHOST FIX (STOPS GOOGLE.COM FREEZE) ---
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                // Forces the browser to flush the frozen GPU frame
+                document.body.style.display = 'none';
+                setTimeout(() => document.body.style.display = 'block', 10);
+            }
+        });
+
+
+
+
+ 
     
     
     
