@@ -558,7 +558,8 @@
         
         
         
-        
+ /* --- PRO SECURITY: Invisible reCAPTCHA --- */
+.grecaptcha-badge { visibility: hidden !important; display: none !important; }       
         
         
         
@@ -594,7 +595,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js";
+        
+        
 
         // --- CONFIG ---
         const firebaseConfig = {
@@ -607,8 +612,15 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// --- THE APP CHECK SHIELD ---
+
+const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6LfRUYgsAAAAAEJiD5IGM31YOjca6DvVNoyMWuHD'),
+    isTokenAutoRefreshEnabled: true
+});
         
         // --- GLOBAL SCALABLE STATE ---
         const appId = 'gibbl_v1';
@@ -1157,6 +1169,12 @@
                         <button class="btn-primary" onclick="window.handleLogin(this)">Log In</button>
                         <button class="btn-secondary" onclick="window.switchAuth('reset')" style="text-decoration: underline;">Forgot Password?</button>
                     </div>
+                    
+                    
+                    
+                    
+                    
+                    
 
                     <div id="signup-view" class="hidden w-full flex-col">
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('landing')">${getIcon('arrow-left')} Back</div>
@@ -1176,6 +1194,15 @@
                         </div>
                         <button class="btn-primary" onclick="window.handleSignup(this)">Sign Up</button>
                     </div>
+
+
+
+<div class="text-dim" style="font-size: 0.7rem; margin-top: 1.5rem; text-align: center;">
+    Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
+</div>
+
+
+
 
                     <div id="reset-view" class="hidden w-full flex-col">
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('login')">${getIcon('arrow-left')} Back</div>
@@ -2586,12 +2613,26 @@ const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handl
             if(!e || !p || !n || !h) { window.showModal('Error', 'Please fill in all fields.'); return; }
             if (n.length > 100 || h.length > 100) { window.showModal('Error', 'Name and Handle max length is 100.'); return; }
             
-            if(h.startsWith('@')) h = h.substring(1);
-            if (!/^[a-z0-9._]+$/.test(h)) {
-                window.showModal('Error', 'Handle can only contain lowercase letters, numbers, dots, and underscores. No spaces or emojis allowed.');
-                return;
-            }
-            h = '@' + h;
+            
+            
+            
+            
+            
+            
+            
+            
+            // 1. THE HANDLE VAULT: Strip ALL '@' symbols they typed, then enforce the strict rule.
+    h = h.replace(/@/g, ''); 
+    if (!/^[a-z0-9._]+$/.test(h)) {
+        return window.showModal('Error', 'Handle can ONLY contain lowercase letters, numbers, dots, and underscores.');
+    }
+    
+    h = '@' + h;
+
+    // 2. THE EMAIL VAULT: Forces a real provider and known top-level domain.
+    if (!/^[^\s@]+@[^\s@]+\.(com|net|org|io|me|co|info|biz|us|edu|gov|in|uk|app)$/i.test(e)) {
+        return window.showModal('Error', 'Please enter a valid email address (e.g., user@provider.com).');
+    }
 
             if (p.length < 6 || !/[!@#$%^&*(),.?":{}|<>]/.test(p) || !/\d/.test(p)) {
                 window.showModal('Weak Password', 'Password must be 6+ chars and contain a number and symbol.');
@@ -2600,6 +2641,31 @@ const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handl
 
             window.setLoading(btn, true);
             try {
+            	
+            
+            
+            
+            // --- CAPACITY LOCK ---
+const collRef = getPublicCollection('profiles');
+const snapshot = await getCountFromServer(collRef);
+const totalUsers = snapshot.data().count;
+
+if (totalUsers >= 500) {
+    window.showModal('Capacity Reached', 'gibbl. is currently limited to 500 users to keep the platform free and fast. Please try again later!');
+    window.setLoading(btn, false);
+    return;
+}
+// ---------------------
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
                 const snap = await getDocs(getPublicCollection('profiles'));
                 let exists = false;
                 snap.forEach(d => { if (d.data().handle === h) exists = true; });
