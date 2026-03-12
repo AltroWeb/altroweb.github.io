@@ -672,7 +672,8 @@ body.dark-mode .store-update-section span {
     width: auto; height: auto; /* Allow SVG to define size */
     background: transparent;
 }
-/* Update this specific block in your <style> */
+
+
 .verified-badge.member svg {
     display: block;
     width: 14px; /* Match the HTML attribute */
@@ -1255,7 +1256,8 @@ body.reduce-effects .homescreen-group {
     animation-duration: 0.01s !important;
 }
 
-
+/* --- PRO SECURITY: Invisible reCAPTCHA --- */
+.grecaptcha-badge { visibility: hidden !important; display: none !important; }
 
 
 
@@ -1821,6 +1823,18 @@ body.reduce-effects .homescreen-group {
 console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
+    
+    
+    
+    // --- PRO GLOBAL BRIDGE: UNLOCKS APP CHECK WITHOUT MODULES ---
+(async () => {
+    const { initializeAppCheck, ReCaptchaV3Provider } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js");
+    window.appCheck = initializeAppCheck(firebase.app(), {
+        provider: new ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+        isTokenAutoRefreshEnabled: true
+    });
+})();
+    
     
         /* --- FIREBASE CONFIGURATION BLOCK --- */
         

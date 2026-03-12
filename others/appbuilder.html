@@ -496,6 +496,10 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 }
 	
 	
+	
+	/* --- PRO SECURITY: Invisible reCAPTCHA --- */
+.grecaptcha-badge { visibility: hidden !important; display: none !important; }
+	
 
     </style>
 </head>
@@ -576,6 +580,13 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                     Don't have an account? <span class="auth-link" onclick="appBuilder.showRegister()">Create Account</span>
                 </div>
                 
+                
+                <div style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 15px; opacity: 0.8;">
+    Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="color: inherit; text-decoration: underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="color: inherit; text-decoration: underline;">Terms</a> apply.
+</div>
+                
+                
+                
                 <div style="text-align: center; margin-top: 25px; margin-bottom:10px;">
     <span class="login-dark-mode"  onclick="appBuilder.toggleDarkMode()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -624,6 +635,12 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                 <div class="auth-switch">
                     Already have an account? <span class="auth-link" onclick="appBuilder.showLogin()">Sign In</span>
                 </div>
+                
+                
+                <div style="font-size: 11px; color: var(--text-secondary); text-align: center; margin-top: 15px; opacity: 0.8;">
+    Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="color: inherit; text-decoration: underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="color: inherit; text-decoration: underline;">Terms</a> apply.
+</div>
+                
                 
                 
                 <div style="text-align: center; margin-top: 25px; margin-bottom:10px;">
@@ -1069,8 +1086,20 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
     </div>
 
     <script>
+    	
+    
+    // --- PRO GLOBAL BRIDGE: UNLOCKS APP CHECK WITHOUT MODULES ---
+(async () => {
+    const { initializeAppCheck, ReCaptchaV3Provider } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js");
+    window.appCheck = initializeAppCheck(firebase.app(), {
+        provider: new ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+        isTokenAutoRefreshEnabled: true
+    });
+})();
+    
+    
         // --- FIREBASE CONFIGURATION BLOCK ---
-        // REPLACE THIS WITH YOUR OWN FIREBASE CONFIG FROM CONSOLE
+        
         const FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBmnPoBKKnfpQj1ms_zuwXrc_1AlVRcJt8",
     authDomain: "ios-simu-app-store.firebaseapp.com",

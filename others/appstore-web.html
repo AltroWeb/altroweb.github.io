@@ -724,7 +724,6 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 .sa-title { font-weight: 600; font-size: 17px; margin: 0 0 4px 0; }
 .sa-msg { font-size: 13px; margin: 0; line-height: 1.4; word-break: break-word; }
 
-/* Update these specific classes in your <style> block */
 
 .sa-btn-group { 
     display: flex; 
@@ -754,6 +753,12 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 .sa-btn:active { 
     background: rgba(128,128,128,0.15); 
 }
+
+
+
+/* --- PRO SECURITY: Invisible reCAPTCHA --- */
+.grecaptcha-badge { visibility: hidden !important; display: none !important; }
+
 
     </style>
 </head>
@@ -869,6 +874,19 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
     </div>
 
     <script>
+    	
+    
+    // --- PRO GLOBAL BRIDGE: UNLOCKS APP CHECK WITHOUT MODULES ---
+(async () => {
+    const { initializeAppCheck, ReCaptchaV3Provider } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js");
+    window.appCheck = initializeAppCheck(firebase.app(), {
+        provider: new ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+        isTokenAutoRefreshEnabled: true
+    });
+})();
+    
+    
+    
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyBmnPoBKKnfpQj1ms_zuwXrc_1AlVRcJt8",
             authDomain: "ios-simu-app-store.firebaseapp.com",
