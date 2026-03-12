@@ -1818,6 +1818,12 @@ body.reduce-effects .homescreen-group {
         </div>
     </div>
 
+
+
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check-compat.js"></script>
+
+
+
     <script>
     	
 console.log = function() {};
@@ -1826,14 +1832,6 @@ console.log = function() {};
     
     
     
-    // --- PRO GLOBAL BRIDGE: UNLOCKS APP CHECK WITHOUT MODULES ---
-(async () => {
-    const { initializeAppCheck, ReCaptchaV3Provider } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js");
-    window.appCheck = initializeAppCheck(firebase.app(), {
-        provider: new ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
-        isTokenAutoRefreshEnabled: true
-    });
-})();
     
     
         /* --- FIREBASE CONFIGURATION BLOCK --- */
@@ -1895,6 +1893,18 @@ console.log = function() {};
                 }
                 const auth = firebase.auth();
                 this.db = firebase.firestore();
+
+
+
+// --- COMPAT ARCHITECT INIT ---
+const appCheck = firebase.appCheck();
+appCheck.activate(
+    new firebase.appCheck.ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+    true // isTokenAutoRefreshEnabled
+);
+
+
+
 
                 try {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {

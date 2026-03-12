@@ -1085,17 +1085,17 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 
     </div>
 
+
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check-compat.js"></script>
+
+
+
+
+
+
     <script>
     	
     
-    // --- PRO GLOBAL BRIDGE: UNLOCKS APP CHECK WITHOUT MODULES ---
-(async () => {
-    const { initializeAppCheck, ReCaptchaV3Provider } = await import("https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js");
-    window.appCheck = initializeAppCheck(firebase.app(), {
-        provider: new ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
-        isTokenAutoRefreshEnabled: true
-    });
-})();
     
     
         // --- FIREBASE CONFIGURATION BLOCK ---
@@ -1261,6 +1261,20 @@ updateTagsCounter(input) {
                 }
                 this.auth = firebase.auth();
                 this.db = firebase.firestore();
+
+
+
+
+             // --- COMPAT ARCHITECT INIT ---
+const appCheck = firebase.appCheck();
+appCheck.activate(
+    new firebase.appCheck.ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+    true // isTokenAutoRefreshEnabled
+);
+                
+                
+
+
 
                 // Listen for real auth state changes
                 this.auth.onAuthStateChanged((user) => {
