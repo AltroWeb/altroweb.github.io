@@ -281,6 +281,11 @@
             border-bottom: 1px solid var(--border);
             animation: fadeIn 0.3s ease;
             transition: background 0.2s;
+            
+            contain: layout paint style; /* Isolates the card completely */
+    will-change: transform, opacity; /* Prompts the GPU to handle this element */
+    transform: translateZ(0);
+            
         }
         .post-card:not(.main-post):hover { background: var(--surface); }
 
@@ -591,8 +596,31 @@
         </div>
     </div>
 
+
+
     <!-- SCRIPTS -->
     <script type="module">
+    	
+    
+    
+    
+    let isScrolling;
+window.isUserScrolling = false;
+window.addEventListener('scroll', () => {
+    window.isUserScrolling = true;
+    clearTimeout(isScrolling);
+    isScrolling = setTimeout(() => {
+        window.isUserScrolling = false;
+    }, 150); 
+}, { passive: true });
+    
+    
+    
+    
+    
+    
+    
+    
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -1481,7 +1509,20 @@ let mediaHTML = '';
                 }
                 
                 // PRO FIX: Bulletproof Flexbox Visual Sort (Bypasses Browser DOM Quirks)
-                list.style.display = 'flex'; list.style.flexDirection = 'column'; (feedSort === 'top' ? snapshot.docs.slice().sort((a,b) => (b.data().likes?.length || 0) - (a.data().likes?.length || 0)) : snapshot.docs).forEach((d, i) => { const el = document.getElementById(`post-${d.id}`); if(el) el.style.order = i; });
+                list.style.display = 'flex'; 
+list.style.flexDirection = 'column'; 
+
+// Only re-order if the user isn't touching the screen
+if (!window.isUserScrolling) {
+    const sortedDocs = (feedSort === 'top') 
+        ? snapshot.docs.slice().sort((a,b) => (b.data().likes?.length || 0) - (a.data().likes?.length || 0)) 
+        : snapshot.docs;
+
+    sortedDocs.forEach((d, i) => { 
+        const el = document.getElementById(`post-${d.id}`); 
+        if(el) el.style.order = i; 
+    });
+}
                 
                 isPaginating = false;
                 const loadBtn = document.getElementById('feed-load-more');
