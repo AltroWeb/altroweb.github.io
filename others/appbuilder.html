@@ -875,10 +875,42 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 
 
 
-                <div class="form-group">
-                    <label>Description <span style="color:var(--danger)">*</span></label>
-                    <textarea id="edit-desc" rows="3" placeholder="Short description for the App Store..."></textarea>
-                </div>
+                <div class="form-group" style="font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <label style="margin-bottom: 0;">Description <span style="color:var(--danger)">*</span></label>
+    
+    <div style="background:rgba(118, 118, 128, 0.12); padding:2px; border-radius:8px; display:flex; height:28px; width:140px; position:relative; flex-shrink: 0;">
+        <button id="tab-desc-write" onclick="setDescMode('write')" 
+            style="flex:1; border:none; border-radius:6px; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; background:var(--card-bg); box-shadow:0 1px 3px rgba(0,0,0,0.12); color:var(--text-primary); transition:all 0.2s ease;">
+            Write
+        </button>
+        <button id="tab-desc-preview" onclick="setDescMode('preview')" 
+            style="flex:1; border:none; border-radius:6px; font-size:13px; font-family:inherit; font-weight:500; cursor:pointer; background:transparent; color:var(--text-secondary); transition:all 0.2s ease;">
+            Preview
+        </button>
+    </div>
+</div>
+
+    <div style="position:relative; width:100%;">
+        <textarea id="edit-desc" rows="4" maxlength="1000" 
+            placeholder="Short description for the App Store..." 
+            style="display:block; width:100%; box-sizing:border-box; min-height:110px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:var(--input-bg); color:var(--text-primary); font-family:inherit; font-size:14px; line-height:1.5; resize: vertical; outline:none; transition:border 0.2s;"
+            onfocus="this.style.borderColor='var(--accent)'"
+            onblur="this.style.borderColor='var(--border)'"
+            oninput="document.getElementById('desc-counter').innerText = this.value.length + '/1000'"></textarea>
+
+        <div id="desc-preview-view" 
+            style="display:none; width:100%; box-sizing:border-box; min-height:110px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:var(--input-bg); color:var(--text-primary); font-family:inherit; font-size:14px; line-height:1.5; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;">
+        </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding:0 2px;">
+        <div style="flex: 1; padding-right: 16px; font-size:12px; color:var(--text-secondary); font-weight:400; line-height:1.4;">
+            Use: <b>**Bold**</b>, <i>*Italic*</i>, <span style="color:var(--accent)">[Link](url)</span>, <span style="color:var(--accent)">$[url]</span>
+        </div>
+        <span id="desc-counter" style="font-size:12px; color:var(--text-secondary); font-variant-numeric: tabular-nums;">0/1000</span>
+    </div>
+</div>,
                 
                 
                 <div class="form-group">
@@ -3129,6 +3161,43 @@ window.setBioMode = function(mode) {
         btnPreview.style.cssText = inactiveStyle;
     }
 };
+
+
+
+
+
+
+
+
+window.setDescMode = function(mode) {
+    const textarea = document.getElementById('edit-desc');
+    const preview = document.getElementById('desc-preview-view');
+    const btnWrite = document.getElementById('tab-desc-write');
+    const btnPreview = document.getElementById('tab-desc-preview');
+
+    const activeStyle = "flex:1; border:none; border-radius:6px; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; background:var(--card-bg); box-shadow:0 3px 8px rgba(0,0,0,0.12); color:var(--text-primary); transition:all 0.2s ease;";
+    const inactiveStyle = "flex:1; border:none; border-radius:6px; font-size:13px; font-family:inherit; font-weight:500; cursor:pointer; background:transparent; box-shadow:none; color:var(--text-secondary); transition:all 0.2s ease;";
+
+    if (mode === 'preview') {
+        preview.innerHTML = renderBio(textarea.value) || '<span style="opacity:0.4; font-style:italic;">Nothing to preview...</span>';
+        textarea.style.display = 'none';
+        preview.style.display = 'block';
+        btnPreview.style.cssText = activeStyle;
+        btnWrite.style.cssText = inactiveStyle;
+    } else {
+        textarea.style.display = 'block';
+        preview.style.display = 'none';
+        btnWrite.style.cssText = activeStyle;
+        btnPreview.style.cssText = inactiveStyle;
+    }
+};
+
+
+
+
+
+
+
 
 // 2. The Renderer (Universal)
 function renderBio(text) {

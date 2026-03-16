@@ -88,7 +88,7 @@
         
         /* Dark Mode Store Items */
         body.dark-mode .store-name { color: #fff; }
-        body.dark-mode .store-sub { color: #98989d; }
+        body.dark-mode .store-desc { color: #98989d; }
 
         button, input, textarea { font-family: inherit; }
 
@@ -428,13 +428,44 @@
     line-height: 1.2;
 }
 
-.store-sub {
+/* The static Author line */
+.store-author {
     font-size: 13px;
-    color: #8E8E93;
-    white-space: normal; /* Enables wrapping */
-    overflow-wrap: break-word;
-    line-height: 1.35;
+    color: var(--sub-text, #8E8E93);
+    margin-bottom: 2px;
 }
+
+/* The interactive Description block */
+.store-desc {
+    font-size: 13px;
+    color: var(--sub-text, #8E8E93);
+    line-height: 1.35;
+    
+    /* Clamping */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    
+    /* Safe Wrapping */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    
+    /* Pro Interactions */
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.store-desc:active {
+    opacity: 0.7;
+}
+
+.store-desc.expanded {
+    -webkit-line-clamp: unset !important;
+}
+
+
         .store-get-btn {
             background: #F2F2F7; color: #007AFF; font-weight: 700; font-size: 14px;
             border-radius: 20px; padding: 6px 20px; border: none; cursor: pointer;
@@ -1261,6 +1292,46 @@ body.reduce-effects .homescreen-group {
 
 
 
+/* --- PRO DEV CARD BADGE FIX --- */
+.dev-card-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important; /* Kill default padding */
+    margin: 0 !important;  /* Let the flex gap handle spacing */
+}
+
+/* Member: Exactly 24x24 Hollow Blue */
+.dev-card-badge.member {
+    width: 24px !important;
+    height: 24px !important;
+    background: transparent !important;
+}
+.dev-card-badge.member svg {
+    width: 24px !important;
+    height: 24px !important;
+    display: block !important;
+    margin: 0 !important;
+}
+
+/* Verified: Exactly 20x20 Solid Blue (with 10x10 white tick) */
+.dev-card-badge.verified {
+    width: 20px !important;
+    height: 20px !important;
+    background: #007AFF !important;
+    border-radius: 50% !important;
+}
+.dev-card-badge.verified svg {
+    width: 10px !important;
+    height: 10px !important;
+    fill: white !important;
+    display: block !important;
+    margin: 0 !important;
+}
+
+
+
     </style>
 </head>
 <body>
@@ -1868,24 +1939,37 @@ console.log = function() {};
             }
 
             async init() {
-                await this.initFirebase();
-                this.initSearch();
-                await Promise.all([
-        this.fetchVerifiedUsers(),
-        this.fetchTrustedApps() // <--- Add this
-    ]);
-    
-    this.fetchApps();
+        await this.initFirebase();
+        this.initSearch();
+        
+        await Promise.all([
+            this.fetchVerifiedUsers(),
+            this.fetchTrustedApps() 
+        ]);
+        this.fetchApps();
 
-                // FIX: Auto-Refresh Store UI when Online
-                window.addEventListener('online', () => {
-                    if (this.isNetworkStrict()) {
-                        console.log("🌐 Network Restored. Refreshing Store...");
-                        this.flushPendingDecrements(); // Sync Queue
-                        this.fetchApps(); // <--- THIS UPDATES THE UI AUTOMATICALLY
-                    }
-                });
+        // 1. Auto-Refresh on Reconnect (PRO FIX)
+        window.addEventListener('online', () => {
+            if (this.isNetworkStrict()) {
+                console.log("🌐 Network Restored. Refreshing Security & Store...");
+                this.flushPendingDecrements(); 
+                this.fetchVerifiedUsers(); // Re-fetch Badges
+                this.fetchTrustedApps();   // Re-fetch Shields
+                this.fetchApps(); 
             }
+        });
+
+        // 2. Background Heartbeat (Silent Sync every 60s)
+        setInterval(() => {
+            if (this.isNetworkStrict()) {
+                this.fetchVerifiedUsers();
+                this.fetchTrustedApps();
+            }
+        }, 60000);
+    }
+    
+    
+    
 
             async initFirebase() {
                 if (firebase.apps.length === 0) {
@@ -2657,10 +2741,11 @@ renderBio(text) {
 
         // 4. Render Badges
         const badgeType = this.userBadges.get(authorId);
+        
         if (badgeType === 'member') {
-            badgeEl.innerHTML = `<span class="verified-badge member" style="width:20px; height:20px;"><svg width="20" height="20" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+            badgeEl.innerHTML = `<span class="dev-card-badge member" title="Member"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
         } else if (badgeType === 'verified') {
-            badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+            badgeEl.innerHTML = `<span class="dev-card-badge verified" title="Verified Developer"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
         } else {
             badgeEl.innerHTML = '';
         }
@@ -2672,6 +2757,37 @@ renderBio(text) {
         // STOP! Do not add any DB fetch code below this line.
         // It will overwrite the bio with raw text.
     }
+
+
+
+
+
+
+formatAppText(text) {
+    if (!text) return "";
+    text = String(text); // Safety check
+
+    // 1. Sanitize HTML
+    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+
+    // 2. Apply Bold & Italic
+    safe = safe
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>');
+
+    // 3. Standard Links
+    safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
+        const label = txt || url;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">${label}</a>`;
+    });
+
+    // 4. Raw Links
+    safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+        `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
+
+    // 5. THE FIX: Replace newlines with a space instead of <br> for list views
+    return safe.replace(/\n/g, ' '); 
+}
 
 
 
@@ -2848,9 +2964,12 @@ else {
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
-                            <div class="store-sub">${authorHTML}${badgeHTML} • ${app.description}</div>
-                        </div>
+    <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
+    <div class="store-author">${authorHTML}${badgeHTML}</div>
+    <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">
+        ${this.formatAppText(app.description)}
+    </div>
+</div>
                         ${actionHTML}
                     `;
                     listEl.appendChild(div);
@@ -5068,67 +5187,89 @@ toggleIslandEvents(el) {
 
 
 handleDeepLinks() {
-    // 1. Get the Query
     const params = new URLSearchParams(window.location.search);
-    const searchQuery = params.get('s'); // Get ?s=Query
+    const searchQuery = params.get('s');
+    const appId = params.get('app');
 
+    // 1. Standard App Store Search (?s=...)
     if (searchQuery) {
-        console.log("🔗 Deep Link Detected:", searchQuery);
-
-        // 2. Wait for AppStore to be initialized
+        console.log("🔗 Store Search Link Detected:", searchQuery);
         const waitForStore = setInterval(() => {
             if (typeof appStore !== 'undefined') {
                 clearInterval(waitForStore);
-
-                // 3. Set the Search Input Early
                 const input = document.getElementById('store-search-input');
                 if (input) input.value = searchQuery;
 
-                // 4. "No-Flash" Render Override (THE FIX IS HERE)
                 if (appStore.renderStore) {
                     const originalRender = appStore.renderStore.bind(appStore);
-                    
                     appStore.renderStore = function(list) {
                         const searchVal = document.getElementById('store-search-input')?.value.toLowerCase().trim();
-                        
-                        // >>> FIX START: Bypass re-filtering for Dev Queries <<<
-                        // If it's a "dev:" query, filterApps() has already done the complex logic.
-                        // We must pass the list through as-is, otherwise standard filtering will wipe it out.
-                        if (searchVal && searchVal.startsWith('dev:')) {
-                            originalRender(list);
-                            return;
-                        }
-                        // >>> FIX END <<<
-
+                        if (searchVal && searchVal.startsWith('dev:')) { originalRender(list); return; }
                         if (searchVal && list.length > 0) {
-                            // "Normal Search" Logic: Check Name, Author, Desc
                             const filtered = list.filter(app => {
                                 const displayName = (app.storeName || app.name).toLowerCase();
                                 const author = (app.author || '').toLowerCase();
                                 const desc = (app.description || '').toLowerCase();
-                                
-                                return displayName.includes(searchVal) || 
-                                       author.includes(searchVal) || 
-                                       desc.includes(searchVal);
+                                return displayName.includes(searchVal) || author.includes(searchVal) || desc.includes(searchVal);
                             });
-                            // Render only the filtered results
                             originalRender(filtered);
-                        } else {
-                            // Render everything if search is empty
-                            originalRender(list);
-                        }
+                        } else { originalRender(list); }
                     };
                 }
 
-                // 5. Open the App Store UI
                 setTimeout(() => {
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
-                    if (appStoreIcon) {
-                        this.openApp(appStoreIcon, 'AppStore', 'light');
-                    }
+                    if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
                 }, 1200); 
             }
         }, 100);
+    }
+
+    // 2. Universal App Deep Linking (?app=...)
+    if (appId) {
+        console.log("🔗 Direct App Link Detected:", appId);
+
+        // A. Security Guard
+        if (this.isSafeMode) {
+            console.warn("🛡️ Safe Mode: Blocked Deep Link auto-launch.");
+            return;
+        }
+
+        // B. Extract Forwarding Params (Everything except 'app' and 'safe')
+        const forwardParams = new URLSearchParams();
+        for (const [key, value] of params.entries()) {
+            if (key !== 'app' && key !== 'safe') forwardParams.append(key, value);
+        }
+        
+        // Stage params globally so the router can inject them
+        window.__deepLinkForwardParams = forwardParams.toString();
+
+        setTimeout(() => {
+            // C. Look for the App Locally
+            const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+            const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+            const targetApp = [...installed, ...sideloaded].find(a => a.id === appId);
+
+            if (targetApp) {
+                // FOUND IT: Open the App
+                let appIcon = this.getVisibleIconElement(appId);
+                this.openApp(appIcon, appId, 'light');
+            } else {
+                // NOT FOUND: Route to App Store and lock search to this exact ID
+                const waitForStore = setInterval(() => {
+                    if (typeof appStore !== 'undefined') {
+                        clearInterval(waitForStore);
+                        const input = document.getElementById('store-search-input');
+                        if (input) input.value = appId;
+                        
+                        if (appStore.filterApps) appStore.filterApps(appId);
+                        
+                        const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
+                        if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
+                    }
+                }, 100);
+            }
+        }, 1000); // Wait for system to boot
     }
 }
 
@@ -6157,6 +6298,12 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 // --- 2. RESOLVE URL (Native vs Web) ---
                 let finalUrl = customApp ? customApp.embedUrl : '';
                 
+                
+                
+                
+                
+                
+                
                 if (customApp && customApp.type === 'native') {
                     const blobUrl = sideloader.getNativeUrl(customApp.id);
                     if (blobUrl) {
@@ -6168,6 +6315,23 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 }
 
                 titleText.innerText = displayName;
+
+
+
+
+
+// PRO FEATURE: Inject Deep Link Parameters ONLY into standard web apps
+if (window.__deepLinkForwardParams) {
+    if (finalUrl.startsWith('http')) {
+        const separator = finalUrl.includes('?') ? '&' : '?';
+        finalUrl += separator + window.__deepLinkForwardParams;
+    }
+    // We clear it so it doesn't accidentally inject into the next app you open
+    window.__deepLinkForwardParams = null; 
+}
+
+
+
 
 
 // --- PRIVILEGE CHECK (For InjectMod) ---

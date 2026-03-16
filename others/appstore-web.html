@@ -225,17 +225,46 @@
     display: block; 
 }
 
-.store-sub {
+/* The static Author line */
+.store-author {
     font-size: 13px;
     color: var(--sub-text);
-    /* Wrapping Logic */
-    white-space: normal;       /* Was 'nowrap' */
-    overflow-wrap: break-word; /* Breaks super long words */
-    line-height: 1.35;
-    /* Remove truncation */
-    overflow: visible;
-    text-overflow: clip;
+    margin-bottom: 2px;
+    overflow-wrap: break-word;
 }
+
+/* The interactive Description block */
+.store-desc {
+    font-size: 13px;
+    color: var(--sub-text);
+    line-height: 1.35;
+    
+    /* Clamping */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    
+    /* Safe Wrapping */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    
+    /* Pro Interactions */
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.store-desc:active {
+    opacity: 0.7;
+}
+
+.store-desc.expanded {
+    -webkit-line-clamp: unset !important;
+}
+
+
+
 
         /* --- BADGES --- */
         .verified-badge {
@@ -922,42 +951,59 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 }
 
             async init() {
-                this.updateThemeIcon();
-                this.setupScrollListener();
-                
-                // 1. Firebase Init
-                if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
-                this.db = firebase.firestore();
+        this.updateThemeIcon();
+        this.setupScrollListener();
+        
+        // 1. Firebase Init
+        if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
+        this.db = firebase.firestore();
 
-                // 2. Auth - Robust fail-safe
-                try {
-                    const auth = firebase.auth();
-                    if (!auth.currentUser) await auth.signInAnonymously();
-                } catch (e) {
-                    console.warn("Auth check: Guest Mode active or Auth Restricted.", e.message);
-                }
-                
-                
-                
-                // --- COMPAT ARCHITECT INIT ---
-const appCheck = firebase.appCheck();
-appCheck.activate(
-    new firebase.appCheck.ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
-    true // isTokenAutoRefreshEnabled
-);
-                
-                
+        // 2. Auth
+        try {
+            const auth = firebase.auth();
+            if (!auth.currentUser) await auth.signInAnonymously();
+        } catch (e) {
+            console.warn("Auth check: Guest Mode active or Auth Restricted.", e.message);
+        }
+        
+        // 3. App Check
+        const appCheck = firebase.appCheck();
+        appCheck.activate(
+            new firebase.appCheck.ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+            true 
+        );
 
-                // 3. Listeners
-                this.initSearch();
+        // 4. Listeners
+        this.initSearch();
 
-                // 4. Fetch Data (Optimized)
-                await Promise.all([this.fetchVerifiedUsers(), this.fetchTrustedApps()]);
-                await this.fetchApps();
+        // 5. Fetch Data
+        await Promise.all([this.fetchVerifiedUsers(), this.fetchTrustedApps()]);
+        await this.fetchApps();
 
-                // 5. Deep Links
-                this.checkUrlParams();
+        // 6. Deep Links
+        this.checkUrlParams();
+
+        // 7. Auto-Refresh on Reconnect (PRO FIX)
+        window.addEventListener('online', () => {
+            console.log("Network Restored. Refreshing Security & Store...");
+            this.fetchVerifiedUsers(); // Re-fetch Badges
+            this.fetchTrustedApps();   // Re-fetch Shields
+            this.fetchApps();
+        });
+
+        // 8. Background Heartbeat (Silent Sync every 60s)
+        setInterval(() => {
+            if (navigator.onLine && this.db) {
+                this.fetchVerifiedUsers();
+                this.fetchTrustedApps();
             }
+        }, 60000);
+    }
+
+
+
+
+
 
             // --- UI ---
             setupScrollListener() {
@@ -1634,6 +1680,47 @@ const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
                 return '5+';
             }
 
+
+
+
+
+
+
+formatAppText(text) {
+    if (!text) return "";
+    text = String(text); // Safety check
+
+    // 1. Sanitize HTML
+    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+
+    // 2. Apply Bold & Italic
+    safe = safe
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>');
+
+    // 3. Standard Links
+    safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
+        const label = txt || url;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">${label}</a>`;
+    });
+
+    // 4. Raw Links
+    safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+        `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
+
+    // 5. THE FIX: Replace newlines with a space instead of <br> for list views
+    return safe.replace(/\n/g, ' '); 
+}
+
+
+
+
+
+
+
+
+
+
             // --- FAST RENDERER ---
             renderStore(appList) {
     const listEl = document.getElementById('store-list');
@@ -1690,7 +1777,10 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
             
             <div class="store-info">
                 <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
-                <div class="store-sub">${authorHTML}${badgeHTML} • ${app.description}</div>
+                <div class="store-author">${authorHTML}${badgeHTML}</div>
+                <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">
+                    ${this.formatAppText(app.description)}
+                </div>
             </div>
             
             <div class="action-stack">
