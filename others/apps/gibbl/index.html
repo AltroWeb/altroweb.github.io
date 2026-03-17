@@ -577,6 +577,16 @@
 .grecaptcha-badge { visibility: hidden !important; display: none !important; }       
         
         
+        /* --- PRO CHAR COUNTER --- */
+        .char-counter { 
+            text-align: right; 
+            margin-top: 4px; 
+            font-weight: 700; 
+            transition: color 0.2s ease; 
+        }
+        .char-counter.warning { color: #f39c12; }
+        .char-counter.danger { color: var(--error); animation: shake 0.3s ease; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
         
         
     </style>
@@ -662,7 +672,9 @@ window.addEventListener('scroll', () => {
 
 
 
- 
+
+
+
     
     
     
@@ -1033,6 +1045,22 @@ const appCheck = initializeAppCheck(app, {
 
 
 
+window.updateCharCount = (inputEl, counterId) => {
+            const counter = document.getElementById(counterId);
+            if (!counter) return;
+            const max = parseInt(inputEl.getAttribute('maxlength'));
+            const len = inputEl.value.length;
+            counter.innerText = `${len}/${max}`;
+            
+            if (len >= max) counter.className = 'char-counter text-xs danger';
+            else if (len >= max * 0.8) counter.className = 'char-counter text-xs warning';
+            else counter.className = 'char-counter text-xs text-dim';
+        };
+
+
+
+
+
 
 
         const formatNum = (n) => {
@@ -1255,10 +1283,13 @@ const appCheck = initializeAppCheck(app, {
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('landing')">${getIcon('arrow-left')} Back</div>
                         <h2 style="text-align: left; margin-bottom: 1.5rem; font-size: 2rem;">Create Account.</h2>
                         <div class="input-group">
-                            <input type="text" id="reg-name" class="custom-input" placeholder="Display Name" maxlength="50">
+                            <div class="input-group">
+                            <input type="text" id="reg-name" class="custom-input" placeholder="Display Name" maxlength="50" oninput="window.updateCharCount(this, 'reg-name-count')">
+                            <div id="reg-name-count" class="char-counter text-xs text-dim">0/50</div>
                         </div>
                         <div class="input-group">
-                            <input type="text" id="reg-handle" class="custom-input" placeholder="@username (no spaces/emojis)" maxlength="20">
+                            <input type="text" id="reg-handle" class="custom-input" placeholder="@username (no spaces/emojis)" maxlength="20" oninput="window.updateCharCount(this, 'reg-handle-count')">
+                            <div id="reg-handle-count" class="char-counter text-xs text-dim">0/20</div>
                         </div>
                         <div class="input-group">
                             <input type="email" id="reg-email" class="custom-input" placeholder="Email">
@@ -2038,11 +2069,13 @@ if (!window.isUserScrolling) {
                     <h3 style="margin-bottom:1rem;">Edit Profile</h3>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Display Name</label>
-                        <input id="edit-name" class="custom-input" value="${currentProfile.displayName}" maxlength="50">
+                        <input id="edit-name" class="custom-input" value="${currentProfile.displayName}" maxlength="50" oninput="window.updateCharCount(this, 'edit-name-count')">
+                        <div id="edit-name-count" class="char-counter text-xs text-dim">${currentProfile.displayName.length}/50</div>
                     </div>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Handle</label>
-                        <input id="edit-handle" class="custom-input" value="${currentProfile.handle}" maxlength="20" placeholder="@username (no spaces)">
+                        <input id="edit-handle" class="custom-input" value="${currentProfile.handle}" maxlength="20" placeholder="@username (no spaces)" oninput="window.updateCharCount(this, 'edit-handle-count')">
+                        <div id="edit-handle-count" class="char-counter text-xs text-dim">${currentProfile.handle.length}/20</div>
                     </div>
                     <div class="input-group">
                         <div class="flex justify-between items-end" style="margin-bottom:0.3rem;">
@@ -2051,9 +2084,11 @@ if (!window.isUserScrolling) {
                                 ${getIcon('eye')}
                             </button>
                         </div>
-                        <textarea id="edit-bio" class="custom-input break-words" rows="4" maxlength="200">${currentProfile.bio || ''}</textarea>
+                        <textarea id="edit-bio" class="custom-input break-words" rows="4" maxlength="200" oninput="window.updateCharCount(this, 'edit-bio-count')">${currentProfile.bio || ''}</textarea>
                         
-                        <div style="background: var(--surface); padding: 1rem; border-radius: var(--radius-md); margin-top: 0.5rem; font-size: 0.85rem; color: var(--dim); border: 1px solid var(--border);">
+                        <div id="edit-bio-count" class="char-counter text-xs text-dim" style="margin-bottom: 12px;">${(currentProfile.bio || '').length}/200</div>
+                        
+                        <div style="background: var(--surface); padding: 1rem; border-radius: var(--radius-md); font-size: 0.85rem; color: var(--dim); border: 1px solid var(--border);">
                             <div class="bold" style="margin-bottom: 4px; color: var(--text);">Markdown Formatting Guide</div>
                             <div>Make text <span class="md-bold">bold</span> by using **stars**: <span style="font-family: monospace;">**bold**</span></div>
                             <div>Make text <span class="md-italic">italic</span> by using *stars*: <span style="font-family: monospace;">*italic*</span></div>
