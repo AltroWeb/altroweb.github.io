@@ -682,7 +682,7 @@ window.addEventListener('scroll', () => {
     
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer, increment} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js";
         
@@ -867,7 +867,8 @@ const appCheck = initializeAppCheck(app, {
                     // Global Unread Notification Daemon
                     // PRO FIX: Scalable Global Unread Notification Daemon
                     if (unsubscribeGlobalNotifs) unsubscribeGlobalNotifs();
-                    const notifQuery = query(getPublicCollection('notifications'), where('receiverId', '==', user.uid));
+                    // PRO FIX: Cap background daemon to 30 to save quota
+const notifQuery = query(getPublicCollection('notifications'), where('receiverId', '==', user.uid), orderBy('timestamp', 'desc'), limit(30));
                     
                     unsubscribeGlobalNotifs = onSnapshot(notifQuery, (snap) => {
                         let hasUnread = false;
@@ -898,6 +899,8 @@ const appCheck = initializeAppCheck(app, {
             if (docSnap.exists()) {
                 currentProfile = docSnap.data();
                 if(currentProfile.mentionsEnabled === undefined) currentProfile.mentionsEnabled = true;
+                // PRO FIX: Initialize memory for old users so Likes never loop or rubberband
+                if(!currentProfile.likedPosts) currentProfile.likedPosts = [];
             } else {
                 currentProfile = {
                     uid: uid,
@@ -1282,7 +1285,7 @@ window.updateCharCount = (inputEl, counterId) => {
                     <div id="signup-view" class="hidden w-full flex-col">
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('landing')">${getIcon('arrow-left')} Back</div>
                         <h2 style="text-align: left; margin-bottom: 1.5rem; font-size: 2rem;">Create Account.</h2>
-                        <div class="input-group">
+                        
                             <div class="input-group">
                             <input type="text" id="reg-name" class="custom-input" placeholder="Display Name" maxlength="50" oninput="window.updateCharCount(this, 'reg-name-count')">
                             <div id="reg-name-count" class="char-counter text-xs text-dim">0/50</div>
@@ -1294,7 +1297,7 @@ window.updateCharCount = (inputEl, counterId) => {
                         <div class="input-group">
                             <input type="email" id="reg-email" class="custom-input" placeholder="Email">
                         </div>
-                        <div class="input-group">
+                   <div class="input-group" style="margin-bottom: 3rem;">
                             <input type="password" id="reg-pass" class="custom-input" placeholder="Password (6+ chars)">
                             <div class="password-toggle" onclick="window.togglePass('reg-pass')">${getIcon('eye')}</div>
                         </div>
@@ -1303,9 +1306,6 @@ window.updateCharCount = (inputEl, counterId) => {
 
 
 
-<div class="text-dim" style="font-size: 0.7rem; margin-top: 1.5rem; text-align: center;">
-    Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
-</div>
 
 
 
@@ -1318,8 +1318,13 @@ window.updateCharCount = (inputEl, counterId) => {
                         </div>
                         <button class="btn-primary" onclick="window.handleResetPassAuth(this)">Send Reset Link</button>
                     </div>
-                </div>
-            `;
+                    
+                    
+                    
+                    <div class="text-dim w-full" style="font-size: 0.75rem; position: absolute; bottom: 20px; left: 0; padding: 0 1rem; text-align: center;">
+                        Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
+                    </div>
+                </div> `;
             document.getElementById('theme-toggle-auth').onclick = window.toggleTheme;
         };
 
@@ -1486,9 +1491,13 @@ let mediaHTML = '';
                         <button class="action-btn" onclick="event.stopPropagation(); window.setView('thread', '${post.id}')">
                             ${getIcon('message-square')} ${formatNum(post.replyCount || 0)}
                         </button>
-                        <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); window.toggleLike('${post.id}', this)">
-                            ${getIcon('heart')} <span class="like-count">${formatNum(post.likes?.length || 0)}</span>
+                        
+                        
+               <button class="action-btn ${((post.likes && post.likes.includes(currentUser.uid)) || (currentProfile.likedPosts && currentProfile.likedPosts.includes(post.id))) ? 'liked' : ''}" onclick="event.stopPropagation(); window.toggleLike('${post.id}', this)">
+                            ${getIcon('heart')} <span class="like-count">${formatNum(post.likeCount !== undefined ? post.likeCount : (post.likes?.length || 0))}</span>
                         </button>
+                        
+                        
                         <button class="action-btn" onclick="event.stopPropagation(); window.sharePost('${post.id}')">
                             ${getIcon('share')}
                         </button>
@@ -1528,7 +1537,7 @@ let mediaHTML = '';
                 `;
             }
             
-            const q = query(getPublicCollection('posts'), orderBy('timestamp', 'desc'), limit(window.LIMITS.feed));
+            const q = query(getPublicCollection('posts'), orderBy('timestamp', 'desc'), limit(window.LIMITS.feed * 5));
             
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -1605,18 +1614,22 @@ if (!window.isUserScrolling) {
                 isPaginating = false;
                 const loadBtn = document.getElementById('feed-load-more');
                 if (loadBtn) {
-                    // PRO FIX: Intersection Observer (Infinite Auto-Scroll)
+                    // PRO FIX: Hybrid Infinite Scroll + Tactile Fallback
                     if (snapshot.docs.length < window.LIMITS.feed) {
                         loadBtn.style.display = 'none'; 
                     } else {
-                        loadBtn.innerHTML = '<div class="spinner text-dim"></div>';
-                        loadBtn.style.background = 'transparent'; 
-                        loadBtn.style.border = 'none';
+                        // 1. Show the physical button
+                        loadBtn.style.display = 'block';
+                        loadBtn.innerHTML = 'Load More';
+                        loadBtn.style.background = 'var(--surface)'; 
+                        loadBtn.style.borderTop = '1px solid var(--border)';
                         
+                        // 2. Attach the Auto-Scroll Sensor
                         if(window.feedObserver) window.feedObserver.disconnect();
                         window.feedObserver = new IntersectionObserver(entries => {
+                            // If the button gets within 400px of the screen, auto-click it!
                             if(entries[0].isIntersecting && !isPaginating) window.loadMoreFeed();
-                        }, { rootMargin: '800px' }); 
+                        }, { rootMargin: '400px' }); 
                         window.feedObserver.observe(loadBtn);
                     }
                 }
@@ -1653,7 +1666,8 @@ if (!window.isUserScrolling) {
                             <img src="${window.getAvatar(currentProfile.pfp, currentProfile.displayName)}" class="pfp-sm pfp-uid-${currentUser.uid}">
                         </div>
                         <div class="w-full">
-                            <textarea id="reply-text" class="custom-input break-words" rows="2" placeholder="Post your reply..." style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 1rem;"></textarea>
+                            <textarea id="reply-text" class="custom-input break-words" rows="2" placeholder="Post your reply..." maxlength="1000" oninput="window.updateCharCount(this, 'reply-char-count')" style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 1rem;"></textarea>
+<div id="reply-char-count" class="char-counter text-xs text-dim">0/1000</div>
                             <div class="image-preview-container" id="reply-img-prev"></div>
                             <div class="flex justify-between items-center" style="margin-top:10px;">
                                 <div class="flex gap-3">
@@ -1788,7 +1802,8 @@ if (!window.isUserScrolling) {
                 const postData = {
                     content: txt, image: tempReplyImage, authorId: currentUser.uid,
                     authorName: currentProfile.displayName, authorHandle: currentProfile.handle,
-                    authorPfp: currentProfile.pfp, timestamp: new Date().toISOString(), likes: [],
+                    authorPfp: currentProfile.pfp, timestamp: new Date().toISOString(), 
+                    likes: [], likeCount: 0, // PRO FIX: New replies are born with the integer!
                     replyTo: replyToId, replyToHandle: parentData.authorHandle, replyToUid: parentData.authorId
                 };
 
@@ -1816,7 +1831,8 @@ if (!window.isUserScrolling) {
 
         window.openCreatePost = (replyToId = null, replyToHandle = null, replyToUid = null) => {
             const html = `
-                <textarea id="post-text" class="custom-input break-words" rows="4" placeholder="${replyToId ? 'Post your reply...' : 'What is happening?!'}"></textarea>
+                <textarea id="post-text" class="custom-input break-words" rows="4" placeholder="${replyToId ? 'Post your reply...' : 'What is happening?!'}" maxlength="1000" oninput="window.updateCharCount(this, 'post-char-count')"></textarea>
+<div id="post-char-count" class="char-counter text-xs text-dim">0/1000</div>
                 <div class="image-preview-container" id="post-img-prev"></div>
                 
                 
@@ -1852,7 +1868,8 @@ if (!window.isUserScrolling) {
                     const postData = {
                         content: txt, image: tempImage, authorId: currentUser.uid,
                         authorName: currentProfile.displayName, authorHandle: currentProfile.handle,
-                        authorPfp: currentProfile.pfp, timestamp: new Date().toISOString(), likes: []
+                        authorPfp: currentProfile.pfp, timestamp: new Date().toISOString(), 
+                        likes: [], likeCount: 0 // PRO FIX: New posts are born with the integer!
                     };
 
                     if (replyToId) {
@@ -1975,7 +1992,7 @@ if (!window.isUserScrolling) {
     <button class="profile-btn" onclick="window.setView('settings')">Edit Profile</button>
 ` : `
     <div class="flex gap-2" style="grid-column: 2; justify-self: end; margin-bottom: 8px;">
-        <button class="profile-btn ${amFollowing ? '' : 'primary'}" style="margin: 0;" onclick="window.handleFollow('${uid}', '${user.handle}')">
+        <button class="profile-btn ${amFollowing ? '' : 'primary'}" style="margin: 0;" onclick="window.handleFollow('${uid}', '${user.handle}', this)">
             ${amFollowing ? 'Following' : 'Follow'}
         </button>
         ${isFollowingMe ? `
@@ -2001,8 +2018,8 @@ if (!window.isUserScrolling) {
                         </div>
                         <div class="bio-text break-words">${markdown(user.bio)}</div>
                      <div class="stats-row">
-    <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'following')"` : ''}><span class="stat-val">${formatNum(user.following?.length || 0)}</span> <span class="stat-label">Following</span></div>
-    <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'followers')"` : ''}><span class="stat-val">${formatNum(user.followers?.length || 0)}</span> <span class="stat-label">Followers</span></div>
+    <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'following')"` : ''}><span class="stat-val">${formatNum(user.followingCount !== undefined ? user.followingCount : (user.following?.length || 0))}</span> <span class="stat-label">Following</span></div>
+    <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'followers')"` : ''}><span class="stat-val">${formatNum(user.followerCount !== undefined ? user.followerCount : (user.followers?.length || 0))}</span> <span class="stat-label">Followers</span></div>
 </div>
                     </div>
                     <div style="padding:1rem; border-bottom:1px solid var(--border); font-weight:700; font-family:var(--font-head); font-size:1.1rem;">Posts & Replies</div>
@@ -2014,7 +2031,7 @@ if (!window.isUserScrolling) {
                 let profileRenderCounter = 0; 
                 // PRO FIX: Targeted query + In-Memory Pagination (Saves quota, prevents missing posts)
                 // PRO FIX: Track listener in memory
-                unsubscribeProfile = onSnapshot(query(getPublicCollection('posts'), where('authorId', '==', uid)), async (snap) => {
+                unsubscribeProfile = onSnapshot(query(getPublicCollection('posts'), where('authorId', '==', uid), orderBy('timestamp', 'desc'), limit(window.LIMITS.profile * 2)), async (snap) => {
                     const pList = document.getElementById('profile-posts');
                     if(!pList || currentView !== 'profile') return;
 
@@ -2045,7 +2062,15 @@ if (!window.isUserScrolling) {
                     if(currentRender === profileRenderCounter && document.getElementById('profile-posts')) {
                         document.getElementById('profile-posts').innerHTML = fullHTML;
                     }
-                }, (err) => {});
+                }, (err) => {
+                // PRO FIX: Expose the missing index error so the dev can fix it
+                console.error("NOTIFICATION ERROR:", err);
+                document.getElementById('notif-list').innerHTML = `
+                    <div style="padding:2rem; text-align:center; color:var(--error); font-size:0.9rem; line-height: 1.5;">
+                        <strong>Database Index Required.</strong><br><br>
+                        Open your browser console (F12 or Inspect), find the red error, and click the blue link Firebase provides to build the index. It takes 5 minutes.
+                    </div>`;
+            });
 
             } catch(e) {
                 container.innerHTML = `<div style="padding:2rem;text-align:center; color:var(--error)">Error loading profile: ${e.message}</div>`;
@@ -2074,7 +2099,9 @@ if (!window.isUserScrolling) {
                     </div>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Handle</label>
-                        <input id="edit-handle" class="custom-input" value="${currentProfile.handle}" maxlength="20" placeholder="@username (no spaces)" oninput="window.updateCharCount(this, 'edit-handle-count')">
+                        <input id="edit-handle" class="custom-input" value="${currentProfile.handle}" maxlength="20" placeholder="@username (no spaces)" oninput="this.value = this.value.toLowerCase().replace(/\\s/g, ''); window.updateCharCount(this, 'edit-handle-count')">
+                        
+                        
                         <div id="edit-handle-count" class="char-counter text-xs text-dim">${currentProfile.handle.length}/20</div>
                     </div>
                     <div class="input-group">
@@ -2380,11 +2407,48 @@ currentProfile.bio = bio; currentProfile.pfp = pfp; currentProfile.mentionsEnabl
                     let operations = [];
                     
                     // PRO FIX: Targeted Queries (Saves 99% of read limits and handles likes cleanly)
+                    // PRO FIX: Targeted Queries + Ghost Reply Cleanup (Zero extra reads)
                     const myPostsSnap = await getDocs(query(getPublicCollection('posts'), where('authorId', '==', uid)));
-                    myPostsSnap.forEach(d => operations.push({ type: 'delete', ref: d.ref }));
+                    myPostsSnap.forEach(d => {
+                        const postData = d.data();
+                        operations.push({ type: 'delete', ref: d.ref });
+                        
+                        // If this post was a reply, subtract 1 from the parent's count instantly
+                        if (postData.replyTo) {
+                            operations.push({ 
+                                type: 'update', 
+                                ref: getPublicDoc('posts', postData.replyTo), 
+                                data: { replyCount: increment(-1) } 
+                            });
+                        }
+                    });
 
-                    const myLikesSnap = await getDocs(query(getPublicCollection('posts'), where('likes', 'array-contains', uid)));
-                    myLikesSnap.forEach(d => operations.push({ type: 'update', ref: d.ref, data: { likes: arrayRemove(uid) } }));
+                    // Drops the UI numbers across the platform when user is wiped
+                    // PRO FIX: Zero-Quota Like Deletion. Uses local memory instead of a massive database scan!
+                    if (currentProfile.likedPosts && currentProfile.likedPosts.length > 0) {
+                        currentProfile.likedPosts.forEach(postId => {
+                            operations.push({ type: 'update', ref: getPublicDoc('posts', postId), data: { likes: arrayRemove(uid), likeCount: increment(-1) } });
+                        });
+                    }
+                    
+                    
+                    
+                    // PRO FIX: The Ghost Follower Cleanup (Zero Database Reads)
+                    // If you delete your account, remove yourself from everyone else's follower/following counts
+                    if (currentProfile.following && currentProfile.following.length > 0) {
+                        currentProfile.following.forEach(targetId => {
+                            operations.push({ type: 'update', ref: getPublicDoc('profiles', targetId), data: { followers: arrayRemove(uid), followerCount: increment(-1) } });
+                        });
+                    }
+                    if (currentProfile.followers && currentProfile.followers.length > 0) {
+                        currentProfile.followers.forEach(targetId => {
+                            operations.push({ type: 'update', ref: getPublicDoc('profiles', targetId), data: { following: arrayRemove(uid), followingCount: increment(-1) } });
+                        });
+                    }
+                    
+                    
+                    
+                    
 
                     const notifsRxSnap = await getDocs(query(getPublicCollection('notifications'), where('receiverId', '==', uid)));
                     notifsRxSnap.forEach(d => operations.push({ type: 'delete', ref: d.ref }));
@@ -2630,8 +2694,9 @@ const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handl
             const badge = document.getElementById('nav-badge');
             if(badge) badge.classList.remove('show');
 
-            // PRO FIX: Explicitly query ONLY the current user's notifications, then paginate locally.
-            onSnapshot(query(getPublicCollection('notifications'), where('receiverId', '==', currentUser.uid)), (snap) => {
+            
+            // PRO FIX: Cap visible notifications to your UI limit
+onSnapshot(query(getPublicCollection('notifications'), where('receiverId', '==', currentUser.uid), orderBy('timestamp', 'desc'), limit(window.LIMITS.notifs * 2)), (snap) => {
                 const list = document.getElementById('notif-list');
                 if(!list || currentView !== 'notifications') return;
 
@@ -2681,7 +2746,15 @@ const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handl
 
                 if (notifs.length === window.LIMITS.notifs) fullHTML += `<div class="load-more-btn" onclick="window.LIMITS.notifs += 20; window.setView('notifications')">Load Older Notifications</div>`;
                 list.innerHTML = fullHTML;
-            }, (err) => {});
+            }, (err) => {
+                // PRO FIX: Expose the missing index error so the dev can fix it
+                console.error("NOTIFICATION ERROR:", err);
+                document.getElementById('notif-list').innerHTML = `
+                    <div style="padding:2rem; text-align:center; color:var(--error); font-size:0.9rem; line-height: 1.5;">
+                        <strong>Database Index Required.</strong><br><br>
+                        Open your browser console (F12 or Inspect), find the red error, and click the blue link Firebase provides to build the index. It takes 5 minutes.
+                    </div>`;
+            });
         };
 
         window.clearNotifications = async () => {
@@ -2839,6 +2912,10 @@ if (totalUsers >= 500) {
         };
 
         window.toggleLike = async (postId, btnEl) => {
+            if (btnEl.dataset.locked === "true") return; 
+            btnEl.dataset.locked = "true";
+            btnEl.style.opacity = "0.7";
+
             const isLiked = btnEl.classList.contains('liked');
             const svgIcon = btnEl.querySelector('svg');
             const countSpan = btnEl.querySelector('.like-count');
@@ -2848,52 +2925,63 @@ if (totalUsers >= 500) {
             if(countStr.includes('k')) rawCount *= 1000;
             if(countStr.includes('m')) rawCount *= 1000000;
 
-            // 1. Optimistic UI Update
-            if (isLiked) {
-                btnEl.classList.remove('liked');
-                svgIcon.setAttribute('fill', 'none');
-                countSpan.innerText = formatNum(Math.max(0, rawCount - 1));
-            } else {
-                btnEl.classList.add('liked');
-                svgIcon.setAttribute('fill', 'var(--error)');
-                countSpan.innerText = formatNum(rawCount + 1);
+            // 1. UI ZERO FLOOR: Visually never drop below 0
+            if (isLiked && rawCount <= 0) {
+                btnEl.classList.remove('liked'); svgIcon.setAttribute('fill', 'none'); countSpan.innerText = "0";
+                btnEl.dataset.locked = "false"; btnEl.style.opacity = "1";
+                return; 
             }
 
-            // 2. Database Sync
+            if (isLiked) {
+                btnEl.classList.remove('liked'); svgIcon.setAttribute('fill', 'none');
+                rawCount = Math.max(0, rawCount - 1);
+            } else {
+                btnEl.classList.add('liked'); svgIcon.setAttribute('fill', 'var(--error)');
+                rawCount += 1;
+            }
+            countSpan.innerText = formatNum(rawCount);
+
+            const ref = getPublicDoc('posts', postId);
+            const myRef = getPublicDoc('profiles', currentUser.uid);
+            
             try {
-                const ref = getPublicDoc('posts', postId);
-                const docSnap = await getDoc(ref);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const likes = data.likes || [];
-                    if (likes.includes(currentUser.uid)) {
-                        await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
-                    } else {
-                        await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
-                        if (data.authorId !== currentUser.uid) {
-                            addDoc(getPublicCollection('notifications'), {
-                                receiverId: data.authorId, 
-                                senderId: currentUser.uid, 
-                                senderName: currentProfile.displayName,
-                                type: 'like', 
-                                postId: postId, 
-                                read: false, 
-                                timestamp: new Date().toISOString()
-                            });
-                        }
+                if(!currentProfile.likedPosts) currentProfile.likedPosts = [];
+                
+                if (isLiked) {
+                    // --- THE UNLIKE BACKEND ZERO FLOOR ---
+                    currentProfile.likedPosts = currentProfile.likedPosts.filter(id => id !== postId);
+                    
+                    // We fetch the post first to guarantee we never push the database below 0
+                    const pSnap = await getDoc(ref);
+                    if (pSnap.exists()) {
+                        const currentLikes = pSnap.data().likeCount || 0;
+                        const safeLikes = Math.max(0, currentLikes - 1); 
+                        await updateDoc(ref, { likeCount: safeLikes, likes: arrayRemove(currentUser.uid) });
+                    }
+                    await updateDoc(myRef, { likedPosts: arrayRemove(postId) });
+                    
+                } else {
+                    // --- THE LIKE LOGIC ---
+                    currentProfile.likedPosts.push(postId);
+                    await updateDoc(ref, { likeCount: increment(1), likes: arrayUnion(currentUser.uid) });
+                    await updateDoc(myRef, { likedPosts: arrayUnion(postId) });
+                    
+                    const docSnap = await getDoc(ref);
+                    if (docSnap.exists() && docSnap.data().authorId !== currentUser.uid) {
+                        addDoc(getPublicCollection('notifications'), {
+                            receiverId: docSnap.data().authorId, senderId: currentUser.uid, senderName: currentProfile.displayName,
+                            type: 'like', postId: postId, read: false, timestamp: new Date().toISOString()
+                        });
                     }
                 }
             } catch (error) {
-                // 3. Revert UI on failure
-                if (isLiked) {
-                    btnEl.classList.add('liked');
-                    svgIcon.setAttribute('fill', 'var(--error)');
-                } else {
-                    btnEl.classList.remove('liked');
-                    svgIcon.setAttribute('fill', 'none');
-                }
-                countSpan.innerText = formatNum(rawCount);
-                console.warn("Like update failed:", error);
+                // Revert UI on failure
+                if (isLiked) { btnEl.classList.add('liked'); svgIcon.setAttribute('fill', 'var(--error)'); } 
+                else { btnEl.classList.remove('liked'); svgIcon.setAttribute('fill', 'none'); }
+                countSpan.innerText = formatNum(Math.max(0, isLiked ? rawCount + 1 : rawCount - 1));
+            } finally {
+                // Always unlock the button
+                btnEl.dataset.locked = "false"; btnEl.style.opacity = "1";
             }
         };
 
@@ -2908,12 +2996,8 @@ if (totalUsers >= 500) {
                         
                         if (data.replyTo) {
                             const parentRef = getPublicDoc('posts', data.replyTo);
-                            const pSnap = await getDoc(parentRef);
-                            if (pSnap.exists()) {
-                                // Pro Fix: Simple math, zero extra database reads!
-                                const currentCount = pSnap.data().replyCount || 0;
-                                await updateDoc(parentRef, { replyCount: Math.max(0, currentCount - 1) });
-                            }
+                            // Zero-scan database subtraction
+                            await updateDoc(parentRef, { replyCount: increment(-1) });
                         }
                     }
 
@@ -2967,32 +3051,41 @@ window.removeFollower = (targetUid, targetHandle) => {
 
 
 
-        window.handleFollow = async (targetUid, targetHandle = 'this user') => {
-    const myRef = getPublicDoc('profiles', currentUser.uid);
-    const targetRef = getPublicDoc('profiles', targetUid);
-    
-    if(!currentProfile.following.includes(targetUid)) {
-        // Follow (No confirmation needed)
-        currentProfile.following.push(targetUid);
-        await updateDoc(myRef, { following: arrayUnion(targetUid) });
-        await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
-        await addDoc(getPublicCollection('notifications'), {
-            receiverId: targetUid, senderId: currentUser.uid, senderName: currentProfile.displayName,
-            type: 'follow', read: false, timestamp: new Date().toISOString()
-        });
-        window.setView('profile', targetUid); 
-    } else {
-        // Unfollow (WITH confirmation)
-        window.showModal('Unfollow', `Are you sure you want to unfollow ${targetHandle}?`, async () => {
-            currentProfile.following = currentProfile.following.filter(id => id !== targetUid);
-            await updateDoc(myRef, { following: arrayRemove(targetUid) });
-            await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
+        window.handleFollow = async (targetUid, targetHandle = 'this user', btnEl) => {
+            if (btnEl && btnEl.dataset.locked === "true") return;
+            if (btnEl) { btnEl.dataset.locked = "true"; btnEl.style.opacity = "0.7"; }
+
+            const myRef = getPublicDoc('profiles', currentUser.uid);
+            const targetRef = getPublicDoc('profiles', targetUid);
             
-            window.closeModal();
-            window.setView('profile', targetUid); 
-        }, true);
-    }
-};
+            try {
+                if(!currentProfile.following.includes(targetUid)) {
+                    currentProfile.following.push(targetUid);
+                    await updateDoc(myRef, { following: arrayUnion(targetUid), followingCount: increment(1) });
+                    await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid), followerCount: increment(1) });
+                    
+                    await addDoc(getPublicCollection('notifications'), {
+                        receiverId: targetUid, senderId: currentUser.uid, senderName: currentProfile.displayName,
+                        type: 'follow', read: false, timestamp: new Date().toISOString()
+                    });
+                    window.setView('profile', targetUid); 
+                } else {
+                    if(btnEl) { btnEl.dataset.locked = "false"; btnEl.style.opacity = "1"; }
+                    window.showModal('Unfollow', `Are you sure you want to unfollow ${targetHandle}?`, async () => {
+                        currentProfile.following = currentProfile.following.filter(id => id !== targetUid);
+                        await updateDoc(myRef, { following: arrayRemove(targetUid), followingCount: increment(-1) });
+                        await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid), followerCount: increment(-1) });
+                        window.closeModal();
+                        window.setView('profile', targetUid); 
+                    }, true);
+                    return; 
+                }
+            } catch (e) {
+                window.showModal('Error', 'Action failed.');
+            } finally {
+                if (btnEl) { btnEl.dataset.locked = "false"; btnEl.style.opacity = "1"; }
+            }
+        };
 
 
 
