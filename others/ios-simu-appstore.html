@@ -1325,14 +1325,13 @@ body.reduce-effects .homescreen-group {
     justify-content: center !important;
     flex-shrink: 0 !important;
     
-    /* This is the ONLY spacing that should exist */
-    margin: 0 0 0 6px !important; 
+    /* 1. TIGHTEN THE GAP: Matches the Web version's exact spacing */
+    margin: 0 0 0 4px !important; 
     padding: 0 !important;
     
-    /* Kill the old optical hack */
-    top: 0 !important;
+    /* 2. THE OPTICAL DROP: Pushes it slightly below mathematical center */
+    transform: translateY(1px) !important; 
     
-    /* Lock the Pro size */
     width: 20px !important;
     height: 20px !important;
 }
