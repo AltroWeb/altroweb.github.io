@@ -1304,59 +1304,45 @@ body.reduce-effects .homescreen-group {
 
 /* --- DEV CARD PIXEL-PERFECT ALIGNMENT FIX --- */
 
-/* 1. Fix the container baseline and kill the double-gap */
+/* 1. Lock the text container and kill the flex gap */
 .dev-name {
     display: flex !important; 
     align-items: center !important; 
     justify-content: center !important; 
-    
-    /* KILL the 6px gap so we don't double-space the badge */
     gap: 0px !important; 
-    
-    /* Lock the bounding box to the exact text height */
     line-height: 24px !important;
     height: 24px !important;
 }
 
-/* 2. Target the badge safely using its specific wrapper ID */
+/* 2. Scale the badge to match the Web Version's font ratio */
 #store-dev-badge .verified-badge {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
     
-    /* 1. TIGHTEN THE GAP: Matches the Web version's exact spacing */
+    /* The exact 4px gap from the Web version */
     margin: 0 0 0 4px !important; 
     padding: 0 !important;
     
-    /* 2. THE OPTICAL DROP: Pushes it slightly below mathematical center */
+    /* The 1px optical drop you noticed */
     transform: translateY(1px) !important; 
     
-    width: 20px !important;
-    height: 20px !important;
+    /* SCALED UP: 22px badge for a 24px font */
+    width: 22px !important;
+    height: 22px !important;
 }
 
-/* 3. Scale the inner SVGs strictly */
+/* 3. Scale the inner checkmark proportionally */
 #store-dev-badge .verified-badge.verified svg {
-    width: 10px !important;
-    height: 10px !important;
+    width: 11px !important;
+    height: 11px !important;
     display: block !important;
 }
 
-/* 1. Size the wrapper for the hollow blue tick */
-#store-dev-badge .verified-badge.member {
-    width: 24px !important;
-    height: 24px !important;
-    margin: 0 0 0 6px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-/* 2. Scale the SVG exactly to 24px to match App Store Web */
 #store-dev-badge .verified-badge.member svg {
-    width: 24px !important;
-    height: 24px !important;
+    width: 22px !important;
+    height: 22px !important;
     display: block !important;
 }
 
