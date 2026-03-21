@@ -994,11 +994,17 @@ body.dark-mode .dev-profile-card {
 /* Typography */
 .dev-info { width: 100%; }
 .dev-name {
-    font-size: 24px; font-weight: 700;
+    font-size: 24px; 
+    font-weight: 700;
     margin: 0 0 8px 0;
     color: #000;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 6px;
     letter-spacing: -0.5px;
+    /* ADD THIS: Eliminates invisible descender space throwing off Flexbox */
+    line-height: 1; 
 }
 body.dark-mode .dev-name { color: #fff; }
 
@@ -1298,8 +1304,12 @@ body.reduce-effects .homescreen-group {
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    padding: 0 !important; /* Kill default padding */
-    margin: 0 !important;  /* Let the flex gap handle spacing */
+    padding: 0 !important; 
+    margin: 0 !important; 
+    
+    /* ADD THESE 2 LINES: Perfect optical alignment with the text baseline */
+    position: relative !important;
+    top: 0px !important; /* Depending on the font weight, change to -2px if needed */
 }
 
 /* Member: Exactly 24x24 Hollow Blue */
