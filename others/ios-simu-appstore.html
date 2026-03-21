@@ -88,7 +88,7 @@
         
         /* Dark Mode Store Items */
         body.dark-mode .store-name { color: #fff; }
-        body.dark-mode .store-sub { color: #98989d; }
+        body.dark-mode .store-desc { color: #98989d; }
 
         button, input, textarea { font-family: inherit; }
 
@@ -428,13 +428,44 @@
     line-height: 1.2;
 }
 
-.store-sub {
+/* The static Author line */
+.store-author {
     font-size: 13px;
-    color: #8E8E93;
-    white-space: normal; /* Enables wrapping */
-    overflow-wrap: break-word;
-    line-height: 1.35;
+    color: var(--sub-text, #8E8E93);
+    margin-bottom: 2px;
 }
+
+/* The interactive Description block */
+.store-desc {
+    font-size: 13px;
+    color: var(--sub-text, #8E8E93);
+    line-height: 1.35;
+    
+    /* Clamping */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    
+    /* Safe Wrapping */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    
+    /* Pro Interactions */
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.store-desc:active {
+    opacity: 0.7;
+}
+
+.store-desc.expanded {
+    -webkit-line-clamp: unset !important;
+}
+
+
         .store-get-btn {
             background: #F2F2F7; color: #007AFF; font-weight: 700; font-size: 14px;
             border-radius: 20px; padding: 6px 20px; border: none; cursor: pointer;
@@ -672,7 +703,8 @@ body.dark-mode .store-update-section span {
     width: auto; height: auto; /* Allow SVG to define size */
     background: transparent;
 }
-/* Update this specific block in your <style> */
+
+
 .verified-badge.member svg {
     display: block;
     width: 14px; /* Match the HTML attribute */
@@ -962,11 +994,21 @@ body.dark-mode .dev-profile-card {
 /* Typography */
 .dev-info { width: 100%; }
 .dev-name {
-    font-size: 24px; font-weight: 700;
+    font-size: 24px; 
+    font-weight: 700;
     margin: 0 0 8px 0;
     color: #000;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    
+    /* Strict Flex Alignment */
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    
+    /* REMOVED: gap: 6px; (This was causing the double-spacing) */
+    
     letter-spacing: -0.5px;
+    line-height: 24px !important;
+    height: 24px !important;
 }
 body.dark-mode .dev-name { color: #fff; }
 
@@ -1137,6 +1179,188 @@ body.dark-mode #store-dev-header {
     transform: translateX(-50%) scale(0.9);
     pointer-events: none;
 }
+
+/* Pro Morphing & Sliding */
+.app-window.recede-morph {
+    transform: translateX(-30%) scale(0.92) !important;
+    filter: blur(20px) brightness(0.8) !important;
+    opacity: 0 !important;
+    border-radius: 44px !important;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                opacity 0.5s ease, 
+                border-radius 0.6s ease,
+                filter 0.7s ease !important;
+}
+
+.app-window.slide-right-init {
+    display: flex !important;
+    transform: translateX(100%) !important;
+    border-radius: 44px !important; 
+    filter: blur(15px);
+    opacity: 1 !important;
+    z-index: 500 !important;
+}
+
+.app-window.slide-right-active {
+    transform: translateX(0) !important;
+    border-radius: 0px !important; /* Force Square */
+    filter: blur(0px) !important;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                border-radius 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+                filter 0.6s ease !important;
+}
+
+/* Ensure no ghost borders during the transition */
+#main-window, #appstore-window {
+    overflow: hidden;
+    backface-visibility: hidden;
+}
+
+/* Unified Pro Button Stacking */
+.store-actions, .sl-action-stack { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    gap: 8px !important; /* Perfected equal spacing for all buttons */
+    align-items: stretch !important; 
+    width: 85px !important; 
+    flex-shrink: 0 !important;
+}
+
+/* Ensure all buttons inside stacks are identical in size and radius */
+.store-actions button, .sl-action-stack button {
+    width: 100% !important;
+    margin: 0 !important; /* Removes the "slightly far" offset from your screenshot */
+    font-size: 11px !important;
+    padding: 6px 0 !important;
+    
+}
+
+
+
+
+/* --- FIX: UNIFIED BUTTON STYLING --- */
+/* This ensures Sideloader buttons match App Store buttons exactly */
+.sl-btn {
+    background: #F2F2F7; 
+    color: #007AFF; 
+    font-weight: 700; 
+    font-size: 13px;
+    border-radius: 20px; /* Fixes the square edges */
+    padding: 6px 20px; 
+    border: none; 
+    cursor: pointer;
+    min-width: 72px; 
+    transition: all 0.2s;
+    width: 100%; /* Stacks perfectly */
+}
+
+.sl-btn.danger { color: #FF3B30; }
+
+/* Dark Mode Support for Sideloader */
+body.dark-mode .sl-btn { background: #2C2C2E; }
+body.dark-mode .sl-btn:active { background: #3a3a3c; }
+
+/* Fix specific spacing in Sideloader stack */
+.sl-action-stack {
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+    width: 85px;
+}
+
+
+/* --- PRO FIX: VISIBILITY SHIELD --- */
+/* This overrides ANY inline style or JS bug that tries to hide the window */
+.app-window.force-visible {
+    display: flex !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+
+
+/* --- PRO PERFORMANCE MODE --- */
+body.reduce-effects * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+/* Force transitions to be near-instant so logic doesn't break */
+body.reduce-effects .app-window, 
+body.reduce-effects .wallpaper-layer,
+body.reduce-effects .homescreen-group {
+    transition-duration: 0.01s !important;
+    animation-duration: 0.01s !important;
+}
+
+/* --- PRO SECURITY: Invisible reCAPTCHA --- */
+.grecaptcha-badge { visibility: hidden !important; display: none !important; }
+
+
+
+/* --- DEV CARD PIXEL-PERFECT ALIGNMENT FIX --- */
+
+/* 1. Fix the container baseline and kill the double-gap */
+.dev-name {
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    
+    /* KILL the 6px gap so we don't double-space the badge */
+    gap: 0px !important; 
+    
+    /* Lock the bounding box to the exact text height */
+    line-height: 24px !important;
+    height: 24px !important;
+}
+
+/* 2. Target the badge safely using its specific wrapper ID */
+#store-dev-badge .verified-badge {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    
+    /* This is the ONLY spacing that should exist */
+    margin: 0 0 0 6px !important; 
+    padding: 0 !important;
+    
+    /* Kill the old optical hack */
+    top: 0 !important;
+    
+    /* Lock the Pro size */
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* 3. Scale the inner SVGs strictly */
+#store-dev-badge .verified-badge.verified svg {
+    width: 10px !important;
+    height: 10px !important;
+    display: block !important;
+}
+
+/* 1. Size the wrapper for the hollow blue tick */
+#store-dev-badge .verified-badge.member {
+    width: 24px !important;
+    height: 24px !important;
+    margin: 0 0 0 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 2. Scale the SVG exactly to 24px to match App Store Web */
+#store-dev-badge .verified-badge.member svg {
+    width: 24px !important;
+    height: 24px !important;
+    display: block !important;
+}
+
 
 
     </style>
@@ -1310,7 +1534,7 @@ body.dark-mode #store-dev-header {
                             </div>
                             <div class="ios-row">
                                 <span>Bluetooth</span>
-                                <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">On <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
+                                <span style="color:#8E8E93; display:flex; align-items:center; gap:5px;">Off <svg width="14" height="14" fill="#C7C7CC" viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span>
                             </div>
                         </div>
 
@@ -1330,6 +1554,14 @@ body.dark-mode #store-dev-header {
 
 <div class="section-header">Accessibility</div>
 <div class="ios-list">
+	
+	<div class="ios-row">
+        <span>Reduce Effects</span>
+        <input type="checkbox" class="ios-switch" id="setting-reduce-effects" onchange="iOS.toggleReduceEffects(this)">
+    </div>
+	
+	
+	
     <div class="ios-row">
         <span>Assistive Touch</span>
         <input type="checkbox" class="ios-switch" id="setting-assistive" onchange="iOS.toggleAssistiveTouch(this)">
@@ -1340,6 +1572,22 @@ body.dark-mode #store-dev-header {
         <input type="checkbox" class="ios-switch" id="setting-assistive-hide" onchange="iOS.toggleAssistiveAutoHide(this)">
     </div>
 </div>
+
+
+
+<div class="section-header">Display Mode</div>
+<div class="ios-list">
+    <div class="ios-row">
+        <span>Immersive Fullscreen</span>
+        <input type="checkbox" class="ios-switch" id="setting-fullscreen" onchange="iOS.toggleFullscreen(this)">
+    </div>
+    <div class="ios-row" id="row-fullscreen-always" style="display:none;">
+        <span>Always Fullscreen</span>
+        <input type="checkbox" class="ios-switch" id="setting-fullscreen-always" onchange="iOS.toggleAlwaysFullscreen(this)">
+    </div>
+</div>
+
+
 
 <div class="section-header">Developer</div>
 <div class="ios-list">
@@ -1365,7 +1613,7 @@ body.dark-mode #store-dev-header {
 </div>
                         
                         <div class="ios-list" style="background:transparent;">
-                            <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date 🚀')">Check for Updates</button>
+                            <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date.')">Check for Updates</button>
                             <div style="height:10px;"></div>
                             <button class="ios-btn secondary">Reset Network Settings</button>
                         </div>
@@ -1404,8 +1652,11 @@ body.dark-mode #store-dev-header {
                 <div class="scroll-inner-padding">
                     <h1 class="app-header-large">Search</h1>
                     <div class="ios-search-bar">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                        <input type="text" id="store-search-input" placeholder="Games, Apps, Stories" style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;">
+                        <svg onclick="document.getElementById('store-search-input').value=''; appStore.clearSearch(); appStore.fetchApps();" 
+     style="cursor:pointer;" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+</svg>
+                        <input type="text" id="store-search-input" placeholder="Games, Apps, Tools" style="background:transparent; border:none; outline:none; font-size:17px; width:100%; color:inherit;">
                     </div>
                     
                     
@@ -1669,11 +1920,21 @@ body.dark-mode #store-dev-header {
         </div>
     </div>
 
+
+
+<script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check-compat.js"></script>
+
+
+
     <script>
     	
- console.log = function() {};
+console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
+    
+    
+    
+    
     
         /* --- FIREBASE CONFIGURATION BLOCK --- */
         
@@ -1709,24 +1970,37 @@ body.dark-mode #store-dev-header {
             }
 
             async init() {
-                await this.initFirebase();
-                this.initSearch();
-                await Promise.all([
-        this.fetchVerifiedUsers(),
-        this.fetchTrustedApps() // <--- Add this
-    ]);
-    
-    this.fetchApps();
+        await this.initFirebase();
+        this.initSearch();
+        
+        await Promise.all([
+            this.fetchVerifiedUsers(),
+            this.fetchTrustedApps() 
+        ]);
+        this.fetchApps();
 
-                // FIX: Auto-Refresh Store UI when Online
-                window.addEventListener('online', () => {
-                    if (this.isNetworkStrict()) {
-                        console.log("🌐 Network Restored. Refreshing Store...");
-                        this.flushPendingDecrements(); // Sync Queue
-                        this.fetchApps(); // <--- THIS UPDATES THE UI AUTOMATICALLY
-                    }
-                });
+        // 1. Auto-Refresh on Reconnect (PRO FIX)
+        window.addEventListener('online', () => {
+            if (this.isNetworkStrict()) {
+                console.log("🌐 Network Restored. Refreshing Security & Store...");
+                this.flushPendingDecrements(); 
+                this.fetchVerifiedUsers(); // Re-fetch Badges
+                this.fetchTrustedApps();   // Re-fetch Shields
+                this.fetchApps(); 
             }
+        });
+
+        // 2. Background Heartbeat (Silent Sync every 60s)
+        setInterval(() => {
+            if (this.isNetworkStrict()) {
+                this.fetchVerifiedUsers();
+                this.fetchTrustedApps();
+            }
+        }, 60000);
+    }
+    
+    
+    
 
             async initFirebase() {
                 if (firebase.apps.length === 0) {
@@ -1734,6 +2008,18 @@ body.dark-mode #store-dev-header {
                 }
                 const auth = firebase.auth();
                 this.db = firebase.firestore();
+
+
+
+// --- COMPAT ARCHITECT INIT ---
+const appCheck = firebase.appCheck();
+appCheck.activate(
+    new firebase.appCheck.ReCaptchaV3Provider('6LcRZIgsAAAAAEpv4iasyCtiuPDQLjQytC1Vzoav'),
+    true // isTokenAutoRefreshEnabled
+);
+
+
+
 
                 try {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -2484,12 +2770,13 @@ renderBio(text) {
             avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
         }
 
-        // 4. Render Badges
+        
+        // 4. Render Badges (Cleaned: No inline styles overriding CSS)
         const badgeType = this.userBadges.get(authorId);
         if (badgeType === 'member') {
-            badgeEl.innerHTML = `<span class="verified-badge member" style="width:20px; height:20px;"><svg width="20" height="20" viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
-        } else if (badgeType === 'verified') {
-            badgeEl.innerHTML = `<span class="verified-badge verified" style="width:20px; height:20px;"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+    badgeEl.innerHTML = `<span class="verified-badge member"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+} else if (badgeType === 'verified') {
+            badgeEl.innerHTML = `<span class="verified-badge verified verified-badge-large"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
         } else {
             badgeEl.innerHTML = '';
         }
@@ -2501,6 +2788,37 @@ renderBio(text) {
         // STOP! Do not add any DB fetch code below this line.
         // It will overwrite the bio with raw text.
     }
+
+
+
+
+
+
+formatAppText(text) {
+    if (!text) return "";
+    text = String(text); // Safety check
+
+    // 1. Sanitize HTML
+    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+
+    // 2. Apply Bold & Italic
+    safe = safe
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>');
+
+    // 3. Standard Links
+    safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
+        const label = txt || url;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">${label}</a>`;
+    });
+
+    // 4. Raw Links
+    safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+        `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
+
+    // 5. THE FIX: Replace newlines with a space instead of <br> for list views
+    return safe.replace(/\n/g, ' '); 
+}
 
 
 
@@ -2629,29 +2947,44 @@ const reportBtn = this.isNetworkStrict() ?
         <span>Report</span>
     </button>` : '';
                     
-                    let actionHTML = '';
-                    if (isUpdateAvailable) {
-                        actionHTML = `
-                            <div class="store-actions">
-                                <button class="store-get-btn" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
-                                    <span>UPDATE</span>
-                                    <div class="spinner"></div>
-                                </button>
-                                <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
-                                    <span>UNINSTALL</span>
-                                    <div class="spinner"></div>
-                                </button>
-                                ${reportBtn}
-                            </div>`;
-                    } else {
-                        actionHTML = `
-                        <div class="store-actions">
-                            <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
-                                <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
-                                <div class="spinner"></div>
-                            </button>
-${reportBtn} </div>`;
-                    }
+                    // --- INSIDE AppStore.renderStore() ---
+// Replace the existing actionHTML logic with this:
+
+let actionHTML = '';
+
+// 1. UPDATE AVAILABLE STATE
+if (isUpdateAvailable) {
+    actionHTML = `
+        <div class="store-actions">
+            <button class="store-get-btn update-mode" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
+                <span>UPDATE</span>
+                <div class="spinner"></div>
+            </button>
+            <button class="store-get-btn" onclick="appStore.directOpen('${app.id}')">
+                <span>OPEN</span>
+            </button>
+             <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+                <span>UNINSTALL</span>
+            </button>
+        </div>`;
+} 
+// 2. STANDARD STATE
+else {
+    // FIX: "OPEN" button is now standard Grey/Blue (No more Green #34C759)
+    const openBtn = isInstalled 
+        ? `<button class="store-get-btn" onclick="appStore.directOpen('${app.id}')"><span>OPEN</span></button>` 
+        : '';
+        
+    actionHTML = `
+    <div class="store-actions">
+        ${openBtn}
+        <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
+            <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
+            <div class="spinner"></div>
+        </button>
+        ${reportBtn} 
+    </div>`;
+}
 
                     // Escape Author Name for JS safety
                     const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
@@ -2662,9 +2995,12 @@ ${reportBtn} </div>`;
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
-                            <div class="store-sub">${authorHTML}${badgeHTML} • ${app.description}</div>
-                        </div>
+    <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
+    <div class="store-author">${authorHTML}${badgeHTML}</div>
+    <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">
+        ${this.formatAppText(app.description)}
+    </div>
+</div>
                         ${actionHTML}
                     `;
                     listEl.appendChild(div);
@@ -2811,7 +3147,106 @@ async removeAppById(appId) {
             
  
             
+    // --- INSIDE AppStore Class ---
+
+
+
+// --- REPLACE AppStore.directOpen() [ULTIMATE POLISH] ---
+directOpen(appId) {
+    // 1. MUTEX LOCK
+    window.iOS.state = 'OPENING';
+    
+    // 2. INTELLIGENT TARGET RESOLUTION
+    // Determine which DOM element is the target based on the App ID
+    let targetId = 'main-window';
+    if (appId === 'AppStore') targetId = 'appstore-window';
+    else if (appId === 'Sideloader') targetId = 'sideloader-window';
+    else if (appId === 'Music') targetId = 'music-window';
+    
+    const targetWindow = document.getElementById(targetId);
+    
+    // 3. DYNAMIC "RECEDE" LIST
+    // Find ALL windows that are currently visible (display != none) BUT are not the target.
+    // This guarantees we catch EVERYTHING (Store, Sideloader, Main, Music, etc.)
+    const allWindows = Array.from(document.querySelectorAll('.app-window'));
+    const windowsToRecede = allWindows.filter(win => {
+        const style = window.getComputedStyle(win);
+        return style.display !== 'none' && win !== targetWindow;
+    });
+
+    // 4. NAVIGATION SYNC (Background)
+    const sourceApps = window.iOS.allApps;
+    const iconsPerPage = (Math.floor((window.innerHeight - 280) / 120)) * 3;
+    const appIndex = sourceApps.findIndex(el => el.getAttribute('data-app-id') === appId);
+    if (appIndex !== -1) {
+        window.iOS.currentPage = Math.floor(appIndex / (iconsPerPage || 1));
+        window.iOS.updatePageScroll();
+    }
+
+    // 5. PREPARE CONTENT
+    window.iOS.routeContent(appId); 
+
+    // 6. NUCLEAR SANITIZATION (Target)
+    targetWindow.removeAttribute('style'); 
+    targetWindow.classList.remove('recede-morph', 'vacuum-active', 'slide-right-active');
+    
+    // >>> PRO POLISH: Z-INDEX BOOST <<<
+    // Ensure the entering window slides OVER the receding one.
+    // We set a high Z-Index temporarily.
+    targetWindow.style.zIndex = '9999';
+
+    // 7. STATUS BAR LOGIC
+    if (!window.iOS.isDarkMode && appId !== 'Music') {
+        window.iOS.statusBar.classList.add('dark-text');
+        document.getElementById('gesture-bar').classList.add('dark-bar');
+    } else {
+        window.iOS.statusBar.classList.remove('dark-text');
+        document.getElementById('gesture-bar').classList.remove('dark-bar');
+    }
+
+    // 8. ANIMATION SETUP (Frame 0)
+    targetWindow.style.transition = 'none';
+    targetWindow.classList.add('slide-right-init');
+    targetWindow.style.display = 'flex'; 
+    void targetWindow.offsetWidth; // Force Paint
+
+    // 9. ANIMATION EXECUTION
+    requestAnimationFrame(() => {
+        targetWindow.style.transition = ''; 
+        
+        requestAnimationFrame(() => {
+            // >>> UNIVERSAL RECEDE ANIMATION <<<
+            // Force every other visible window to shrink and fade back
+            windowsToRecede.forEach(win => {
+                win.classList.add('recede-morph');
+            });
+
+            // Slide in Target
+            targetWindow.classList.add('slide-right-active');
             
+            // 10. ENGINE SYNC
+            window.iOS.activeWindow = targetWindow;
+            window.iOS.state = 'ACTIVE';
+            window.iOS.activeWindow.setAttribute('data-app', appId);
+            window.iOS.activeAppIcon = window.iOS.getVisibleIconElement(appId);
+        });
+    });
+
+    // 11. CLEANUP (750ms later)
+    setTimeout(() => {
+        // Hide all the receded windows
+        windowsToRecede.forEach(win => {
+            win.style.display = 'none';
+            win.classList.remove('recede-morph');
+        });
+        
+        // Clean up the target window state
+        targetWindow.classList.remove('slide-right-init', 'slide-right-active');
+        
+        // Remove the Z-Index boost so standard layering returns
+        targetWindow.style.zIndex = ''; 
+    }, 750);
+}
             
             
             
@@ -3039,6 +3474,10 @@ async removeAppById(appId) {
             `Delete "${app.name}"?`,
             "Deleting this app will also delete its data.",
             () => {
+            	
+           btn.parentElement.querySelectorAll('button').forEach(b => { if(b !== btn) b.style.display = 'none'; });
+            
+            
                 // LOCK immediately on confirm
                 btn.classList.add('loading');
                 btn.disabled = true;
@@ -3086,6 +3525,22 @@ async performInstall(app, btn, isUpdate = false, forceBackfill = false) {
             btn.classList.add('installed');
             btn.querySelector('span').innerText = 'UNINSTALL';
             btn.disabled = false;
+            
+            
+            
+            // >>> PRO FIX: INSTANT OPEN BUTTON INJECTION <<<
+            // This ensures the button appears immediately without a page refresh
+            if (!btn.parentElement.querySelector('button[onclick*="directOpen"]')) {
+                const openBtn = document.createElement('button');
+                openBtn.className = 'store-get-btn';
+                openBtn.style.cssText = 'margin-bottom:4px;';
+                openBtn.onclick = () => this.directOpen(app.id);
+                openBtn.innerHTML = '<span>OPEN</span>';
+                btn.parentElement.insertBefore(openBtn, btn);
+            }
+            
+            
+            
         }
 
         // --- STEP 3: ANALYTICS CORE ---
@@ -3940,17 +4395,25 @@ async generatePackage(name, icon, type, payload, size, author) {
         if (app.isPacked) badge = ' <span style="font-size:10px; background:#E5E5EA; padding:2px 4px; border-radius:4px; color:#000;">IAP</span>';
         else if (app.type === 'native') badge = ' <span style="font-size:10px; background:#34C759; color:white; padding:2px 4px; border-radius:4px; display: none;">NATIVE</span>';
 
-        // Conditional Edit Button
-        // If isPacked (IAP), show ONLY Delete. If normal, show Edit + Delete.
-        let actionsHTML = '';
-        if (app.isPacked) {
-            actionsHTML = `<button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Uninstall</button>`;
-        } else {
-            actionsHTML = `
-                <button style="background:#E9E9EA; color:#007AFF; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.showForm('${app.id}')">Edit</button>
-                <button style="background:#E9E9EA; color:#FF3B30; border:none; padding:6px 14px; border-radius:16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="sideloader.deleteApp('${app.id}')">Delete</button>
-            `;
-        }
+        // --- INSIDE Sideloader.renderList() ---
+// Replace the actionsHTML logic with this:
+
+let actionsHTML = '';
+
+if (app.isPacked) {
+    actionsHTML = `
+        <div class="sl-action-stack">
+            <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+            <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+        </div>`;
+} else {
+    actionsHTML = `
+        <div class="sl-action-stack">
+            <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+            <button class="sl-btn" onclick="sideloader.showForm('${app.id}')">EDIT</button>
+            <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+        </div>`;
+}
 
         row.innerHTML = `
         <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
@@ -4539,6 +5002,10 @@ this.initSettings();
 
 this.handleDeepLinks();
 
+
+this.initFullscreenListener();
+
+
             }
             
             
@@ -4684,6 +5151,21 @@ initNetworkListeners() {
                 if (save) localStorage.setItem('ios_airplane_mode', isActive);
                 
                 // Add this inside initSettings() method
+                
+                
+                
+                
+      // Inside initSettings() 
+const savedReduce = localStorage.getItem('ios_reduce_effects') === 'true';
+this.toggleReduceEffects({ checked: savedReduce }); // Apply class
+const reduceSwitch = document.getElementById('setting-reduce-effects');
+if (reduceSwitch) reduceSwitch.checked = savedReduce; // Sync UI,,          
+                
+                
+                
+                
+                
+                
 
 // 4. Load Island Preference (Default: true)
 const savedIsland = localStorage.getItem('ios_island_enabled') !== 'false';
@@ -4736,67 +5218,89 @@ toggleIslandEvents(el) {
 
 
 handleDeepLinks() {
-    // 1. Get the Query
     const params = new URLSearchParams(window.location.search);
-    const searchQuery = params.get('s'); // Get ?s=Query
+    const searchQuery = params.get('s');
+    const appId = params.get('app');
 
+    // 1. Standard App Store Search (?s=...)
     if (searchQuery) {
-        console.log("🔗 Deep Link Detected:", searchQuery);
-
-        // 2. Wait for AppStore to be initialized
+        console.log("🔗 Store Search Link Detected:", searchQuery);
         const waitForStore = setInterval(() => {
             if (typeof appStore !== 'undefined') {
                 clearInterval(waitForStore);
-
-                // 3. Set the Search Input Early
                 const input = document.getElementById('store-search-input');
                 if (input) input.value = searchQuery;
 
-                // 4. "No-Flash" Render Override (THE FIX IS HERE)
                 if (appStore.renderStore) {
                     const originalRender = appStore.renderStore.bind(appStore);
-                    
                     appStore.renderStore = function(list) {
                         const searchVal = document.getElementById('store-search-input')?.value.toLowerCase().trim();
-                        
-                        // >>> FIX START: Bypass re-filtering for Dev Queries <<<
-                        // If it's a "dev:" query, filterApps() has already done the complex logic.
-                        // We must pass the list through as-is, otherwise standard filtering will wipe it out.
-                        if (searchVal && searchVal.startsWith('dev:')) {
-                            originalRender(list);
-                            return;
-                        }
-                        // >>> FIX END <<<
-
+                        if (searchVal && searchVal.startsWith('dev:')) { originalRender(list); return; }
                         if (searchVal && list.length > 0) {
-                            // "Normal Search" Logic: Check Name, Author, Desc
                             const filtered = list.filter(app => {
                                 const displayName = (app.storeName || app.name).toLowerCase();
                                 const author = (app.author || '').toLowerCase();
                                 const desc = (app.description || '').toLowerCase();
-                                
-                                return displayName.includes(searchVal) || 
-                                       author.includes(searchVal) || 
-                                       desc.includes(searchVal);
+                                return displayName.includes(searchVal) || author.includes(searchVal) || desc.includes(searchVal);
                             });
-                            // Render only the filtered results
                             originalRender(filtered);
-                        } else {
-                            // Render everything if search is empty
-                            originalRender(list);
-                        }
+                        } else { originalRender(list); }
                     };
                 }
 
-                // 5. Open the App Store UI
                 setTimeout(() => {
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
-                    if (appStoreIcon) {
-                        this.openApp(appStoreIcon, 'AppStore', 'light');
-                    }
+                    if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
                 }, 1200); 
             }
         }, 100);
+    }
+
+    // 2. Universal App Deep Linking (?app=...)
+    if (appId) {
+        console.log("🔗 Direct App Link Detected:", appId);
+
+        // A. Security Guard
+        if (this.isSafeMode) {
+            console.warn("🛡️ Safe Mode: Blocked Deep Link auto-launch.");
+            return;
+        }
+
+        // B. Extract Forwarding Params (Everything except 'app' and 'safe')
+        const forwardParams = new URLSearchParams();
+        for (const [key, value] of params.entries()) {
+            if (key !== 'app' && key !== 'safe') forwardParams.append(key, value);
+        }
+        
+        // Stage params globally so the router can inject them
+        window.__deepLinkForwardParams = forwardParams.toString();
+
+        setTimeout(() => {
+            // C. Look for the App Locally
+            const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+            const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+            const targetApp = [...installed, ...sideloaded].find(a => a.id === appId);
+
+            if (targetApp) {
+                // FOUND IT: Open the App
+                let appIcon = this.getVisibleIconElement(appId);
+                this.openApp(appIcon, appId, 'light');
+            } else {
+                // NOT FOUND: Route to App Store and lock search to this exact ID
+                const waitForStore = setInterval(() => {
+                    if (typeof appStore !== 'undefined') {
+                        clearInterval(waitForStore);
+                        const input = document.getElementById('store-search-input');
+                        if (input) input.value = appId;
+                        
+                        if (appStore.filterApps) appStore.filterApps(appId);
+                        
+                        const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
+                        if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
+                    }
+                }, 100);
+            }
+        }, 1000); // Wait for system to boot
     }
 }
 
@@ -4806,53 +5310,48 @@ handleDeepLinks() {
 
 
 initMessageListeners() {
-                window.addEventListener('message', (event) => {
-                    // 1. SECURITY: IDENTIFY THE SENDER
-                    let senderAppId = null;
-                    const iframes = document.querySelectorAll('iframe');
-                    for (const iframe of iframes) {
-                        if (iframe.contentWindow === event.source) {
-                            senderAppId = iframe.getAttribute('data-app-id');
-                            break;
-                        }
-                    }
-
-                    // 2. SECURITY: CHECK PRIVILEGES
-                    // If we can't identify the sender, ignore it (unless it's system internal)
-                    if (!senderAppId) return;
-
-                    // Re-calculate the Safe List
-                    const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
-                    const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
-                    const isTrusted = SAFE_LIST.includes(senderAppId);
-
-                    // 3. HANDLE COMMANDS
-                    
-                    // A. Dynamic Island (Trusted Only)
-                    if (event.data && event.data.type === 'IOS_ISLAND_TRIGGER') {
-                        if (!isTrusted) {
-                            console.warn(`⛔ BLOCKED: Restricted app '${senderAppId}' tried to use Dynamic Island.`);
-                            return; 
-                        }
-                        const { icon, title, text, color, duration, mode } = event.data;
-                        this.triggerSystemNotification(icon, title, text, color, duration, mode);
-                    }
-
-                    if (event.data && event.data.type === 'IOS_ISLAND_DISMISS') {
-                        if (!isTrusted) return; 
-                        this.dismissSystemNotification();
-                    }
-
-                    // B. Audio Manager (All Apps Allowed)
-                    if (event.data.type === 'IOS_AUDIO_REQUEST') {
-                        this.audioManager.requestFocus(senderAppId);
-                    }
-
-                    if (event.data.type === 'IOS_AUDIO_RELEASE') {
-                        this.audioManager.releaseFocus(senderAppId);
-                    }
-                });
+    window.addEventListener('message', (event) => {
+        // 1. IDENTIFY SENDER
+        let senderAppId = null;
+        const iframes = document.querySelectorAll('iframe');
+        for (const iframe of iframes) {
+            if (iframe.contentWindow === event.source) {
+                senderAppId = iframe.getAttribute('data-app-id');
+                break;
             }
+        }
+        if (!senderAppId) return;
+
+        // 2. DEFINE PERMISSIONS
+        const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+        const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
+        const isNativeSideload = window.sideloader && window.sideloader.apps.some(a => a.id === senderAppId && a.type === 'native');
+        
+        // 3. ZERO TRUST POLICY (The "Jail" Logic)
+        // If Safe Mode is ON, 'canTrigger' is ALWAYS FALSE. No exceptions.
+        const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isNativeSideload);
+
+        // 4. EXECUTE
+        if (event.data.type === 'IOS_ISLAND_TRIGGER') {
+            if (canTrigger) {
+                const { icon, title, text, color, duration, mode } = event.data;
+                this.triggerSystemNotification(icon, title, text, color, duration, mode);
+            } else {
+                console.warn(`🔒 Safe Mode: Blocked Island Trigger from '${senderAppId}'`);
+            }
+        }
+
+        // Allow dismissals even in Safe Mode to clear stuck UI
+        if (event.data.type === 'IOS_ISLAND_DISMISS') {
+            if (SAFE_LIST.includes(senderAppId) || isNativeSideload) this.dismissSystemNotification();
+        }
+
+        if (event.data.type === 'IOS_AUDIO_REQUEST') this.audioManager.requestFocus(senderAppId);
+        if (event.data.type === 'IOS_AUDIO_RELEASE') this.audioManager.releaseFocus(senderAppId);
+    });
+}
+
+
 
             // 2. TRIGGER: Handles Animation & Live Updates
             triggerSystemNotification(iconSVG, title, text, iconColor = '#fff', duration = 3000, mode = 'compact') {
@@ -5065,6 +5564,111 @@ initMessageListeners() {
 
 
 
+
+
+
+
+
+
+
+
+
+// Add this inside the IOSEngine class
+toggleReduceEffects(toggle) {
+    const isEnabled = toggle.checked;
+    localStorage.setItem('ios_reduce_effects', isEnabled);
+    
+    if (isEnabled) {
+        document.body.classList.add('reduce-effects');
+    } else {
+        document.body.classList.remove('reduce-effects');
+    }
+}
+
+
+
+
+
+
+
+toggleFullscreen(el) {
+    const doc = document.documentElement;
+    const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+
+    // 1. Feature Detection Guard
+    const canFullscreen = doc.requestFullscreen || doc.webkitRequestFullscreen;
+    if (!canFullscreen) {
+        if (el) el.checked = false;
+        this.showAlert("Not Supported", "Your browser does not support the Fullscreen API.");
+        return;
+    }
+
+    // 2. Create the "Pro" Transition Shield
+    const shield = document.createElement('div');
+    shield.style.cssText = "position:fixed; inset:0; background:black; z-index:99999; transition:opacity 0.3s; pointer-events:none;";
+    document.body.appendChild(shield);
+
+    // 3. Execution with Robust Error Handling
+    if (el?.checked && !isFS) {
+        const request = doc.requestFullscreen ? doc.requestFullscreen() : doc.webkitRequestFullscreen();
+        
+        if (request) {
+            request.then(() => {
+                // Fade out shield once context switch is done
+                setTimeout(() => {
+                    shield.style.opacity = '0';
+                    setTimeout(() => shield.remove(), 300);
+                }, 100);
+            }).catch(err => {
+                shield.remove();
+                if (el) el.checked = false;
+                this.showAlert("Permission Denied", "Browser blocked immersive mode. Please try again.");
+            });
+        }
+    } 
+    else {
+        try {
+            // Only exit if the document is actually active/fullscreen
+            if (isFS) {
+                const exit = document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen();
+                if (exit) exit.catch(() => {});
+            }
+        } catch (err) {
+            console.warn("Fullscreen Exit Failed:", err.message);
+        } finally {
+            shield.remove();
+        }
+    }
+}
+
+
+
+
+
+initFullscreenListener() {
+    const syncToggle = () => {
+        const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        const toggle = document.getElementById('setting-fullscreen');
+        if (toggle) toggle.checked = isFS;
+    };
+
+    // Standard and Webkit (Safari/iOS) event listeners
+    document.addEventListener('fullscreenchange', syncToggle);
+    document.addEventListener('webkitfullscreenchange', syncToggle);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* --- INSERT THIS INSIDE IOSEngine Class --- */
 
     getCustomIcon(appNameOrId, defaultUrl) {
@@ -5194,53 +5798,81 @@ initMessageListeners() {
             }
 
             initPagination() {
-                this.pagesWrapper.innerHTML = '';
-                this.pageIndicators.innerHTML = '';
-                
-                const screenHeight = window.innerHeight;
-                const topPadding = 130; 
-                const dockZoneHeight = 150; 
-                const availableHeight = screenHeight - topPadding - dockZoneHeight;
-                const itemFullHeight = 90 + 30; // 90px height + 30px gap
-                
-                let maxRows = Math.floor(availableHeight / itemFullHeight);
-                if (maxRows < 1) maxRows = 1;
-                
-                const cols = 3; 
-                const iconsPerPage = maxRows * cols;
-                
-                const pages = [];
-                for (let i = 0; i < this.allApps.length; i += iconsPerPage) {
-                    pages.push(this.allApps.slice(i, i + iconsPerPage));
-                }
-                this.totalPages = pages.length;
-                
-                pages.forEach((pageApps, index) => {
-                    const pageEl = document.createElement('div');
-                    pageEl.className = 'homescreen-page';
-                    pageApps.forEach(app => {
-                        const clone = app.cloneNode(true);
-                        // Re-attach listener specifically if needed, but onclick attrib persists
-                        pageEl.appendChild(clone);
-                    });
-                    this.pagesWrapper.appendChild(pageEl);
-                    if (this.totalPages > 1) {
-                        const dot = document.createElement('div');
-                        dot.className = 'dot' + (index === 0 ? ' active' : '');
-        dot.onclick = (e) => { 
-            e.stopPropagation(); 
-            this.currentPage = index; 
-            this.updatePageScroll(); 
-        };
-                        this.pageIndicators.appendChild(dot);
-                    }
-                });
-                
-                // Adjust current page if out of bounds
-                if (this.currentPage >= this.totalPages) this.currentPage = Math.max(0, this.totalPages - 1);
-                
-                this.updatePageScroll();
-            }
+    this.pagesWrapper.innerHTML = '';
+    this.pageIndicators.innerHTML = '';
+
+    const H = window.innerHeight;
+
+    // --- 1. DYNAMIC INDICATOR POSITIONING ---
+    // In landscape, we lower the dots to 115px (closer to dock) to free up room.
+    // In portrait, we keep them at 155px (standard iOS look).
+    // We check if Height < 600 to detect Landscape/SE/Old Phones.
+    const isCompact = H < 600;
+    const indicatorBottom = isCompact ? 115 : 155; 
+    
+    // APPLY DYNAMICALLY TO CSS
+    this.pageIndicators.style.bottom = `${indicatorBottom}px`;
+
+    // --- 2. MATCH CSS PADDING ---
+    let topPad = 130;
+    let gap = 30; 
+
+    if (H <= 660) {
+        topPad = 100;
+        gap = 30;
+    } else if (H <= 800) {
+        topPad = 130;
+        gap = 40;
+    }
+
+    // --- 3. CALCULATE SAFE ZONE ---
+    // Now we use the DYNAMIC indicator position for our math.
+    // We add a 20px buffer so icons never touch the dots.
+    const hardBottomLimit = H - indicatorBottom - 20; 
+    const usableHeight = hardBottomLimit - topPad;
+
+    // --- 4. CALCULATE ROWS ---
+    // (Row + Gap) logic to prevent cutting off text
+    let maxRows = Math.floor((usableHeight + gap) / (90 + gap));
+
+    // Force strict limits (1 to 5 rows)
+    maxRows = Math.max(1, Math.min(maxRows, 5));
+
+    const cols = 3;
+    const iconsPerPage = maxRows * cols;
+
+    // --- 5. RENDER ---
+    const pages = [];
+    for (let i = 0; i < this.allApps.length; i += iconsPerPage) {
+        pages.push(this.allApps.slice(i, i + iconsPerPage));
+    }
+    this.totalPages = pages.length;
+
+    pages.forEach((pageApps, index) => {
+        const pageEl = document.createElement('div');
+        pageEl.className = 'homescreen-page';
+        pageEl.style.gridTemplateRows = `repeat(${maxRows}, min-content)`;
+        
+        pageApps.forEach(app => {
+            pageEl.appendChild(app.cloneNode(true));
+        });
+        this.pagesWrapper.appendChild(pageEl);
+
+        if (this.totalPages > 1) {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (index === 0 ? ' active' : '');
+            dot.onclick = (e) => { 
+                e.stopPropagation(); 
+                this.currentPage = index; 
+                this.updatePageScroll(); 
+            };
+            this.pageIndicators.appendChild(dot);
+        }
+    });
+
+    if (this.currentPage >= this.totalPages) this.currentPage = Math.max(0, this.totalPages - 1);
+    this.updatePageScroll();
+}
 
             initPageSwipes() {
                 let startX = 0;
@@ -5697,6 +6329,12 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 // --- 2. RESOLVE URL (Native vs Web) ---
                 let finalUrl = customApp ? customApp.embedUrl : '';
                 
+                
+                
+                
+                
+                
+                
                 if (customApp && customApp.type === 'native') {
                     const blobUrl = sideloader.getNativeUrl(customApp.id);
                     if (blobUrl) {
@@ -5708,6 +6346,23 @@ localStorage.setItem('ios_last_charging_state', isCharging);
                 }
 
                 titleText.innerText = displayName;
+
+
+
+
+
+// PRO FEATURE: Inject Deep Link Parameters ONLY into standard web apps
+if (window.__deepLinkForwardParams) {
+    if (finalUrl.startsWith('http')) {
+        const separator = finalUrl.includes('?') ? '&' : '?';
+        finalUrl += separator + window.__deepLinkForwardParams;
+    }
+    // We clear it so it doesn't accidentally inject into the next app you open
+    window.__deepLinkForwardParams = null; 
+}
+
+
+
 
 
 // --- PRIVILEGE CHECK (For InjectMod) ---
@@ -6645,32 +7300,67 @@ if (this.activeWindow === this.musicWindow) {
 
             /* --- UPDATED FINISH CLOSING (Background Support) --- */
             finishClosing() {
-                if(this.state !== 'CLOSING') return;
-                
-                this.activeWindow.classList.remove('vacuum-active'); 
-                
-                // BACKGROUND LOGIC:
-                // We do NOT remove the iframe from DOM here.
-                // We just hide the main container window.
-                // Because we use routeContent() in openApp, it will automatically hide
-                // non-active iframes when a different app opens, keeping only the 
-                // relevant ones in the DOM based on manageBackgroundApps logic.
-                
-                this.activeWindow.style.display = 'none';
-                this.activeWindow.style.transform = 'none';
-                this.activeWindow.style.opacity = '1';
-                this.activeWindow.style.filter = 'blur(0px)';
-                
-                if (this.activeAppIcon) {
-                    this.activeAppIcon.style.transition = '';
-                    this.activeAppIcon.style.transform = '';
-                    this.activeAppIcon.style.opacity = '';
-                }
-                
-                this.activeAppIcon = null;
-                this.state = 'IDLE';
-                this.activeWindow = null;
-            }
+    if(this.state !== 'CLOSING') return;
+    
+    this.activeWindow.classList.remove('vacuum-active'); 
+    
+    // BACKGROUND LOGIC:
+    // We do NOT remove the iframe from DOM here.
+    // We just hide the main container window.
+    // Because we use routeContent() in openApp, it will automatically hide
+    // non-active iframes when a different app opens, keeping only the 
+    // relevant ones in the DOM based on manageBackgroundApps logic.
+    
+    this.activeWindow.style.display = 'none';
+    this.activeWindow.style.transform = 'none';
+    this.activeWindow.style.opacity = '1';
+    this.activeWindow.style.filter = 'blur(0px)';
+
+    // PRO FIX: Reset border radius to 0px to ensure the next launch 
+    // doesn't show "ghost" rounded corners.
+    this.activeWindow.style.borderRadius = '0px';
+    this.mainWindow.style.borderRadius = '0px';
+    this.storeWindow.style.borderRadius = '0px';
+    
+    if (this.activeAppIcon) {
+        // Ensure the source icon is visible again on the home screen.
+        this.activeAppIcon.classList.remove('hidden-source');
+        this.activeAppIcon.style.transition = '';
+        this.activeAppIcon.style.transform = '';
+        this.activeAppIcon.style.opacity = '';
+    }
+    
+    this.activeAppIcon = null;
+    
+    // NEW: Global Re-initialization
+    // Global Re-initialization for Slide/Morph features
+    this.mainWindow.classList.remove('recede-morph', 'slide-right-init', 'slide-right-active');
+    this.storeWindow.classList.remove('recede-morph', 'slide-right-init', 'slide-right-active');
+    this.mainWindow.style.transform = '';
+    this.storeWindow.style.transform = '';
+    this.mainWindow.style.display = 'none';
+    
+    // Reset indicators and background states
+    this.gestureBar.classList.add('on-home');
+    
+    this.state = 'IDLE';
+    this.activeWindow = null;
+    
+    
+  // this.initPagination(); 
+
+    // 2. Hard Clamp: Ensure we never land on Page 5 if only 3 pages exist
+    if (this.currentPage >= this.totalPages) {
+        this.currentPage = Math.max(0, this.totalPages - 1);
+    }
+    
+    // 3. Visual Snap: Force the slider to jump to the valid page immediately
+    this.updatePageScroll();
+    
+    
+    
+    
+}
 
             handleIslandClick() {
                 // --- FIX: BLOCK INTERACTION FOR ALERTS ---
@@ -7321,7 +8011,94 @@ window.sideloader = new Sideloader();
 })();
 
 
+    
+
+
+
+
+
+
+
+(function fixFullscreenSystem() {
+    // 1. Silent Toggle Logic (NO ALERT)
+    window.iOS.toggleAlwaysFullscreen = function(el) {
+        localStorage.setItem('ios_fullscreen_always', el.checked);
+        // Instant check: if turning ON, force fullscreen immediately to be safe
+        if (el.checked && !document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(()=>{});
+        }
+    };
+
+    // 2. Main Toggle Wrapper (Controls visibility of sub-toggle)
+    const originalToggle = window.iOS.toggleFullscreen.bind(window.iOS);
+    window.iOS.toggleFullscreen = function(el) {
+        originalToggle(el); // Run original logic
         
+        // Show/Hide the "Always" row based on the main switch
+        const subRow = document.getElementById('row-fullscreen-always');
+        if (subRow) subRow.style.display = el.checked ? 'flex' : 'none';
+        
+        // If main toggle is turned OFF, force "Always" to OFF too
+        if (!el.checked) {
+            localStorage.setItem('ios_fullscreen_always', 'false');
+            const subSwitch = document.getElementById('setting-fullscreen-always');
+            if (subSwitch) subSwitch.checked = false;
+        }
+    };
+
+    // 3. THE ENFORCER (The "Touch to Focus" Fix)
+    const reEnterFullscreen = (e) => {
+        // Check if "Always Fullscreen" is enabled in storage
+        const isAlwaysOn = localStorage.getItem('ios_fullscreen_always') === 'true';
+        const isCurrentlyFS = document.fullscreenElement || document.webkitFullscreenElement;
+
+        // If enabled, but we dropped out of fullscreen...
+        if (isAlwaysOn && !isCurrentlyFS) {
+            // STOP if the user is actually clicking the toggle to turn it off
+            if (e.target.closest('#setting-fullscreen-always') || e.target.closest('#setting-fullscreen')) {
+                return;
+            }
+
+            // Otherwise, FORCE entry
+            const doc = document.documentElement;
+            const req = doc.requestFullscreen ? doc.requestFullscreen() : doc.webkitRequestFullscreen();
+            if (req) req.catch(() => {});
+        }
+    };
+
+    // Listen on BODY to catch bubbles. This is the most stable method for re-entry.
+    document.body.addEventListener('click', reEnterFullscreen);
+    document.body.addEventListener('touchstart', reEnterFullscreen);
+
+    // 4. UI Sync on Load/Change
+    const syncUI = () => {
+        const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        const mainSwitch = document.getElementById('setting-fullscreen');
+        const subRow = document.getElementById('row-fullscreen-always');
+        const alwaysSwitch = document.getElementById('setting-fullscreen-always');
+
+        // Sync Main Switch visual state
+        if (mainSwitch) mainSwitch.checked = isFS;
+        
+        // Sync Sub-Row visibility (Show if FS is active OR if main switch is checked)
+        if (subRow) subRow.style.display = (isFS || (mainSwitch && mainSwitch.checked)) ? 'flex' : 'none';
+
+        // Restore "Always" switch state from storage
+        if (alwaysSwitch) alwaysSwitch.checked = localStorage.getItem('ios_fullscreen_always') === 'true';
+    };
+
+    // Run Sync on load and on change
+    document.addEventListener('fullscreenchange', syncUI);
+    document.addEventListener('webkitfullscreenchange', syncUI);
+    
+    // Initial Run (Delayed to ensure DOM is ready)
+    setTimeout(syncUI, 500);
+})();
+
+
+
+
+    
         
     </script>
 </body>
