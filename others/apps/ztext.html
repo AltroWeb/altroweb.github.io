@@ -33,6 +33,7 @@
 
         body {
             background-color: var(--bg); color: var(--text); font-family: var(--font-ui);
+            
             margin: 0; height: 100vh; display: flex; flex-direction: column;
         }
 
@@ -59,6 +60,7 @@
         /* BUTTONS */
         button {
             background: var(--surface); color: var(--text); border: 1px solid var(--border);
+            font-family: var(--font-ui);
             padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 13px;
             display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; flex-shrink: 0;
             position: relative; overflow: hidden;
@@ -128,8 +130,12 @@
         .input-error input { border-color: var(--danger); }
         .input-error .error-msg { display: block; }
 
-        /* DASHBOARD GRID */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; width: 100%; }
+ .top-nav { 
+    display: flex; justify-content: space-between; align-items: center; 
+    margin-bottom: 20px; flex-shrink: 0; width: 100%;
+    overflow-x: auto; white-space: nowrap; gap: 15px;
+}
+.top-nav::-webkit-scrollbar { display: none; }
         
         .dashboard-content { 
             flex-grow: 1; position: relative; overflow-y: auto; 
@@ -365,7 +371,7 @@
         .z-text-link {
             color: #8b949e;              /* Pro Muted Grey */
             text-decoration: none;       /* Clean look initially */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: var(--font-ui);
             font-size: 14px;
             padding: 10px 10px;           /* Perfect touch area */
             margin: 5px 0;               /* Spacing */
@@ -378,6 +384,13 @@
             text-decoration: underline;  /* Adds underline */
             text-underline-offset: 4px;  /* Modern "Pro" gap */
         }
+        
+        
+        
+      
+        
+        
+        
     </style>
 </head>
 <body>
@@ -405,8 +418,10 @@
     <div id="login-screen" class="screen active">
         <div class="auth-card">
             <div style="margin-bottom:15px; color:var(--primary);">
-                <svg class="svg-icon svg-lg" viewBox="0 0 24 24"><path d="M17.5 19c0-1.7-3-3-5.5-3S6.5 17.3 6.5 19"/><path d="M16.5 7.5v-2a4.5 4.5 0 0 0-9 0v2"/><path d="M3.2 13h17.6a2 2 0 0 1 1.8 1.1l.1.3a2 2 0 0 1-1.3 2.6l-1.3.3a9 9 0 0 1-16.2 0l-1.3-.3a2 2 0 0 1-1.3-2.6l.1-.3A2 2 0 0 1 3.2 13z"/></svg>
-            </div>
+    <svg class="svg-icon svg-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 4 20 4 4 20 20 20"></polyline>
+    </svg>
+</div>
             <h2>Z-Text</h2>
             <p>Upload or create your notes on the go, stored safely and encrypted on the cloud.</p>
             
@@ -440,38 +455,55 @@
                     <button onclick="saveServerConfig()">Save</button>
                 </div>
             </div>
-            <br><br>
+            <br>
             <a href="https://altroweb.github.io/ztext-status" class="z-text-link" target="_blank">Check Z-Text Cloud database server status</a>
-            
+            <br>
         </div>
     </div>
 
     <!-- 2. DASHBOARD -->
     <div id="dashboard-screen" class="screen">
-        <div class="top-nav">
-            <h2>My Files</h2>
-            <div style="display:flex; gap:8px;">
-            	
+        <div class="top-nav" style="position: relative;">
+    <div id="nav-default" style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
+        <h2>My Files</h2>
+        <div style="display:flex; gap:8px;">
+            <button class="icon-btn" onclick="toggleSearch()" title="Search">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
             <button id="refreshBtn" class="icon-btn" title="Sync & Refresh">
-    <svg class="sync-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 4v6h-6"></path>
-        <path d="M1 20v-6h6"></path>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-    </svg>
-</button>
-            
-                <button class="icon-btn" onclick="triggerFileUpload()" title="Upload File (.txt, .md)" id="btn-upload">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                </button>
-                <input type="file" id="upload-input" style="display:none" accept=".txt,.md" onchange="handleFileUpload(event)">
-                <button class="icon-btn" onclick="openSettings()" title="Settings">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-                </button>
-                <button class="icon-btn" onclick="confirmLogout()" title="Logout" style="color:var(--danger)">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                <svg class="sync-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+            <button class="icon-btn" onclick="triggerFileUpload()" title="Upload File (.txt, .md)" id="btn-upload">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </button>
+            <input type="file" id="upload-input" style="display:none" accept=".txt,.md" onchange="handleFileUpload(event)">
+            <button class="icon-btn" onclick="openSettings()" title="Settings">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+            </button>
+            <button class="icon-btn" onclick="confirmLogout()" title="Logout" style="color:var(--danger)">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="nav-search-area" style="display:none; width: 100%; align-items: center; gap: 8px;">
+        <div class="input-wrapper" style="flex:1; margin-bottom:0;">
+            <input type="text" id="search-input" placeholder="Search files..." style="padding-right: 40px;" oninput="handleSearch()">
+            <div style="position:absolute; right:4px; top:0; bottom:0; display:flex; align-items:center;">
+                <button class="icon-btn" onclick="clearSearch()" title="Clear">
+                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
         </div>
+        <button class="icon-btn secondary" onclick="toggleSearch()" title="Close Search" style="flex-shrink: 0;">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+    </div>
+</div>
 
         <div class="dashboard-content">
             <div id="file-grid" class="file-grid"></div>
@@ -619,15 +651,15 @@
             <button class="danger" onclick="performDeleteAccount()" style="width:100%">Delete Account</button>
         </div>
     </div>
-    <br><br>
+    <br>
     	
     <a href="https://altroweb.github.io/ztext-status" class="z-text-link" target="_blank">Check Z-Text Cloud database server status</a>
     
-    
+
 </div>
 
     <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/acebase-client@latest/dist/browser.min.js"></script>
+    <script src="assets/ztext/browser.min.js"></script>
     
     <script>
         // --- CONFIG & INIT ---
@@ -834,7 +866,8 @@
                         card.innerHTML = `
                             <div class="file-icon"><svg class="svg-icon svg-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
                             <div class="file-title">${decName}</div>
-                            <div class="file-date">${new Date(f.updated).toLocaleDateString()}</div>
+       
+<div class="file-date">${new Date(f.updated).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                         `;
                         card.onclick = () => openEditor(key, f);
                         grid.appendChild(card);
@@ -1001,14 +1034,15 @@
         }
 
         function deleteCurrentFile() {
-            if(!currentFileId) return goDashboard();
-            confirmDialog("Delete File?", "Confirm deletion", async () => {
-                showConnectionStatus(true);
-                await db.ref(`users/${currentUser.uid}/docs/${currentFileId}`).remove();
-                toast("Deleted", "success");
-                goDashboard(); loadFiles();
-            });
-        }
+    if(!currentFileId) return goDashboard(true); // Bypass if empty file
+    
+    confirmDialog("Delete File?", "Confirm deletion", async () => {
+        showConnectionStatus(true);
+        await db.ref(`users/${currentUser.uid}/docs/${currentFileId}`).remove();
+        toast("Deleted", "success");
+        goDashboard(true); // Pass 'true' to force exit without the second confirmation
+    });
+}
 
         async function performDeleteAccount() {
             const confirmName = val('del-confirm-user');
@@ -1111,22 +1145,22 @@
             showScreen('settings-screen'); 
         }
         
-        function goDashboard() { 
-            // 1. Check if we are currently inside the Editor
-            if (document.getElementById('editor-screen').style.display !== 'none') {
-                confirmDialog("Close File?", "Unsaved changes will be lost.", performExit);
-            } else {
-                // 2. If in Settings/Auth, exit immediately
-                performExit();
-            }
+        function goDashboard(forceExit = false) { 
+    // 1. Check if we are inside the Editor AND not forcing an exit
+    if (!forceExit && document.getElementById('editor-screen').style.display !== 'none') {
+        confirmDialog("Close File?", "Unsaved changes will be lost.", performExit);
+    } else {
+        // 2. Exit immediately
+        performExit();
+    }
 
-            // Helper to execute the actual exit
-            function performExit() {
-                stopAutoSave(); 
-                showScreen('dashboard-screen'); 
-                loadFiles(); 
-            }
-        }
+    // Helper to execute the actual exit
+    function performExit() {
+        stopAutoSave(); 
+        showScreen('dashboard-screen'); 
+        loadFiles(); 
+    }
+}
         
         function saveServerConfig() { 
             const url = val('server-url-input');
@@ -1436,6 +1470,44 @@
                 }
             });
         }
+        
+        
+        
+        
+        // --- PRO SEARCH LOGIC ---
+function toggleSearch() {
+    const defaultNav = document.getElementById('nav-default');
+    const searchArea = document.getElementById('nav-search-area');
+    const input = document.getElementById('search-input');
+    
+    if (searchArea.style.display === 'none') {
+        defaultNav.style.display = 'none';
+        searchArea.style.display = 'flex';
+        input.focus();
+    } else {
+        defaultNav.style.display = 'flex';
+        searchArea.style.display = 'none';
+        clearSearch();
+    }
+}
+
+function clearSearch() {
+    document.getElementById('search-input').value = '';
+    handleSearch(); // Reset the grid
+}
+
+function handleSearch() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('#file-grid .file-card');
+    
+    cards.forEach(card => {
+        const title = card.querySelector('.file-title').innerText.toLowerCase();
+        card.style.display = title.includes(query) ? 'flex' : 'none';
+    });
+}
+        
+        
+        
     </script>
 </body>
 </html>
