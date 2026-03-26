@@ -1,21 +1,9 @@
 # Security Policy
 
-## Supported Versions
-
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+AltroWeb **DOES NOT** guarantee a fully bug-free or unbothered experience. If you have any concerns, please report it here.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+You can report, ask or request here by submitting your query as an issue on this repository. We may not guarantee quick repsonses, and the project creators are solely responsible for their content.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+### © AltroWeb. All rights reserved.
