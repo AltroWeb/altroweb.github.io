@@ -4807,6 +4807,12 @@ this.sideloaderWindow = document.getElementById('sideloader-window'); // <--- AD
                 this.gestureBar = document.getElementById('gesture-bar');
                 this.island = document.getElementById('island');
                 this.islandContent = this.island.querySelector('.island-content');
+                
+                // ADD THIS: Hardcode the baseline state exactly once on boot.
+this.DEFAULT_ISLAND_HTML = this.islandContent.innerHTML; 
+
+                
+                
                 this.pagesWrapper = document.getElementById('pages-wrapper');
                 this.pageIndicators = document.getElementById('page-indicators');
                 
@@ -5391,12 +5397,7 @@ initMessageListeners() {
     islandContent.classList.remove('blur-out');
     // ------------------------------------
 
-    // 2. Capture Original Content (Safe Guard)
 
-                // Only capture if we aren't already transitioning, to avoid saving a blank state
-                if (!island.classList.contains('system-notification') && islandContent.innerHTML.trim() !== "") {
-                     this.tempOriginalHtml = islandContent.innerHTML;
-                }
 
                 // 3. Set Active State
                 island.classList.add('system-notification');
@@ -5438,59 +5439,7 @@ initMessageListeners() {
                 }, 200);
             }
 
-            // 3. DISMISS: Closes and Restores Music
-            dismissSystemNotification() {
-    const island = document.getElementById('island');
-    const statusBar = document.getElementById('status-bar');
-    
-    // Safety Check
-    if (!island || !statusBar) return;
-    
-    const islandContent = island.querySelector('.island-content');
-
-    // 1. KILL TIMER: Prevent auto-dismiss conflicts
-    if (this.systemNotificationTimer) {
-        clearTimeout(this.systemNotificationTimer);
-        this.systemNotificationTimer = null;
-    }
-
-    // 2. Fade Out Text
-    islandContent.style.opacity = '0';
-    
-    setTimeout(() => {
-        // --- ROBUST FIX: STATUS BAR RESET ---
-        // Explicitly remove ALL potential animation classes
-        statusBar.classList.remove('blurred', 'squished'); 
-        
-        // Force reset CSS properties to ensure it pops back up
-        statusBar.style.filter = ''; 
-        statusBar.style.opacity = '';
-        statusBar.style.transform = ''; // Removes the "receded" scale/translate
-        
-        // --- ROBUST FIX: ISLAND RESET ---
-        // Remove animation classes that might have stuck from the "vacuum" effect
-        islandContent.classList.remove('blur-out');
-        island.classList.remove('compact', 'expanded', 'system-notification', 'island-impact');
-
-        // 3. Restore Original Content (Music/Idle)
-        setTimeout(() => {
-            if (this.tempOriginalHtml && this.tempOriginalHtml.trim().length > 0) {
-                islandContent.innerHTML = this.tempOriginalHtml;
-                this.tempOriginalHtml = null; // Clear buffer
-                
-                // FORCE RESET STYLES so Music/Visualizer is visible
-                islandContent.style.display = ''; 
-                islandContent.style.opacity = ''; // Ensure it's visible
-                islandContent.style.alignItems = '';
-                islandContent.style.justifyContent = '';
-            } else {
-                // If nothing was there, clear it cleanly
-                islandContent.innerHTML = '';
-                islandContent.style.opacity = '';
-            }
-        }, 300); // Wait for shrink transition
-    }, 200); // Wait for text fade
-}
+            
 
             // 3. DISMISS: Closes and Restores Music
             dismissSystemNotification() {
@@ -5526,22 +5475,16 @@ initMessageListeners() {
         islandContent.classList.remove('blur-out');
         island.classList.remove('compact', 'expanded', 'system-notification', 'island-impact');
 
-        // 3. Restore Original Content (Music/Idle)
+      // 3. Restore Original Content (Music/Idle)
         setTimeout(() => {
-            if (this.tempOriginalHtml && this.tempOriginalHtml.trim().length > 0) {
-                islandContent.innerHTML = this.tempOriginalHtml;
-                this.tempOriginalHtml = null; // Clear buffer
-                
-                // FORCE RESET STYLES so Music/Visualizer is visible
-                islandContent.style.display = ''; 
-                islandContent.style.opacity = ''; // Ensure it's visible
-                islandContent.style.alignItems = '';
-                islandContent.style.justifyContent = '';
-            } else {
-                // If nothing was there, clear it cleanly
-                islandContent.innerHTML = '';
-                islandContent.style.opacity = '';
-            }
+            // FORCE RESTORE FROM IMMUTABLE BASELINE
+            islandContent.innerHTML = this.DEFAULT_ISLAND_HTML;
+            
+            // FORCE RESET STYLES so Music/Visualizer is visible
+            islandContent.style.display = ''; 
+            islandContent.style.opacity = ''; 
+            islandContent.style.alignItems = '';
+            islandContent.style.justifyContent = '';
         }, 300); // Wait for shrink transition
     }, 200); // Wait for text fade
 }
@@ -6231,19 +6174,18 @@ if (isCharging && !island.classList.contains('charging-active') && !wasLastCharg
                 island.classList.remove('compact');
                 
                 setTimeout(() => {
-                    if (originalHtml && originalHtml.trim().length > 0) {
-                        islandContent.innerHTML = originalHtml;
-                        islandContent.style.display = ''; 
-                        islandContent.style.alignItems = '';
-                        islandContent.style.justifyContent = '';
-                        islandContent.style.opacity = ''; 
-                    } else {
-                        islandContent.innerHTML = '';
-                        islandContent.style.opacity = '';
-                    }
+                    // FORCE RESTORE FROM IMMUTABLE BASELINE
+                    islandContent.innerHTML = this.DEFAULT_ISLAND_HTML;
+                    
+                    // Reset styles
+                    islandContent.style.display = ''; 
+                    islandContent.style.alignItems = '';
+                    islandContent.style.justifyContent = '';
+                    islandContent.style.opacity = ''; 
+                    
                     island.classList.remove('charging-active');
                 }, 500); 
-            }, 200); 
+            }, 200);
         }, 4000);
     }, 200);
 }
