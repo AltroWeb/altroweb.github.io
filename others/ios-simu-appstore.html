@@ -3169,7 +3169,18 @@ directOpen(appId) {
     }
 
     // 5. PREPARE CONTENT
-    window.iOS.routeContent(appId); 
+    window.iOS.routeContent(appId);
+
+
+// --- PRO FIX: FORCE GLOBAL OS STATES ---
+    // This ensures the wallpaper blurs, homescreen hides, and gesture bar 
+    // wakes up, even if this command is fired directly from the homescreen.
+    window.iOS.wallpaper.classList.add('active-app');
+    window.iOS.homescreenGroup.classList.add('minimized');
+    document.getElementById('gesture-bar').classList.remove('on-home');
+    // ----------
+    
+ 
 
     // 6. NUCLEAR SANITIZATION (Target)
     targetWindow.removeAttribute('style'); 
