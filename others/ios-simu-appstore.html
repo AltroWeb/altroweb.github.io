@@ -3138,6 +3138,12 @@ async removeAppById(appId) {
 
 // --- REPLACE AppStore.directOpen() [ULTIMATE POLISH] ---
 directOpen(appId) {
+	
+	
+	if (window.iOS.state === 'ACTIVE' && window.iOS.activeWindow && window.iOS.activeWindow.getAttribute('data-app') === appId) return;
+	
+	
+	
     // 1. MUTEX LOCK
     window.iOS.state = 'OPENING';
     
@@ -5336,8 +5342,10 @@ initMessageListeners() {
         // 4. EXECUTE
         if (event.data.type === 'IOS_ISLAND_TRIGGER') {
             if (canTrigger) {
-                const { icon, title, text, color, duration, mode } = event.data;
-                this.triggerSystemNotification(icon, title, text, color, duration, mode);
+                // Extract the new 'actionable' flag from the developer's payload
+                const { icon, title, text, color, duration, mode, actionable } = event.data;
+                // Pass senderAppId and actionable state to the system
+                this.triggerSystemNotification(icon, title, text, color, duration, mode, senderAppId, actionable);
             } else {
                 console.warn(`🔒 Safe Mode: Blocked Island Trigger from '${senderAppId}'`);
             }
@@ -5356,18 +5364,20 @@ initMessageListeners() {
 
 
             // 2. TRIGGER: Handles Animation & Live Updates
-            triggerSystemNotification(iconSVG, title, text, iconColor = '#fff', duration = 3000, mode = 'compact') {
-            	
-            
-            
-            if (!this.islandEventsEnabled) return;
-            
-            
-            
+            // 1. Update the parameters to include appId and actionable
+            triggerSystemNotification(iconSVG, title, text, iconColor = '#fff', duration = 3000, mode = 'compact', appId = null, actionable = false) {
+                
+                if (!this.islandEventsEnabled) return;
+                
                 const island = document.getElementById('island');
                 const islandContent = island.querySelector('.island-content');
                 const statusBar = document.getElementById('status-bar');
 
+                // 2. Inject the data into the DOM element for the click handler to read
+                island.setAttribute('data-trigger-app', appId || '');
+                island.setAttribute('data-actionable', actionable === true ? 'true' : 'false');
+
+                
                 // --- CASE A: HOT UPDATE (Already Active) ---
                 if (island.classList.contains('system-notification')) {
                     if (this.systemNotificationTimer) clearTimeout(this.systemNotificationTimer);
@@ -7301,16 +7311,43 @@ if (this.activeWindow === this.musicWindow) {
 }
 
             handleIslandClick() {
-                // --- FIX: BLOCK INTERACTION FOR ALERTS ---
-                // If Charging OR System Notification (Airplane/No Wifi) is active:
-                if (this.island.classList.contains('charging-active') || this.island.classList.contains('system-notification')) {
-                    // Trigger Bounce Animation
+                // 1. Charging is always read-only
+                if (this.island.classList.contains('charging-active')) {
                     this.island.classList.remove('island-bounce');
-                    void this.island.offsetWidth; // Force Reflow
+                    void this.island.offsetWidth; 
                     this.island.classList.add('island-bounce');
-                    
-                    return; // STOP HERE. Do not open apps.
+                    return; 
                 }
+
+                // 2. System Notifications (The Pro Logic)
+                if (this.island.classList.contains('system-notification')) {
+                    // Always bounce on tap for tactile feedback
+                    this.island.classList.remove('island-bounce');
+                    void this.island.offsetWidth; 
+                    this.island.classList.add('island-bounce');
+
+                    // Read the Dev API flags
+                    const isActionable = this.island.getAttribute('data-actionable') === 'true';
+                    const targetApp = this.island.getAttribute('data-trigger-app');
+
+                    // If the dev set actionable: true, execute the routing
+                    if (isActionable && targetApp) {
+                        console.log(`🔗 Island Link: Routing to ${targetApp}`);
+                        
+                        // Instantly clear the Island UI
+                        this.dismissSystemNotification();
+
+                        // Fire the Gatekept directOpen
+                        if (window.appStore && window.appStore.directOpen) {
+                            window.appStore.directOpen(targetApp);
+                        } else if (window.iOS && window.iOS.openApp) {
+                            const targetAppEl = window.iOS.getVisibleIconElement(targetApp);
+                            window.iOS.openApp(targetAppEl, targetApp);
+                        }
+                    }
+                    return; // Stop here so it doesn't open the music player
+                }
+
 
                 // --- Standard Music/Expand Logic ---
                 if (this.state === 'ACTIVE' && this.activeWindow?.getAttribute('data-app') === 'Music') {
@@ -7425,6 +7462,29 @@ if (this.activeWindow === this.musicWindow) {
         window.iOS = new IOSEngine();
 window.appStore = new AppStore();
 window.sideloader = new Sideloader(); 
+
+
+
+
+// This listener lives in the main OS scope where appStore IS defined
+window.addEventListener('MIXOS_DEEP_LINK', function(e) {
+    var targetId = e.detail.appId;
+    console.log("OS Kernel caught deep link request for:", targetId);
+
+    if (window.appStore && window.appStore.directOpen) {
+        window.appStore.directOpen(targetId);
+    } else if (window.iOS && window.iOS.openApp) {
+        var icon = window.iOS.getVisibleIconElement(targetId);
+        window.iOS.openApp(icon, targetId);
+    }
+});
+
+
+
+
+
+
+
 
         // --- ROBUST NOTIFICATION SERVICE INJECTOR ---
         (function ensureNotificationService() {
@@ -7597,47 +7657,121 @@ window.sideloader = new Sideloader();
                     banner.className = 'notification-banner';
                     banner.innerHTML = \`<img src="\${iconUrl}" class="notif-icon"><div class="notif-content"><div class="notif-header"><span class="notif-title">\${displayTitle}</span><span class="notif-time">Now</span></div><div class="notif-msg"><b>\${item.title}</b> \${item.msg}</div></div>\`;
                     
-                    const dismiss = (dir) => {
+                    var dismiss = function(dir) {
                         banner.classList.add('dismissing');
-                        requestAnimationFrame(() => {
-                            banner.style.transform = \`translateX(\${dir==='right'?120:-120}%)\`;
+                        
+                        // Strict Left/Right dismissal
+                        var transformValue = 'translateX(' + (dir === 'right' ? 120 : -120) + '%)';
+                        
+                        requestAnimationFrame(function() {
+                            banner.style.transition = 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease';
+                            banner.style.transform = transformValue;
                             banner.style.opacity = '0';
                         });
-                        setTimeout(() => { banner.classList.add('collapsed'); setTimeout(() => banner.remove(), 400); }, 400);
-                    };
-
-                    let startX=0, currentX=0, isDragging=false;
-                    const onStart = (e) => { if(banner.classList.contains('dismissing')) return; startX=(e.touches?e.touches[0].clientX:e.clientX); isDragging=true; banner.classList.add('swiping'); };
-                    const onMove = (e) => { if(!isDragging) return; if(e.cancelable) e.preventDefault(); currentX=(e.touches?e.touches[0].clientX:e.clientX); banner.style.transform = \`translateX(\${currentX-startX}px)\`; };
-                    const onEnd = () => { if(!isDragging) return; isDragging=false; banner.classList.remove('swiping'); const diff=currentX-startX; void banner.offsetHeight; if(Math.abs(diff)>80) dismiss(diff>0?'right':'left'); else { banner.style.transition='transform 0.5s cubic-bezier(0.19,1,0.22,1)'; banner.style.transform='translateX(0px)'; setTimeout(()=>banner.style.transition='',500); }};
-
-                    banner.addEventListener('mousedown', onStart); banner.addEventListener('touchstart', onStart, {passive:false});
-                    window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, {passive:false});
-                    window.addEventListener('mouseup', onEnd); window.addEventListener('touchend', onEnd);
-                    
-                    banner.onclick = (e) => {
-                        if(Math.abs(currentX-startX)>5) return;
-                        dismiss('right');
                         
-                        // OPEN APP LOGIC - Uses Resolved Launch ID
-                        const allApps = document.querySelectorAll('.app-item');
-                        let targetAppEl = null;
-                        for (const el of allApps) {
-                            if (el.getAttribute('data-app-id') === launchId) { targetAppEl = el; break; }
+                        setTimeout(function() { 
+                            banner.classList.add('collapsed'); 
+                            setTimeout(function() { banner.remove(); }, 400); 
+                        }, 300);
+                    };
+
+                    var startX = 0, startY = 0, currentX = 0, currentY = 0;
+                    var isDragging = false, startTime = 0;
+                    
+                    var handleTouchStart = function(e) { 
+                        if(banner.classList.contains('dismissing')) return; 
+                        startX = e.touches[0].clientX; 
+                        startY = e.touches[0].clientY; 
+                        currentX = startX; 
+                        currentY = startY; 
+                        startTime = Date.now();
+                        isDragging = true; 
+                        
+                        banner.classList.add('swiping'); 
+                        banner.style.transition = 'none'; 
+                    };
+                    
+                    var handleTouchMove = function(e) { 
+                        if(!isDragging) return; 
+                        
+                        currentX = e.touches[0].clientX; 
+                        currentY = e.touches[0].clientY; 
+                        
+                        var diffX = currentX - startX;
+                        var diffY = currentY - startY;
+                        
+                        // Prevent page scrolling ONLY if they are intentionally swiping sideways
+                        if (Math.abs(diffX) > Math.abs(diffY)) {
+                            if(e.cancelable) e.preventDefault(); 
                         }
-                        // Fallback Name Match
-                        if (!targetAppEl) {
-                            for (const el of allApps) {
-                                const nameEl = el.querySelector('.app-name');
-                                if (nameEl && nameEl.innerText.trim().toLowerCase() === String(displayTitle).toLowerCase()) { targetAppEl = el; break; }
+                        
+                        // THE PRO LOCK: We force the Y-axis to 0. It can ONLY move horizontally.
+                        banner.style.transform = 'translate3d(' + diffX + 'px, 0, 0)'; 
+                    };
+                    
+                    var handleTouchEnd = function(e) { 
+                        if(!isDragging) return; 
+                        isDragging = false; 
+                        banner.classList.remove('swiping'); 
+                        
+                        var diffX = currentX - startX; 
+                        var diffY = currentY - startY; 
+                        var timeElapsed = Date.now() - startTime;
+                        
+                        var velocityX = Math.abs(diffX) / timeElapsed;
+
+                        // 1. THE TAP GATEKEEPER (Less than 5px movement)
+                        if (Math.abs(diffX) < 5 && Math.abs(diffY) < 5) {
+                            
+                            // Native "sucked into the app" tap animation
+                            banner.style.transition = 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease';
+                            banner.style.transform = 'translateY(-150px) scale(0.8)';
+                            banner.style.opacity = '0';
+                            setTimeout(function() { banner.remove(); }, 300);
+                            
+                            // --- THE PRO ACTIONABLE CHECK ---
+                            // Safely checks your payload. Defaults to true (clickable) unless dev explicitly says false.
+                            var isActionable = true;
+                            try {
+                                // Checks both common variable names for your queue items just to be safe
+                                if (typeof payload !== 'undefined' && payload.actionable === false) isActionable = false;
+                                if (typeof item !== 'undefined' && item.actionable === false) isActionable = false;
+                            } catch(e) {}
+
+                            if (isActionable) {
+                                var targetId = launchId;
+                                var bridge = window.appStore || (window.parent && window.parent.appStore);
+                                
+                                if (bridge && bridge.directOpen) {
+                                    bridge.directOpen(targetId);
+                                } else if (window.iOS && window.iOS.openApp) {
+                                    var targetAppEl = window.iOS.getVisibleIconElement(targetId) || document.querySelector('.app-item');
+                                    window.iOS.openApp(targetAppEl, targetId, 'light');
+                                }
+                            } else {
+                                console.log("Banner tapped: Read-Only mode active. Dismissing without opening app.");
                             }
+                            
+                            return; // Stop execution so it doesn't trigger the swipe math
                         }
 
-                        if (targetAppEl && window.iOS) {
-                            const theme = String(displayTitle).toLowerCase() === 'music' ? 'dark' : 'light';
-                            window.iOS.openApp(targetAppEl, launchId, theme);
+                        // 2. THE SWIPE CHECK
+                        // Did they drag it more than 60px OR flick it fast?
+                        if (Math.abs(diffX) > 60 || velocityX > 0.5) {
+                            dismiss(diffX > 0 ? 'right' : 'left'); 
+                        } else { 
+                            // 3. RUBBER-BAND SNAP BACK
+                            // If they didn't commit to the swipe, it snaps perfectly back to center
+                            banner.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'; 
+                            banner.style.transform = 'translate3d(0px, 0px, 0)'; 
                         }
                     };
+
+                    banner.addEventListener('touchstart', handleTouchStart, {passive: false});
+                    banner.addEventListener('touchmove', handleTouchMove, {passive: false});
+                    banner.addEventListener('touchend', handleTouchEnd);
+
+
 
                     zone.prepend(banner);
                     requestAnimationFrame(() => banner.classList.add('active'));

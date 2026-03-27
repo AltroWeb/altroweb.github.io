@@ -1252,43 +1252,31 @@ localStorage.<span class="hl-f">setItem</span>(<span class="hl-s">'aB3x9Yq2_sett
                     </div>
 
                     <h4>2. Triggering Notifications (The Bridge)</h4>
-                    <p>Apps run in sandboxes (iframes), so they cannot directly access the notification UI. Instead, we use a <strong>Bridge</strong> system. You construct a payload and send it via `postMessage`. The simulator listens for this and adds it to the queue.<br><br><strong>Tip:</strong> If there is a an app listed with the same name as yours, it might cause conflicts. So, you can use <strong>App IDs</strong>, which can be seen in the <strong>Edit </strong>screen of any app you have published using the App Builder. Use this to distinguish even between duplicate app names to avoid overrides.</p>
+                    <p>Apps run in sandboxes (iframes), so they cannot directly access the notification UI. Instead, we use a <strong>Bridge</strong> system. You construct a payload and send it via `postMessage`.<br><br><strong>Pro Physics & Gatekeeper:</strong> Banners feature a 1D Physics Engine locking them to a horizontal swipe rail. They perfectly distinguish a stationary tap (to open) from a swipe (to dismiss). Use the <code>actionable</code> flag to control if a tap opens the app or just dismisses a "Read-Only" alert.</p>
                     
                     <div class="code-box">
-<span class="hl-c">// --- CORE NOTIFICATION FUNCTION ---
-// This function uses the exact protocol required by your updated Simulator.</span>
+<span class="hl-c">// --- CORE NOTIFICATION FUNCTION ---</span>
 <span class="hl-k">function</span> <span class="hl-f">triggerNotification</span>(title, message) {
-    <span class="hl-c">// 1. Check if we are inside the Simulator (iframe)</span>
-    <span class="hl-k">if</span> (window.parent === window) {
-        console.warn(<span class="hl-s">"Not in simulator: Notification suppressed."</span>);
-        <span class="hl-k">return</span>;
-    }
+    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span>; <span class="hl-c">// Not in simulator</span>
 
-    <span class="hl-c">// 2. Construct Payload
-    // 'Timer' will be matched by the Simulator to this app's Name or ID.</span>
     <span class="hl-k">const</span> payload = {
         appId: <span class="hl-s">'Timer'</span>, 
         title: title,
         msg: message,
-        showAfter: <span class="hl-f">Date</span>.now(), <span class="hl-c">// Immediate</span>
-        
-        <span class="hl-c">// CRITICAL: Unique ID for De-duplication in the System Service</span>
+        showAfter: <span class="hl-f">Date</span>.now(), 
         uuid: <span class="hl-f">Date</span>.now() + <span class="hl-s">'-'</span> + Math.random().toString(36).substr(2, 9),
         
-        <span class="hl-c">// Optional: Custom Sound (Base64 or URL)</span>
-        sound: <span class="hl-s">'https://download-apple-sms-ringtones-free.mobilesringtones.com/storage/2018/08/30/24645/24645.mp3'</span>
+        <span class="hl-c">// THE GATEKEEPER FLAG: true = opens app, false = dismisses gracefully</span>
+        actionable: <span class="hl-k">true</span>, 
+        
+        sound: <span class="hl-s">'https://example.com/ping.mp3'</span> <span class="hl-c">// Optional Custom Audio</span>
     };
 
-    <span class="hl-c">// 3. Send via Bridge
-    // The Simulator's background service listens for this specific message type.</span>
     window.parent.<span class="hl-f">postMessage</span>({ 
         type: <span class="hl-s">'IOS_NOTIFICATION_QUEUE'</span>, 
         payload: payload 
     }, <span class="hl-s">'*'</span>);
 }
-
-<span class="hl-c">// Example Usage:
-// triggerNotification('Timer', 'Timer finished!');</span>
                     </div>
 
                     <h4>3. Injecting Custom Scripts (System Apps)</h4>
@@ -1305,21 +1293,26 @@ window.parent.<span class="hl-f">postMessage</span>({
 
 <div id="doc-island" class="doc-block">
                     <h3>Dynamic Island API</h3>
-                    <p>Apps can trigger rich notifications on the Dynamic Island. The Island supports compact and expanded modes, live updates, and persistent states (e.g., for timers or music).</p>
+                    <p>Apps can trigger rich notifications on the Dynamic Island. With the Pro architecture, you can dictate whether an alert is a "Read-Only" status indicator or an interactive "Deep Link" that launches an app.</p>
                     
-                    <strong>Basic Trigger (Compact)</strong>
+                    <strong>Basic Trigger (Actionable)</strong>
+                    <p>Set <code>actionable: true</code> to allow the user to tap the Island, instantly dismiss it, and launch your app via the DirectOpen Gatekeeper.</p>
                     <div class="code-box">
 <span class="hl-k">function</span> <span class="hl-f">notifyIsland</span>() {
-    <span class="hl-k">const</span> iconSVG = <span class="hl-s">`&lt;svg ...&gt;&lt;/svg&gt;`</span>; <span class="hl-c">// Your SVG string</span>
+    <span class="hl-k">const</span> iconSVG = <span class="hl-s">`&lt;svg ...&gt;&lt;/svg&gt;`</span>; 
     
     window.parent.<span class="hl-f">postMessage</span>({
         type: <span class="hl-s">'IOS_ISLAND_TRIGGER'</span>,
         icon: iconSVG,
-        title: <span class="hl-s">'Pizza Tracker'</span>,
-        text: <span class="hl-s">'Order #4552 is preparing...'</span>,
-        color: <span class="hl-s">'#FF9500'</span>, <span class="hl-c">// Icon color</span>
+        title: <span class="hl-s">'File Saved'</span>,
+        text: <span class="hl-s">'Document.txt stored securely.'</span>,
+        color: <span class="hl-s">'#34C759'</span>, 
         mode: <span class="hl-s">'compact'</span>,
-        duration: <span class="hl-c">3000</span> <span class="hl-c">// ms</span>
+        duration: <span class="hl-c">3000</span>,
+        
+        <span class="hl-c">// PRO ROUTING API</span>
+        appId: <span class="hl-s">'Files'</span>, <span class="hl-c">// Target app to open</span>
+        actionable: <span class="hl-k">false</span> <span class="hl-c">// false = Read-Only Bounce. true = Open App.</span>
     }, <span class="hl-s">'*'</span>);
 }
                     </div>
@@ -1334,7 +1327,7 @@ window.parent.<span class="hl-f">postMessage</span>({
         title: <span class="hl-s">'Timer'</span>,
         text: <span class="hl-s">'14:59 remaining'</span>,
         color: <span class="hl-s">'#FF3B30'</span>,
-        mode: <span class="hl-s">'expanded'</span>, <span class="hl-c">// Shows the 'text' field</span>
+        mode: <span class="hl-s">'expanded'</span>,
         duration: <span class="hl-s">'PERSISTENT'</span>
     }, <span class="hl-s">'*'</span>);
 }
