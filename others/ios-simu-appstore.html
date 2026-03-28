@@ -1348,6 +1348,18 @@ body.reduce-effects .homescreen-group {
 
 
 
+.app-desc-preview {
+            margin-top:6px; padding-top:6px; border-top:0.5px solid rgba(128,128,128,0.2); font-size:12px; color:#8E8E93; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer;
+        }
+        .app-desc-preview.expanded {
+            display: block; /* Removes truncation on tap */
+            -webkit-line-clamp: unset;
+        }
+        .app-desc-preview b { color: var(--text-primary); }
+
+
+
+
     </style>
 </head>
 <body>
@@ -1723,6 +1735,23 @@ body.reduce-effects .homescreen-group {
             <input type="text" class="ios-input" id="sl-author" placeholder="Author Name (Optional)" style="background:transparent; padding:0;">
         </div>
 
+
+
+<div class="ios-row" style="flex-direction:column; align-items:stretch; padding: 12px 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:14px; font-weight:500; color:#8E8E93;">Release Notes</span>
+                <div style="background:rgba(128, 128, 128, 0.15); padding:2px; border-radius:8px; display:flex; height:26px; width:130px;">
+                    <button id="sl-tab-write" onclick="sideloader.setDescMode('write')" style="flex:1; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:var(--card-bg, #fff); box-shadow:0 1px 3px rgba(0,0,0,0.12); color:inherit;">Write</button>
+                    <button id="sl-tab-preview" onclick="sideloader.setDescMode('preview')" style="flex:1; border:none; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; background:transparent; color:#8E8E93;">Preview</button>
+                </div>
+            </div>
+            <textarea id="sl-desc" rows="3" maxlength="1000" placeholder="e.g. **v2.0 Update**&#10;- Improved UI&#10;- Fixed bugs" class="ios-input" style="background:rgba(128,128,128,0.1); padding:12px; border-radius:10px; font-size:15px; resize:vertical; min-height:80px;" oninput="document.getElementById('sl-desc-counter').innerText = this.value.length + '/1000'"></textarea>
+            <div id="sl-desc-preview" class="ios-input" style="display:none; background:rgba(128,128,128,0.1); padding:12px; border-radius:10px; font-size:15px; min-height:80px; white-space:pre-wrap; overflow-wrap:break-word;"></div>
+            <div style="text-align:right; font-size:11px; color:#8E8E93; margin-top:6px;" id="sl-desc-counter">0/1000</div>
+        </div>
+
+
+
         <!-- ICON ROW -->
         <div class="ios-row" style="padding: 12px 16px;">
             <div style="display:flex; align-items:center; width:100%; gap:15px;">
@@ -1913,7 +1942,7 @@ body.reduce-effects .homescreen-group {
 
     <script>
     	
-console.log = function() {};
+// console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -3766,6 +3795,47 @@ uninstallApp(app, btn, skipRefresh = false) {
     }           
             
             
+// --- PRO MARKDOWN ENGINE ---
+    renderMarkdown(text) {
+        if (!text) return "";
+        let safe = String(text).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+        
+        safe = safe.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                   .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+                   .replace(/\n/g, '<br>');
+
+        // ⚡ THE SECURE LINK HANDLER ⚡
+        safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
+            const label = txt || url;
+            return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS && window.iOS.showAlert ? window.iOS.showAlert('External Link', 'Go to ' + u + '?', f) : confirm('Go to ' + u + '?') && f();" style="color:#0A84FF; text-decoration:underline; pointer-events:auto;">${label}</a>`;
+        });
+
+        return safe;
+    }
+
+    setDescMode(mode) {
+        const ta = document.getElementById('sl-desc');
+        const prev = document.getElementById('sl-desc-preview');
+        const btnW = document.getElementById('sl-tab-write');
+        const btnP = document.getElementById('sl-tab-preview');
+        const isDark = document.body.classList.contains('dark-mode');
+        
+        
+        const activeBg = isDark ? '#1c1c1e' : '#FFFFFF';
+        const activeColor = isDark ? '#FFFFFF' : 'inherit';
+
+        if (mode === 'preview') {
+            prev.innerHTML = this.renderMarkdown(ta.value) || '<span style="opacity:0.4; font-style:italic;">Nothing to preview...</span>';
+            ta.style.display = 'none'; prev.style.display = 'block';
+            btnP.style.background = activeBg; btnP.style.color = activeColor; btnP.style.fontWeight = '600'; btnP.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
+            btnW.style.background = 'transparent'; btnW.style.color = '#8E8E93'; btnW.style.fontWeight = '500'; btnW.style.boxShadow = 'none';
+        } else {
+            ta.style.display = 'block'; prev.style.display = 'none';
+            btnW.style.background = activeBg; btnW.style.color = activeColor; btnW.style.fontWeight = '600'; btnW.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
+            btnP.style.background = 'transparent'; btnP.style.color = '#8E8E93'; btnP.style.fontWeight = '500'; btnP.style.boxShadow = 'none';
+        }
+    }
+
 
 
 
@@ -3920,6 +3990,9 @@ handleUrlInput(el) {
         this.editingId = editId;
         
         document.getElementById('sl-name').value = app.name;
+        document.getElementById('sl-desc').value = app.description || ''; // <--- ADD THIS
+        document.getElementById('sl-desc-counter').innerText = (app.description ? app.description.length : 0) + '/1000'; // <--- ADD THIS
+        this.setDescMode('write'); // <--- ADD THIS (Resets UI tab)
         
         // LOAD AUTHOR (Robust Check)
         const authorField = document.getElementById('sl-author');
@@ -3969,6 +4042,11 @@ handleUrlInput(el) {
         
         document.getElementById('sl-icon').value = '';
         document.getElementById('sl-url').value = '';
+        
+        
+        document.getElementById('sl-desc').value = '';
+        
+        
         document.getElementById('sl-file-data').value = '';
         document.getElementById('sl-icon-preview').src = 'grey.png';
         document.getElementById('sl-file-name').innerText = "Select HTML File";
@@ -4079,33 +4157,32 @@ handleIAPFile(file) {
 }
 
 installIAP(pkg) {
-    // 1. Construct App Object
-    const appId = pkg.meta.id || 'iap_' + Date.now();
-    const appData = {
-        id: appId,
-        name: pkg.meta.name,
-        iconUrl: pkg.meta.icon,
-        author: pkg.meta.author || 'Sideloaded Package',
-        type: pkg.meta.type,
-        embedUrl: '', // Will be filled below
-        isPacked: true, // Flag to disable editing
-        updatedAt: Date.now()
-    };
+        // 1. Construct App Object
+        const appId = pkg.meta.id || 'iap_' + Date.now();
+        const appData = {
+            id: appId,
+            name: pkg.meta.name,
+            description: pkg.meta.description || '', // ⚡ FIXED: Now extracts desc from package
+            iconUrl: pkg.meta.icon,
+            author: pkg.meta.author || 'Sideloaded Package',
+            type: pkg.meta.type,
+            embedUrl: '', // Will be filled below
+            isPacked: true, // Flag to disable editing
+            updatedAt: Date.now()
+        };
 
-    // 2. Handle Payload (Native vs Legacy)
-    if (pkg.meta.type === 'native') {
-        // Payload is Base64 Blob Data. Convert back to Blob.
-        const blob = appStore.dataURItoBlob(pkg.payload);
-        appStore.saveToNativeDB(appId, blob).then(() => {
-            appData.embedUrl = `native://${appId}`;
+        // 2. Handle Payload (Native vs Legacy)
+        if (pkg.meta.type === 'native') {
+            const blob = appStore.dataURItoBlob(pkg.payload);
+            appStore.saveToNativeDB(appId, blob).then(() => {
+                appData.embedUrl = `native://${appId}`;
+                this.finalizeInstall(appData);
+            });
+        } else {
+            appData.embedUrl = pkg.payload;
             this.finalizeInstall(appData);
-        });
-    } else {
-        // Payload is URL or HTML Data URI
-        appData.embedUrl = pkg.payload;
-        this.finalizeInstall(appData);
+        }
     }
-}
 
 finalizeInstall(appData) {
     // Save to Storage
@@ -4129,60 +4206,69 @@ finalizeInstall(appData) {
 
 // 3. EXPORT .IAP (Creation)
 downloadIAP() {
-	
-	if (window.iOS && window.iOS.isSafeMode) {
-                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
-                    return;
-                }
-    
-    
-	
-	
-	
-    const name = document.getElementById('sl-name').value.trim();
-    
-    // Same robust capture for Export
-    const rawAuthor = document.getElementById('sl-author') ? document.getElementById('sl-author').value.trim() : '';
-    const author = rawAuthor || 'User Generated';
-    
-    const icon = this.pendingIconBase64 || document.getElementById('sl-icon').value.trim();
-    
-    if (!name) { iOS.showAlert('Error', 'App Name is required'); return; }
+        if (window.iOS && window.iOS.isSafeMode) {
+            iOS.showAlert('Cannot save app', `Sideloading is disabled in safe mode.`);
+            return;
+        }
 
-    // Detects specific type: HTTPS URL, Legacy HTML, or falls back to native
-let type = this.currentSourceMode === 'url' ? 'HTTPS URL' : (this.currentSourceMode === 'file' ? 'Legacy HTML' : 'native');
-    let payload = ''; // The content to pack
+        const name = document.getElementById('sl-name').value.trim();
+        const rawAuthor = document.getElementById('sl-author') ? document.getElementById('sl-author').value.trim() : '';
+        const author = rawAuthor || 'User Generated';
+        const icon = this.pendingIconBase64 || document.getElementById('sl-icon').value.trim();
+        
+        // ⚡ CRASH-PROOF DESC GRAB ⚡
+        const descEl = document.getElementById('sl-desc');
+        const desc = descEl ? descEl.value.trim() : '';
 
-    // Get Content based on active mode
-    if (this.currentSourceMode === 'url') {
-        payload = document.getElementById('sl-url').value.trim();
-        if (!payload) { iOS.showAlert('Error', 'URL required'); return; }
-    } 
-    else if (this.currentSourceMode === 'file') {
-        payload = document.getElementById('sl-file-data').value;
-        if (!payload) { iOS.showAlert('Error', 'File required'); return; }
-    } 
-    else if (this.currentSourceMode === 'native') {
-        // Native is tricky: we need the Base64 of the Blob
-        if (!this.pendingBlob) { iOS.showAlert('Error', 'Native file missing'); return; }
-        type = 'native';
-        
-        // Async read for blob
-        
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            // FIX: Added 'author' as the 6th argument
-            this.generatePackage(name, icon, type, e.target.result, this.pendingBlob.size, author);
+        if (!name) { iOS.showAlert('Error', 'App Name is required'); return; }
+
+        let distId = null;
+        if (this.editingId) {
+            if (this.editingId.startsWith('iap_')) distId = this.editingId;
+            else if (this.editingId.startsWith('sl_')) distId = 'iap_' + this.editingId.substring(3);
+            else distId = 'iap_' + this.editingId;
+        } else {
+            distId = 'iap_' + Math.random().toString(36).substr(2, 8);
+        }
+
+        let type = this.currentSourceMode === 'url' ? 'HTTPS URL' : (this.currentSourceMode === 'file' ? 'Legacy HTML' : 'native');
+
+        const executeExport = (payload, size) => {
+            this.generatePackage(name, icon, type, payload, size, author, desc, distId);
         };
-        reader.readAsDataURL(this.pendingBlob); // Converts blob to base64 string
-        return; // Pause here, let reader finish
-    }
 
-    // Determine size roughly for text
-    const sizeStr = (payload.length / 1024).toFixed(1) + ' KB';
-    this.generatePackage(name, icon, type, payload, sizeStr, author);
-}
+        if (this.currentSourceMode === 'url') {
+            const payload = document.getElementById('sl-url').value.trim();
+            if (!payload) { iOS.showAlert('Error', 'URL required'); return; }
+            executeExport(payload, (payload.length / 1024).toFixed(1) + ' KB');
+        } 
+        else if (this.currentSourceMode === 'file') {
+            const payload = document.getElementById('sl-file-data').value;
+            if (!payload) { iOS.showAlert('Error', 'File required'); return; }
+            executeExport(payload, (payload.length / 1024).toFixed(1) + ' KB');
+        } 
+        else if (this.currentSourceMode === 'native') {
+            if (this.pendingBlob) {
+                const reader = new FileReader();
+                reader.onload = (e) => executeExport(e.target.result, this.pendingBlob.size);
+                reader.readAsDataURL(this.pendingBlob); 
+            } else if (this.editingId && this.db) {
+                const tx = this.db.transaction('native_apps', 'readonly');
+                const req = tx.objectStore('native_apps').get(this.editingId);
+                
+                req.onsuccess = (e) => {
+                    const blob = e.target.result;
+                    if (!blob) { iOS.showAlert('Error', 'Native app data missing in DB.'); return; }
+                    const reader = new FileReader();
+                    reader.onload = (evt) => executeExport(evt.target.result, blob.size);
+                    reader.readAsDataURL(blob);
+                };
+                req.onerror = () => iOS.showAlert('Error', 'Database read failed.');
+            } else {
+                iOS.showAlert('Error', 'Native file missing');
+            }
+        }
+    }
 
 
 
@@ -4304,41 +4390,40 @@ uint8ArrayToString(arr) {
 }
 
 
-async generatePackage(name, icon, type, payload, size, author) {
-    const rawData = {
-        meta: {
-            id: 'iap_' + Math.random().toString(36).substr(2, 9),
-            name: name,
-            icon: icon, 
-            author: author,
-            type: type,
-            size: size,
-            created: Date.now(),
-            version: "SECURE_V4"
-        },
-        payload: payload
-    };
+async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
+        const rawData = {
+            meta: {
+                id: forcedId, 
+                name: name,
+                description: desc, // <--- SAVED TO PACKAGE
+                icon: icon, 
+                author: author,
+                type: type,
+                size: size,
+                created: Date.now(),
+                version: "SECURE_V4"
+            },
+            payload: payload
+        };
 
-    try {
-        // 1. Encrypt (AES-GCM 256)
-        const encryptedBuffer = await this.encryptIAP(rawData);
-
-        // 2. Download Binary Blob
-        const blob = new Blob([encryptedBuffer], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${name.replace(/\s+/g, '_')}.iap`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        iOS.showAlert('Success', 'App exported successfully.');
-    } catch (e) {
-        iOS.showAlert('Export Failed', 'Encryption error: ' + e.message);
+        try {
+            const encryptedBuffer = await this.encryptIAP(rawData);
+            const blob = new Blob([encryptedBuffer], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name.replace(/\s+/g, '_')}.iap`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            iOS.showAlert('Success', 'App exported successfully.');
+        } catch (e) {
+            iOS.showAlert('Export Failed', 'Encryption error: ' + e.message);
+        }
     }
-}
+    
 
     
     
@@ -4362,79 +4447,81 @@ async generatePackage(name, icon, type, payload, size, author) {
     }
 
     renderList() {
-    const list = document.getElementById('sl-apps-list');
-    const term = document.getElementById('sl-search')?.value.trim().toLowerCase() || '';
-    list.innerHTML = '';
-    
-    // --- ADD IMPORT BUTTON HERE (First Item) ---
-    const importRow = document.createElement('div');
-    importRow.className = 'ios-row';
-    importRow.style.color = '#007AFF';
-    importRow.style.justifyContent = 'center';
-    importRow.style.fontWeight = '600';
-    importRow.innerText = 'Import .iap Package';
-    importRow.onclick = () => this.triggerIAPImport();
-    list.appendChild(importRow);
-    // -------------------------------------------
-
-    if (this.apps.length === 0) {
-        const empty = document.createElement('div');
-        empty.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No apps installed</div>';
-        list.appendChild(empty);
-        return;
-    }
-
-    const filtered = this.apps.filter(app => app.name.toLowerCase().includes(term));
-
-    filtered.forEach(app => {
-        const row = document.createElement('div');
-        row.className = 'ios-row';
-        row.style.padding = '12px 16px';
-        const iconSrc = app.iconUrl || 'grey.png';
+        const list = document.getElementById('sl-apps-list');
+        const term = document.getElementById('sl-search')?.value.trim().toLowerCase() || '';
+        list.innerHTML = '';
         
-        // Badge Logic
-        let badge = '';
-        if (app.isPacked) badge = ' <span style="font-size:10px; background:#E5E5EA; padding:2px 4px; border-radius:4px; color:#000;">IAP</span>';
-        else if (app.type === 'native') badge = ' <span style="font-size:10px; background:#34C759; color:white; padding:2px 4px; border-radius:4px; display: none;">NATIVE</span>';
+        // --- ADD IMPORT BUTTON HERE (First Item) ---
+        const importRow = document.createElement('div');
+        importRow.className = 'ios-row';
+        importRow.style.color = '#007AFF';
+        importRow.style.justifyContent = 'center';
+        importRow.style.fontWeight = '600';
+        importRow.innerText = 'Import .iap Package';
+        importRow.onclick = () => this.triggerIAPImport();
+        list.appendChild(importRow);
+        // -------------------------------------------
 
-        // --- INSIDE Sideloader.renderList() ---
-// Replace the actionsHTML logic with this:
+        if (this.apps.length === 0) {
+            const empty = document.createElement('div');
+            empty.innerHTML = '<div style="padding:40px; text-align:center; color:#8E8E93;">No apps installed</div>';
+            list.appendChild(empty);
+            return;
+        }
 
-let actionsHTML = '';
+        const filtered = this.apps.filter(app => app.name.toLowerCase().includes(term));
 
-if (app.isPacked) {
-    actionsHTML = `
-        <div class="sl-action-stack">
-            <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
-            <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
-        </div>`;
-} else {
-    actionsHTML = `
-        <div class="sl-action-stack">
-            <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
-            <button class="sl-btn" onclick="sideloader.showForm('${app.id}')">EDIT</button>
-            <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
-        </div>`;
-}
+        filtered.forEach(app => {
+            const row = document.createElement('div');
+            row.className = 'ios-row';
+            row.style.padding = '12px 16px';
+            const iconSrc = app.iconUrl || 'grey.png';
+            
+            // Badge Logic
+            let badge = '';
+            if (app.isPacked) badge = ' <span style="font-size:10px; background:#E5E5EA; padding:2px 4px; border-radius:4px; color:#000;">IAP</span>';
+            else if (app.type === 'native') badge = ' <span style="font-size:10px; background:#34C759; color:white; padding:2px 4px; border-radius:4px; display: none;">NATIVE</span>';
 
-        row.innerHTML = `
-        <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
-            <img src="${iconSrc}" style="width:42px; height:42px; border-radius:10px; background:#eee; object-fit:cover; flex-shrink:0;" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-            <div style="display:flex; flex-direction:column; min-width:0;">
-                <span style="font-weight:600; font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${app.name}${badge}</span>
-                <!-- SHOW AUTHOR AND ID -->
-                <span style="font-size:11px; color:#8E8E93; font-family: 'SF Mono', monospace; margin-top:2px; white-space:normal; overflow-wrap:break-word; line-height:1.3;">
-    ${app.author || 'Sideloaded'} • ${app.id}
-</span>
+            let actionsHTML = '';
+            if (app.isPacked) {
+                actionsHTML = `
+                    <div class="sl-action-stack">
+                        <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+                        <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+                    </div>`;
+            } else {
+                actionsHTML = `
+                    <div class="sl-action-stack">
+                        <button class="sl-btn" onclick="appStore.directOpen('${app.id}')">OPEN</button>
+                        <button class="sl-btn" onclick="sideloader.showForm('${app.id}')">EDIT</button>
+                        <button class="sl-btn danger" onclick="sideloader.deleteApp('${app.id}')">DELETE</button>
+                    </div>`;
+            }
+
+            // ⚡ FIXED: Stripped inline styles so your CSS class handles the look and the toggle perfectly ⚡
+            let descHTML = '';
+            if (app.description) {
+                descHTML = `<div class="app-desc-preview" onclick="this.classList.toggle('expanded')">${this.renderMarkdown(app.description)}</div>`;
+            }
+
+            row.innerHTML = `
+            <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:0;">
+                <img src="${iconSrc}" style="width:42px; height:42px; border-radius:10px; background:#eee; object-fit:cover; flex-shrink:0;" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+                <div style="display:flex; flex-direction:column; min-width:0; width:100%;">
+                    <span style="font-weight:600; font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${app.name}${badge}</span>
+                    <span style="font-size:11px; color:#8E8E93; font-family: 'SF Mono', monospace; margin-top:2px; white-space:normal; overflow-wrap:break-word; line-height:1.3;">
+                        ${app.author || 'Sideloaded'} • ${app.id}
+                    </span>
+                    ${descHTML}
+                </div>
             </div>
-        </div>
-        <div style="display:flex; gap:8px; margin-left:10px;">
-            ${actionsHTML}
-        </div>
-    `;
-        list.appendChild(row);
-    });
-}
+            <div style="display:flex; align-items:center; gap:8px; margin-left:10px; flex-shrink:0;">
+                ${actionsHTML}
+            </div>
+        `;
+            list.appendChild(row);
+        });
+    }
 
     toggleSource(mode) {
         this.currentSourceMode = mode;
@@ -4548,12 +4635,17 @@ if (app.isPacked) {
     
         const name = document.getElementById('sl-name').value.trim();
         const urlValue = document.getElementById('sl-icon').value.trim();
-        const appId = this.editingId || 'sl_' + Math.random().toString(36).substr(2, 6);
+      const appId = this.editingId || 'sl_' + Math.random().toString(36).substr(2, 8);
 
 
 const rawAuthor = document.getElementById('sl-author') ? document.getElementById('sl-author').value.trim() : '';
     // 2. If empty, fallback to 'User Generated' (Cleaner than 'Sideloaded Package')
     const author = rawAuthor || 'User Generated';
+
+
+const descEl = document.getElementById('sl-desc');
+    const desc = descEl ? descEl.value.trim() : '';
+
 
 
 
@@ -4588,6 +4680,7 @@ const rawAuthor = document.getElementById('sl-author') ? document.getElementById
             id: appId,
             name: name,
             author: author, // SAVE AUTHOR
+            description: desc,
             iconUrl: finalIcon, // <--- SAVES NEW ICON
             embedUrl: embedUrl,
             
@@ -5012,6 +5105,10 @@ this.handleDeepLinks();
 
 
 this.initFullscreenListener();
+
+
+this.bootBackgroundServices();
+
 
 
             }
@@ -6409,6 +6506,22 @@ if (window.__deepLinkForwardParams) {
                             }
                         }
                         
+                        
+                        
+                        //  STRIP BACKGROUND CLOAKING IF IT WAS A BACKGROUND SERVICE
+                        
+                        iframe.style.position = '';
+                        iframe.style.opacity = '1';
+                        iframe.style.pointerEvents = 'auto';
+                        iframe.style.zIndex = '';
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         iframe.style.display = 'block';
                         
                     } else {
@@ -6418,6 +6531,122 @@ if (window.__deepLinkForwardParams) {
                     }
                 }
             }
+            
+            
+            
+            
+            
+            
+            
+            // ---  PRO BACKGROUND SERVICES API  ---
+            
+            registerBackgroundService(appId, options = {}) {
+                if (this.isSafeMode) return { success: false, error: 'Safe Mode Active.' };
+                
+                //  THE GATEKEEPER CHECK
+                const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+                const SYSTEM_SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
+                
+                const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+                const isSideloaded = sideloaded.some(a => a.id === appId);
+                const isTrusted = SYSTEM_SAFE_LIST.includes(appId);
+
+                // Best Decision: Only Sideloaded (Dev) or Trusted (Verified) can run in BG
+                if (!isSideloaded && !isTrusted) {
+                    console.warn(`Security Block: App ${appId} attempted background registration without Trusted status.`);
+                    return { success: false, error: 'Elevated privileges required for background services.' };
+                }
+                
+                let services = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+                
+                if (services.some(s => s.appId === appId)) {
+                    return { success: true, status: 'Already registered' };
+                }
+                
+                if (services.length >= 3) {
+                    this.showAlert('RAM Limit', 'Maximum of 3 background services allowed. Manage them in Safe Mode.');
+                    return { success: false, error: 'Limit reached' };
+                }
+                
+                services.push({ appId, options, registeredAt: Date.now() });
+                localStorage.setItem('ios_bg_services', JSON.stringify(services));
+                return { success: true };
+            }
+
+            removeBackgroundService(appId) {
+                let services = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+                services = services.filter(s => s.appId !== appId);
+                localStorage.setItem('ios_bg_services', JSON.stringify(services));
+                this.renderSafeModeUI(); // Refresh UI instantly
+                this.showAlert('Service Revoked', `Background privileges removed for ${appId}.`);
+            }
+
+            bootBackgroundServices() {
+                if (this.isSafeMode) return;
+                
+                const services = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+                if (services.length === 0) return;
+
+                console.log(`🚀 OS Bootloader: Initializing ${services.length} Background Services...`);
+
+                // Delay to allow Native DB to fully hydrate
+                setTimeout(() => {
+                    const container = document.getElementById('dynamic-app-container');
+                    if (!container) return;
+
+                    services.forEach(service => {
+                        const appId = service.appId;
+                        if (container.querySelector(`iframe[data-app-id="${appId}"]`)) return; // Already running
+
+                        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+                        const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+                        const app = [...installed, ...sideloaded].find(a => a.id === appId);
+
+                        if (!app) return; // App was deleted
+
+                        let finalUrl = app.embedUrl;
+                        if (app.type === 'native' && window.sideloader) {
+                            finalUrl = window.sideloader.getNativeUrl(appId) || finalUrl;
+                        }
+                        if (!finalUrl) return;
+
+                        const iframe = document.createElement('iframe');
+                        iframe.src = finalUrl;
+                        iframe.style.width = '100%';
+                        iframe.style.height = '100%';
+                        iframe.style.border = 'none';
+                        iframe.style.borderRadius = '12px';
+                        iframe.setAttribute('data-app-id', appId);
+                        
+                        // ⚡ THE MAGIC: Load active but completely invisible ⚡
+                        iframe.style.position = 'absolute';
+                        iframe.style.opacity = '0';
+                        iframe.style.pointerEvents = 'none';
+                        iframe.style.zIndex = '-9999';
+                        
+                        // Dev API Custom Parameters Enforcement
+                        if (service.options.audio) iframe.setAttribute('allow', 'microphone; camera');
+                        if (!service.options.sandbox) iframe.removeAttribute('sandbox'); // Give full permission if requested
+                        
+                        container.appendChild(iframe);
+                        console.log(`👻 Background Service Active: ${appId}`);
+                    });
+                }, 3000); // 3 second delay ensures IndexedDB is fully ready
+            }
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
 checkWallpaperBrightness() {
     // 1. IGNORE if Dark Mode is active (Keep text white)
@@ -6516,18 +6745,45 @@ renderSafeModeUI() {
                 }).join('');
             }
 
+//  INJECT BACKGROUND SERVICES MANAGER INTO SAFE MODE UI 
+            const bgServices = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+            let bgListHTML = bgServices.length === 0 
+                ? `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Background Services</div>`
+                : bgServices.map(s => {
+                    const safeOptions = JSON.stringify(s.options).replace(/"/g, '&quot;');
+                    return `
+                    <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
+                        <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:0;">
+      <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">${s.appId}</span>
+                            <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3;">
+                                ${safeOptions}
+                            </span>
+                        </div>
+                        <button onclick="window.iOS.showAlert('Revoke Service?', 'Stop ${s.appId} from running in the background?', () => window.iOS.removeBackgroundService('${s.appId}'), true)" 
+                            style="background: rgba(255, 59, 48, 0.1); color: #FF3B30; border: none; padding: 6px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
+                            Revoke
+                        </button>
+                    </div>`;
+                }).join('');
+
             safeGroup.innerHTML = `
                 <div class="section-header">Critical Threats</div>
                 <div class="ios-list" style="border: 1px solid rgba(255, 59, 48, 0.3);">
                     ${listHTML}
                 </div>
+                
+                <div class="section-header">Background Services (Max 3)</div>
+                <div class="ios-list">
+                    ${bgListHTML}
+                </div>
+
                 <div class="ios-list" style="margin-top:20px; background:transparent;">
                     <button class="ios-btn" onclick="window.location.href = window.location.pathname">
                         Respring & Exit Safe Mode
                     </button>
                 </div>
                 <p style="text-align:center; color:#8E8E93; font-size:13px; margin-top:10px;">
-                    Deleting a mod will also offer to uninstall its source app.
+                    Deleting a mod will also offer to uninstall its source app. Revoking a background service frees up RAM.
                 </p>
             `;
             settingsContent.insertBefore(safeGroup, settingsContent.firstChild); 
@@ -7465,6 +7721,20 @@ window.sideloader = new Sideloader();
 
 
 
+// --- GLOBAL LINK HIJACKER (SAFE MODE) ---
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('a');
+    if (link && window.iOS && window.iOS.isSafeMode) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Direct Block Alert - No "Cancel/OK" destination choice
+        window.iOS.showAlert('Security Block', 'External links are disabled in Safe Mode to protect system integrity.');
+    }
+}, true); // 'true' enables capturing phase to intercept before app-specific logic fires
+
+
+
 
 // This listener lives in the main OS scope where appStore IS defined
 window.addEventListener('MIXOS_DEEP_LINK', function(e) {
@@ -7875,6 +8145,10 @@ window.addEventListener('MIXOS_DEEP_LINK', function(e) {
     iOS.toggleDarkMode = function(el) {
         this.wallpaperCache = null; // Clear cache
         oldToggle(el);
+        
+        this.setBarTheme(this.isDarkMode ? 'light' : (this.wallpaperCache || 'dark'));
+        
+        
         this.checkWallpaperBrightness();
     };
 
@@ -8168,8 +8442,23 @@ window.addEventListener('MIXOS_DEEP_LINK', function(e) {
 })();
 
 
-
-
+// --- KERNEL-LEVEL WINDOW FIREWALL ---
+(function lockDownExternalLinks() {
+    const originalWindowOpen = window.open;
+    
+    window.open = function(url, target, features) {
+        if (window.iOS && window.iOS.isSafeMode) {
+            console.warn(`KERNEL: Blocked unauthorized window.open to ${url}`);
+            
+            // Only show alert if the click hijacker didn't already catch it
+            if (window.iOS.showAlert) {
+                window.iOS.showAlert('Security Block', 'Cannot open external links in Safe Mode.');
+            }
+            return null; 
+        }
+        return originalWindowOpen.call(window, url, target, features);
+    };
+})();
     
         
     </script>

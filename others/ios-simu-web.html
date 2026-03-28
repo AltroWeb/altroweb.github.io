@@ -797,7 +797,21 @@ body.dark-mode .nav-more-trigger {
 <a href="#doc-builder">App Builder Guide</a>
 
              <a href="#doc-deploy">Deployment</a>
+             
+             
+             
+             
+             
+             
                 <a href="#doc-verify">Verification</a>
+                
+                
+                
+                <a href="#doc-bg-services">Background Services</a>
+                
+                
+                
+                
                 <a href="#doc-audio">Audio Manager</a> 
                 <a href="#doc-api">System APIs</a>
           <a href="#doc-open">Opening Apps</a>
@@ -1021,6 +1035,72 @@ body.dark-mode .nav-more-trigger {
                       
                     </div>
                 </div>
+
+
+
+
+
+
+
+
+<div id="doc-bg-services" class="doc-block">
+    <h3>Background Services API</h3>
+    <p>The Background Services API allows critical applications to remain active in system memory even when they are minimized or the Simulator is restarted. This is essential for apps that require persistent connections, like iMessage or real-time trackers.</p>
+
+    <div class="alert-box" style="background: rgba(88, 86, 214, 0.05); border-color: rgba(88, 86, 214, 0.3);">
+        <div class="alert-icon" style="color: #5856D6;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        </div>
+        <div class="alert-content">
+            <h4 style="color: #5856D6;">The "Rule of Three"</h4>
+            <p>To preserve system stability and RAM, the Simulator strictly enforces a <strong>maximum of 3 active background services</strong>. If a 4th app requests background privileges, the registration will be denied until a user revokes an existing service in <strong>Safe Mode</strong>.</p>
+        </div>
+    </div>
+
+    <h4>1. Registering a Service</h4>
+    <p>Call this API from your app's main script. Registration is persistent; once called, the OS will auto-boot your app silently every time the Simulator starts.</p>
+
+    <div class="code-box">
+<span class="hl-k">if</span> (window.parent.iOS && window.parent.iOS.<span class="hl-f">registerBackgroundService</span>) {
+    <span class="hl-k">const</span> result = window.parent.iOS.<span class="hl-f">registerBackgroundService</span>(<span class="hl-s">'YOUR_APP_ID'</span>, { 
+        notifications: <span class="hl-k">true</span>, 
+        audio: <span class="hl-k">true</span>, 
+        sandbox: <span class="hl-k">false</span>,
+        priority: <span class="hl-s">'high'</span> 
+    });
+    
+    <span class="hl-k">if</span> (result.success) console.<span class="hl-f">log</span>(<span class="hl-s">"Persistence Active."</span>);
+}
+    </div>
+
+    <h4>2. Parameter Breakdown</h4>
+    <p>Developers can customize how the OS handles their background instance using the options object:</p>
+    <ul>
+        <li><strong><code>notifications:</code></strong> Grants the background instance permission to push banners to the Bridge.</li>
+        <li><strong><code>audio:</code></strong> If set to <code>true</code>, the OS grants <code>microphone</code> permissions to the invisible iframe.</li>
+        <li><strong><code>sandbox:</code></strong> (Trusted Only) If <code>false</code>, removes the iframe sandbox to allow cross-origin communication required for P2P libraries like PeerJS.</li>
+        <li><strong><code>priority:</code></strong> <code>'high'</code> prevents the OS RAM Janitor from killing the process during heavy usage.</li>
+    </ul>
+
+    <h4>3. Use Cases & Prevention</h4>
+    <p>This API is a high-privilege tool. Use it only for:</p>
+    <ul style="margin-bottom: 20px;">
+        <li><strong>P2P Communication:</strong> Maintaining a PeerJS ID so users remain "Online."</li>
+        <li><strong>Background Sync:</strong> Polling an API to trigger Dynamic Island alerts.</li>
+        <li><strong>System Audio:</strong> Keeping music playing when the app window is closed.</li>
+    </ul>
+
+    <div class="pro-tip">
+        <strong>Prevention of RAM Bloat:</strong>
+        <p>The OS loads background services with <code>opacity: 0</code> and <code>pointer-events: none</code>. This ensures they are fully functional but do not consume GPU resources for rendering. If your app is caught running heavy WebGL or mining operations in the background, it will be <strong>Shadow Banned</strong>.</p>
+    </div>
+
+    <h4>4. Revoking Privileges</h4>
+    <p>Users can manage background services by booting into <strong>Safe Mode</strong> (<code>?safe=true</code>). There, they can view all registered IDs and tap <strong>Revoke</strong> to free up memory and prevent the app from auto-booting.</p>
+</div>
+
+
+
 
 
 
@@ -2176,7 +2256,21 @@ const searchIndex = [
     // DOCUMENTATION
     { id: 'doc-start', title: 'Getting Started', category: 'Documentation', text: 'Host-guest architecture, URL Embed, HTML Upload, App Builder', view: 'docs' },
     { id: 'doc-deploy', title: 'Deployment & Security', category: 'Documentation', text: 'HTTPS requirement, Service Workers, secure contexts', view: 'docs' },
+
+
+
+
+
     { id: 'doc-verify', title: 'App Store Verification', category: 'Documentation', text: 'Badges, Trusted Member, Official Partner, verification request', view: 'docs' },
+    
+    
+    
+    { id: 'doc-bg-services', title: 'Background Services API', category: 'Documentation', text: 'registerBackgroundService, removeBackgroundService, persistent background execution, RAM management', view: 'docs' },
+
+    
+    
+    
+    
     { id: 'doc-audio', title: 'Audio Focus Manager', category: 'Documentation', text: 'Prevent audio overlap, IOS_AUDIO_REQUEST, AudioClient', view: 'docs' },
 { id: 'doc-api', title: 'System APIs', category: 'Documentation', text: 'setWallpaper, showAlert, fetchAllApps, Bridge, iOS_INJECT_SCRIPT', view: 'docs' },
     { id: 'doc-open', title: 'Opening Apps', category: 'Documentation', text: 'mixStore.directOpen, launch apps programmatically, deep link, IOS_OPEN_APP', view: 'docs' },
