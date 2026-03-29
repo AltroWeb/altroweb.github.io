@@ -312,7 +312,39 @@
             flex: 1; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
             padding: 0; padding-top: 50px; -webkit-overflow-scrolling: touch;
         }
-        .app-content-scroll::-webkit-scrollbar { width: 0; }
+        
+        
+        
+        
+        
+/* --- PRO SLEEK SCROLLBARS (Toggleable) --- */
+.app-content-scroll::-webkit-scrollbar { 
+    width: 0; /* Default iOS Invisible */
+}
+
+body.sleek-scrollbars ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+body.sleek-scrollbars ::-webkit-scrollbar-track {
+    background: transparent;
+}
+body.sleek-scrollbars ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+}
+body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+}
+body.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+        
+        
+        
         .scroll-inner-padding { padding: 40px 20px 100px 20px; }
         
         #example-app { margin-left: -20px !important; margin-right: -20px !important; width: auto; }
@@ -1563,6 +1595,12 @@ body.dark-mode #sl-tab-preview[style*="600"] {
     </div>
 	
 	
+	<div class="ios-row">
+        <span>Show Scrollbars</span>
+        <input type="checkbox" class="ios-switch" id="setting-scrollbars" onchange="iOS.toggleScrollbars(this)">
+    </div>
+	
+	
 	
     <div class="ios-row">
         <span>Assistive Touch</span>
@@ -1946,8 +1984,8 @@ body.dark-mode #sl-tab-preview[style*="600"] {
 
 
     <script>
-    	
-// console.log = function() {};
+    
+ console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -5273,7 +5311,11 @@ if (reduceSwitch) reduceSwitch.checked = savedReduce; // Sync UI,,
                 
                 
                 
-                
+                // Load Sleek Scrollbars (Default to true for the Pro look)
+        const savedScrollbars = localStorage.getItem('ios_sleek_scrollbars') === 'true';
+        this.toggleScrollbars({ checked: savedScrollbars });
+        const scrollSwitch = document.getElementById('setting-scrollbars');
+        if (scrollSwitch) scrollSwitch.checked = savedScrollbars;
                 
                 
 
@@ -5635,6 +5677,22 @@ toggleReduceEffects(toggle) {
         document.body.classList.remove('reduce-effects');
     }
 }
+
+
+
+
+
+toggleScrollbars(el) {
+    const isEnabled = el.checked;
+    localStorage.setItem('ios_sleek_scrollbars', isEnabled);
+    
+    if (isEnabled) {
+        document.body.classList.add('sleek-scrollbars');
+    } else {
+        document.body.classList.remove('sleek-scrollbars');
+    }
+}
+
 
 
 
