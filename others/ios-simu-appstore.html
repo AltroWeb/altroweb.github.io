@@ -310,7 +310,12 @@
 
         .app-content-scroll {
             flex: 1; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden;
-            padding: 0; padding-top: 50px; -webkit-overflow-scrolling: touch;
+            padding: 0; 
+
+margin-top: 90px; /* This physically pushes the scroller (and its bar) below the nav */
+    height: calc(100% - 90px);
+
+ -webkit-overflow-scrolling: touch;
         }
         
         
@@ -5731,6 +5736,10 @@ toggleFullscreen(el) {
             }).catch(err => {
                 shield.remove();
                 if (el) el.checked = false;
+                
+                
+                document.getElementById('row-fullscreen-always').style.display = 'none';
+                
                 this.showAlert("Permission Denied", "Browser blocked immersive mode. Please try again.");
             });
         }
