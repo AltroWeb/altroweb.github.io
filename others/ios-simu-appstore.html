@@ -1357,7 +1357,12 @@ body.reduce-effects .homescreen-group {
         }
         .app-desc-preview b { color: var(--text-primary); }
 
-
+/* --- PRO FIX: SIDELOADER TABS DARK MODE --- */
+body.dark-mode #sl-tab-write[style*="600"],
+body.dark-mode #sl-tab-preview[style*="600"] {
+    background: #1c1c1e !important;
+    color: #ffffff !important;
+}
 
 
     </style>
