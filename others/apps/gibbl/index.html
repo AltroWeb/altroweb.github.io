@@ -102,15 +102,17 @@
             vertical-align: middle;
         }
 
-        /* --- LAYOUT --- */
+/* --- LAYOUT --- */
         .app-container {
             max-width: 600px;
             margin: 0 auto;
-            min-height: 100vh;
+            /* PRO FIX: dvh stops the layout from jumping when the mobile URL bar hides */
+            min-height: 100vh; 
+            min-height: 100dvh; 
             border-left: 1px solid var(--border);
             border-right: 1px solid var(--border);
             position: relative;
-            padding-bottom: 70px;
+            padding-bottom: 0 !important; /* Brought over from the previous fix */
         }
 
         /* --- HEADER --- */
@@ -130,14 +132,21 @@
         .logo { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
 
         /* --- AUTH SCREEN --- */
-        .auth-screen {
+.auth-screen {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            /* We removed justify-content: center to stop the crushing */
             align-items: center;
             min-height: calc(100vh - 70px);
-            padding: 2rem;
+            min-height: calc(100dvh - 70px); /* PRO FIX: Accounts for mobile browser URL bars */
+            padding: 2rem 2rem 1rem 2rem;
             text-align: center;
+        }
+
+        /* PRO FIX: This naturally centers the login/signup boxes while pushing the footer down */
+        .auth-screen > div[id$="-view"] {
+            margin: auto 0;
+            width: 100%;
         }
         
         .auth-hero h1 { font-size: 3rem; margin-bottom: 0.5rem; line-height: 1.1; }
@@ -587,6 +596,28 @@
         .char-counter.warning { color: #f39c12; }
         .char-counter.danger { color: var(--error); animation: shake 0.3s ease; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+        
+        
+        
+        /* --- PRO AUTH LAYOUT & GAP FIX --- */
+        .app-container { padding-bottom: 0 !important; }
+        #main-content { padding-bottom: 90px !important; }
+        
+        .auth-screen { 
+            min-height: calc(100dvh - 65px) !important; 
+            padding-bottom: 1.5rem !important; 
+        }
+        
+        .auth-screen > div[id$="-view"] {
+            margin: auto 0 !important;
+            padding-bottom: 3.5rem !important; /* The forcefield! It will NEVER touch the footer now */
+        }
+        
+        
+        /* Adds breathing room to the top, pushing the footer down */
+        .auth-hero { margin-top: 15vh !important; }
+        
+        .auth-screen > .text-dim { margin-top: 50px !important; padding-bottom: 0px !important; }
         
         
     </style>
@@ -1319,14 +1350,22 @@ window.updateCharCount = (inputEl, counterId) => {
                     
                     
                     
-                    <div class="text-dim w-full" style="font-size: 0.75rem; position: absolute; bottom: 20px; left: 0; padding: 0 1rem; text-align: center;">
-                        Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
+<div class="text-dim w-full" style="padding-top: 2rem; margin-top: auto; font-size: 0.7rem; line-height: 1.6;">
+                        <div style="margin-bottom: 20px; opacity: 0.6;">
+                            Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; padding-bottom: 10px;">
+                            <a href="about.html" 
+                               style="color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.35; transition: 0.3s ease;" 
+                               onmouseover="this.style.opacity='1'; this.style.letterSpacing='1.5px'" 
+                               onmouseout="this.style.opacity='0.35'; this.style.letterSpacing='1px'">
+                               About
+                            </a>
+                            <div style="opacity: 0.6;">&copy; gibbl Social. All rights reserved.</div>
+                        </div>
                     </div>
-                    
-                    
-                    
-                </div>
-            `;
+                </div> `;
             document.getElementById('theme-toggle-auth').onclick = window.toggleTheme;
         };
 
@@ -1699,34 +1738,83 @@ if (!window.isUserScrolling) {
                 }
                 const post = { id: docSnap.id, ...docSnap.data() };
                 const isLiked = post.likes && post.likes.includes(currentUser.uid);
+                
+                document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `window.setView('thread', '${post.replyTo}')` : `window.setView('home')`);
+                
+                
+                
+                
                 document.getElementById('thread-main').innerHTML = await buildPostHTML(post, isLiked, true);
             }, (err) => {});
 
             // PRO FIX: Targeted query + In-Memory Pagination for Replies
+// PRO FIX: Native DOM Injection (No Wiping)
             window.unsubscribeReplies = onSnapshot(query(getPublicCollection('posts'), where('replyTo', '==', postId)), async (snap) => {
                 const list = document.getElementById('thread-replies');
                 if(!list || currentView !== 'thread') return; 
                 
                 let replies = [];
                 snap.forEach(d => replies.push({id: d.id, ...d.data()}));
-                
-                // Sort oldest to newest for replies
-                replies.sort((a,b) => a.timestamp.localeCompare(b.timestamp)); 
+                replies.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()); 
 
-                // Paginate locally
-                const paginatedReplies = replies.slice(0, window.LIMITS.thread);
+                // 1. Initial Load
+                if (!window.lastThreadReplies || !list.querySelector('.post-card')) {
+                    window.lastThreadReplies = replies;
+                    const paginated = replies.slice(0, window.LIMITS.thread);
+                    const htmlPromises = paginated.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+                    let fullHTML = (await Promise.all(htmlPromises)).join('');
+                    if (replies.length > window.LIMITS.thread) fullHTML += `<div class="load-more-btn" onclick="window.appendThreadReplies('${postId}')">Load More Replies</div>`;
+                    list.innerHTML = fullHTML;
+                    return;
+                }
 
-                // PRO FIX: Parallelized Rendering for Replies (CORRECTED VARIABLE)
-                const htmlPromises = paginatedReplies.map(async (post) => {
-                    const isLiked = post.likes && post.likes.includes(currentUser.uid);
-                    return await buildPostHTML(post, isLiked);
+                // 2. New Reply Added: Inject instantly at the BOTTOM
+                if (replies.length > window.lastThreadReplies.length) {
+                    const newCount = replies.length - window.lastThreadReplies.length;
+                    const newReplies = replies.slice(-newCount); 
+                    window.lastThreadReplies = replies; 
+
+                    const htmlPromises = newReplies.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+                    const newHTML = (await Promise.all(htmlPromises)).join('');
+                    
+                    const btn = list.querySelector('.load-more-btn');
+                    if (btn) btn.remove(); // Move button down
+                    
+                    list.insertAdjacentHTML('beforeend', newHTML);
+                    
+                    if (replies.length > window.LIMITS.thread) {
+                        list.insertAdjacentHTML('beforeend', `<div class="load-more-btn" onclick="window.appendThreadReplies('${postId}')">Load More Replies</div>`);
+                    }
+                    
+                    // Smoothly scroll down so you see your reply instantly
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    return;
+                }
+
+                // 3. Post Deleted: Remove it without jumping
+                if (replies.length < window.lastThreadReplies.length) {
+                    const currentIds = replies.map(r => r.id);
+                    window.lastThreadReplies.forEach(old => {
+                        if (!currentIds.includes(old.id)) {
+                            const el = document.getElementById(`post-${old.id}`);
+                            if (el) el.remove();
+                        }
+                    });
+                    window.lastThreadReplies = replies;
+                    return;
+                }
+
+                // 4. Like Updated: Silent text change
+                window.lastThreadReplies = replies;
+                replies.slice(0, window.LIMITS.thread).forEach(p => {
+                    const el = document.getElementById(`post-${p.id}`);
+                    if (el) {
+                        const likeCount = el.querySelector('.like-count');
+                        if(likeCount) likeCount.innerText = formatNum(p.likes?.length || 0);
+                    }
                 });
-                let fullHTML = (await Promise.all(htmlPromises)).join('');
-                
-                if (replies.length > window.LIMITS.thread) fullHTML += `<div class="load-more-btn" onclick="window.LIMITS.thread += 50; window.setView('thread', '${postId}')">Load More Replies</div>`;
-                list.innerHTML = fullHTML; 
             }, (err) => {});
-        };
+            };
 
 
 
@@ -2034,37 +2122,61 @@ if (!window.isUserScrolling) {
                 let profileRenderCounter = 0; 
                 // PRO FIX: Targeted query + In-Memory Pagination (Saves quota, prevents missing posts)
                 // PRO FIX: Track listener in memory
+                // PRO FIX: Native DOM Injection (No Wiping)
                 unsubscribeProfile = onSnapshot(query(getPublicCollection('posts'), where('authorId', '==', uid)), async (snap) => {
                     const pList = document.getElementById('profile-posts');
                     if(!pList || currentView !== 'profile') return;
 
-                    const currentRender = ++profileRenderCounter;
                     let posts = [];
                     snap.forEach(d => posts.push({id: d.id, ...d.data()}));
+                    posts.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                     
-                    // Sort locally
-                    posts.sort((a,b) => b.timestamp.localeCompare(a.timestamp));
-
-                    if (posts.length === 0) {
-                        if(currentRender === profileRenderCounter) pList.innerHTML = `<div style="padding:2rem;text-align:center; color:var(--dim)">No posts to show.</div>`;
+                    // 1. Initial Load
+                    if (!window.lastProfilePosts || !pList.querySelector('.post-card')) {
+                        window.lastProfilePosts = posts;
+                        const paginated = posts.slice(0, window.LIMITS.profile);
+                        const htmlPromises = paginated.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+                        let fullHTML = (await Promise.all(htmlPromises)).join('');
+                        if (posts.length > window.LIMITS.profile) fullHTML += `<div class="load-more-btn" onclick="window.appendProfilePosts('${uid}')">Load More</div>`;
+                        pList.innerHTML = fullHTML;
                         return;
                     }
 
-                    // Paginate locally based on window.LIMITS
-                    const paginatedPosts = posts.slice(0, window.LIMITS.profile);
+                    // 2. New Post Added: Inject instantly at the TOP
+                    if (posts.length > window.lastProfilePosts.length) {
+                        const newCount = posts.length - window.lastProfilePosts.length;
+                        const newPosts = posts.slice(0, newCount); 
+                        window.lastProfilePosts = posts;
 
-                    // PRO FIX: Parallelized Rendering for Profiles (CORRECTED VARIABLE)
-                    const htmlPromises = paginatedPosts.map(async (post) => {
-                        const isLiked = post.likes && post.likes.includes(currentUser.uid);
-                        return await buildPostHTML(post, isLiked);
-                    });
-                    let fullHTML = (await Promise.all(htmlPromises)).join('');
-                    
-                    if (posts.length > window.LIMITS.profile) fullHTML += `<div class="load-more-btn" onclick="window.LIMITS.profile += 20; window.setView('profile', '${uid}')">Load More</div>`;
-
-                    if(currentRender === profileRenderCounter && document.getElementById('profile-posts')) {
-                        document.getElementById('profile-posts').innerHTML = fullHTML;
+                        const htmlPromises = newPosts.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+                        const newHTML = (await Promise.all(htmlPromises)).join('');
+                        
+                        pList.insertAdjacentHTML('afterbegin', newHTML);
+                        return;
                     }
+
+                    // 3. Post Deleted: Remove it without jumping
+                    if (posts.length < window.lastProfilePosts.length) {
+                        const currentIds = posts.map(p => p.id);
+                        window.lastProfilePosts.forEach(old => {
+                            if (!currentIds.includes(old.id)) {
+                                const el = document.getElementById(`post-${old.id}`);
+                                if (el) el.remove();
+                            }
+                        });
+                        window.lastProfilePosts = posts;
+                        return;
+                    }
+
+                    // 4. Like Updated: Silent text change
+                    window.lastProfilePosts = posts;
+                    posts.slice(0, window.LIMITS.profile).forEach(p => {
+                        const el = document.getElementById(`post-${p.id}`);
+                        if (el) {
+                            const likeCount = el.querySelector('.like-count');
+                            if(likeCount) likeCount.innerText = formatNum(p.likes?.length || 0);
+                        }
+                    });
                 }, (err) => {});
 
             } catch(e) {
@@ -3097,7 +3209,88 @@ window.removeFollower = (targetUid, targetHandle) => {
             }
         };
         
-        
+       
+
+
+
+// --- PRO FIX: SILENT APPENDERS & FAILSAFES ---
+        window.loadMoreFeed = () => { 
+            const btn = document.getElementById('feed-load-more');
+            if(window.isPaginating) return; // Stops double-firing
+            if(btn) btn.innerHTML = '<div class="spinner"></div>';
+            window.isPaginating = true; 
+            window.LIMITS.feed += 30; 
+            
+            // Failsafe Timer: If Firebase lags, it unlocks the button so you can manually tap it!
+            setTimeout(() => { 
+                window.isPaginating = false; 
+                const checkBtn = document.getElementById('feed-load-more');
+                if(checkBtn && checkBtn.innerHTML.includes('spinner')) checkBtn.innerHTML = 'Load More'; 
+            }, 4000);
+
+            renderFeed(document.getElementById('main-content'), false); 
+        };
+
+
+
+
+
+
+
+
+
+
+
+
+
+        window.appendProfilePosts = async (uid) => {
+            const btn = document.querySelector('#profile-posts .load-more-btn');
+            if(btn) btn.innerHTML = '<div class="spinner"></div>';
+            
+            const start = window.LIMITS.profile;
+            window.LIMITS.profile += 20;
+            
+            // Slice the next 20 directly from the local memory we already sorted!
+            const paginated = window.lastProfilePosts.slice(start, window.LIMITS.profile);
+            
+            const htmlPromises = paginated.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+            const newHTML = (await Promise.all(htmlPromises)).join('');
+            
+            if(btn) btn.remove(); // Kill the old button
+            document.getElementById('profile-posts').insertAdjacentHTML('beforeend', newHTML); // Append seamlessly
+            
+            // Add the button back if there are still more in memory
+            if (window.lastProfilePosts.length > window.LIMITS.profile) {
+                document.getElementById('profile-posts').insertAdjacentHTML('beforeend', `<div class="load-more-btn" onclick="window.appendProfilePosts('${uid}')">Load More</div>`);
+            }
+        };
+
+        window.appendThreadReplies = async (postId) => {
+            const btn = document.querySelector('#thread-replies .load-more-btn');
+            if(btn) btn.innerHTML = '<div class="spinner"></div>';
+            
+            const start = window.LIMITS.thread;
+            window.LIMITS.thread += 50;
+            
+            // Slice the next 50 directly from local memory
+            const paginated = window.lastThreadReplies.slice(start, window.LIMITS.thread);
+            
+            const htmlPromises = paginated.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+            const newHTML = (await Promise.all(htmlPromises)).join('');
+            
+            if(btn) btn.remove();
+            document.getElementById('thread-replies').insertAdjacentHTML('beforeend', newHTML);
+            
+            if (window.lastThreadReplies.length > window.LIMITS.thread) {
+                document.getElementById('thread-replies').insertAdjacentHTML('beforeend', `<div class="load-more-btn" onclick="window.appendThreadReplies('${postId}')">Load More Replies</div>`);
+            }
+        };
+
+
+
+
+
+ 
         
         
 
