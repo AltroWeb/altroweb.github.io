@@ -791,6 +791,53 @@ z-index: 10 !important; }
 .hero-desc.expanded::-webkit-scrollbar-track { background: transparent; }
 .hero-desc.expanded::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
         
+        /* --- PRO DESKTOP LAYOUT OVERRIDES --- */
+@media (min-width: 769px) {
+    .top-bar {
+        left: var(--sidebar-w); /* Push top bar past the sidebar */
+        width: calc(100% - var(--sidebar-w)); /* Prevent horizontal scrolling */
+        justify-content: space-between; /* Push settings icon to the far right */
+        padding: 0 40px; /* Luxurious desktop padding */
+    }
+}
+        
+        
+        
+        @media (min-width: 769px) {
+    .search-container {
+        width: 100%;
+        max-width: 600px; /* Wide, cinematic search bar */
+        margin: 0 auto; /* Dead center alignment */
+        height: 48px; /* Taller, more clickable target */
+        border-radius: 16px; /* Smoother pro edges */
+    }
+    
+    .search-input {
+        font-size: 1.1rem; /* Easier to read on large screens */
+    }
+}
+
+
+
+
+
+
+@media (min-width: 769px) {
+    .section {
+        padding: 40px 6%; /* More breathing room on the edges */
+    }
+    
+    .grid-container {
+        /* Larger grid items for desktop */
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+        gap: 24px;
+    }
+    
+    .card {
+        flex: 0 0 200px; /* Larger items in the horizontal scrolling rows */
+    }
+}
+        
         
         
         
