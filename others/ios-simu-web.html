@@ -833,7 +833,7 @@ body.dark-mode .nav-more-trigger {
             
             <main class="doc-content">
                 <h1>Documentation</h1>
-                <p class="doc-lead">Everything you need to integrate with the iOS Web Ecosystem.<BR><BR>NOTE: More docs may be adding soon!</p>
+                <p class="doc-lead">Everything you need to integrate with the iOS Web Ecosystem.<BR><BR>These docs are subject to updates. Always read the documentation properly before doing anything.</p>
 
                 <div id="doc-start" class="doc-block">
                     <h3>Getting Started</h3>
@@ -938,7 +938,7 @@ body.dark-mode .nav-more-trigger {
     <h4>3. Updating & Maintaining</h4>
     <p>You can push updates to your app at any time without changing the App ID.</p>
     <ul>
-        <li><strong>To Update:</strong> Click the <strong>Edit (Pencil)</strong> icon on your app card. Modify the code or URL, then click <strong>Save Changes</strong>. Users will see the new version the next time they launch the app.</li>
+        <li><strong>To Update:</strong> Click the <strong>Edit (Pencil)</strong> icon on your app card. Modify the code or URL, then click <strong>Save Changes</strong>. Users would need to update their apps manually to see the changes.</li>
         <li><strong>To Delete:</strong> Click the <strong>Delete (Trash)</strong> icon. <strong style="color:var(--danger);">Warning: This is permanent.</strong></li>
     </ul>
 
@@ -1190,7 +1190,7 @@ body.dark-mode .nav-more-trigger {
 
 <div id="doc-open" class="doc-block">
                     <h3>Opening Apps Programmatically</h3>
-                    <p>To launch another application from within your own app, use the <code>mixStore.directOpen()</code> method. This is the universal boot command that handles Z-indexing, background limits, and native OS animations (like the homescreen zoom and blur).</p>
+                    <p>To launch another application from within your own app, use the <code>appStore.directOpen()</code> method. This is the universal boot command that handles Z-indexing, background limits, and native OS animations (like the homescreen zoom and blur).</p>
                     
                     <div class="info-box">
                         <strong>Note:</strong> Guest apps running in standard sandboxes cannot call this directly for security reasons. You must use the PostMessage Bridge to ask the OS to open it for you.
@@ -1208,8 +1208,8 @@ window.parent.<span class="hl-f">postMessage</span>({
                     <strong>The Direct Method (For Trusted/System Apps Only)</strong>
                     <div class="code-box">
 <span class="hl-c">// Trusted apps with Root privileges can call the engine directly</span>
-<span class="hl-k">if</span> (window.parent.mixStore) {
-    window.parent.mixStore.<span class="hl-f">directOpen</span>(<span class="hl-s">'iap_123456789'</span>);
+<span class="hl-k">if</span> (window.parent.appStore) {
+    window.parent.appStore.<span class="hl-f">directOpen</span>(<span class="hl-s">'iap_123456789'</span>);
 }
                     </div>
                 </div>
@@ -2273,7 +2273,7 @@ const searchIndex = [
     
     { id: 'doc-audio', title: 'Audio Focus Manager', category: 'Documentation', text: 'Prevent audio overlap, IOS_AUDIO_REQUEST, AudioClient', view: 'docs' },
 { id: 'doc-api', title: 'System APIs', category: 'Documentation', text: 'setWallpaper, showAlert, fetchAllApps, Bridge, iOS_INJECT_SCRIPT', view: 'docs' },
-    { id: 'doc-open', title: 'Opening Apps', category: 'Documentation', text: 'mixStore.directOpen, launch apps programmatically, deep link, IOS_OPEN_APP', view: 'docs' },
+    { id: 'doc-open', title: 'Opening Apps', category: 'Documentation', text: 'appStore.directOpen, launch apps programmatically, deep link, IOS_OPEN_APP', view: 'docs' },
 { id: 'doc-ipc', title: 'App Communication (IPC)', category: 'Documentation', text: 'BroadcastChannel, send messages between apps, mxa_, sl_, app IDs', view: 'docs' },
     { id: 'doc-shared-storage', title: 'Shared Storage & Conflicts', category: 'Documentation', text: 'IndexedDB, localStorage, namespace, collisions, ban, deactivation, warnings', view: 'docs' },
     
