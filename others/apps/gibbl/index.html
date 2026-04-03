@@ -1370,11 +1370,16 @@ window.updateCharCount = (inputEl, counterId) => {
         };
 
         window.switchAuth = (view) => {
+            // PRO FIX: Smooth transition to the top so the header isn't cut off
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             document.getElementById('landing-view').classList.add('hidden');
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('signup-view').classList.add('hidden');
             document.getElementById('reset-view').classList.add('hidden');
-            document.getElementById(view + '-view').classList.remove('hidden');
+            
+            const target = document.getElementById(view + '-view');
+            if (target) target.classList.remove('hidden');
         };
         
         window.togglePass = (id) => {
