@@ -11,6 +11,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
     
     <style>
+    
+    
+    html { scroll-behavior: smooth; }
+    
+    
         /* --- CSS VARIABLES & RESET --- */
         :root {
             --bg: #ffffff;
@@ -84,7 +89,7 @@
             border-left: 1px solid var(--border);
             border-right: 1px solid var(--border);
             padding-bottom: 70px;
-            overflow: hidden; /* Hard lock to prevent horizontal scrolling */
+            overflow: clip; /* Hard lock to prevent horizontal scrolling */
         }
 
         .top-bar {
@@ -200,7 +205,7 @@
     <div class="app-container">
         <!-- TOP NAV -->
         <div class="top-bar flex justify-between items-center">
-            <div class="logo">gibbl.</div>
+            <a href="#" class="logo">gibbl.</a>
             <button class="pointer" id="theme-toggle" style="color:var(--text); padding: 5px;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
