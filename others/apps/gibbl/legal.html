@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal | gibbl.</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* PRO FIX: Native Smooth Scrolling for anchor links */
+        html { scroll-behavior: smooth; }
+
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --bg: #ffffff;
+            --text: #000000;
+            --surface: #f7f7f7;
+            --border: #e6e6e6;
+            --dim: #536471; 
+            --font-head: 'Syne', sans-serif;
+            --font-body: 'Sora', sans-serif;
+            --radius-md: 16px;
+            --radius-full: 9999px;
+        }
+
+        [data-theme="dark"] {
+            --bg: #000000;
+            --text: #ffffff;
+            --surface: #16181c;
+            --border: #2f3336;
+            --dim: #71767b; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            transition: background 0.2s, color 0.2s;
+            overflow-x: hidden;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .break-words { overflow-wrap: break-word; word-break: break-word; word-wrap: break-word; max-width: 100%; }
+
+        h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+        h1 { font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 1rem; }
+        h2 { font-size: clamp(1.8rem, 6vw, 2.2rem); margin-bottom: 1.5rem; margin-top: 4rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--text); display: inline-block;}
+        h3 { font-size: 1.3rem; margin-bottom: 0.5rem; margin-top: 1.5rem; }
+        p { margin-bottom: 1.2rem; color: var(--dim); }
+        
+        a { color: var(--text); text-decoration: none; font-weight: 600; }
+        button { cursor: pointer; border: none; background: none; font-family: inherit; color: inherit;}
+
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+
+        .app-container {
+            max-width: 700px;
+            margin: 0 auto;
+            min-height: 100vh;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            padding-bottom: 70px;
+        }
+
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(var(--bg), 0.85);
+            backdrop-filter: blur(12px);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; text-decoration: none;}
+
+        .content-wrap { padding: 3rem 1.5rem; }
+
+        .btn-primary {
+            display: inline-flex; justify-content: center; align-items: center;
+            padding: 1rem 2.5rem; background: var(--text); color: var(--bg);
+            border-radius: var(--radius-full); font-weight: 700; font-size: 1.1rem;
+            transition: transform 0.2s; text-decoration: none;
+        }
+        .btn-primary:active { transform: scale(0.95); }
+
+        .info-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-pills { display: flex; gap: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
+        .nav-pill { padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); color: var(--text); font-weight: 700; font-size: 0.9rem; text-decoration: none; transition: 0.2s; }
+        .nav-pill:hover { background: var(--text); color: var(--bg); }
+        
+        ul { margin-left: 1.5rem; margin-bottom: 1.5rem; color: var(--dim); }
+        li { margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- TOP NAV -->
+        <div class="top-bar flex justify-between items-center">
+            <a href="#" class="logo">gibbl.</a>
+            <button class="pointer" id="theme-toggle" style="color:var(--text); padding: 5px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+        </div>
+
+        <div class="content-wrap">
+            <h1 class="break-words">The Fine Print.</h1>
+            <p style="font-size: 1.15rem;">We don't do sneaky legal jargon. Here is exactly how gibbl operates, how your data is handled, and the rules of the platform. Plain and simple.</p>
+            
+            <div class="nav-pills">
+                <a href="#privacy" class="nav-pill">Privacy Policy</a>
+                <a href="#terms" class="nav-pill">Terms of Service</a>
+            </div>
+
+            <!-- PRIVACY SECTION -->
+            <h2 id="privacy" style="scroll-margin-top: 100px;">Privacy Policy</h2>
+            <p>Your data is yours. We collect the absolute minimum required to make the app function.</p>
+
+            <div class="info-box">
+                <h3>What We Collect</h3>
+                <ul>
+                    <li><strong>Account Basics:</strong> Your email address, display name, handle, and a hashed version of your password.</li>
+                    <li><strong>Content:</strong> The posts, replies, and compressed media (images/audio/video up to 800KB) you actively publish.</li>
+                    <li><strong>Device Security Data:</strong> Basic User-Agent strings and active session timestamps to power our Intrusion Detection engine (allowing you to sign out rogue devices).</li>
+                </ul>
+
+                <h3>Third-Party Infrastructure</h3>
+                <p>gibbl is powered by Google's infrastructure. We do not sell your data to advertisers, but we use the following services to keep the lights on:</p>
+                <ul>
+                    <li><strong>Firebase Auth & Firestore:</strong> Used to securely store your account data and host the database. Passwords are encrypted by Google.</li>
+                    <li><strong>Google reCAPTCHA v3:</strong> Runs invisibly in the background during login and signup to block bots and spam. Their <a href="https://policies.google.com/privacy" target="_blank" style="text-decoration: underline;">Privacy Policy</a> applies to this security check.</li>
+                </ul>
+
+                <h3>Your Right to Vanish</h3>
+                <p>We built a "Nuclear Option" into the settings. Clicking "Delete Account" executes a batch script that instantly wipes your profile, posts, notifications, and traces of your account from our Firestore database. No 30-day waiting periods. Once it's gone, it's gone.</p>
+            </div>
+
+            <!-- TERMS SECTION -->
+            <h2 id="terms" style="scroll-margin-top: 100px;">Terms of Service</h2>
+            <p>By using gibbl, you agree to play by the rules of the vibe.</p>
+
+            <div class="info-box">
+                <h3>1. The "Unbiased" Rule</h3>
+                <p>gibbl is an algorithm-free zone. We do not curate, shadowban, or artificially boost content based on political bias, corporate sponsorships, or "engagement optimization."</p>
+                <ul>
+                    <li>The <strong>Newest</strong> feed is strictly chronological.</li>
+                    <li>The <strong>Top</strong> feed is strictly based on integer math (like counts).</li>
+                </ul>
+                <p>Everyone gets the exact same chronological megaphone.</p>
+
+                <h3>2. Free Expression & Boundaries</h3>
+                <p>We support open dialogue and free expression. However, "free speech" is not a free pass to break the law or destroy the platform. You will be permanently banned for posting:</p>
+                <ul>
+                    <li>Illegal content, CSAM, or explicit non-consensual media.</li>
+                    <li>Direct, credible threats of violence or doxxing.</li>
+                    <li>Spam, bot-nets, or attempts to crash the 1MB database document limits (don't paste movie scripts).</li>
+                </ul>
+
+                <h3>3. User Responsibility</h3>
+                <p>You own what you post. gibbl is a neutral platform. We are not legally responsible for the opinions, media, or external links posted by our users. If you upload media, you verify that you have the right to share it.</p>
+
+                <h3>4. Service Limits</h3>
+                <p>gibbl is an engineering experiment built to be blazing fast. We reserve the right to enforce capacity caps (e.g., maximum 500 users, 800KB media limits) to ensure the platform remains stable and free for the community.</p>
+            </div>
+
+            <!-- FOOTER -->
+            <div style="margin-top: 4rem; text-align: center; border-top: 1px solid var(--border); padding-top: 3rem;">
+                <div class="logo" style="font-size: 2.5rem; margin-bottom: 1.5rem;">gibbl.</div>
+                
+                <div style="display: flex; gap: 15px; align-items: center; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <a href="about.html" style="color: var(--text); font-weight: 700; opacity: 0.6; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">About</a>
+                    <span style="opacity: 0.2;">•</span>
+                    <a href="#privacy" style="color: var(--text); font-weight: 700; opacity: 0.6; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">Privacy</a>
+                    <span style="opacity: 0.2;">•</span>
+                    <a href="#terms" style="color: var(--text); font-weight: 700; opacity: 0.6; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">Terms</a>
+                </div>
+
+                <p class="text-dim" style="font-size: 0.9rem; margin-bottom: 2.5rem;">© gibbl Social. All rights reserved.</p>
+                <a href="index.html" class="btn-primary" style="padding: 1rem 3rem;">Return to App</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- THEME SCRIPT -->
+    <script>
+        let isDarkMode = localStorage.getItem('gibbl_dark') === 'true';
+        const body = document.body;
+        const themeIcon = document.getElementById('theme-icon');
+        const icons = {
+            moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>',
+            sun: '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>'
+        };
+        const updateTheme = () => {
+            if (isDarkMode) { body.setAttribute('data-theme', 'dark'); themeIcon.innerHTML = icons.sun; } 
+            else { body.setAttribute('data-theme', 'light'); themeIcon.innerHTML = icons.moon; }
+        };
+        document.getElementById('theme-toggle').onclick = () => {
+            isDarkMode = !isDarkMode; localStorage.setItem('gibbl_dark', isDarkMode); updateTheme();
+        };
+        updateTheme();
+    </script>
+</body>
+</html>

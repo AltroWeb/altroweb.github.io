@@ -1350,22 +1350,28 @@ window.updateCharCount = (inputEl, counterId) => {
                     
                     
                     
-<div class="text-dim w-full" style="padding-top: 2rem; margin-top: auto; font-size: 0.7rem; line-height: 1.6;">
+<!-- PRO FIX: Natural Document Flow Footer with Legal Links -->
+                    <div class="text-dim w-full" style="padding-top: 2rem; margin-top: auto; font-size: 0.7rem; line-height: 1.6;">
                         <div style="margin-bottom: 20px; opacity: 0.6;">
                             Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
                         </div>
                         
-                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; padding-bottom: 10px;">
-                            <a href="about.html" 
-                               style="color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.35; transition: 0.3s ease;" 
-                               onmouseover="this.style.opacity='1'; this.style.letterSpacing='1.5px'" 
-                               onmouseout="this.style.opacity='0.35'; this.style.letterSpacing='1px'">
-                               About
-                            </a>
-                            <div style="opacity: 0.6;">&copy; gibbl Social. All rights reserved.</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; padding-bottom: 10px;">
+                            
+                            <!-- THE NEW INLINE LINK ROW -->
+                            <div style="display: flex; gap: 15px; align-items: center; justify-content: center;">
+                                <a href="about.html" style="color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.35; transition: 0.3s ease; text-decoration: none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.35'">About</a>
+                                <span style="opacity: 0.2;">•</span>
+                                <a href="legal.html#privacy" style="color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.35; transition: 0.3s ease; text-decoration: none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.35'">Privacy</a>
+                                <span style="opacity: 0.2;">•</span>
+                                <a href="legal.html#terms" style="color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.35; transition: 0.3s ease; text-decoration: none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.35'">Terms</a>
+                            </div>
+
+                            <div style="opacity: 0.4; margin-top: 4px;">&copy; gibbl Social. All rights reserved.</div>
                         </div>
                     </div>
                 </div> `;
+
             document.getElementById('theme-toggle-auth').onclick = window.toggleTheme;
         };
 
@@ -1441,6 +1447,11 @@ window.updateCharCount = (inputEl, counterId) => {
         };
 
         window.setView = (view, param = null) => {
+        
+        if (currentView === 'home' && view !== 'home') sessionStorage.setItem('gibbl_scroll', window.scrollY);
+        
+        
+        
             // PRO FIX: Destroy ghost listeners to free up device RAM
             if(unsubscribeFeed) { unsubscribeFeed(); unsubscribeFeed = null; }
             if(unsubscribeThread) { unsubscribeThread(); unsubscribeThread = null; }
@@ -1482,7 +1493,9 @@ if(window.feedObserver) { window.feedObserver.disconnect(); window.feedObserver 
             
             
             if (view === 'notifications') renderNotifications(content);
-            window.scrollTo(0, 0);
+            
+            // PRO FIX 2: Only snap to top if we AREN'T going back to the feed
+            if (view !== 'home') window.scrollTo(0, 0);
         };
 
 
@@ -1582,7 +1595,10 @@ let mediaHTML = '';
                     <div id="posts-list">
                         <div style="padding:2rem; text-align:center; color:var(--dim)"><div class="spinner"></div></div>
                     </div>
-                    <div id="feed-load-more" class="load-more-btn" onclick="window.loadMoreFeed()">Load More</div>
+                    
+                    <div id="feed-tripwire" style="height: 1px; width: 100%; pointer-events: none;"></div>
+                    
+                    <button id="feed-load-more" class="load-more-btn" onclick="window.loadMoreFeed(true)">Load More</button>
                 `;
             }
             
@@ -1661,35 +1677,71 @@ if (!window.isUserScrolling) {
 }
                 
                 isPaginating = false;
+                
+                // PRO FIX 3: Restore scroll AFTER the posts physically exist on screen
+                const savedScroll = sessionStorage.getItem('gibbl_scroll');
+                if (savedScroll) {
+                    window.scrollTo(0, parseInt(savedScroll));
+                    sessionStorage.removeItem('gibbl_scroll'); // Clear it so it doesn't get stuck
+                }
+
+                isPaginating = false;
                 const loadBtn = document.getElementById('feed-load-more');
-                if (loadBtn) {
-                    // PRO FIX: Hybrid Infinite Scroll + Tactile Fallback
+                const tripwire = document.getElementById('feed-tripwire');
+                
+                if (loadBtn && tripwire) {
                     if (snapshot.docs.length < window.LIMITS.feed) {
                         loadBtn.style.display = 'none'; 
+                        tripwire.style.display = 'none';
                     } else {
-                        // 1. Show the physical button
                         loadBtn.style.display = 'block';
+                        tripwire.style.display = 'block';
                         loadBtn.innerHTML = 'Load More';
-                        loadBtn.style.background = 'var(--surface)'; 
-                        loadBtn.style.borderTop = '1px solid var(--border)';
+                        loadBtn.disabled = false;
+                        loadBtn.style.opacity = '1';
                         
-                        // 2. Attach the Auto-Scroll Sensor
                         if(window.feedObserver) window.feedObserver.disconnect();
                         window.feedObserver = new IntersectionObserver(entries => {
-                            // If the button gets within 400px of the screen, auto-click it!
-                            if(entries[0].isIntersecting && !isPaginating) window.loadMoreFeed();
-                        }, { rootMargin: '400px' }); 
-                        window.feedObserver.observe(loadBtn);
+                            if(entries[0].isIntersecting && !window.isPaginating) window.loadMoreFeed(false);
+                        }, { rootMargin: '150px' }); 
+                        
+                        window.feedObserver.observe(tripwire);
                     }
                 }
             }, (err) => {});
         };
 
-        window.loadMoreFeed = () => { 
+
+// window.renderFeed = renderFeed; 
+// ABOVE JUST TO TEST LOAD MORE BUTTON 
+
+
+
+
+        // --- PRO FIX: RAW SPEED WITH MANUAL FALLBACK ---
+        window.loadMoreFeed = (isManual = false) => {
+            if(window.isPaginating) return; 
+            window.isPaginating = true; 
+
             const btn = document.getElementById('feed-load-more');
-            if(btn) btn.innerHTML = '<div class="spinner"></div>';
-            isPaginating = true; 
-            window.LIMITS.feed += 30; // Batches of 30
+            if (btn) {
+                btn.innerHTML = '<div class="spinner"></div>';
+                btn.style.opacity = '0.7';
+                if (isManual) btn.disabled = true; // Prevent double-tapping
+            }
+            
+            window.LIMITS.feed += 30; 
+
+            // 5-Second Failsafe (If network fully drops, unlock the button)
+            setTimeout(() => { 
+                window.isPaginating = false; 
+                if (btn) {
+                    btn.innerHTML = 'Load More';
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
+                }
+            }, 5000);
+
             renderFeed(document.getElementById('main-content'), false); 
         };
         
@@ -2308,6 +2360,24 @@ if (!window.isUserScrolling) {
                     <h3 style="margin-bottom:1rem; color:var(--error);">Danger Zone</h3>
                     <button class="btn-secondary" style="display:block; width:100%; text-align:center; margin-bottom:1rem; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full);" onclick="window.confirmLogout()">Log Out Device</button>
                     <button class="btn-danger" onclick="window.deleteAccount()">Delete Account</button>
+
+  <div style="margin-top: 4rem; display: flex; gap: 12px; justify-content: center; padding-bottom: 20px;">
+                        
+                        <button onclick="window.showModal('Leaving Workspace', 'You are about to leave the main app to view the About page. Continue?', () => { window.location.href='about.html'; }, true)" 
+                                style="border: 1px solid var(--border); border-radius: var(--radius-full); padding: 0.5rem 1.2rem; font-size: 0.8rem; font-weight: 700; color: var(--text); background: transparent; transition: 0.2s; opacity: 0.7;" 
+                                onmouseover="this.style.opacity='1'; this.style.background='var(--surface)'" 
+                                onmouseout="this.style.opacity='0.7'; this.style.background='transparent'">
+                            About
+                        </button>
+
+                        <button onclick="window.showModal('Leaving Workspace', 'You are about to leave the main app to view the Legal page. Continue?', () => { window.location.href='legal.html'; }, true)" 
+                                style="border: 1px solid var(--border); border-radius: var(--radius-full); padding: 0.5rem 1.2rem; font-size: 0.8rem; font-weight: 700; color: var(--text); background: transparent; transition: 0.2s; opacity: 0.7;" 
+                                onmouseover="this.style.opacity='1'; this.style.background='var(--surface)'" 
+                                onmouseout="this.style.opacity='0.7'; this.style.background='transparent'">
+                            Legal
+                        </button>
+                        
+                    </div>
                 </div>
             `;
         };
