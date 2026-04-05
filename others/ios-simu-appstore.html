@@ -133,7 +133,7 @@
   
 .page-indicators {
     position: absolute; 
-    bottom: 125px; 
+    bottom: 155px; 
     left: 0; 
     right: 0;
     margin: 0 auto; /* Pure CSS centering */
@@ -5038,11 +5038,28 @@ if (this.isDarkMode) {
     
 
                 this.initPagination();
-                window.addEventListener('resize', () => {
-                     clearTimeout(this.resizeTimer);
-                     this.resizeTimer = setTimeout(() => this.initPagination(), 100);
-                });
-                this.initPageSwipes();
+        
+        // ⚡ THE ROBUST MOBILE FIX ⚡
+        // Save the initial dimensions to compare against later
+        this.lastWinWidth = window.innerWidth;
+        this.lastWinHeight = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+             const currentW = window.innerWidth;
+             const currentH = window.innerHeight;
+             
+             // ONLY recalculate if the width changed (device rotated) 
+             // OR if the height changed by a massive amount (Desktop resize/Keyboard opening)
+             if (currentW !== this.lastWinWidth || Math.abs(currentH - this.lastWinHeight) > 120) {
+                 this.lastWinWidth = currentW;
+                 this.lastWinHeight = currentH;
+                 
+                 clearTimeout(this.resizeTimer);
+                 this.resizeTimer = setTimeout(() => this.initPagination(), 100);
+             }
+        });
+        
+        this.initPageSwipes();
 
 // --- FIX: SYNC DARK MODE TOGGLE ---
 // This forces the toggle switch to match the saved state
@@ -5916,81 +5933,83 @@ initFullscreenListener() {
             }
 
             initPagination() {
-    this.pagesWrapper.innerHTML = '';
-    this.pageIndicators.innerHTML = '';
+        this.pagesWrapper.innerHTML = '';
+        this.pageIndicators.innerHTML = '';
 
-    const H = window.innerHeight;
+        const H = window.innerHeight;
 
-    // --- 1. DYNAMIC INDICATOR POSITIONING ---
-    // In landscape, we lower the dots to 115px (closer to dock) to free up room.
-    // In portrait, we keep them at 155px (standard iOS look).
-    // We check if Height < 600 to detect Landscape/SE/Old Phones.
-    const isCompact = H < 600;
-    const indicatorBottom = isCompact ? 115 : 125; 
-    
-    // APPLY DYNAMICALLY TO CSS
-    this.pageIndicators.style.bottom = `${indicatorBottom}px`;
+        // --- 1. MATCH CSS MEDIA QUERIES EXACTLY ---
+        // This ensures the dots stay exactly ~15-20px above the dock 
+        // regardless of how CSS scales the dock on desktop vs mobile.
+        let indicatorBottom = 155; // Desktop (Dock top is ~136px)
+        let topPad = 130;
+        let gap = 40; 
 
-    // --- 2. MATCH CSS PADDING ---
-    let topPad = 130;
-    let gap = 30; 
-
-    if (H <= 660) {
-        topPad = 100;
-        gap = 30;
-    } else if (H <= 800) {
-        topPad = 130;
-        gap = 40;
-    }
-
-    // --- 3. CALCULATE SAFE ZONE ---
-    // Now we use the DYNAMIC indicator position for our math.
-    // We add a 10px buffer so icons never touch the dots.
-    const hardBottomLimit = H - indicatorBottom - 10; 
-    const usableHeight = hardBottomLimit - topPad;
-
-    // --- 4. CALCULATE ROWS ---
-    // (Row + Gap) logic to prevent cutting off text
-    let maxRows = Math.floor((usableHeight + gap) / (90 + gap));
-
-    // Force strict limits (1 to 5 rows)
-    maxRows = Math.max(1, Math.min(maxRows, 5));
-
-    const cols = 3;
-    const iconsPerPage = maxRows * cols;
-
-    // --- 5. RENDER ---
-    const pages = [];
-    for (let i = 0; i < this.allApps.length; i += iconsPerPage) {
-        pages.push(this.allApps.slice(i, i + iconsPerPage));
-    }
-    this.totalPages = pages.length;
-
-    pages.forEach((pageApps, index) => {
-        const pageEl = document.createElement('div');
-        pageEl.className = 'homescreen-page';
-        pageEl.style.gridTemplateRows = `repeat(${maxRows}, min-content)`;
-        
-        pageApps.forEach(app => {
-            pageEl.appendChild(app.cloneNode(true));
-        });
-        this.pagesWrapper.appendChild(pageEl);
-
-        if (this.totalPages > 1) {
-            const dot = document.createElement('div');
-            dot.className = 'dot' + (index === 0 ? ' active' : '');
-            dot.onclick = (e) => { 
-                e.stopPropagation(); 
-                this.currentPage = index; 
-                this.updatePageScroll(); 
-            };
-            this.pageIndicators.appendChild(dot);
+        if (H <= 660) {
+            indicatorBottom = 115; // Small mobile (Dock top is ~97px)
+            topPad = 100;
+            gap = 30;
+        } else if (H <= 800) {
+            indicatorBottom = 130; // Medium mobile (Dock top is ~110px)
+            topPad = 130;
+            gap = 30;
         }
-    });
 
-    if (this.currentPage >= this.totalPages) this.currentPage = Math.max(0, this.totalPages - 1);
-    this.updatePageScroll();
-}
+
+
+
+
+
+
+        // APPLY DYNAMICALLY TO CSS
+        this.pageIndicators.style.bottom = `${indicatorBottom}px`;
+
+        // --- 2. CALCULATE SAFE ZONE ---
+        // ⚡ MINIMAL FIX: Bumped buffer from 20 to 35. 
+        // This physically forces the grid to stop 35px above the dots, 
+        // guaranteeing that aesthetic space you wanted from the app names.
+        const hardBottomLimit = H - indicatorBottom - 35; 
+        const usableHeight = hardBottomLimit - topPad;
+
+        // --- 3. CALCULATE ROWS ---
+        let maxRows = Math.floor((usableHeight + gap) / (90 + gap));
+        maxRows = Math.max(1, Math.min(maxRows, 5));
+
+        const cols = 3;
+        const iconsPerPage = maxRows * cols;
+
+        // --- 4. RENDER ---
+        const pages = [];
+        for (let i = 0; i < this.allApps.length; i += iconsPerPage) {
+            pages.push(this.allApps.slice(i, i + iconsPerPage));
+        }
+        this.totalPages = pages.length;
+
+        pages.forEach((pageApps, index) => {
+            const pageEl = document.createElement('div');
+            pageEl.className = 'homescreen-page';
+            pageEl.style.gridTemplateRows = `repeat(${maxRows}, min-content)`;
+            
+            pageApps.forEach(app => {
+                pageEl.appendChild(app.cloneNode(true));
+            });
+            this.pagesWrapper.appendChild(pageEl);
+
+            if (this.totalPages > 1) {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (index === 0 ? ' active' : '');
+                dot.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    this.currentPage = index; 
+                    this.updatePageScroll(); 
+                };
+                this.pageIndicators.appendChild(dot);
+            }
+        });
+
+        if (this.currentPage >= this.totalPages) this.currentPage = Math.max(0, this.totalPages - 1);
+        this.updatePageScroll();
+    }
 
             initPageSwipes() {
                 let startX = 0;
