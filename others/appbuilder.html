@@ -609,10 +609,18 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                     </div>
                 </div>
                 <h1 style="text-align: center; margin-bottom: 30px;">Create Account</h1>
+                
+                
                 <div class="form-group">
                     <label>Display Name (Public)</label>
-                    <input type="text" id="reg-name" placeholder="e.g. Studio X">
+                    <input type="text" id="reg-name" maxlength="100" placeholder="e.g. Studio X" oninput="document.getElementById('reg-name-count').innerText = this.value.length + '/100'">
+                    <div style="display:flex; justify-content:flex-end; margin-top:6px;">
+                        <span id="reg-name-count" style="font-size:12px; color:var(--text-secondary); font-variant-numeric: tabular-nums;">0/100</span>
+                    </div>
                 </div>
+                
+                
+                
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="reg-email" placeholder="name@example.com">
@@ -829,16 +837,22 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 
             <div class="card">
             	
-            <div class="form-group">
-    <label>App Store Display Name (Optional)</label>
-    <input type="text" id="edit-store-name" placeholder="e.g. Flappy Bird - The Original">
-    <div class="hint">The title shown in the App Store list. If empty, uses App Name.</div>
-</div>
+<div class="form-group">
+                    <label>App Store Display Name (Optional)</label>
+                    <input type="text" id="edit-store-name" maxlength="100" placeholder="e.g. Flappy Bird - The Original" oninput="document.getElementById('edit-store-name-count').innerText = this.value.length + '/100'">
+                    <div style="display:flex; justify-content:space-between; margin-top:6px;">
+                        <div class="hint" style="margin:0;">The title shown in the App Store list. If empty, uses App Name.</div>
+                        <span id="edit-store-name-count" style="font-size:12px; color:var(--text-secondary); font-variant-numeric: tabular-nums;">0/100</span>
+                    </div>
+                </div>
             
             
                 <div class="form-group">
                     <label>App Name <span style="color:var(--danger)">*</span></label>
-                    <input type="text" id="edit-name" placeholder="e.g. Super Bird">
+                    <input type="text" id="edit-name" maxlength="100" placeholder="e.g. Super Bird" oninput="document.getElementById('edit-name-count').innerText = this.value.length + '/100'">
+                    <div style="display:flex; justify-content:flex-end; margin-top:6px;">
+                        <span id="edit-name-count" style="font-size:12px; color:var(--text-secondary); font-variant-numeric: tabular-nums;">0/100</span>
+                    </div>
                 </div>
                 
                 
@@ -988,9 +1002,12 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
             </div>
 
             <div class="card">
-                <div class="form-group">
+         <div class="form-group">
                     <label>Display Name</label>
-                    <input type="text" id="set-name" placeholder="Studio Name">
+                    <input type="text" id="set-name" maxlength="100" placeholder="Studio Name" oninput="document.getElementById('set-name-count').innerText = this.value.length + '/100'">
+                    <div style="display:flex; justify-content:flex-end; margin-top:6px;">
+                        <span id="set-name-count" style="font-size:12px; color:var(--text-secondary); font-variant-numeric: tabular-nums;">0/100</span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -2036,10 +2053,21 @@ async fetchMyApps() {
                 document.getElementById('display-app-id').style.fontStyle = "italic";
                 document.getElementById('edit-name').value = '';
                 
-             document.getElementById('edit-store-name').value = '';  
+                
+                
+                document.getElementById('edit-name-count').innerText = '0/100';
+                document.getElementById('edit-store-name').value = '';  
+                document.getElementById('edit-store-name-count').innerText = '0/100';
+                
+                
                 
                 document.getElementById('edit-icon').value = '';
                 document.getElementById('edit-desc').value = '';
+                
+                
+                document.getElementById('desc-counter').innerText = '0/1000';
+                
+                
          
 const tagInput = document.getElementById('edit-tags');
 tagInput.value = '';
@@ -2126,9 +2154,21 @@ this.updateTagsCounter(tagInput); // Reset counter to 0/1000
                     
                     document.getElementById('edit-store-name').value = data.storeName || '';
                     
+                    
+                    
+                    document.getElementById('edit-name-count').innerText = (data.name ? data.name.length : 0) + '/100';
+        document.getElementById('edit-store-name-count').innerText = (data.storeName ? data.storeName.length : 0) + '/100';
+                    
+                    
+                    
+                    
                     document.getElementById('edit-icon').value = data.iconUrl || '';
                     document.getElementById('icon-preview').src = data.iconUrl || 'grey.png';
                     document.getElementById('edit-desc').value = data.description;
+                    
+                    
+                    document.getElementById('desc-counter').innerText = (data.description ? data.description.length : 0) + '/1000';
+                    
                     
                     
                     const tagInput = document.getElementById('edit-tags');
@@ -2845,9 +2885,22 @@ showPrompt(title, message, placeholder = "", inputType = "text", okText = "Submi
 
             async loadSettings() {
                 // 1. Load Basic Auth Info
-                document.getElementById('set-name').value = this.devProfile.displayName;
+                document.getElementById('set-name').value = this.devProfile.displayName || '';
+                document.getElementById('set-name-count').innerText = (this.devProfile.displayName ? this.devProfile.displayName.length : 0) + '/100';
+                
                 document.getElementById('set-email').value = this.devProfile.email;
                 document.getElementById('set-pass').value = '';
+                
+                
+                
+                document.getElementById('set-name').value = this.devProfile.displayName;
+        document.getElementById('set-name-count').innerText = (this.devProfile.displayName ? this.devProfile.displayName.length : 0) + '/100'; // ADD THIS
+                
+                
+                
+                
+                
+                
                 
                 // 2. Fetch Extended Profile (Icon & Bio) from NEW 'user_info' collection
                 try {
