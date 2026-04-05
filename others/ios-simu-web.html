@@ -1097,6 +1097,55 @@ body.dark-mode .nav-more-trigger {
 
     <h4>4. Revoking Privileges</h4>
     <p>Users can manage background services by booting into <strong>Safe Mode</strong> (<code>?safe=true</code>). There, they can view all registered IDs and tap <strong>Revoke</strong> to free up memory and prevent the app from auto-booting.</p>
+    
+    
+    
+    
+    <h4 style="margin-top: 40px;">5. Pro Tip: Building "Self-Aware" Apps</h4>
+    <p>When writing apps that run in the background or save data, <strong>never hardcode your App ID</strong> (e.g., <code>const APP_ID = 'MyTracker';</code>). If a user installs your app via the Sideloader and renames it to "Focus Mode", your hardcoded ID won't match the system registry, and your background service will instantly break.</p>
+    
+    <div class="pro-tip">
+        <strong>The Solution:</strong> Make your app ask the OS for its true identity dynamically. Just paste this at the very top of your app's script:
+    </div>
+
+    <div class="code-box">
+<span class="hl-c">// 1. Set a fallback (useful if testing locally outside the simulator)</span>
+<span class="hl-k">let</span> APP_ID = <span class="hl-s">'MyAwesomeApp'</span>; 
+
+<span class="hl-c">// 2. Ask the System Kernel for our true assigned identity</span>
+<span class="hl-k">try</span> {
+    <span class="hl-k">if</span> (window.frameElement && window.frameElement.<span class="hl-f">getAttribute</span>(<span class="hl-s">'data-app-id'</span>)) {
+        APP_ID = window.frameElement.<span class="hl-f">getAttribute</span>(<span class="hl-s">'data-app-id'</span>);
+    }
+} <span class="hl-k">catch</span>(e) {}
+
+<span class="hl-c">// 3. Now use APP_ID for all your saving and background registrations!</span>
+<span class="hl-k">if</span> (window.parent.iOS) {
+    window.parent.iOS.<span class="hl-f">registerBackgroundService</span>(APP_ID, { sandbox: <span class="hl-k">false</span> });
+}
+    </div>
+
+    <h4 style="margin-top: 30px;">6. The Registry Scanner</h4>
+    <p>Need to know what other apps the user has installed? You can scan the OS Registry from inside your app to fetch every app name, icon, and ID currently loaded in the system.</p>
+
+    <div class="code-box">
+<span class="hl-k">function</span> <span class="hl-f">fetchSystemRegistry</span>() {
+    <span class="hl-k">if</span> (window.parent === window) <span class="hl-k">return</span> []; <span class="hl-c">// Stop if not inside the OS</span>
+
+    <span class="hl-k">const</span> apps = [];
+    window.parent.document.<span class="hl-f">querySelectorAll</span>(<span class="hl-s">'.app-item'</span>).<span class="hl-f">forEach</span>(el => {
+        <span class="hl-k">const</span> name = el.<span class="hl-f">querySelector</span>(<span class="hl-s">'.app-name'</span>)?.innerText.trim() || <span class="hl-s">'Unknown'</span>;
+        <span class="hl-k">const</span> id = el.<span class="hl-f">getAttribute</span>(<span class="hl-s">'data-app-id'</span>) || name;
+        apps.<span class="hl-f">push</span>({ id, name });
+    });
+    <span class="hl-k">return</span> apps;
+}
+    </div>
+    
+    
+    
+    
+    
 </div>
 
 
