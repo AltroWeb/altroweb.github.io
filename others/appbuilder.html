@@ -521,7 +521,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
              <div class="nav-icon-btn" id="dark-mode-btn" onclick="appBuilder.toggleDarkMode()" title="Toggle Theme">
     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
 </div>
-             <div class="user-menu" id="user-menu" onclick="appBuilder.showSettings()">
+      <div class="user-menu" id="user-menu" onclick="appBuilder.discardChangesGuard(() => appBuilder.showSettings())">
                  <span id="nav-username">User</span>
                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
              </div>
@@ -823,9 +823,9 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
         <!-- EDITOR VIEW -->
         <div id="editor-view" class="view">
             <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
-                <button class="btn secondary sm" onclick="appBuilder.showDashboard()">
-                    &larr; Back
-                </button>
+             <button class="btn secondary sm" onclick="appBuilder.discardChangesGuard(() => appBuilder.showDashboard())">
+    &larr; Back
+</button>
                 <div style="flex:1;">
     <h1 style="margin:0;" id="editor-title">Create App</h1>
     <div id="editor-date" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; display: none;"></div>
@@ -1170,6 +1170,31 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                 this.currentEditingId = null;
                 this.sourceMode = 'url';
 
+
+
+// --- BROWSER BACK BUTTON PROTECTION ---
+                window.addEventListener('popstate', async (event) => {
+                    const currentView = document.querySelector('.view.active').id;
+                    
+                    // If user is in editor and hits phone back button
+                    if (currentView === 'editor-view') {
+                        // Re-push state to "freeze" the back action momentarily
+                        history.pushState(null, null, window.location.pathname);
+                        
+                        this.discardChangesGuard(() => {
+                            // If they confirmed discard, actually go back
+                            this.showDashboard();
+                        });
+                    }
+                });
+
+
+
+
+
+
+
+
                 this.initFirebase();
                 this.setupInputs();
                 
@@ -1225,6 +1250,11 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                     document.getElementById('icon-preview').src = this.getSafeIconUrl(val);
                 });
             }
+            
+            
+            
+            
+            
             
             
             
@@ -2084,6 +2114,9 @@ this.updateTagsCounter(tagInput); // Reset counter to 0/1000
                 this.switchSourceTab('url');
                 document.getElementById('html-file-input').value = '';
                 this.updateUIState('editor');
+                
+                this.editorSnapshot = this.getEditorSnapshot();
+                
             }
 
                         async editApp(appId) {
@@ -2202,6 +2235,9 @@ this.updateTagsCounter(tagInput); // Update counter
                     document.getElementById('html-file-input').value = '';
                     this.updateUIState('editor');
                     
+                    // Wait a tiny bit for the UI to settle (like the "Native Package Loaded" text)
+        setTimeout(() => { this.editorSnapshot = this.getEditorSnapshot(); }, 100);
+                    
               
                 } catch(e) {
                     await this.showAlert("Error", e.message, true);
@@ -2255,6 +2291,47 @@ this.updateTagsCounter(tagInput); // Update counter
                     input.value = '';
                 }
             }
+
+
+
+
+getEditorSnapshot() {
+        return JSON.stringify({
+            name: document.getElementById('edit-name').value,
+            storeName: document.getElementById('edit-store-name').value,
+            icon: document.getElementById('edit-icon').value,
+            iconB64: document.getElementById('edit-icon').dataset.realB64 || '',
+            desc: document.getElementById('edit-desc').value,
+            tags: document.getElementById('edit-tags').value,
+            source: this.sourceMode,
+            embed: document.getElementById('edit-embed').value,
+            file: document.getElementById('edit-file-data').value,
+            analytics: document.getElementById('toggle-analytics-ui').classList.contains('checked')
+        });
+    }
+
+
+
+async discardChangesGuard(onConfirmed) {
+        const currentSnapshot = this.getEditorSnapshot();
+        
+        // Only trigger the alert if the data has actually changed
+        if (this.editorSnapshot && this.editorSnapshot !== currentSnapshot) {
+            const confirmed = await this.showConfirm(
+                "Unsaved Changes", 
+                "You have unsaved modifications. If you leave now, all progress will be lost.", 
+                "Discard Changes"
+            );
+            if (!confirmed) return; // User wants to stay
+        }
+        
+        // If we reach here, either nothing changed OR the user clicked Discard
+        onConfirmed();
+    }
+
+
+
+
 
                         async publishApp() {
     const name = document.getElementById('edit-name').value.trim();
