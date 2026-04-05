@@ -133,7 +133,7 @@
   
 .page-indicators {
     position: absolute; 
-    bottom: 155px; 
+    bottom: 125px; 
     left: 0; 
     right: 0;
     margin: 0 auto; /* Pure CSS centering */
@@ -5926,7 +5926,7 @@ initFullscreenListener() {
     // In portrait, we keep them at 155px (standard iOS look).
     // We check if Height < 600 to detect Landscape/SE/Old Phones.
     const isCompact = H < 600;
-    const indicatorBottom = isCompact ? 115 : 155; 
+    const indicatorBottom = isCompact ? 115 : 125; 
     
     // APPLY DYNAMICALLY TO CSS
     this.pageIndicators.style.bottom = `${indicatorBottom}px`;
@@ -5945,8 +5945,8 @@ initFullscreenListener() {
 
     // --- 3. CALCULATE SAFE ZONE ---
     // Now we use the DYNAMIC indicator position for our math.
-    // We add a 20px buffer so icons never touch the dots.
-    const hardBottomLimit = H - indicatorBottom - 20; 
+    // We add a 10px buffer so icons never touch the dots.
+    const hardBottomLimit = H - indicatorBottom - 10; 
     const usableHeight = hardBottomLimit - topPad;
 
     // --- 4. CALCULATE ROWS ---
