@@ -1591,6 +1591,34 @@ body.dark-mode #sl-tab-preview[style*="600"] {
 </div>
                         </div>
 
+
+
+
+<div class="section-header">Notifications</div>
+<div class="ios-list">
+    <div class="ios-row">
+        <div style="display:flex; flex-direction:column;">
+            <span>Strict Notifications</span>
+            <span style="font-size:11px; color:#8E8E93;"></span>
+        </div>
+        <input type="checkbox" class="ios-switch" id="setting-strict-notifs" onchange="iOS.toggleStrictNotifications(this)">
+    </div>
+    
+    <div class="ios-row" id="row-notif-dev-only" style="display:none;">
+        <div style="display:flex; flex-direction:column;">
+            <span>Block All Notifications</span>
+            <span style="font-size:11px; color:#8E8E93;"></span>
+        </div>
+        <input type="checkbox" class="ios-switch" id="setting-notif-dev-only" onchange="iOS.toggleDevOnlyNotifs(this)">
+    </div>
+</div>
+
+
+
+
+
+
+
 <div class="section-header">Accessibility</div>
 <div class="ios-list">
 	
@@ -5361,7 +5389,29 @@ initNetworkListeners() {
                 
                 // Add this inside initSettings() method
                 
-                
+              
+// Load Strict Notifications
+        const savedStrict = localStorage.getItem('ios_strict_notifs') !== 'false';
+        const strictSwitch = document.getElementById('setting-strict-notifs');
+        if (strictSwitch) strictSwitch.checked = savedStrict;
+
+        // Load Dev-Only Sub-Toggle
+        const savedDevOnly = localStorage.getItem('ios_notif_dev_only') === 'true';
+        const devSwitch = document.getElementById('setting-notif-dev-only');
+        if (devSwitch) devSwitch.checked = savedDevOnly;
+        
+        const devRow = document.getElementById('row-notif-dev-only');
+        if (devRow) devRow.style.display = savedStrict ? 'flex' : 'none';
+
+
+
+
+
+
+
+
+
+  
                 
                 
       // Inside initSettings() 
@@ -5535,14 +5585,17 @@ initMessageListeners() {
         }
         if (!senderAppId) return;
 
-        // 2. DEFINE PERMISSIONS
+// 2. DEFINE PERMISSIONS
         const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
         const SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
-        const isNativeSideload = window.sideloader && window.sideloader.apps.some(a => a.id === senderAppId && a.type === 'native');
+        
+        // 🛡️ SECURITY AUDIT FIX: Allow ALL Sideloaded apps (not just native) + Trusted Apps
+        const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+        const isSideloaded = sideloaded.some(a => a.id === senderAppId);
         
         // 3. ZERO TRUST POLICY (The "Jail" Logic)
         // If Safe Mode is ON, 'canTrigger' is ALWAYS FALSE. No exceptions.
-        const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isNativeSideload);
+        const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isSideloaded);
 
         // 4. EXECUTE
         if (event.data.type === 'IOS_ISLAND_TRIGGER') {
@@ -5719,7 +5772,24 @@ initMessageListeners() {
 
 
 
+toggleStrictNotifications(el) {
+        localStorage.setItem('ios_strict_notifs', el.checked);
+        
+        // Show/Hide the sub-row
+        const devRow = document.getElementById('row-notif-dev-only');
+        if (devRow) devRow.style.display = el.checked ? 'flex' : 'none';
 
+        // If Strict is turned off, force Dev-Only off as well
+        if (!el.checked) {
+            localStorage.setItem('ios_notif_dev_only', 'false');
+            const devSwitch = document.getElementById('setting-notif-dev-only');
+            if (devSwitch) devSwitch.checked = false;
+        }
+    }
+
+    toggleDevOnlyNotifs(el) {
+        localStorage.setItem('ios_notif_dev_only', el.checked);
+    }
 
 
 
@@ -6542,7 +6612,10 @@ if (window.__deepLinkForwardParams) {
 
 // --- PRIVILEGE CHECK (For InjectMod) ---
                 const isSideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]').some(a => a.id === appName);
-                this.currentAppPrivilege = isSideloaded ? 'root' : 'user';
+                const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+                
+                // 🛡️ THE FIX: Grant ROOT if sideloaded OR if Admin Trusted on the Store
+                this.currentAppPrivilege = (isSideloaded || remoteTrusted.includes(appName)) ? 'root' : 'user';
 
 
 
@@ -8195,10 +8268,41 @@ window.addEventListener('MIXOS_DEEP_LINK', function(e) {
                     } catch(e) { localStorage.setItem('ios_notif_queue', '[]'); }
                 }, 800);
 
-                // Direct Event Listener - PASS THE SOURCE WINDOW
+   // Direct Event Listener - PASS THE SOURCE WINDOW
                 window.addEventListener('message', (event) => {
                     if (event.data && event.data.type === 'IOS_NOTIFICATION_QUEUE' && event.data.payload) {
-                        spawnNotification(event.data.payload, event.source);
+                        
+                        let senderAppId = resolveAppIdFromSource(event.source) || event.data.payload.appId;
+                        let isTrusted = false;
+
+                        // Check Settings
+                        const isStrict = localStorage.getItem('ios_strict_notifs') !== 'false';
+                        const isDevOnly = localStorage.getItem('ios_notif_dev_only') === 'true';
+
+                        if (!isStrict) {
+                            // 🔓 TIER 1: FLOODGATES OPEN
+                            isTrusted = true; 
+                        } else if (window.iOS && !window.iOS.isSafeMode) {
+                            const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+                            const isSideloaded = sideloaded.some(a => a.id === senderAppId);
+
+                            if (isDevOnly) {
+                                // 🔒 TIER 3: ULTIMATE LOCKDOWN (Only Sideloaded)
+                                isTrusted = isSideloaded;
+                            } else {
+                                // 🛡️ TIER 2: STANDARD STRICT (Sideloaded + Trusted Store Apps)
+                                const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+                                const SYSTEM_SAFE_LIST = [...window.iOS.SYSTEM_CORE, ...remoteTrusted];
+                                isTrusted = isSideloaded || SYSTEM_SAFE_LIST.includes(senderAppId);
+                            }
+                        }
+
+                        // Execute
+                        if (isTrusted) {
+                            spawnNotification(event.data.payload, event.source);
+                        } else {
+                            console.warn(\`🔒 Security Block: '\${senderAppId}' blocked by Notification Policy.\`);
+                        }
                     }
                 });
             })();
