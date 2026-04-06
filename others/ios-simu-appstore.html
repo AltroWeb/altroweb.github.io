@@ -1990,7 +1990,7 @@ body.dark-mode #sl-tab-preview[style*="600"] {
 
     <script>
     
- console.log = function() {};
+// console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -3832,6 +3832,15 @@ uninstallApp(app, btn, skipRefresh = false) {
 
 
 
+formatTime(ms) {
+        if (!ms) return '';
+        const d = new Date(ms);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+
+
+
 
     hydrateSingle(appId, blob) {
         // 1. Revoke old URL to free memory
@@ -4216,7 +4225,9 @@ installIAP(pkg) {
             type: pkg.meta.type,
             embedUrl: '', // Will be filled below
             isPacked: true, // Flag to disable editing
-            updatedAt: Date.now()
+            
+            createdAt: pkg.meta.created || Date.now(),
+            updatedAt: pkg.meta.created || Date.now()
         };
 
         // 2. Handle Payload (Native vs Legacy)
@@ -4486,6 +4497,9 @@ async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
     
 
     showList() {
+    
+    this.apps = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+    
         document.getElementById('sl-list-view').style.display = 'block';
         document.getElementById('sl-form-view').style.display = 'none';
         document.getElementById('sl-main-header').innerText = 'Sideloader';
@@ -4548,6 +4562,28 @@ async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
 
             // ⚡ FIXED: Stripped inline styles so your CSS class handles the look and the toggle perfectly ⚡
             let descHTML = '';
+            
+            
+            
+            let timeHTML = '';
+            if (app.createdAt || app.updatedAt) {
+                const createdStr = this.formatTime(app.createdAt || app.updatedAt);
+                // Replace the updatedStr logic with this:
+// REPLACE your current isModified logic with this:
+const isModified = app.updatedAt && (app.updatedAt > (app.createdAt || 0) + 1000);
+const hasContentChange = app.description && app.description.trim() !== "";
+
+// Force show 'Updated' if there is a real time gap AND it's not a fresh install
+const updatedStr = (isModified && !app.isPacked) 
+    ? `<br><span style="color:var(--accent);">Updated: ${this.formatTime(app.updatedAt)}</span>` 
+    : '';
+                timeHTML = `<div style="font-size:10.5px; color:#8E8E93; margin-top:4px; line-height:1.4;">Created: ${createdStr}${updatedStr}</div>`;
+            }
+            
+            
+            
+            
+            
             if (app.description) {
                 descHTML = `<div class="app-desc-preview" onclick="this.classList.toggle('expanded')">${this.renderMarkdown(app.description)}</div>`;
             }
@@ -4561,7 +4597,7 @@ async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
                         ${app.author || 'Sideloaded'} • ${app.id}
                     </span>
                     ${descHTML}
-                </div>
+                    ${timeHTML} </div>
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-left:10px; flex-shrink:0;">
                 ${actionsHTML}
@@ -4733,6 +4769,8 @@ const descEl = document.getElementById('sl-desc');
             embedUrl: embedUrl,
             
             type: type,
+            
+            createdAt: this.editingId ? (this.apps.find(a => a.id === this.editingId)?.createdAt || Date.now()) : Date.now(),
             updatedAt: Date.now()
         };
 
@@ -4759,7 +4797,8 @@ const descEl = document.getElementById('sl-desc');
         this.pendingIconBase64 = null; // Clear memory
         
         iOS.injectSingleApp(appData);
-        this.showList();
+        this.apps = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+this.showList();
         iOS.applyCustomIcons(); // Refresh icons immediately
         iOS.showAlert(this.editingId ? 'App Updated' : 'App Installed', `${name} is ready.`);
     }
