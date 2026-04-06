@@ -1660,7 +1660,6 @@ initSecurityMonitor(uid) {
                     const lastGlobalLogin = data.lastLoginTime.toMillis();
                     const myLogin = parseInt(localStorage.getItem('auth_session_start') || Date.now());
 
-                    // If DB login is newer than mine (> 5s tolerance)
                     if (lastGlobalLogin > (myLogin + 5000)) {
                         
                         const sessionsRef = this.db.collection('artifacts').doc(this.appId)
@@ -1669,23 +1668,19 @@ initSecurityMonitor(uid) {
                             .collection('sessions');
 
                         sessionsRef.get().then(snapshot => {
-                            // 🛡️ THE HELL SOLID FIX: Filter out THIS exact device
                             const currentDeviceId = localStorage.getItem('app_device_id');
                             const otherDevices = snapshot.docs.filter(doc => doc.id !== currentDeviceId);
 
-                            // ONLY alert if a DIFFERENT device triggered the login
                             if (otherDevices.length > 0) {
-                                const lastSeenAlert = parseInt(sessionStorage.getItem('last_alert_timestamp') || '0');
+                                // ROBUST FIX: Use localStorage so it survives tab reloads!
+                                const lastSeenAlert = parseInt(localStorage.getItem('last_alert_timestamp') || '0');
                                 
                                 if (lastGlobalLogin > lastSeenAlert) {
-                                    sessionStorage.setItem('last_alert_timestamp', lastGlobalLogin);
+                                    localStorage.setItem('last_alert_timestamp', lastGlobalLogin);
                                     document.getElementById('security-modal').style.display = 'flex';
                                 }
                             } else {
-                                // SILENT SYNC: It was just our own token refreshing.
-                                // Update local start time so we don't keep checking this same timestamp
                                 localStorage.setItem('auth_session_start', lastGlobalLogin);
-                                console.log("Security: Self-refresh detected. Ignored.");
                             }
                         }).catch(e => console.warn("Security check skipped", e));
                     }
@@ -3568,7 +3563,7 @@ function renderBio(text) {
                 <button class="btn secondary block" onclick="appBuilder.showSettings(); document.getElementById('security-modal').style.display='none'">
                     Review Active Devices
                 </button>
-                <button class="btn block" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--border);" onclick="document.getElementById('security-modal').style.display='none'">
+                <button class="btn block" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--border);" onclick="localStorage.setItem('auth_session_start', Date.now()); document.getElementById('security-modal').style.display='none'">
                     Yes, It Was Me
                 </button>
             </div>
