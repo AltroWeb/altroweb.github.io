@@ -1655,7 +1655,7 @@ initSecurityMonitor(uid) {
                     }
                 }
 
-                // B. INTRUSION ALERT (Smart Check)
+    // B. INTRUSION ALERT (Smart Check)
                 if (data.lastLoginTime) {
                     const lastGlobalLogin = data.lastLoginTime.toMillis();
                     const myLogin = parseInt(localStorage.getItem('auth_session_start') || Date.now());
@@ -1663,23 +1663,29 @@ initSecurityMonitor(uid) {
                     // If DB login is newer than mine (> 5s tolerance)
                     if (lastGlobalLogin > (myLogin + 5000)) {
                         
-                        // CHECK: Are there actually multiple devices?
                         const sessionsRef = this.db.collection('artifacts').doc(this.appId)
                             .collection('public').doc('data')
                             .collection('user_info').doc(uid)
                             .collection('sessions');
 
                         sessionsRef.get().then(snapshot => {
-                            // If snapshot.size is 1, it's just ME re-logging in. Ignore.
-                            // If snapshot.size > 1, it's a SECOND device. ALERT!
-                            if (snapshot.size > 1) {
+                            // 🛡️ THE HELL SOLID FIX: Filter out THIS exact device
+                            const currentDeviceId = localStorage.getItem('app_device_id');
+                            const otherDevices = snapshot.docs.filter(doc => doc.id !== currentDeviceId);
+
+                            // ONLY alert if a DIFFERENT device triggered the login
+                            if (otherDevices.length > 0) {
                                 const lastSeenAlert = parseInt(sessionStorage.getItem('last_alert_timestamp') || '0');
                                 
-                                // Only show if we haven't shown this specific alert yet
                                 if (lastGlobalLogin > lastSeenAlert) {
                                     sessionStorage.setItem('last_alert_timestamp', lastGlobalLogin);
                                     document.getElementById('security-modal').style.display = 'flex';
                                 }
+                            } else {
+                                // SILENT SYNC: It was just our own token refreshing.
+                                // Update local start time so we don't keep checking this same timestamp
+                                localStorage.setItem('auth_session_start', lastGlobalLogin);
+                                console.log("Security: Self-refresh detected. Ignored.");
                             }
                         }).catch(e => console.warn("Security check skipped", e));
                     }

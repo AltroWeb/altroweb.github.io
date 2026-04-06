@@ -5968,7 +5968,7 @@ initFullscreenListener() {
                 // OK button listener is set dynamically
             }
 
-            showAlert(title, msg, onOk = null, isDestructive = false) {
+            showAlert(title, msg, onOk = null, isDestructive = false, customOkText = null, customCancelText = "Cancel") {
                 document.getElementById('sa-title').innerText = title;
                 document.getElementById('sa-msg').innerText = msg;
                 
@@ -5977,13 +5977,21 @@ initFullscreenListener() {
                     this.closeAlert();
                 };
 
-                if (isDestructive) {
+                // Dynamic OK Text
+                if (customOkText) {
+                    this.alertOkBtn.innerText = customOkText;
+                    if (isDestructive) this.alertOkBtn.classList.add('danger');
+                    else this.alertOkBtn.classList.remove('danger');
+                } else if (isDestructive) {
                     this.alertOkBtn.innerText = "Delete";
                     this.alertOkBtn.classList.add('danger');
                 } else {
                     this.alertOkBtn.innerText = "OK";
                     this.alertOkBtn.classList.remove('danger');
                 }
+
+                // Dynamic Cancel Text (Auto-resets to "Cancel" on normal alerts)
+                this.alertCancelBtn.innerText = customCancelText;
 
                 this.alertOverlay.classList.add('visible');
             }
@@ -6996,41 +7004,46 @@ renderSafeModeUI() {
 
 
 deletePersistentMod(modId, originAppId) {
-    this.showAlert(
-        "Remove Malware?", 
-        "This will remove the persistent script from your system.", 
-        () => {
-            // 1. Remove the Malware Script
-            let mods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
-            mods = mods.filter(m => m.id !== modId);
-            localStorage.setItem('ios_persistent_mods', JSON.stringify(mods));
-            
-            // 2. NUKE SOURCE APP (Using the robust method)
-            if (originAppId && originAppId !== 'Unknown') {
-                setTimeout(() => {
-                    this.showAlert(
-                        "Uninstall Source?", 
-                        `The app "${originAppId}" created this malware. Delete it?`,
-                        () => {
-                            // USE THE MASTER DELETE FUNCTION
-                            if (window.appStore) {
-                                window.appStore.forceDeleteApp(originAppId);
-                            }
-                            
-                            this.renderSafeModeUI();
-                            setTimeout(() => this.showAlert("Cleaned", "Malware and Source nuked."), 300);
-                        },
-                        true // Destructive Red Button
-                    );
-                }, 400);
-            } else {
-                this.renderSafeModeUI();
-                this.showAlert("Cleaned", "Malware removed.");
+                this.showAlert(
+                    "Remove Malware?", 
+                    "This will stop the script from running. You can choose to keep or delete the source app next.", 
+                    () => {
+                        // 1. Physically remove the script from Kernel Memory (Works for both OS versions)
+                        const storageKey = window.mixOSAPI ? 'mixOSAPI_persistent_mods' : 'ios_persistent_mods';
+                        let mods = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                        mods = mods.filter(m => m.id !== modId);
+                        localStorage.setItem(storageKey, JSON.stringify(mods));
+                        
+                        // 2. Refresh the UI so the threat vanishes immediately
+                        this.renderSafeModeUI();
+
+                        // STAGE 2: OPTIONAL SOURCE CLEANUP
+                        if (originAppId && originAppId !== 'Unknown') {
+                            setTimeout(() => {
+                                this.showAlert(
+                                    "Mod Removed", 
+                                    `Would you also like to uninstall the source app "${originAppId}"?`,
+                                    () => {
+                                        // Master delete cleans DB, Icons, and Storage (Works for both OS versions)
+                                        const store = window.mixStore || window.appStore;
+                                        if (store) store.forceDeleteApp(originAppId);
+                                        
+                                        this.renderSafeModeUI();
+                                        setTimeout(() => this.showAlert("System Cleaned", "Source app and malware have been nuked."), 300);
+                                    },
+                                    true,            // isDestructive (Makes it Red)
+                                    "Uninstall App", // customOkText
+                                    "Keep App"       // customCancelText
+                                );
+                            }, 400);
+                        } else {
+                            setTimeout(() => this.showAlert("Malware Removed", "The system script has been deleted."), 400);
+                        }
+                    },
+                    true,           // isDestructive
+                    "Remove Mod"    // customOkText for the first prompt
+                );
             }
-        },
-        true
-    );
-}
 
   
 
@@ -7940,7 +7953,7 @@ document.addEventListener('click', function(e) {
 
 
 // This listener lives in the main OS scope where appStore IS defined
-window.addEventListener('MIXOS_DEEP_LINK', function(e) {
+window.addEventListener('IOS_DEEP_LINK', function(e) {
     var targetId = e.detail.appId;
     console.log("OS Kernel caught deep link request for:", targetId);
 
@@ -8287,7 +8300,7 @@ window.addEventListener('MIXOS_DEEP_LINK', function(e) {
                             const isSideloaded = sideloaded.some(a => a.id === senderAppId);
 
                             if (isDevOnly) {
-                                // 🔒 TIER 3: ULTIMATE LOCKDOWN (Only Sideloaded)
+                                // ?? TIER 3: ULTIMATE LOCKDOWN (Only Sideloaded)
                                 isTrusted = isSideloaded;
                             } else {
                                 // 🛡️ TIER 2: STANDARD STRICT (Sideloaded + Trusted Store Apps)
