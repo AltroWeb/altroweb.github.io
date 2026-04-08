@@ -120,9 +120,9 @@
             position: sticky;
             top: 0;
             z-index: 50;
-            background: rgba(var(--bg), 0.85);
-            backdrop-filter: blur(12px);
-            padding: 1rem 1.2rem;
+            background: var(--bg);
+            padding: 0 1.2rem; /* Removed vertical padding so height controls it purely */
+            height: 60px; /* PRO FIX: The Hard Lock */
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -415,8 +415,8 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 600px;
-            background: rgba(var(--bg), 0.95);
-            backdrop-filter: blur(12px);
+            background: var(--bg);
+            
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-around;
@@ -713,7 +713,7 @@ window.addEventListener('scroll', () => {
     
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer, startAfter } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js";
         
@@ -1434,16 +1434,28 @@ window.updateCharCount = (inputEl, counterId) => {
             const urlParams = new URLSearchParams(window.location.search);
             const linkedPostId = urlParams.get('post');
             const linkedUserId = urlParams.get('u');
+            const searchQuery = urlParams.get('q');
+            const targetView = urlParams.get('v'); // The "View" Hook (settings/notifs)
 
             if (linkedPostId) {
                 window.setView('thread', linkedPostId);
-                window.history.replaceState({}, document.title, window.location.pathname);
             } else if (linkedUserId) {
                 window.setView('profile', linkedUserId);
-                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (searchQuery) {
+                window.searchType = 'posts';
+                window.currentSearchQuery = searchQuery;
+                window.setView('search');
+            } else if (targetView) {
+                // Allows links like ?v=settings or ?v=notifications
+                window.setView(targetView);
             } else {
                 window.setView('home');
             }
+            
+            // PRO FIX: Cleans the URL instantly so hitting 'Refresh' doesn't trap the user
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            
         };
 
         window.setView = (view, param = null) => {
@@ -1459,6 +1471,10 @@ window.updateCharCount = (inputEl, counterId) => {
             if(unsubscribeProfile) { unsubscribeProfile(); unsubscribeProfile = null; }
 
 if(window.feedObserver) { window.feedObserver.disconnect(); window.feedObserver = null; }
+
+
+// PRO FIX: Remember the last main tab so the back button knows where to go
+        if (['home', 'search', 'notifications'].includes(view)) window.previousMainView = view;
 
 
 
@@ -1754,7 +1770,7 @@ if (!window.isUserScrolling) {
         // --- THREAD VIEW ---
         const renderThread = async (container, postId) => {
             container.innerHTML = `
-                <div style="display:flex; align-items:center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(var(--bg), 0.85); backdrop-filter: blur(12px); z-index: 10;">
+                <div style="display:flex; align-items:center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10;">
                     <div class="back-btn" style="margin:0; padding:0;" onclick="window.setView('home')">${getIcon('arrow-left')} <span style="margin-left: 6px;">Post</span></div>
                 </div>
                 <div id="thread-main">
@@ -1796,7 +1812,8 @@ if (!window.isUserScrolling) {
                 const post = { id: docSnap.id, ...docSnap.data() };
                 const isLiked = post.likes && post.likes.includes(currentUser.uid);
                 
-                document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `window.setView('thread', '${post.replyTo}')` : `window.setView('home')`);
+                const backTarget = window.previousMainView || 'home';
+document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `window.setView('thread', '${post.replyTo}')` : `window.setView('${backTarget}')`);
                 
                 
                 
@@ -2170,7 +2187,20 @@ if (!window.isUserScrolling) {
     <div class="stat-item ${isMe ? 'pointer' : ''}" ${isMe ? `onclick="window.setView('connections', 'followers')"` : ''}><span class="stat-val">${formatNum(user.followers?.length || 0)}</span> <span class="stat-label">Followers</span></div>
 </div>
                     </div>
-                    <div style="padding:1rem; border-bottom:1px solid var(--border); font-weight:700; font-family:var(--font-head); font-size:1.1rem;">Posts & Replies</div>
+                    <div style="padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); font-weight:700; font-family:var(--font-head); font-size:1.1rem;">Posts & Replies</div>
+                    
+                    <div style="position: sticky; top: 60px; z-index: 10; display: flex; flex-direction: column;">
+                        <div style="padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); background: var(--bg); display: flex; gap: 12px; align-items: center;" id="profile-filters">
+                            <button class="filter-chip active" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="window.sortProfile('newest', this)">Newest</button>
+                            <button class="filter-chip" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="window.sortProfile('top', this)">Top</button>
+                            <button class="filter-chip flex items-center justify-center" style="padding: 0.4rem 0.6rem; background: var(--text); color: var(--bg); border: none;" onclick="document.getElementById('profile-search-bar').classList.toggle('hidden'); document.getElementById('profile-search-input').focus();">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </button>
+                        </div>
+                        <div id="profile-search-bar" class="hidden" style="padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); background: var(--bg);">
+                            <input type="text" id="profile-search-input" class="custom-input w-full" placeholder="Search loaded posts..." onkeyup="window.localProfileSearch(this.value)" style="padding: 0.8rem 1rem;">
+                        </div>
+                    </div>
                     <div id="profile-posts">
                         <div style="padding:2rem;text-align:center; color:var(--dim)"><div class="spinner"></div></div>
                     </div>
@@ -2244,16 +2274,15 @@ if (!window.isUserScrolling) {
         const renderSettings = (container) => {
             container.innerHTML = `
                 <div style="padding:1.5rem;">
-                    <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Settings</h2>
-                    <br>
-                    <div class="input-group">
-                        <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.5rem;">Appearance</label>
+                    <h2 style="font-size: 2rem; margin-bottom: 1.2rem; line-height: 1;">Settings</h2>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="text-dim text-sm bold" style="display:block; margin-bottom: 1rem;">Appearance</label>
                         <button class="btn-primary flex items-center justify-center gap-2" id="theme-toggle-app" onclick="window.toggleTheme()" style="background:var(--surface); color:var(--text); border:1px solid var(--border);">
                             ${getIcon(isDarkMode ? 'sun' : 'moon')}
                             Switch to ${isDarkMode ? 'Light' : 'Dark'} Mode
                         </button>
                     </div>
-                    <hr style="border:0; border-top:1px solid var(--border); margin:2rem 0;">
+                    <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
                     
                     <h3 style="margin-bottom:1rem;">Edit Profile</h3>
                     <div class="input-group">
@@ -2656,7 +2685,7 @@ const renderConnections = async (container, type) => {
 
     // 2. Base UI with the Search Bar
     container.innerHTML = `
-        <div style="display:flex; align-items:center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(var(--bg), 0.85); backdrop-filter: blur(12px); z-index: 10;">
+        <div style="display:flex; align-items:center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10;">
             <div class="back-btn" style="margin:0; padding:0;" onclick="window.setView('profile', '${currentUser.uid}')">${getIcon('arrow-left')} <span style="margin-left: 6px;">${title}</span></div>
         </div>
         <div class="search-bar-container">
@@ -2767,62 +2796,194 @@ window.handleConnSearch = async (val, type) => {
 
 
 
-        const renderSearch = async (container) => {
-             container.innerHTML = `
-                <div class="search-bar-container">
-                    <input type="text" id="search-input" class="custom-input" placeholder="Search users by name or handle..." onkeyup="window.handleSearch(this.value)">
+const renderSearch = async (container) => {
+            window.searchType = window.searchType || 'users'; 
+            container.innerHTML = `
+          <div style="position: sticky; top: 60px; background: var(--bg); z-index: 10; display: flex; flex-direction: column; border-bottom: 1px solid var(--border);">
+                    <div class="search-bar-container" style="border-bottom: none; padding: 0.8rem 1rem 0.5rem 1rem;">
+                        <input type="text" id="search-input" class="custom-input" placeholder="Search ${window.searchType}..." onkeyup="window.handleSearch(this.value)" value="${window.currentSearchQuery || ''}">
+                    </div>
+                    <div class="feed-filters" style="border-bottom: none; padding-bottom: 0.8rem; padding-top: 0.3rem;">
+                        <button class="filter-chip ${window.searchType === 'users' ? 'active' : ''}" onclick="window.setSearchType('users')">Users</button>
+                        <button class="filter-chip ${window.searchType === 'posts' ? 'active' : ''}" onclick="window.setSearchType('posts')">Posts</button>
+                    </div>
                 </div>
                 <div id="search-res" class="list-results">
                     <div class="text-dim" style="text-align:center; margin-top: 2rem;">Type to search.</div>
                 </div>
-             `;
+                
+                <!-- PRO FIX: Infinite Scroll Tripwire for Post Search -->
+                <div id="search-tripwire" style="height: 1px; width: 100%; pointer-events: none;"></div>
+                <button id="search-load-more" class="load-more-btn" style="display:none;" onclick="window.loadMoreSearchPosts(true)">Load More</button>
+            `;
+            if (window.currentSearchQuery) window.handleSearch(window.currentSearchQuery);
         };
 
-        let searchTimeout = null; // PRO FIX: Debounce timer
+        window.setSearchType = (type) => {
+            window.searchType = type;
+            window.lastSearchCursor = null; 
+            window.searchMatchedPosts = [];
+            renderSearch(document.getElementById('main-content'));
+        };
 
+        let searchTimeout = null; 
+        
         window.handleSearch = (val) => {
+            window.currentSearchQuery = val;
             const res = document.getElementById('search-res');
-            if(val.length < 2) { res.innerHTML = '<div class="text-dim" style="text-align:center; margin-top: 2rem;">Type to search.</div>'; return; }
-            
-            res.innerHTML = '<div style="text-align:center; margin-top:2rem;"><div class="spinner text-dim"></div></div>';
+            const loadBtn = document.getElementById('search-load-more');
             
             clearTimeout(searchTimeout);
+            
+            if(val.trim().length < 2) { 
+                res.innerHTML = '<div class="text-dim" style="text-align:center; margin-top: 2rem;">Type to search.</div>'; 
+                res.style.opacity = '1';
+                if(loadBtn) loadBtn.style.display = 'none';
+                return; 
+            }
+            
+// PRO FIX: Stop DOM Trashing AND protect the spinner animation!
+            if (!res.innerHTML.includes('post-card') && !res.innerHTML.includes('user-row')) {
+                // Only inject the spinner if it isn't ALREADY spinning
+                if (!res.innerHTML.includes('spinner')) {
+                    res.innerHTML = '<div style="text-align:center; margin-top:2rem;"><div class="spinner text-dim"></div></div>';
+                }
+            } else {
+                res.style.opacity = '0.5'; 
+            }
+            if(loadBtn) loadBtn.style.display = 'none';
+            
             searchTimeout = setTimeout(async () => {
+                const thisSearchId = Date.now();
+                window.activeSearchId = thisSearchId; // The Race Condition Stamp
+
+                if (window.searchType === 'users') {
+                    const qStr = val.trim().toLowerCase().startsWith('@') ? val.trim().toLowerCase() : '@' + val.trim().toLowerCase();
+                    const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handle'), startAt(qStr), endAt(qStr + '\uf8ff'), limit(20)));
+
+                    // PRO FIX: Kill the ghost if user typed something new!
+                    if (window.activeSearchId !== thisSearchId) return;
+
+                    res.style.opacity = '1';
+                    res.innerHTML = '';
+                    let matches = 0;
+                    
+                    snap.forEach(doc => {
+                        const u = doc.data();
+                        if(u.displayName.toLowerCase().includes(val.toLowerCase()) || u.handle.toLowerCase().includes(val.toLowerCase())) {
+                            matches++;
+                            res.innerHTML += window.buildUserRow(u);
+                        }
+                    });
+
+                    if (matches === 0) res.innerHTML = '<div class="text-dim" style="text-align:center; margin-top: 2rem;">No users found.</div>';
+                } else {
+                    window.lastSearchCursor = null; 
+                    window.searchMatchedPosts = []; 
+                    await window.loadMoreSearchPosts(false, thisSearchId); // Pass the stamp to the posts crawler
+                }
+            }, 400); 
+        };
+
+        // --- PRO FIX: COST-OPTIMIZED POST CRAWLER (V3) ---
+        window.loadMoreSearchPosts = async (isManual = false, fetchId = null) => {
+            if(window.isPaginatingSearch) return; 
+            window.isPaginatingSearch = true; 
+
+            const res = document.getElementById('search-res');
+            const loadBtn = document.getElementById('search-load-more');
+            const tripwire = document.getElementById('search-tripwire');
+            const val = window.currentSearchQuery?.toLowerCase() || '';
+
+            if (isManual && loadBtn) {
+                loadBtn.innerHTML = '<div class="spinner"></div>';
+                loadBtn.style.opacity = '0.5';
+                loadBtn.disabled = true;
+            }
+
+            try {
+                let chunkLimit = 50; 
+                let newMatches = [];
+                let keepDigging = true;
+                let currentCursor = window.lastSearchCursor;
+                let maxDigs = 4; 
+                let hitEndOfDB = false; // PRO FIX: Tracks if we hit the bedrock of the database
+
+                while (keepDigging && maxDigs > 0) {
+                    let qArgs = [getPublicCollection('posts'), orderBy('timestamp', 'desc'), limit(chunkLimit)];
+                    if (currentCursor) qArgs.push(startAfter(currentCursor));
+                    
+                    const snap = await getDocs(query(...qArgs));
+                    if (snap.empty) { hitEndOfDB = true; break; }
+                    
+                    currentCursor = snap.docs[snap.docs.length - 1]; 
+                    
+                    snap.forEach(doc => {
+                        const p = {id: doc.id, ...doc.data()};
+                        if ((p.content && p.content.toLowerCase().includes(val.trim())) || 
+                            (p.authorName && p.authorName.toLowerCase().includes(val.trim())) || 
+                            (p.authorHandle && p.authorHandle.toLowerCase().includes(val.trim()))) {
+                            newMatches.push(p);
+                            window.searchMatchedPosts.push(p);
+                        }
+                    });
+
+                    if (newMatches.length >= 10) keepDigging = false;
+                    
+                    // PRO FIX: If Firebase gives us less than 50 posts, there are no more posts left in existence.
+                    if (snap.docs.length < chunkLimit) hitEndOfDB = true; 
+                    
+                    maxDigs--;
+                }
+
+                window.lastSearchCursor = currentCursor; 
+
+                // PRO FIX: If the user kept typing, silently drop this outdated data!
+                if (fetchId && fetchId !== window.activeSearchId) return;
                 
-                
-                
-                
-                const qStr = val.trim().toLowerCase().startsWith('@') ? val.trim().toLowerCase() : '@' + val.trim().toLowerCase();
-const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handle'), startAt(qStr), endAt(qStr + '\uf8ff'), limit(20)));
+                res.style.opacity = '1'; // Restore full visibility
 
 
-                res.innerHTML = '';
-                let matches = 0;
-                
-                snap.forEach(doc => {
-                    const u = doc.data();
-                    if(u.displayName.toLowerCase().includes(val.toLowerCase()) || u.handle.toLowerCase().includes(val.toLowerCase())) {
-                        matches++;
-                        const div = document.createElement('div');
-                        div.className = 'user-row pointer';
-                        div.onclick = () => window.setView('profile', u.uid);
-                        // PRO FIX: Sanitize output rendering
-                        const safeName = u.displayName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        div.innerHTML = `
-                             <div class="user-info-row">
-                                 <img src="${window.getAvatar(u.pfp, u.displayName)}" class="pfp-sm">
-                                 <div>
-                                    <div class="bold display-name" style="width:200px;"><span class="display-name-text">${safeName}</span></div>
-                                    <div class="text-xs text-dim handle" style="width:200px;">${u.handle}</div>
-                                 </div>
-                             </div>
-                        `;
-                        res.appendChild(div);
+
+
+
+                // RENDER LOGIC
+          if (window.searchMatchedPosts.length === 0 && hitEndOfDB) {
+                    res.innerHTML = '<div class="text-dim" style="text-align:center; margin-top: 2rem;">No posts found.</div>';
+                    if (loadBtn) loadBtn.style.display = 'none';
+                } else {
+                    if (res.innerHTML.includes('spinner') || res.innerHTML.includes('No posts found')) res.innerHTML = '';
+                    
+                    const htmlPromises = newMatches.map(async (post) => await buildPostHTML(post, post.likes?.includes(currentUser.uid)));
+                    res.insertAdjacentHTML('beforeend', (await Promise.all(htmlPromises)).join(''));
+
+                    // PRO FIX: Only show the button if we HAVEN'T hit the bedrock
+                    if (!hitEndOfDB) {
+                        if (loadBtn) {
+                            loadBtn.style.display = 'block';
+                            loadBtn.innerHTML = 'Load More';
+                            loadBtn.disabled = false;
+                            loadBtn.style.opacity = '1';
+                        }
+                        
+                        if(window.searchObserver) window.searchObserver.disconnect();
+                        window.searchObserver = new IntersectionObserver(entries => {
+                            if(entries[0].isIntersecting && !window.isPaginatingSearch) window.loadMoreSearchPosts(false);
+                        }, { rootMargin: '150px' }); 
+                        
+                        if(tripwire) window.searchObserver.observe(tripwire);
+                    } else {
+                        // Bedrock reached. Hide everything.
+                        if (loadBtn) loadBtn.style.display = 'none';
+                        if (tripwire) tripwire.style.display = 'none';
                     }
-                });
-
-                if (matches === 0) res.innerHTML = '<div class="text-dim" style="text-align:center; margin-top: 2rem;">No users found.</div>';
-            }, 400); // Waits 400ms after user stops typing before hitting database
+                }
+            } catch(e) {
+                console.error("Search Error:", e);
+                if(res.innerHTML.includes('spinner')) res.innerHTML = '<div class="text-error" style="text-align:center; padding:1rem;">Search failed.</div>';
+            }
+            
+            window.isPaginatingSearch = false; 
         };
 
         const renderNotifications = async (container) => {
@@ -2852,8 +3013,8 @@ const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handl
                     if (data.read === false) unreadDocs.push(d.id);
                 });
                 
-                // Sort newest first, then cut the list to the current limit
                 allNotifs.sort((a,b) => b.timestamp.localeCompare(a.timestamp));
+                window.cachedNotifs = allNotifs; // PRO FIX: Cache to local RAM
                 let notifs = allNotifs.slice(0, window.LIMITS.notifs);
                 
                 if (unreadDocs.length > 0) {
@@ -2888,7 +3049,9 @@ const snap = await getDocs(query(getPublicCollection('profiles'), orderBy('handl
                     `;
                 });
 
-                if (notifs.length === window.LIMITS.notifs) fullHTML += `<div class="load-more-btn" onclick="window.LIMITS.notifs += 20; window.setView('notifications')">Load Older Notifications</div>`;
+                if (notifs.length === window.LIMITS.notifs && notifs.length < allNotifs.length) {
+                    fullHTML += `<div class="load-more-btn" onclick="window.loadMoreNotifs(this)">Load Older Notifications</div>`;
+                }
                 list.innerHTML = fullHTML;
             }, (err) => {});
         };
@@ -3363,9 +3526,91 @@ window.removeFollower = (targetUid, targetHandle) => {
 
 
 
+// --- PRO PROFILE FILTERS & INLINE SEARCH ---
+        window.sortProfile = (type, btn) => {
+            const filters = document.getElementById('profile-filters');
+            if(filters) filters.querySelectorAll('.filter-chip').forEach(c => {
+                if(c.innerText === 'Newest' || c.innerText === 'Top') c.classList.remove('active');
+            });
+            btn.classList.add('active');
+            
+            const list = document.getElementById('profile-posts');
+            if(!list) return;
+            
+            list.style.display = 'flex';
+            list.style.flexDirection = 'column';
+            
+            if (type === 'top') {
+                // Sorts the existing memory array by likes, then applies CSS order
+                window.lastProfilePosts.slice().sort((a,b) => (b.likes?.length || 0) - (a.likes?.length || 0)).forEach((p, i) => {
+                    const el = document.getElementById(`post-${p.id}`);
+                    if(el) el.style.order = i;
+                });
+            } else {
+                // Resets to chronological
+                window.lastProfilePosts.forEach((p, i) => {
+                    const el = document.getElementById(`post-${p.id}`);
+                    if(el) el.style.order = 0; 
+                });
+            }
+        };
 
+        window.localProfileSearch = (val) => {
+            const q = val.toLowerCase();
+            const cards = document.querySelectorAll('#profile-posts .post-card');
+            const loadBtn = document.querySelector('#profile-posts .load-more-btn');
+            
+            cards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                // Hides posts that don't match the search text instantly
+                card.style.display = text.includes(q) ? 'flex' : 'none';
+            });
+            
+            // Hides the "Load More" button while searching so the pagination logic stays safe
+            if(loadBtn) loadBtn.style.display = q ? 'none' : 'block';
+        };
 
  
+        
+        // --- PRO FIX: SILENT NOTIFICATION LOADER ---
+        window.loadMoreNotifs = (btn) => {
+            btn.innerHTML = '<div class="spinner"></div>';
+            window.LIMITS.notifs += 20;
+            const list = document.getElementById('notif-list');
+            if (!list || !window.cachedNotifs) return;
+
+            let notifs = window.cachedNotifs.slice(0, window.LIMITS.notifs);
+            let fullHTML = '';
+            
+            notifs.forEach(n => {
+                let action = '';
+                if (n.type === 'like') action = 'liked your post';
+                else if (n.type === 'reply') action = 'replied to your post';
+                else if (n.type === 'follow') action = 'followed you';
+                else if (n.type === 'post') action = 'published a new post';
+                else if (n.type === 'mention') action = 'mentioned you in a post';
+
+                fullHTML += `
+                    <div class="user-row">
+                        <div class="user-info-row w-full ${n.postId ? 'pointer' : ''}" ${n.postId ? `onclick="window.setView('thread', '${n.postId}')"` : ''}>
+                            <div style="color:var(--text); line-height: 1.3;">
+                                <span class="bold break-words">${n.senderName}</span> <span class="text-dim">${action}</span>.
+                                <div class="text-xs text-dim" style="margin-top:4px;">${timeAgo(n.timestamp)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (notifs.length === window.LIMITS.notifs && notifs.length < window.cachedNotifs.length) {
+                fullHTML += `<div class="load-more-btn" onclick="window.loadMoreNotifs(this)">Load Older Notifications</div>`;
+            }
+            
+            list.innerHTML = fullHTML;
+        };
+        
+        
+        
         
         
 
