@@ -1063,7 +1063,7 @@ const appCheck = initializeAppCheck(app, {
         }
     } else {
         btn.disabled = false;
-        btn.innerHTML = btn.dataset.originalText;
+        btn.innerHTML = btn.dataset.originalText || 'OK';
         btn.style.opacity = '1';
         // Unlock the cancel button
         if(cancelBtn) { 
@@ -1247,15 +1247,23 @@ window.updateCharCount = (inputEl, counterId) => {
             btnCancel.onclick = window.closeModal;
             
             overlay.classList.add('open');
+            document.body.style.overflow = 'hidden'; // PRO FIX: Locks background scroll
         };
 
-        window.closeModal = () => document.getElementById('modal-container').classList.remove('open');
+        window.closeModal = () => { 
+            document.getElementById('modal-container').classList.remove('open'); 
+            document.body.style.overflow = ''; // PRO FIX: Unlocks background scroll
+        };
 
         window.showImgModal = (src) => {
             document.getElementById('full-img').src = src;
             document.getElementById('img-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
         };
-        window.closeImgModal = () => document.getElementById('img-modal').classList.remove('open');
+        window.closeImgModal = () => {
+            document.getElementById('img-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        };
 
         // --- VIEW RENDERERS ---
 
@@ -1568,7 +1576,7 @@ let mediaHTML = '';
                         <span class="text-dim" style="font-size:0.85rem; flex-shrink: 0;">· ${timeAgo(post.timestamp)}</span>
                     </div>
                     ${replyingToHTML}
-                    <div class="post-content break-words">${markdown(post.content)}${mediaHTML}</div>
+                    <div class="post-content break-words">${markdown(post.content)}${mediaHTML}<span style="display:none;">${post.tags || ''}</span></div>
                     <div class="post-actions">
                         <button class="action-btn" onclick="event.stopPropagation(); window.setView('thread', '${post.id}')">
                             ${getIcon('message-square')} ${formatNum(post.replyCount || 0)}
@@ -1898,47 +1906,51 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
 
 
         window.handleImgSelectReply = async (input) => {
-    if(input.files && input.files[0]) {
-        const f = input.files[0];
-        const isMedia = f.type.startsWith('video/') || f.type.startsWith('audio/');
-        
-        if (isMedia && currentProfile.mediaEnabled !== true) {
-            input.value = '';
-            return window.showModal("Restricted", "Media uploads are disabled by default. Turn them on in Settings.");
-        }
-
-        if (isMedia || f.type === 'image/gif') {
-            if (f.size > 800000) { input.value = ''; return window.showModal("Error", "File too heavy (>800KB strict limit)."); }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                tempReplyImage = e.target.result;
-                let previewHTML = '';
+            if(input.files && input.files[0]) {
+                const f = input.files[0];
+                const isMedia = f.type.startsWith('video/') || f.type.startsWith('audio/');
                 
-                if (f.type.startsWith('video/')) previewHTML = `<video src="${tempReplyImage}#t=0.001" style="width:100%; height:auto; display:block; border-radius:12px; background:#000;" controlsList="noplaybackrate" controls></video>`;
-                else if (f.type.startsWith('audio/')) previewHTML = `<audio src="${tempReplyImage}" style="width:100%;" controlsList="noplaybackrate" controls></audio>`;
-                else previewHTML = `<img src="${tempReplyImage}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+                if (isMedia && currentProfile.mediaEnabled !== true) {
+                    input.value = '';
+                    return window.showModal("Restricted", "Media uploads are disabled by default. Turn them on in Settings.");
+                }
 
-                const wrapperClass = f.type === 'image/gif' ? 'preview-thumb' : '';
+                if (isMedia || f.type === 'image/gif') {
+                    if (f.size > 800000) { input.value = ''; return window.showModal("Error", "File too heavy (>800KB strict limit)."); }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        tempReplyImage = e.target.result;
+                        let previewHTML = '';
+                        
+                        if (f.type.startsWith('video/')) previewHTML = `<video src="${tempReplyImage}#t=0.001" style="width:100%; height:auto; display:block; border-radius:12px; background:#000;" controlsList="noplaybackrate" controls></video>`;
+                        else if (f.type.startsWith('audio/')) previewHTML = `<audio src="${tempReplyImage}" style="width:100%;" controlsList="noplaybackrate" controls></audio>`;
+                        else previewHTML = `<img src="${tempReplyImage}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+
+                        const wrapperClass = f.type === 'image/gif' ? 'preview-thumb' : '';
+                        document.getElementById('reply-img-prev').innerHTML = `
+                            <div class="${wrapperClass}" style="position:relative; width:100%; margin-top:10px; margin-bottom: 15px;">
+                                ${previewHTML}
+                                <div class="rm-img" style="z-index:20;" onclick="tempReplyImage=null; this.parentElement.remove(); document.getElementById('reply-file-in').value='';">${getIcon('x')}</div>
+                                <input type="text" id="reply-media-tags" class="custom-input w-full" placeholder="Required: Add media tags (e.g. arsenal)" maxlength="200" oninput="window.updateCharCount(this, 'reply-media-tags-count')" style="margin-top:8px; padding:0.6rem 1rem; font-size:0.85rem; border:1px solid var(--error);">
+                                <div id="reply-media-tags-count" class="char-counter text-xs text-dim" style="margin-top: 4px;">0/200</div>
+                            </div>`;
+                    };
+                    return reader.readAsDataURL(f);
+                }
+                
+                if (f.size > 3000000) { input.value = ''; return window.showModal("Error", "Image must be under 3MB before compression."); }
+                const base64 = await compressImage(f);
+                tempReplyImage = base64;
                 document.getElementById('reply-img-prev').innerHTML = `
-                    <div class="${wrapperClass}" style="position:relative; width:100%; margin-top:10px; margin-bottom: 15px;">
-                        ${previewHTML}
+                    <div style="position:relative; width:100%; margin-top:10px; margin-bottom: 15px;">
+                        <img src="${base64}" style="width:100%; height:auto; max-height:280px; object-fit:cover; border-radius:12px;">
                         <div class="rm-img" style="z-index:20;" onclick="tempReplyImage=null; this.parentElement.remove(); document.getElementById('reply-file-in').value='';">${getIcon('x')}</div>
-                    </div>`;
-            };
-            return reader.readAsDataURL(f);
-        }
-        
-        if (f.size > 3000000) { input.value = ''; return window.showModal("Error", "Image must be under 3MB before compression."); }
-        const base64 = await compressImage(f);
-        tempReplyImage = base64;
-        document.getElementById('reply-img-prev').innerHTML = `
-            <div class="preview-thumb" style="margin-top:10px; margin-bottom: 15px;">
-                <img src="${base64}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
-                <div class="rm-img" onclick="tempReplyImage=null; this.parentElement.remove(); document.getElementById('reply-file-in').value='';">${getIcon('x')}</div>
-            </div>
-        `;
-    }
-};
+                        <input type="text" id="reply-media-tags" class="custom-input w-full" placeholder="Required: Add media tags (e.g. arsenal)" maxlength="200" oninput="window.updateCharCount(this, 'reply-media-tags-count')" style="margin-top:8px; padding:0.6rem 1rem; font-size:0.85rem; border:1px solid var(--error);">
+                        <div id="reply-media-tags-count" class="char-counter text-xs text-dim" style="margin-top: 4px;">0/200</div>
+                    </div>
+                `;
+            }
+        };
 
 
 
@@ -1955,8 +1967,12 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
             
             if (!txt.trim() && !tempReplyImage) return;
             
-            
-            
+            let mediaTags = '';
+            if (tempReplyImage) {
+                const tagEl = document.getElementById('reply-media-tags');
+                if (!tagEl || !tagEl.value.trim()) return window.showModal('Required', 'You MUST add tags to your media before posting.');
+                mediaTags = tagEl.value.trim().toLowerCase();
+            }
 
             window.setLoading(btn, true);
 
@@ -1969,6 +1985,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 const postData = {
                     content: txt, image: tempReplyImage, authorId: currentUser.uid,
                     authorName: currentProfile.displayName, authorHandle: currentProfile.handle,
+                    tags: mediaTags,
                     authorPfp: currentProfile.pfp, timestamp: new Date().toISOString(), likes: [],
                     replyTo: replyToId, replyToHandle: parentData.authorHandle, replyToUid: parentData.authorId
                 };
@@ -2025,7 +2042,12 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 
                 if (!txt.trim() && !tempImage) return;
                 
-                
+                let mediaTags = '';
+                if (tempImage) {
+                    const tagEl = document.getElementById('post-media-tags');
+                    if (!tagEl || !tagEl.value.trim()) return window.showModal('Required', 'You MUST add tags to your media before posting.');
+                    mediaTags = tagEl.value.trim().toLowerCase();
+                }
                 
                 
                 try {
@@ -2033,7 +2055,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                     
                     const postData = {
                         content: txt, image: tempImage, authorId: currentUser.uid,
-                        authorName: currentProfile.displayName, authorHandle: currentProfile.handle,
+                        authorName: currentProfile.displayName, authorHandle: currentProfile.handle, tags: mediaTags,
                         authorPfp: currentProfile.pfp, timestamp: new Date().toISOString(), likes: []
                     };
 
@@ -2080,49 +2102,51 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
 
 
         window.handleImgSelect = async (input) => {
-    if(input.files && input.files[0]) {
-        const f = input.files[0];
-        const isMedia = f.type.startsWith('video/') || f.type.startsWith('audio/');
-        
-        // Strict Kill Switch: Blocks if undefined (default) or false
-        if (isMedia && currentProfile.mediaEnabled !== true) {
-            input.value = ''; 
-            return window.showModal("Restricted", "Media uploads are disabled by default. Turn them on in Settings.");
-        }
-
-        if (isMedia || f.type === 'image/gif') {
-            if (f.size > 800000) { input.value = ''; return window.showModal("Error", "File too heavy (>800KB strict limit)."); }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                tempImage = e.target.result;
-                let previewHTML = '';
+            if(input.files && input.files[0]) {
+                const f = input.files[0];
+                const isMedia = f.type.startsWith('video/') || f.type.startsWith('audio/');
                 
-                // Pro Sizing: max-height 280px ensures portrait videos don't blow up the modal, object-fit contains it cleanly.
-                if (f.type.startsWith('video/')) previewHTML = `<video src="${tempImage}#t=0.001" style="width:100%; height:auto; display:block; border-radius:12px; background:#000;" controlsList="noplaybackrate" controls></video>`;
-                else if (f.type.startsWith('audio/')) previewHTML = `<audio src="${tempImage}" style="width:100%;" controlsList="noplaybackrate" controls></audio>`;
-                else previewHTML = `<img src="${tempImage}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+                if (isMedia && currentProfile.mediaEnabled !== true) {
+                    input.value = ''; 
+                    return window.showModal("Restricted", "Media uploads are disabled by default. Turn them on in Settings.");
+                }
 
-                const wrapperClass = f.type === 'image/gif' ? 'preview-thumb' : '';
+                if (isMedia || f.type === 'image/gif') {
+                    if (f.size > 800000) { input.value = ''; return window.showModal("Error", "File too heavy (>800KB strict limit)."); }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        tempImage = e.target.result;
+                        let previewHTML = '';
+                        
+                        if (f.type.startsWith('video/')) previewHTML = `<video src="${tempImage}#t=0.001" style="width:100%; height:auto; display:block; border-radius:12px; background:#000;" controlsList="noplaybackrate" controls></video>`;
+                        else if (f.type.startsWith('audio/')) previewHTML = `<audio src="${tempImage}" style="width:100%;" controlsList="noplaybackrate" controls></audio>`;
+                        else previewHTML = `<img src="${tempImage}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+
+                        const wrapperClass = f.type === 'image/gif' ? 'preview-thumb' : '';
+                        document.getElementById('post-img-prev').innerHTML = `
+                            <div class="${wrapperClass}" style="position:relative; width:100%; margin-top:10px; margin-bottom: 15px;">
+                                ${previewHTML}
+                                <div class="rm-img" style="z-index:20;" onclick="tempImage=null; this.parentElement.remove(); document.getElementById('file-in').value='';">${getIcon('x')}</div>
+                                <input type="text" id="post-media-tags" class="custom-input w-full" placeholder="Required: Add media tags (e.g. arsenal)" maxlength="200" oninput="window.updateCharCount(this, 'post-media-tags-count')" style="margin-top:8px; padding:0.6rem 1rem; font-size:0.85rem; border:1px solid var(--error);">
+                                <div id="post-media-tags-count" class="char-counter text-xs text-dim" style="margin-top: 4px;">0/200</div>
+                            </div>`;
+                    };
+                    return reader.readAsDataURL(f);
+                }
+                
+                if (f.size > 3000000) { input.value = ''; return window.showModal("Error", "Image must be under 3MB before compression."); }
+                const base64 = await compressImage(f);
+                tempImage = base64;
                 document.getElementById('post-img-prev').innerHTML = `
-                    <div class="${wrapperClass}" style="position:relative; width:100%; margin-top:10px; margin-bottom: 15px;">
-                        ${previewHTML}
+                    <div style="position:relative; width:100%; margin-top:10px; margin-bottom: 15px;">
+                        <img src="${base64}" style="width:100%; height:auto; max-height:280px; object-fit:cover; border-radius:12px;">
                         <div class="rm-img" style="z-index:20;" onclick="tempImage=null; this.parentElement.remove(); document.getElementById('file-in').value='';">${getIcon('x')}</div>
-                    </div>`;
-            };
-            return reader.readAsDataURL(f);
-        }
-        
-        if (f.size > 3000000) { input.value = ''; return window.showModal("Error", "Image must be under 3MB before compression."); }
-        const base64 = await compressImage(f);
-        tempImage = base64;
-        document.getElementById('post-img-prev').innerHTML = `
-            <div class="preview-thumb" style="margin-top:10px; margin-bottom: 15px;">
-                <img src="${base64}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
-                <div class="rm-img" onclick="tempImage=null; this.parentElement.remove(); document.getElementById('file-in').value='';">${getIcon('x')}</div>
-            </div>
-        `;
-    }
-};
+                        <input type="text" id="post-media-tags" class="custom-input w-full" placeholder="Required: Add media tags (e.g. arsenal)" maxlength="200" oninput="window.updateCharCount(this, 'post-media-tags-count')" style="margin-top:8px; padding:0.6rem 1rem; font-size:0.85rem; border:1px solid var(--error);">
+                        <div id="post-media-tags-count" class="char-counter text-xs text-dim" style="margin-top: 4px;">0/200</div>
+                    </div>
+                `;
+            }
+        };
 
 
 
@@ -2921,8 +2945,10 @@ const renderSearch = async (container) => {
                     snap.forEach(doc => {
                         const p = {id: doc.id, ...doc.data()};
                         if ((p.content && p.content.toLowerCase().includes(val.trim())) || 
+                            (p.tags && p.tags.toLowerCase().includes(val.trim())) || 
                             (p.authorName && p.authorName.toLowerCase().includes(val.trim())) || 
                             (p.authorHandle && p.authorHandle.toLowerCase().includes(val.trim()))) {
+                            
                             newMatches.push(p);
                             window.searchMatchedPosts.push(p);
                         }
