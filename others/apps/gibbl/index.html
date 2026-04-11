@@ -620,6 +620,22 @@
         .auth-screen > .text-dim { margin-top: 50px !important; padding-bottom: 0px !important; }
         
         
+        
+        /* --- PRO ICON & AVATAR FIX --- */
+svg, .pfp-nav, .pfp-sm, .pfp-lg {
+    display: block; /* Kills the baseline ghost gap */
+    flex-shrink: 0; /* Prevents flexbox from squishing them into ovals */
+}
+
+.pfp-nav, .pfp-sm, .pfp-lg {
+    aspect-ratio: 1 / 1; /* Forces a mathematically perfect square before the border-radius kicks in */
+}
+        
+        
+        
+        
+        
+        
     </style>
 </head>
 <body>
