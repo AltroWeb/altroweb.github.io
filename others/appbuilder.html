@@ -1026,7 +1026,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
         
         <div style="flex: 1;">
             <input type="text" id="set-icon" placeholder="https://... or click icon to upload" oninput="appBuilder.updateSettingsIconPreview(this.value)">
-            <div class="hint">Appears on your Developer Profile Card. Max 2MB.</div>
+            <div class="hint">Appears on your Developer Profile Card. Max 500KB.</div>
         </div>
     </div>
 </div>
@@ -3460,7 +3460,7 @@ function renderBio(text) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
             
-            if (file.size > 500 * 1024) { // Allow up to 2MB, we will squash it anyway
+            if (file.size > 500 * 1024) { // Allow up to 500KB, we will squash it anyway
                 await this.showAlert("File Too Large", "Please select an image under 500KB.", true);
                 input.value = '';
                 return;
