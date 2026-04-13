@@ -1263,6 +1263,12 @@ clearSearch() {
             
             
             async updateDevCard(app) {
+            
+            const authorId = app.authorId;
+    this.currentViewedDevId = authorId; // PRO FIX: Lock the current view target
+            
+            
+            
     const card = document.getElementById('dev-profile-card');
     const header = document.getElementById('dev-section-header');
     
@@ -1272,7 +1278,7 @@ clearSearch() {
     const badgeEl = document.getElementById('dev-badge-container');
 
     const authorName = app.author || "Unknown";
-    const authorId = app.authorId;
+    
 
     // --- NEW: INSTANT LOAD FROM CACHE ---
     const cacheKey = `store_dev_profile_${authorId}`;
@@ -1359,6 +1365,10 @@ clearSearch() {
             .collection('user_info').doc(authorId).get();
 
         if (userDoc.exists) {
+        
+        if (this.currentViewedDevId !== authorId) return;
+        
+        
             const profile = userDoc.data();
             
             // <<< CHANGED: Save to Cache + Use innerHTML

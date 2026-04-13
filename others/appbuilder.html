@@ -1026,7 +1026,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
         
         <div style="flex: 1;">
             <input type="text" id="set-icon" placeholder="https://... or click icon to upload" oninput="appBuilder.updateSettingsIconPreview(this.value)">
-            <div class="hint">Appears on your Developer Profile Card. Max 500KB.</div>
+            <div class="hint">Appears on your Developer Profile Card. Max 2MB.</div>
         </div>
     </div>
 </div>
@@ -2314,6 +2314,15 @@ getEditorSnapshot() {
 
 
 async discardChangesGuard(onConfirmed) {
+        // THE PRO FIX: Check if we are physically inside the Editor right now
+        const isEditorActive = document.getElementById('editor-view').classList.contains('active');
+        
+        // If we are on the Dashboard, Settings, or anywhere else, bypass the guard instantly.
+        if (!isEditorActive) {
+            onConfirmed();
+            return;
+        }
+
         const currentSnapshot = this.getEditorSnapshot();
         
         // Only trigger the alert if the data has actually changed
@@ -2326,7 +2335,10 @@ async discardChangesGuard(onConfirmed) {
             if (!confirmed) return; // User wants to stay
         }
         
-        // If we reach here, either nothing changed OR the user clicked Discard
+        // MEMORY WIPE: Clear the ghost memory so it doesn't haunt the Dashboard
+        this.editorSnapshot = null;
+        
+        // Proceed to destination
         onConfirmed();
     }
 
@@ -2336,14 +2348,12 @@ async discardChangesGuard(onConfirmed) {
 
                         async publishApp() {
     const name = document.getElementById('edit-name').value.trim();
-    
     const storeNameInput = document.getElementById('edit-store-name').value.trim();
-    
     const icon = document.getElementById('edit-icon').value.trim();
     const desc = document.getElementById('edit-desc').value.trim();
     
     // Get tags (defaults to empty string if null)
-const tags = document.getElementById('edit-tags').value.trim();
+    const tags = document.getElementById('edit-tags').value.trim();
     
     // Handle Source Mode
     let embedUrl = this.sourceMode === 'url' ? document.getElementById('edit-embed').value.trim() : document.getElementById('edit-file-data').value;
@@ -2360,6 +2370,40 @@ const tags = document.getElementById('edit-tags').value.trim();
     const now = Date.now();
 
     try {
+        
+        let devIcon = '';
+        let devBio = '';
+        try {
+            const userDoc = await this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('user_info').doc(this.devProfile.uid).get();
+                
+            if (userDoc.exists) {
+                const data = userDoc.data();
+                devIcon = data.authorIcon || '';
+                devBio = data.authorBio || '';
+            }
+        } catch(e) { console.warn("Failed to fetch dev profile during publish", e); }
+        
+
+
+//  THE 910KB SAFETY NET 
+        const payloadSize = embedUrl.length; // Base64 HTML size
+        const iconSize = devIcon.length + icon.length; // Base64 Icons size
+        const totalEstimatedBytes = payloadSize + iconSize;
+
+        // 931,840 bytes = 910 KB
+        if (totalEstimatedBytes > 931840) {
+            btn.classList.remove('loading');
+            await this.showAlert("Payload Too Large", "The combined size of your App File and Icons exceeds the 910KB safety limit. Please reduce your HTML file size.", true);
+            return;
+        }
+
+
+
+
+
+
         // Base Data
         const appData = {
             name: name,
@@ -2370,12 +2414,19 @@ const tags = document.getElementById('edit-tags').value.trim();
             embedUrl: embedUrl,
             author: this.devProfile.displayName,
             authorId: this.devProfile.uid,
+            
+            
+            authorIcon: devIcon, 
+            authorBio: devBio,   
+            
+            
             updatedAt: now,
             enableAnalytics: enableAnalytics,
             // CRITICAL: Save the Type!
             type: this.sourceMode === 'native' ? 'native' : 'web' 
         };
 
+        // YOUR ORIGINAL LOGIC REMAINS EXACTLY THE SAME BELOW
         if (!this.currentEditingId) {
             // --- SCENARIO 1: CREATE NEW APP ---
             appData.createdAt = now;
@@ -2389,21 +2440,21 @@ const tags = document.getElementById('edit-tags').value.trim();
             
         } else {
             // --- SCENARIO 2: EDIT EXISTING APP ---
-    const docRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId);
+            const docRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(this.currentEditingId);
 
-    const docSnap = await docRef.get();
-    const existingData = docSnap.exists ? docSnap.data() : {};
+            const docSnap = await docRef.get();
+            const existingData = docSnap.exists ? docSnap.data() : {};
 
-    // Analytics Logic (Keep existing)
-    if (enableAnalytics && !existingData.analyticsVersion) {
-        appData.analyticsVersion = now; 
-    }
+            // Analytics Logic (Keep existing)
+            if (enableAnalytics && !existingData.analyticsVersion) {
+                appData.analyticsVersion = now; 
+            }
 
-    // --- NEW: INCREMENT UPDATE COUNTER ---
-    // Uses Firestore atomic increment so it's always accurate
-    appData.updateCount = firebase.firestore.FieldValue.increment(1);
+            // --- NEW: INCREMENT UPDATE COUNTER ---
+            // Uses Firestore atomic increment so it's always accurate
+            appData.updateCount = firebase.firestore.FieldValue.increment(1);
 
-    await docRef.update(appData);
+            await docRef.update(appData);
         }
         
         this.showDashboard();
@@ -3133,24 +3184,28 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
                             authorBio: newBio
                         }, { merge: true });
 
-                    // --- STEP 4: BATCH UPDATE APPS ---
+                    // --- STEP 4: BATCH UPDATE APPS (Chunked for >500 Apps) ---
                     const snapshot = await this.db.collection('artifacts').doc(this.appId)
                         .collection('public').doc('data')
                         .collection('store_apps').where('authorId', '==', uid).get();
                         
-                    const batch = this.db.batch();
-                    let appCount = 0;
-
-                    snapshot.forEach(doc => {
-                        batch.update(doc.ref, { 
-                            author: newName,
-                            authorIcon: newIcon,
-                            authorBio: newBio
+                    const docs = snapshot.docs;
+                    const chunkSize = 450; // Safely below Firestore's 500 limit
+                    
+                    for (let i = 0; i < docs.length; i += chunkSize) {
+                        const chunk = docs.slice(i, i + chunkSize);
+                        const batch = this.db.batch();
+                        
+                        chunk.forEach(doc => {
+                            batch.update(doc.ref, { 
+                                author: newName,
+                                authorIcon: newIcon,
+                                authorBio: newBio
+                            });
                         });
-                        appCount++;
-                    });
-
-                    if (appCount > 0) await batch.commit();
+                        
+                        await batch.commit(); // Commit each chunk sequentially
+                    }
 
                     // --- STEP 5: FINALIZE ---
                     localStorage.setItem('ios_builder_session', JSON.stringify(this.devProfile));
@@ -3400,27 +3455,42 @@ function renderBio(text) {
             }
         };
 
-        // 4. Fast, native upload handler (No Compression, No Lag)
+// 1. Pro Canvas Micro-Compression: Dev Profile Icon
         AppBuilder.prototype.handleProfileUpload = async function(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
             
-            if (file.size > 500 * 1024) {
-                await this.showAlert("File Too Large", "Please select an image under 500KB.", true);
+            if (file.size > 2000 * 1024) { // Allow up to 2MB, we will squash it anyway
+                await this.showAlert("File Too Large", "Please select an image under 2MB.", true);
                 input.value = '';
                 return;
             }
 
             const reader = new FileReader();
             reader.onload = (e) => {
-                const dataUri = e.target.result;
-                const iconInput = document.getElementById('set-icon');
-                
-                // Store the heavy payload safely, show clean UI text
-                iconInput.dataset.realB64 = dataUri;
-                iconInput.value = "Local Image Uploaded";
-                
-                this.updateSettingsIconPreview(dataUri);
+                const img = new Image();
+                img.onload = () => {
+                    // Force 200x200 resolution
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 200; 
+                    canvas.height = 200;
+                    
+                    // Center crop to perfect square
+                    const size = Math.min(img.width, img.height);
+                    const x = (img.width - size) / 2;
+                    const y = (img.height - size) / 2;
+                    ctx.drawImage(img, x, y, size, size, 0, 0, 200, 200);
+                    
+                    // Export as WebP at 75% Quality (Yields ~10KB to 30KB max)
+                    const compressedDataUri = canvas.toDataURL('image/webp', 0.75);
+
+                    const iconInput = document.getElementById('set-icon');
+                    iconInput.dataset.realB64 = compressedDataUri;
+                    iconInput.value = "Local Image Uploaded";
+                    this.updateSettingsIconPreview(compressedDataUri);
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
             input.value = ''; 
