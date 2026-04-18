@@ -382,11 +382,7 @@
     document.getElementById('year').textContent = new Date().getFullYear();
 
     const darkModeToggle = document.getElementById('darkModeToggle');
-    darkModeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        darkModeToggle.className = isDark ? 'fa fa-sun-o dark-mode-toggle' : 'fa fa-moon-o dark-mode-toggle';
-    });
+    (localStorage.getItem('aq_dark') === '1' && document.body.classList.add('dark-mode'), darkModeToggle.className = document.body.classList.contains('dark-mode') ? 'fa fa-sun-o dark-mode-toggle' : 'fa fa-moon-o dark-mode-toggle', darkModeToggle.onclick = () => localStorage.setItem('aq_dark', document.body.classList.toggle('dark-mode') ? (darkModeToggle.className = 'fa fa-sun-o dark-mode-toggle', '1') : (darkModeToggle.className = 'fa fa-moon-o dark-mode-toggle', '0')));
 
     const menuToggle = document.getElementById('menuToggle');
     const menuOverlay = document.getElementById('menu-overlay');
