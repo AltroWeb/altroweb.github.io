@@ -387,9 +387,24 @@
         
         
         
-      
+      .z-link {
+      	color: var(--text-muted);              /* Pro Muted Grey */
+            text-decoration: none;       /* Clean look initially */
+            font-family: var(--font-ui);
+            font-size: 11px;
+            
+            
+            margin: 5px 0;               /* Spacing */
+            display: inline-block;
+            transition: color 0.2s ease;
+            text-align: center;
+      }
         
-        
+        .z-link:hover {
+            color: #c9d1d9;              /* Brightens slightly on hover */
+            text-decoration: underline;  /* Adds underline */
+            text-underline-offset: 4px;  /* Modern "Pro" gap */
+        }
         
     </style>
 </head>
@@ -459,6 +474,9 @@
             <a href="https://altroweb.github.io/ztext-status" class="z-text-link" target="_blank">Check Z-Text Cloud database server status</a>
             <br>
         </div>
+        <br>
+        <p style="text-align: center; font-size: 11px; margin-top: 15px;">A <b><a href="#" target="_blank" class="z-link">Z-Axis</a></b> product.</p>
+        
     </div>
 
     <!-- 2. DASHBOARD -->
@@ -655,6 +673,11 @@
     	
     <a href="https://altroweb.github.io/ztext-status" class="z-text-link" target="_blank">Check Z-Text Cloud database server status</a>
     
+
+<br><br>
+	<p style="text-align: center; font-size: 11px; margin-top: 15px;">A <b><a href="#" target="_blank" class="z-link">Z-Axis</a></b> product.</p>
+
+
 
 </div>
 
@@ -1505,6 +1528,66 @@ function handleSearch() {
         card.style.display = title.includes(query) ? 'flex' : 'none';
     });
 }
+        
+        
+        
+        // =========================================================
+//  PRO PWA ROUTER: Z-TEXT NATIVE NAVIGATION
+// =========================================================
+(function initZTextRouter() {
+    // 1. Initialize Base State
+    history.replaceState({ screen: 'login-screen' }, '');
+
+    // 2. Monkey-Patch showScreen to feed Browser History
+    const origShowScreen = showScreen;
+    showScreen = function(id, fromHistory = false) {
+        origShowScreen(id);
+        if (!fromHistory) history.pushState({ screen: id }, '');
+    };
+
+    // 3. The Hardware Back-Button Trap
+    window.addEventListener('popstate', function(e) {
+        
+        // TRAP 1: Modals & Dialogs
+        const modal = document.getElementById('modal-overlay');
+        if (modal && modal.style.display === 'flex') {
+            modal.style.display = 'none'; // Visually close
+            history.pushState(e.state, ''); // Repair browser stack
+            return;
+        }
+
+        // TRAP 2: Active Search Bar
+        const searchArea = document.getElementById('nav-search-area');
+        if (searchArea && searchArea.style.display === 'flex') {
+            toggleSearch(); // Run your native close logic
+            history.pushState(e.state, ''); // Repair browser stack
+            return;
+        }
+
+        // TRAP 3: Editor Guard (Unsaved Changes)
+        const currentScreen = document.querySelector('.screen.active')?.id;
+        if (currentScreen === 'editor-screen') {
+            history.pushState({ screen: 'editor-screen' }, ''); // Instantly lock them on the page
+            goDashboard(); // Fire your native confirmDialog ("Close File?")
+            return;
+        }
+
+        // NORMAL ROUTING: Sync UI with History Stack
+        if (e.state && e.state.screen) {
+            origShowScreen(e.state.screen, true);
+        } else {
+            origShowScreen('login-screen', true);
+        }
+    });
+})();
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
