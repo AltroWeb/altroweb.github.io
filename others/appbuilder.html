@@ -3573,77 +3573,116 @@ function renderBio(text) {
 
 
 
-// =========================================================
-//  PRO PWA ROUTER: APP BUILDER NATIVE NAVIGATION
-// =========================================================
-(function initAppBuilderRouter() {
-    // 1. Initialize Base State
-    history.replaceState({ screen: 'login' }, '');
 
-    // 2. Monkey-Patch updateUIState to feed Browser History
-    const origUpdateUI = appBuilder.updateUIState;
-    appBuilder.updateUIState = function(viewName, fromHistory = false) {
-        origUpdateUI.call(this, viewName);
-        if (!fromHistory) history.pushState({ screen: viewName }, '');
-    };
-
-    // 3. The Hardware Back-Button Trap (Capture Phase to kill old listeners)
-    window.addEventListener('popstate', function(e) {
-        e.stopImmediatePropagation(); // Kills the old naive constructor listener
-
-        // TRAP 1: Blocking Promise Modals
-        const securityModal = document.getElementById('security-modal');
-        const promptModal = document.getElementById('prompt-modal');
-        const confirmModal = document.getElementById('confirm-modal');
-        const alertModal = document.getElementById('alert-modal');
-
-        if (securityModal && securityModal.style.display === 'flex') {
-            history.pushState(e.state, ''); return; // Security lock: Inescapable
-        }
-        if (promptModal && promptModal.style.display === 'flex') {
-            history.pushState(e.state, ''); 
-            document.getElementById('prompt-cancel').click(); return;
-        }
-        if (confirmModal && confirmModal.style.display === 'flex') {
-            history.pushState(e.state, ''); 
-            document.getElementById('confirm-cancel').click(); return;
-        }
-        if (alertModal && alertModal.style.display === 'flex') {
-            history.pushState(e.state, ''); 
-            document.getElementById('alert-ok').click(); return;
-        }
-
-        // TRAP 2: The Editor Guard (Unsaved Changes)
-        const currentView = document.querySelector('.view.active')?.id;
-        if (currentView === 'editor-view') {
-            history.pushState({ screen: 'editor' }, ''); // Lock them on the page instantly
-            appBuilder.discardChangesGuard(() => {
-                // If they confirm discard, route them cleanly without pushing new history
-                appBuilder.updateUIState('dashboard', true); 
-            });
-            return;
-        }
-
-        // NORMAL ROUTING: Sync UI with History Stack
-        if (e.state && e.state.screen) {
-            origUpdateUI.call(appBuilder, e.state.screen, true);
-        } else {
-            origUpdateUI.call(appBuilder, 'login', true);
-        }
-    }, true); 
-})();
-
-
-
-
-
-
-
-  
         
         
         
     </script>
+    
+    
+    
+    
+<script>
+(function initPerfectAppBuilderRouter() {
+    // 1. Establish Base State
+    history.replaceState({ screen: 'login' }, '');
+
+    // 2. Monkey-Patch UI Update for Native Tracking
+    const origUpdateUI = appBuilder.updateUIState;
+    appBuilder.updateUIState = function(viewName, isFromHistory = false) {
+        origUpdateUI.call(this, viewName);
+        if (!isFromHistory) history.pushState({ screen: viewName }, '');
+    };
+
+    // 3. Inject Dynamic Property to safely read Editor state
+    Object.defineProperty(appBuilder, 'hasUnsavedChanges', {
+        get: function() {
+            return this.editorSnapshot && this.editorSnapshot !== this.getEditorSnapshot();
+        }
+    });
+
+    // 4. The Hardware Back-Button Trap
+    window.addEventListener('popstate', function(e) {
+        e.stopImmediatePropagation(); // Instantly kill the old buggy constructor listener
+
+        const currentScreen = document.querySelector('.view.active')?.id.replace('-view', '') || 'dashboard';
+
+        // Fetch all potential modals
+        const securityModal = document.getElementById('security-modal');
+        const alertModal = document.getElementById('alert-modal');
+        const promptModal = document.getElementById('prompt-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+
+        // ==========================================
+        // TRAP 1: MODAL ROUTING & CLOSING
+        // ==========================================
+        
+        if (securityModal && securityModal.style.display === 'flex') {
+            history.pushState({ screen: currentScreen }, ''); return; // Inescapable
+        }
+        
+        if (alertModal && alertModal.style.display === 'flex') {
+            history.pushState({ screen: currentScreen }, ''); 
+            document.getElementById('alert-ok')?.click(); return; // Close Alert
+        }
+        
+        if (promptModal && promptModal.style.display === 'flex') {
+            history.pushState({ screen: currentScreen }, ''); 
+            document.getElementById('prompt-cancel')?.click(); return; // Close Prompt
+        }
+        
+        if (confirmModal && confirmModal.style.display === 'flex') {
+            history.pushState({ screen: currentScreen }, ''); // Repair URL immediately
+            
+            const title = document.getElementById('confirm-title')?.innerText || '';
+            
+            if (title === 'Unsaved Changes') {
+                // THE BRICK WALL: Do not auto-close. Force user interaction.
+                return; 
+            } else {
+                // NORMAL CONFIRM (Sign Out, Delete App, Reset Stats): Auto-close on swipe back
+                document.getElementById('confirm-cancel')?.click();
+                return;
+            }
+        }
+
+        // ==========================================
+        // TRAP 2: THE EDITOR GUARD (No Modals Open)
+        // ==========================================
+        
+        if (currentScreen === 'editor' && appBuilder.hasUnsavedChanges) {
+            // User swiped back while typing. Lock the URL to keep them in the editor.
+            history.pushState({ screen: 'editor' }, '');
+
+            // Summon the native warning
+            appBuilder.discardChangesGuard(() => {
+                // This ONLY fires if they click "Discard Changes"
+                appBuilder.updateUIState('dashboard'); 
+            });
+            return; 
+        }
+
+        // ==========================================
+        // TRAP 3: NORMAL SCREEN ROUTING
+        // ==========================================
+        
+        if (e.state && e.state.screen) {
+            let target = e.state.screen;
+            // Smart Auth Guard: Prevent swiping back to login if already authenticated
+            if (target === 'login' && firebase.auth().currentUser) target = 'dashboard';
+            origUpdateUI.call(appBuilder, target, true);
+        } else {
+            origUpdateUI.call(appBuilder, 'login', true);
+        }
+    }, true); // Capture phase ensures we intercept the swipe first
+})();
+</script>
+    
+    
+    
+    
+    
+    
     
     <!-- CUSTOM CONFIRM MODAL -->
 <div id="confirm-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 10000;">

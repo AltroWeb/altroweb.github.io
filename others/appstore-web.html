@@ -1819,39 +1819,6 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
         
         
         
-        // =========================================================
-//  PRO PWA ROUTER: WEB STORE NATIVE NAVIGATION
-// =========================================================
-(function initWebPWA() {
-    history.replaceState({ screen: 'home' }, '');
-
-    window.addEventListener('popstate', function(e) {
-        const sysAlert = document.getElementById('sys-alert');
-        const reportModal = document.getElementById('report-modal');
-        const devCard = document.getElementById('dev-profile-card');
-
-        // TRAP 1: System Alerts
-        if (sysAlert && sysAlert.classList.contains('visible')) {
-            sysAlert.classList.remove('visible');
-            history.pushState(e.state, ''); // Lock state
-            return;
-        }
-        
-        // TRAP 2: Report Modals
-        if (reportModal && reportModal.classList.contains('visible')) {
-            if (window.appStoreWeb) window.appStoreWeb.closeReport();
-            history.pushState(e.state, ''); // Lock state
-            return;
-        }
-
-        // TRAP 3: Developer Profile Card
-        if (devCard && devCard.style.display !== 'none') {
-            if (window.appStoreWeb) window.appStoreWeb.clearSearch();
-            // Note: clearSearch naturally pushes state, so we don't lock here.
-            return;
-        }
-    });
-})();
         
         
         
@@ -1861,6 +1828,111 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
         
         
     </script>
+    
+    
+    
+    
+    <script>
+(function initProAppStoreWebRouter() {
+    // 1. Sync Initial State (Protects Deep Links on reload)
+    const initialInput = document.getElementById('store-search-input')?.value || '';
+    let currentQuery = initialInput;
+    history.replaceState({ screen: initialInput ? 'search' : 'home', q: initialInput }, '');
+
+    // 2. Monkey-Patch filterApps to inject history when Dev Card or Search opens
+    const origFilter = appStoreWeb.filterApps;
+    appStoreWeb.filterApps = function(query, isFromHistory = false) {
+        origFilter.call(this, query);
+        
+        if (!isFromHistory && query !== currentQuery) {
+            // If entering a Dev Card or starting a fresh search: PUSH new history.
+            // If just typing another letter in search: REPLACE history (prevents 100 clicks to go back).
+            if (query.startsWith('dev:') || currentQuery === '') {
+                history.pushState({ screen: 'search', q: query }, '');
+            } else {
+                history.replaceState({ screen: 'search', q: query }, '');
+            }
+            currentQuery = query || '';
+        }
+    };
+
+    // 3. Monkey-Patch clearSearch to route home safely
+    const origClear = appStoreWeb.clearSearch;
+    appStoreWeb.clearSearch = function(isFromHistory = false) {
+        // Mute the buggy native pushState in the original function to prevent URL mangling
+        const origPushState = window.history.pushState;
+        window.history.pushState = function() {}; 
+        origClear.call(this);
+        window.history.pushState = origPushState; 
+
+        currentQuery = '';
+        if (!isFromHistory) {
+            history.pushState({ screen: 'home', q: '' }, '');
+        }
+    };
+
+    // 4. Monkey-Patch Modals to inject a "dummy" history state
+    const origOpenReport = appStoreWeb.openReport;
+    appStoreWeb.openReport = async function(appId) {
+        history.pushState({ screen: 'modal' }, ''); // Add dummy state
+        await origOpenReport.call(this, appId);
+    };
+
+    if (typeof appStoreWeb.showAlert === 'function') {
+        const origShowAlert = appStoreWeb.showAlert;
+        appStoreWeb.showAlert = function(title, msg, cb) {
+            history.pushState({ screen: 'modal' }, ''); // Add dummy state
+            origShowAlert.call(this, title, msg, cb);
+        };
+    }
+
+    // 5. The Hardware Back-Button Trap
+    window.addEventListener('popstate', function(e) {
+        e.stopImmediatePropagation(); // Strike first
+
+        const reportModal = document.getElementById('report-modal');
+        const alertModal = document.getElementById('sys-alert');
+        let modalClosed = false;
+
+        // TRAP 1: Modals
+        if (reportModal && reportModal.classList.contains('visible')) {
+            appStoreWeb.closeReport();
+            modalClosed = true;
+        }
+        if (alertModal && alertModal.classList.contains('visible')) {
+            document.getElementById('sa-btn-ok')?.click();
+            alertModal.classList.remove('visible'); // Failsafe
+            modalClosed = true;
+        }
+
+        // If a modal was closed, the browser already popped the dummy state off the stack. 
+        // We are naturally back on the correct screen. Halt execution.
+        if (modalClosed) return;
+
+        // TRAP 2: Sub-Pages (Dev Card) and Search
+        if (e.state) {
+            if (e.state.screen === 'home') {
+                appStoreWeb.clearSearch(true); // True = don't push history
+            } else if (e.state.screen === 'search') {
+                const input = document.getElementById('store-search-input');
+                if (input) input.value = e.state.q || '';
+                appStoreWeb.filterApps(e.state.q || '', true);
+            } else {
+                appStoreWeb.clearSearch(true);
+            }
+        } else {
+            appStoreWeb.clearSearch(true);
+        }
+    }, true);
+})();
+</script>
+    
+    
+    
+    
+    
+    
+    
     
     
     
