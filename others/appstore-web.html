@@ -1813,6 +1813,53 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
 }
 }
         window.appStoreWeb = new AppStoreWeb();
+        
+        
+        
+        
+        
+        
+        // =========================================================
+//  PRO PWA ROUTER: WEB STORE NATIVE NAVIGATION
+// =========================================================
+(function initWebPWA() {
+    history.replaceState({ screen: 'home' }, '');
+
+    window.addEventListener('popstate', function(e) {
+        const sysAlert = document.getElementById('sys-alert');
+        const reportModal = document.getElementById('report-modal');
+        const devCard = document.getElementById('dev-profile-card');
+
+        // TRAP 1: System Alerts
+        if (sysAlert && sysAlert.classList.contains('visible')) {
+            sysAlert.classList.remove('visible');
+            history.pushState(e.state, ''); // Lock state
+            return;
+        }
+        
+        // TRAP 2: Report Modals
+        if (reportModal && reportModal.classList.contains('visible')) {
+            if (window.appStoreWeb) window.appStoreWeb.closeReport();
+            history.pushState(e.state, ''); // Lock state
+            return;
+        }
+
+        // TRAP 3: Developer Profile Card
+        if (devCard && devCard.style.display !== 'none') {
+            if (window.appStoreWeb) window.appStoreWeb.clearSearch();
+            // Note: clearSearch naturally pushes state, so we don't lock here.
+            return;
+        }
+    });
+})();
+        
+        
+        
+        
+        
+        
+        
+        
     </script>
     
     

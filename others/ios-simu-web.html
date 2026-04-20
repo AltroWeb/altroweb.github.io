@@ -2812,6 +2812,68 @@ window.navigateToResult = function(view, hash) {
         
         
         
+        
+        // =========================================================
+//  PRO PWA ROUTER: IOS SIMU WEB (DOCS) NAVIGATION
+// =========================================================
+(function initDocsRouter() {
+    window.addEventListener('popstate', function(e) {
+        
+        // TRAP 1: Mobile Hamburger Menu
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenu && mobileMenu.classList.contains('open')) {
+            toggleMenu(); // Closes the menu visually
+            history.pushState(e.state, ''); // Repairs the browser history stack
+            return;
+        }
+
+        // TRAP 2: Docs Sidebar Overlay (Mobile)
+        const docsSidebar = document.getElementById('docs-sidebar');
+        if (docsSidebar && docsSidebar.classList.contains('active') && window.innerWidth <= 768) {
+            toggleDocsSidebar();
+            history.pushState(e.state, '');
+            return;
+        }
+
+        // TRAP 3: Support Sidebar Overlay (Mobile)
+        const supportSidebar = document.getElementById('support-sidebar');
+        if (supportSidebar && supportSidebar.classList.contains('active') && window.innerWidth <= 768) {
+            toggleSupportSidebar();
+            history.pushState(e.state, '');
+            return;
+        }
+
+        // NORMAL ROUTING (Sync UI with URL Parameter)
+        const params = new URLSearchParams(window.location.search);
+        const targetView = params.get('page') || 'home';
+
+        // Use the base switcher to avoid infinitely pushing history loops
+        if (typeof _baseSwitch === 'function') {
+            _baseSwitch(targetView);
+        } else {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            const tgt = document.getElementById('view-' + targetView);
+            if(tgt) tgt.classList.add('active');
+        }
+
+        // Handle Anchor Hash Scrolling on Back Press
+        if (window.location.hash) {
+            setTimeout(() => {
+                const el = document.querySelector(window.location.hash);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        } else {
+            window.scrollTo(0,0);
+        }
+    });
+})();
+        
+        
+        
+        
+        
+        
+        
     </script>
 </body>
 </html>

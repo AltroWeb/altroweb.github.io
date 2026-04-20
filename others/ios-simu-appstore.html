@@ -2846,6 +2846,8 @@ renderBio(text) {
             return;
         }
 
+        this.currentViewedDevId = app.authorId; // PRO FIX: Lock the view target
+
         const nameEl = document.getElementById('store-dev-name');
         const bioEl = document.getElementById('store-dev-bio');
         const avatarEl = document.getElementById('store-dev-avatar');
@@ -2854,38 +2856,60 @@ renderBio(text) {
         const authorName = app.author || "Unknown";
         const authorId = app.authorId;
 
-        // 1. Render Name
+        // --- INSTANT CACHE LOAD ---
+        const cacheKey = `store_dev_profile_${authorId}`;
+        const cached = localStorage.getItem(cacheKey);
+        
+        if (cached) {
+            try {
+                const d = JSON.parse(cached);
+                if (d.authorBio) bioEl.innerHTML = this.renderBio(d.authorBio); 
+                if (d.authorIcon) avatarEl.innerHTML = `<img src="${d.authorIcon}" class="dev-avatar-circle">`;
+            } catch(e) {}
+        }
+
+        // 1. Render Basic Text
         nameEl.innerText = authorName;
         header.innerText = `Apps by ${authorName}`;
 
-        // 2. Render Bio (Using innerHTML to allow links)
-        // If app.authorBio is empty, it defaults to "Developer"
-        bioEl.innerHTML = this.renderBio(app.authorBio || "Developer");
-
-        // 3. Render Avatar
-        if (app.authorIcon) {
-            avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
-        } else {
-            avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
+        if (!cached) {
+            bioEl.innerHTML = this.renderBio(app.authorBio || "Developer");
+            if (app.authorIcon) avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
+            else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
         }
 
-        
-        // 4. Render Badges (Cleaned: No inline styles overriding CSS)
+        // 2. Render Badges
         const badgeType = this.userBadges.get(authorId);
         if (badgeType === 'member') {
-    badgeEl.innerHTML = `<span class="verified-badge member"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
-} else if (badgeType === 'verified') {
+            badgeEl.innerHTML = `<span class="verified-badge member"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
+        } else if (badgeType === 'verified') {
             badgeEl.innerHTML = `<span class="verified-badge verified verified-badge-large"><svg viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
         } else {
             badgeEl.innerHTML = '';
         }
 
-        // 5. Show Card
+        // 3. Show Card
         card.style.display = 'flex';
         header.style.display = 'block';
 
-        // STOP! Do not add any DB fetch code below this line.
-        // It will overwrite the bio with raw text.
+        // --- LIVE DB FETCH ---
+        try {
+            const userDoc = await this.db.collection('artifacts').doc(this.appId)
+                .collection('public').doc('data')
+                .collection('user_info').doc(authorId).get();
+
+            if (userDoc.exists) {
+                if (this.currentViewedDevId !== authorId) return; // Prevent race conditions
+                const profile = userDoc.data();
+                
+                localStorage.setItem(cacheKey, JSON.stringify(profile)); // Save Cache
+                
+                if (profile.authorBio) bioEl.innerHTML = this.renderBio(profile.authorBio);
+                if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
+                    avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
+                }
+            }
+        } catch(e) { console.warn(e); }
     }
 
 
@@ -8716,6 +8740,82 @@ window.addEventListener('IOS_DEEP_LINK', function(e) {
     };
 })();
     
+        
+        
+        
+        
+        
+        // =========================================================
+//  PRO PWA ROUTER: IOS SIMULATOR NATIVE NAVIGATION
+// =========================================================
+(function initSimulatorPWA() {
+    history.replaceState({ screen: 'homescreen' }, '');
+
+    // 1. Patch App Opening
+    const origOpen = window.iOS.openApp.bind(window.iOS);
+    window.iOS.openApp = function(el, appName, theme, fromHistory = false) {
+        origOpen(el, appName, theme);
+        if (!fromHistory) history.pushState({ screen: appName }, '');
+    };
+
+    // 2. Patch App Closing
+    const origClose = window.iOS.closeApp.bind(window.iOS);
+    window.iOS.closeApp = function(fromHistory = false) {
+        origClose();
+        if (!fromHistory && history.state && history.state.screen !== 'homescreen') {
+            history.back();
+        }
+    };
+
+    // 3. Hardware Back-Button Trap
+    window.addEventListener('popstate', function(e) {
+        // TRAP 1: System & Report Alerts
+        const sysAlert = document.getElementById('sys-alert');
+        const reportAlert = document.getElementById('report-alert-overlay');
+
+        if (sysAlert && sysAlert.classList.contains('visible')) {
+            window.iOS.closeAlert(); 
+            history.pushState(e.state, ''); // Lock state
+            return;
+        }
+        if (reportAlert && reportAlert.classList.contains('visible')) {
+            if (window.appStore) window.appStore.closeReportAlert();
+            history.pushState(e.state, ''); // Lock state
+            return;
+        }
+
+        // TRAP 2: Sub-App Navigation (Dev Card & Sideloader)
+        if (window.iOS.state === 'ACTIVE' && window.iOS.activeWindow) {
+            const activeApp = window.iOS.activeWindow.getAttribute('data-app');
+            
+            if (activeApp === 'AppStore') {
+                const devCard = document.getElementById('store-dev-card');
+                if (devCard && devCard.style.display !== 'none') {
+                    if (window.appStore) window.appStore.clearSearch();
+                    history.pushState(e.state, ''); // Lock state
+                    return;
+                }
+            }
+            
+            if (activeApp === 'Sideloader') {
+                const formView = document.getElementById('sl-form-view');
+                if (formView && formView.style.display !== 'none') {
+                    if (window.sideloader) window.sideloader.showList();
+                    history.pushState(e.state, ''); // Lock state
+                    return;
+                }
+            }
+
+            // TRAP 3: Close the Active App
+            window.iOS.closeApp(true);
+        }
+    });
+})();
+        
+        
+        
+        
+        
         
     </script>
 </body>
