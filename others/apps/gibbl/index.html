@@ -3661,5 +3661,118 @@ window.removeFollower = (targetUid, targetHandle) => {
         
 
     </script>
+    
+    
+    
+    <script>
+(function initGibblRouter() {
+    // Wait for your module to attach its functions to the window
+    const checkReady = setInterval(() => {
+        if (window.setView && window.switchAuth && window.showModal) {
+            clearInterval(checkReady);
+            setupRouter();
+        }
+    }, 100);
+
+    function setupRouter() {
+        // 1. Establish the base state
+        history.replaceState({ type: 'init' }, '');
+
+        // 2. Monkey-Patch setView (Main App Navigation)
+        const origSetView = window.setView;
+        window.setView = function(view, param = null, isFromPopState = false) {
+            origSetView(view, param);
+            if (isFromPopState !== true) {
+                history.pushState({ type: 'view', view: view, param: param }, '');
+            }
+        };
+
+        // 3. Monkey-Patch switchAuth (Login/Signup Screens)
+        const origSwitchAuth = window.switchAuth;
+        window.switchAuth = function(view, isFromPopState = false) {
+            origSwitchAuth(view);
+            if (isFromPopState !== true) {
+                history.pushState({ type: 'auth', view: view }, '');
+            }
+        };
+
+        // 4. Monkey-Patch Standard Modals
+        const origShowModal = window.showModal;
+        window.showModal = function(...args) {
+            origShowModal(...args);
+            history.pushState({ type: 'modal' }, '');
+        };
+
+        const origCloseModal = window.closeModal;
+        window.closeModal = function(isFromPopState) {
+            origCloseModal();
+            // If closed via UI (Cancel/OK button), pop the history to keep the stack clean
+            // Strict === true check prevents HTML PointerEvents from breaking the logic
+            if (isFromPopState !== true && history.state && history.state.type === 'modal') {
+                history.back();
+            }
+        };
+
+        // 5. Monkey-Patch Image Modals
+        const origShowImgModal = window.showImgModal;
+        window.showImgModal = function(src) {
+            origShowImgModal(src);
+            history.pushState({ type: 'imgModal' }, '');
+        };
+
+        const origCloseImgModal = window.closeImgModal;
+        window.closeImgModal = function(isFromPopState) {
+            origCloseImgModal();
+            if (isFromPopState !== true && history.state && history.state.type === 'imgModal') {
+                history.back();
+            }
+        };
+
+        // 6. The Native PopState Listener (Catches Hardware/Gesture Back)
+        window.addEventListener('popstate', function(e) {
+            const state = e.state;
+
+            // TRAP 1: Close Image Modal
+            if (document.getElementById('img-modal').classList.contains('open')) {
+                origCloseImgModal(); // Use original to bypass pushing history
+                return;
+            }
+
+            // TRAP 2: Close Standard Modal
+            if (document.getElementById('modal-container').classList.contains('open')) {
+                origCloseModal(); // Use original to bypass pushing history
+                return;
+            }
+
+            // ROUTER: Navigate through the App History
+            if (state) {
+                if (state.type === 'view') {
+                    origSetView(state.view, state.param, true);
+                } else if (state.type === 'auth') {
+                    origSwitchAuth(state.view, true);
+                } else {
+                    // Fallback: If no recognized state, drop them to home/landing
+                    tryRescueState();
+                }
+            } else {
+                tryRescueState();
+            }
+        });
+
+        // Helper to figure out where to dump the user if history breaks
+        function tryRescueState() {
+            if (document.getElementById('login-email')) origSwitchAuth('landing', true);
+            else origSetView('home', null, true);
+        }
+    }
+})();
+</script>
+    
+    
+    
+    
+    
+    
+    
 </body>
 </html>
