@@ -1572,6 +1572,13 @@ function handleSearch() {
             return;
         }
 
+
+// TRAP: Dashboard Logout Guard
+if (document.querySelector('.screen.active')?.id === 'dashboard-screen') { history.pushState({ screen: 'dashboard-screen' }, ''); confirmLogout(); return; }
+
+
+
+
         // NORMAL ROUTING: Sync UI with History Stack
         if (e.state && e.state.screen) {
             origShowScreen(e.state.screen, true);
