@@ -500,6 +500,7 @@ body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
 
 .store-desc.expanded {
     -webkit-line-clamp: unset !important;
+    white-space: pre-wrap !important; /* THE MAGIC: Un-squashes the newlines */
 }
 
 
@@ -2409,9 +2410,18 @@ checkUrlParams() {
     // 2. CRITICAL: Wipe URL Parameter
     // This ensures that when you close and reopen the app, the ?s= param 
     // is gone, so it doesn't auto-trigger the dev page again.
+    
     if (window.history && window.history.replaceState) {
         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+    }
+
+    // 3. RESTORE SCROLL MEMORY
+    if (this.savedScroll) {
+        setTimeout(() => {
+            document.getElementById('store-scroll').scrollTo({ top: this.savedScroll, behavior: 'smooth' });
+            this.savedScroll = 0; // Clear memory
+        }, 10);
     }
 }
             
@@ -2810,10 +2820,13 @@ async submitReport(reason) {
 
 
 renderBio(text) {
-    if (!text) return "Developer";
+    if (!text) return "Developer"; // (Keep as return ""; in appbuilder)
+
+    // PRO FIX: Trim the raw text before sanitization begins
+    let rawText = String(text).trim();
 
     // 1. Sanitize HTML (Security)
-    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+    let safe = rawText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
 
     // 2. Apply Bold & Italic (BEFORE links so you can do [**Bold**](url))
     safe = safe
@@ -2919,7 +2932,8 @@ renderBio(text) {
 
 formatAppText(text) {
     if (!text) return "";
-    text = String(text); // Safety check
+    // PRO FIX: Force .trim() to annihilate leading/trailing ghost lines
+    text = String(text).trim();
 
     // 1. Sanitize HTML
     let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
@@ -2939,8 +2953,8 @@ formatAppText(text) {
     safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
         `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
 
-    // 5. THE FIX: Replace newlines with a space instead of <br> for list views
-    return safe.replace(/\n/g, ' '); 
+    // 5. PRO FIX: Cap newlines at 2 (prevents abuse), keep raw \n intact for CSS to handle
+return safe.replace(/\n{3,}/g, '\n\n');
 }
 
 
@@ -3113,16 +3127,14 @@ else {
                     const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
                     
                     // Create Clickable Link
-                    const authorHTML = `<span class="store-author-link" onclick="const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
+                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
 
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
     <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
     <div class="store-author">${authorHTML}${badgeHTML}</div>
-    <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">
-        ${this.formatAppText(app.description)}
-    </div>
+    <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
 </div>
                         ${actionHTML}
                     `;

@@ -261,6 +261,7 @@
 
 .store-desc.expanded {
     -webkit-line-clamp: unset !important;
+    white-space: pre-wrap !important; /* THE MAGIC: Un-squashes the newlines */
 }
 
 
@@ -1087,8 +1088,16 @@ clearSearch() {
                 window.history.pushState({}, '', url);
 
                 // 4. Show All Apps
-                this.renderStore(this.apps);
-            }
+    this.renderStore(this.apps);
+
+    // 5. RESTORE SCROLL MEMORY
+    if (this.savedScroll) {
+        setTimeout(() => {
+            window.scrollTo({ top: this.savedScroll, behavior: 'smooth' });
+            this.savedScroll = 0; // Clear memory
+        }, 10);
+    }
+}
 
 
 
@@ -1234,10 +1243,13 @@ clearSearch() {
 
             
   renderBio(text) {
-    if (!text) return "Developer";
+    if (!text) return "Developer"; // (Keep as return ""; in appbuilder)
+
+    // PRO FIX: Trim the raw text before sanitization begins
+    let rawText = String(text).trim();
 
     // 1. Sanitize HTML (Security)
-    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+    let safe = rawText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
 
     // 2. Apply Bold & Italic (BEFORE links so you can do [**Bold**](url))
     safe = safe
@@ -1698,7 +1710,8 @@ const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
 
 formatAppText(text) {
     if (!text) return "";
-    text = String(text); // Safety check
+    // PRO FIX: Force .trim() to annihilate leading/trailing ghost lines
+    text = String(text).trim();
 
     // 1. Sanitize HTML
     let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
@@ -1718,8 +1731,8 @@ formatAppText(text) {
     safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
         `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
 
-    // 5. THE FIX: Replace newlines with a space instead of <br> for list views
-    return safe.replace(/\n/g, ' '); 
+    // 5. PRO FIX: Cap newlines at 2 (prevents abuse), keep raw \n intact for CSS to handle
+return safe.replace(/\n{3,}/g, '\n\n');
 }
 
 
@@ -1774,7 +1787,7 @@ formatAppText(text) {
         const safeAuthorName = (app.author || 'Unknown').replace(/'/g, "\\'");
         
         // This span triggers the search for "dev:Name"
-        const authorHTML = `<span class="author-link" onclick="window.scrollTo(0,0); appStoreWeb.filterApps('dev:${safeAuthorName}')">${app.author || 'Unknown'}</span>`;
+        const authorHTML = `<span class="author-link" onclick="appStoreWeb.savedScroll = window.scrollY; window.scrollTo(0,0); appStoreWeb.filterApps('dev:${safeAuthorName}')">${app.author || 'Unknown'}</span>`;
 
         // USE APP ID FOR ROBUST LINKING
 const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
@@ -1788,9 +1801,7 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
             <div class="store-info">
                 <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
                 <div class="store-author">${authorHTML}${badgeHTML}</div>
-                <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">
-                    ${this.formatAppText(app.description)}
-                </div>
+                <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
             </div>
             
             <div class="action-stack">

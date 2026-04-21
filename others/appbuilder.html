@@ -3394,8 +3394,13 @@ window.setDescMode = function(mode) {
 
 // 2. The Renderer (Universal)
 function renderBio(text) {
-    if (!text) return "";
-    let safe = text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+    if (!text) return "Developer"; // (Keep as return ""; in appbuilder)
+
+    // PRO FIX: Trim the raw text before sanitization begins
+    let rawText = String(text).trim();
+
+    // 1. Sanitize HTML (Security)
+    let safe = rawText.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
     
     safe = safe
         .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold
@@ -3404,10 +3409,12 @@ function renderBio(text) {
         .replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (m,t,u) => 
             `<a href="#" style="color:var(--accent, #007AFF); text-decoration:underline;">${t||u}</a>`)
         // Raw Links: $[URL]
-        .replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
-            `<a href="#" style="color:var(--accent, #007AFF); text-decoration:underline;">$1</a>`);
+    .replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
+        `<a href="#" style="color:var(--accent, #007AFF); text-decoration:underline;">$1</a>`);
 
-    return safe.replace(/\n/g, '<br>');
+// PRO FIX: Enforce the 2-newline maximum in the preview renderer
+safe = safe.replace(/\n{3,}/g, '\n\n');
+return safe.replace(/\n/g, '<br>');
 }
         
         
