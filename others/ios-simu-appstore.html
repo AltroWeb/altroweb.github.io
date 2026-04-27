@@ -4173,10 +4173,13 @@ handleUrlInput(el) {
         document.getElementById('sl-icon').value = '';
         document.getElementById('sl-url').value = '';
         
-        
+        // --- PRO FIX: Reset Description, Counter, and force Write Mode ---
         document.getElementById('sl-desc').value = '';
-        
-        
+        const slCounter = document.getElementById('sl-desc-counter');
+        if (slCounter) slCounter.innerText = '0/1000';
+        this.setDescMode('write'); // Kills the ghost preview and resets the tabs
+        // ----------------------------------------------------------------
+
         document.getElementById('sl-file-data').value = '';
         document.getElementById('sl-icon-preview').src = 'grey.png';
         document.getElementById('sl-file-name').innerText = "Select HTML File";
