@@ -3932,22 +3932,27 @@ formatTime(ms) {
             
             
 // --- PRO MARKDOWN ENGINE ---
-    renderMarkdown(text) {
-        if (!text) return "";
-        let safe = String(text).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
-        
-        safe = safe.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                   .replace(/\*([^*]+)\*/g, '<i>$1</i>')
-                   .replace(/\n/g, '<br>');
+renderMarkdown(text) {
+    if (!text) return "";
+    let safe = String(text).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+    
+    safe = safe.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+               .replace(/\*([^*]+)\*/g, '<i>$1</i>');
 
-        // ⚡ THE SECURE LINK HANDLER ⚡
-        safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
-            const label = txt || url;
-            return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS && window.iOS.showAlert ? window.iOS.showAlert('External Link', 'Go to ' + u + '?', f) : confirm('Go to ' + u + '?') && f();" style="color:#0A84FF; text-decoration:underline; pointer-events:auto;">${label}</a>`;
-        });
+    // PRO PROTECTION: Clamp excessive whitespace to a 2-newline maximum
+    safe = safe.replace(/\n{3,}/g, '\n\n');
+    
+    // Convert safe newlines to HTML breaks
+    safe = safe.replace(/\n/g, '<br>');
 
-        return safe;
-    }
+    // THE SECURE LINK HANDLER
+    safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
+        const label = txt || url;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS && window.iOS.showAlert ? window.iOS.showAlert('External Link', 'Go to ' + u + '?', f) : confirm('Go to ' + u + '?') && f();" style="color:#0A84FF; text-decoration:underline; pointer-events:auto;">${label}</a>`;
+    });
+
+    return safe;
+}
 
     setDescMode(mode) {
         const ta = document.getElementById('sl-desc');
