@@ -3394,7 +3394,7 @@ window.setDescMode = function(mode) {
 
 // 2. The Renderer (Universal)
 function renderBio(text) {
-    if (!text) return "Developer"; // (Keep as return ""; in appbuilder)
+    if (!text) return ""; // THE FIX: Return empty string so the UI fallback triggers
 
     // PRO FIX: Trim the raw text before sanitization begins
     let rawText = String(text).trim();
@@ -3412,9 +3412,9 @@ function renderBio(text) {
     .replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
         `<a href="#" style="color:var(--accent, #007AFF); text-decoration:underline;">$1</a>`);
 
-// PRO FIX: Enforce the 2-newline maximum in the preview renderer
-safe = safe.replace(/\n{3,}/g, '\n\n');
-return safe.replace(/\n/g, '<br>');
+    // PRO FIX: Enforce the 2-newline maximum in the preview renderer
+    safe = safe.replace(/\n{3,}/g, '\n\n');
+    return safe.replace(/\n/g, '<br>');
 }
         
         
