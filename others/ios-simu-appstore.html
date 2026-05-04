@@ -2848,8 +2848,7 @@ renderBio(text) {
 }
 
 
-    // Main Function - REPLACE YOUR EXISTING ONE COMPLETELY
-    async updateDevCard(app) {
+   async updateDevCard(app) {
         const card = document.getElementById('store-dev-card');
         const header = document.getElementById('store-dev-header');
         
@@ -2876,8 +2875,10 @@ renderBio(text) {
         if (cached) {
             try {
                 const d = JSON.parse(cached);
-                if (d.authorBio) bioEl.innerHTML = this.renderBio(d.authorBio); 
+                // PRO FIX: Force overwrite to prevent state leakage from previous dev cards
+                bioEl.innerHTML = this.renderBio(d.authorBio); 
                 if (d.authorIcon) avatarEl.innerHTML = `<img src="${d.authorIcon}" class="dev-avatar-circle">`;
+                else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
             } catch(e) {}
         }
 
@@ -2886,7 +2887,8 @@ renderBio(text) {
         header.innerText = `Apps by ${authorName}`;
 
         if (!cached) {
-            bioEl.innerHTML = this.renderBio(app.authorBio || "Developer");
+            // PRO FIX: Force overwrite
+            bioEl.innerHTML = this.renderBio(app.authorBio);
             if (app.authorIcon) avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
             else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
         }
@@ -2917,9 +2919,13 @@ renderBio(text) {
                 
                 localStorage.setItem(cacheKey, JSON.stringify(profile)); // Save Cache
                 
-                if (profile.authorBio) bioEl.innerHTML = this.renderBio(profile.authorBio);
-                if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
+                // PRO FIX: Force overwrite regardless of if it's empty, to stop state leakage
+                bioEl.innerHTML = this.renderBio(profile.authorBio);
+                
+                if (profile.authorIcon) {
                     avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
+                } else {
+                    avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
                 }
             }
         } catch(e) { console.warn(e); }

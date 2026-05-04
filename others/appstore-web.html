@@ -1377,23 +1377,24 @@ clearSearch() {
             .collection('user_info').doc(authorId).get();
 
         if (userDoc.exists) {
-        
-        if (this.currentViewedDevId !== authorId) return;
-        
-        
+            if (this.currentViewedDevId !== authorId) return; // Prevents race conditions
+            
             const profile = userDoc.data();
             
-            // <<< CHANGED: Save to Cache + Use innerHTML
+            // Save to Cache
             localStorage.setItem(cacheKey, JSON.stringify(profile)); 
             
-            if (profile.authorBio) bioEl.innerHTML = this.renderBio(profile.authorBio);
+            // THE FIX: Unconditionally overwrite to prevent previous dev info from sticking
+            bioEl.innerHTML = this.renderBio(profile.authorBio || "Developer");
             
-            if (profile.authorIcon && profile.authorIcon !== app.authorIcon) {
+            if (profile.authorIcon) {
                 avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar">`;
+            } else {
+                avatarEl.innerHTML = `<div class="dev-avatar">${authorName.charAt(0).toUpperCase()}</div>`;
             }
         }
     } catch(e) { console.warn(e); }
-}
+    }
             
             
             
