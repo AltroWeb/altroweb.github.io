@@ -4249,6 +4249,10 @@ handleIAPFile(file) {
         }
 	
 	
+	if (!file.name.endsWith('.iap')) return iOS.showAlert('Invalid Format', 'Only .iap files are allowed.');
+	
+	
+	
     if (!file) return;
     
     if (window.iOS && window.iOS.isSafeMode) {
