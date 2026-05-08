@@ -1418,8 +1418,8 @@ body.dark-mode #sl-tab-preview[style*="600"] {
     <div class="screen-container" id="screen">
     	
     
-    <div id="truetone-layer" style="position:absolute; inset:0; background:rgba(255, 220, 150, 0.15); mix-blend-mode:multiply; z-index:9000; pointer-events:none; opacity:0; transition:opacity 0.5s ease;"></div>
-<div id="brightness-layer" style="position:absolute; inset:0; background:black; z-index:9001; pointer-events:none; opacity:0; transition:opacity 0.1s linear;"></div>
+    <div id="truetone-layer" style="position:absolute; inset:0; background:rgba(255, 220, 150, 0.15); mix-blend-mode:multiply; z-index:9999999; pointer-events:none; opacity:0; transition:opacity 0.5s ease;"></div>
+<div id="brightness-layer" style="position:absolute; inset:0; background:black; z-index:9999999; pointer-events:none; opacity:0; transition:opacity 0.1s linear;"></div>
     
     
         
@@ -1697,7 +1697,7 @@ body.dark-mode #sl-tab-preview[style*="600"] {
                         <div class="ios-list" style="background:transparent;">
                             <button class="ios-btn" onclick="iOS.showAlert('Software Update', 'Your simulator is up to date.')">Check for Updates</button>
                             <div style="height:10px;"></div>
-                            <button class="ios-btn secondary">Reset Network Settings</button>
+                 <button class="ios-btn secondary" onclick="triggerResetAllSettings()">Reset All Settings</button>
                         </div>
                     </div>
 
@@ -5036,6 +5036,112 @@ const SecureStorage = {
 };
 
       
+        
+        function triggerResetAllSettings() {
+    const os = window.parent.iOS || window.iOS || window;
+    if (!os || !os.showAlert) return;
+
+    // 1. Native iOS Alert Confirmation (Red Destructive Button)
+    os.showAlert(
+        "Reset All Settings?",
+        "This will restore all system preferences, toggles, and brightness to factory defaults. No apps or data will be deleted.",
+        () => {
+            
+            // 2. Wipe specific settings from localStorage
+            const settingsKeys = [
+                'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
+                'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects',
+                'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
+                'ios_fullscreen_always', 'ios_sideloading_enabled', 'ios_island_enabled'
+            ];
+            settingsKeys.forEach(k => localStorage.removeItem(k));
+
+            // 3. Apply defaults directly to the Live Engine
+            if (os.setBrightness) os.setBrightness(100);
+            
+            // Dark Mode
+            os.isDarkMode = false;
+            document.body.classList.remove('dark-mode');
+            if (os.checkWallpaperBrightness) os.checkWallpaperBrightness();
+            
+            // Airplane Mode
+            os.isAirplaneMode = false;
+            if (os.toggleAirplaneMode) os.toggleAirplaneMode({ checked: false }, false);
+            
+            // Sideloading
+            if (window.sideloader) {
+                window.sideloader.enabled = false;
+                window.sideloader.removeSystemIcon();
+            }
+
+            // Assistive Touch
+            if (os.removeAssistiveTouch) os.removeAssistiveTouch();
+
+            // Display Effects
+            document.body.classList.remove('reduce-effects');
+            document.body.classList.add('sleek-scrollbars'); 
+
+            // Island Events
+            os.islandEventsEnabled = true;
+
+            // 4. Sync UI Checkboxes and Sliders
+            const uiDefaults = {
+                'setting-brightness': 100,
+                'setting-truetone': false,
+                'setting-airplane': false,
+                'setting-strict-notifs': true,
+                'setting-notif-dev-only': false,
+                'setting-reduce-effects': false,
+                'setting-scrollbars': true,
+                'setting-assistive': false,
+                'setting-assistive-hide': true,
+                'setting-fullscreen': false,
+                'setting-fullscreen-always': false,
+                'setting-sideload': false,
+                'setting-island': true
+            };
+
+            // Fix the dark mode toggle (it lacks an ID in the HTML)
+            const darkModeSwitch = document.querySelector('input[onchange*="toggleDarkMode"]');
+            if (darkModeSwitch) darkModeSwitch.checked = false;
+
+            Object.keys(uiDefaults).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (el.type === 'checkbox') el.checked = uiDefaults[id];
+                    else if (el.type === 'range') el.value = uiDefaults[id];
+                }
+            });
+            
+            // 5. Hide dynamic sub-rows to match defaults
+            const devRow = document.getElementById('row-notif-dev-only');
+            if (devRow) devRow.style.display = 'flex'; // True by default for strict
+            
+            const hideRow = document.getElementById('row-assistive-hide');
+            if (hideRow) hideRow.style.display = 'none';
+
+            const fsAlwaysRow = document.getElementById('row-fullscreen-always');
+            if (fsAlwaysRow) fsAlwaysRow.style.display = 'none';
+
+            // 6. Show Success Alert
+            setTimeout(() => {
+                os.showAlert("Reset Complete", "All system preferences have been restored to defaults.");
+            }, 350);
+
+        },
+        true, // isDestructive (Makes the button red)
+        "Reset", // customOkText
+        "Cancel" // customCancelText
+    );
+}
+        
+        
+        
+        
+        
+        
+        
+        
         
         
 
