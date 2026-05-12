@@ -3705,11 +3705,11 @@ window.removeFollower = (targetUid, targetHandle) => {
 
         const origCloseModal = window.closeModal;
         window.closeModal = function(isFromPopState) {
-            origCloseModal();
-            // If closed via UI (Cancel/OK button), pop the history to keep the stack clean
-            // Strict === true check prevents HTML PointerEvents from breaking the logic
+            // Let the popstate trap handle the actual closing to prevent re-renders
             if (isFromPopState !== true && history.state && history.state.type === 'modal') {
                 history.back();
+            } else {
+                origCloseModal();
             }
         };
 
@@ -3722,9 +3722,11 @@ window.removeFollower = (targetUid, targetHandle) => {
 
         const origCloseImgModal = window.closeImgModal;
         window.closeImgModal = function(isFromPopState) {
-            origCloseImgModal();
+            // Let the popstate trap handle the actual closing to prevent re-renders
             if (isFromPopState !== true && history.state && history.state.type === 'imgModal') {
                 history.back();
+            } else {
+                origCloseImgModal();
             }
         };
 
