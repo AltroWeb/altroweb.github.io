@@ -1667,6 +1667,15 @@ body.dark-mode #sl-tab-preview[style*="600"] {
         <span>Always Fullscreen</span>
         <input type="checkbox" class="ios-switch" id="setting-fullscreen-always" onchange="iOS.toggleAlwaysFullscreen(this)">
     </div>
+    
+    <div class="ios-row">
+    <span>Untrusted App Fullscreen</span>
+    <input type="checkbox" class="ios-switch" id="setting-untrusted-fs" onchange="window.iOS.toggleUntrustedFS(this)">
+</div>
+    
+    
+    
+    
 </div>
 
 
@@ -5050,7 +5059,7 @@ const SecureStorage = {
             // 2. Wipe specific settings from localStorage
             const settingsKeys = [
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
-                'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects',
+                'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects', 'ios_untrusted_fs',
                 'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
                 'ios_fullscreen_always', 'ios_sideloading_enabled', 'ios_island_enabled'
             ];
@@ -5098,7 +5107,8 @@ const SecureStorage = {
                 'setting-fullscreen': false,
                 'setting-fullscreen-always': false,
                 'setting-sideload': false,
-                'setting-island': true
+                'setting-island': true,
+                'setting-untrusted-fs': false
             };
 
             // Fix the dark mode toggle (it lacks an ID in the HTML)
@@ -5555,6 +5565,19 @@ initNetworkListeners() {
                 }
 
                 if (save) localStorage.setItem('ios_airplane_mode', isActive);
+                
+                
+                
+                // Load Untrusted Fullscreen Preference
+const savedUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
+const untrustedFSSwitch = document.getElementById('setting-untrusted-fs');
+if (untrustedFSSwitch) untrustedFSSwitch.checked = savedUntrustedFS;
+                
+                
+                
+                
+                
+                
                 
                 // Add this inside initSettings() method
                 
@@ -6073,7 +6096,18 @@ initFullscreenListener() {
 
 
 
-
+toggleUntrustedFS(el) {
+    localStorage.setItem('ios_untrusted_fs', el.checked);
+    
+    // --- PRO REAL-TIME FIX ---
+    // Trusted apps have the sandbox attribute completely removed.
+    // By targeting 'iframe[sandbox]', we surgically kill ONLY untrusted background apps.
+    const container = document.getElementById('dynamic-app-container');
+    if (container) {
+        container.querySelectorAll('iframe[sandbox]').forEach(iframe => iframe.remove());
+        console.log("Entitlements changed: Flushed untrusted apps from RAM.");
+    }
+}
 
 
 
@@ -6868,13 +6902,21 @@ if (window.__deepLinkForwardParams) {
                             // but Trusted Store Apps are now blocked if Safe Mode is on.
                             const isTrusted = SAFE_LIST.includes(appName) || (isSideloaded && !this.isSafeMode);
 
-                            if (isTrusted) {
+                           if (isTrusted) {
                                 console.log(`🔓 Launching TRUSTED App: ${appName}`);
                                 iframe.removeAttribute('sandbox'); // FULL ACCESS
                             } else {
                                 console.log(`🔒 Launching RESTRICTED App: ${appName}`);
-                                // SANDBOX MODE
-                                iframe.setAttribute('sandbox', 'allow-scripts allow-forms'); 
+                                
+                                // --- PRO DYNAMIC ENTITLEMENTS ---
+                                const allowUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
+                                
+                                if (allowUntrustedFS) {
+                                    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-fullscreen');
+                                    iframe.setAttribute('allow', 'fullscreen'); // Required for modern webkit/chromium
+                                } else {
+                                    iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
+                                }
                             }
                             // -----------------------------
 
