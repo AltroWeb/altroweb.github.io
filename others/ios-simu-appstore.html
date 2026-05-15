@@ -6909,14 +6909,15 @@ if (window.__deepLinkForwardParams) {
                                 console.log(`🔒 Launching RESTRICTED App: ${appName}`);
                                 
                                 // --- PRO DYNAMIC ENTITLEMENTS ---
-                                const allowUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
-                                
-                                if (allowUntrustedFS) {
-                                    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-fullscreen');
-                                    iframe.setAttribute('allow', 'fullscreen'); // Required for modern webkit/chromium
-                                } else {
-                                    iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
-                                }
+const allowUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
+
+if (allowUntrustedFS) {
+    // We append allow-orientation-lock so games can dictate their own aspect ratio
+    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-fullscreen allow-orientation-lock');
+    iframe.setAttribute('allow', 'fullscreen'); 
+} else {
+    iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
+}
                             }
                             // -----------------------------
 
