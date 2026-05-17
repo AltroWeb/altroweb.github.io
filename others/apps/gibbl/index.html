@@ -2672,6 +2672,13 @@ currentProfile.bio = bio; currentProfile.pfp = pfp; currentProfile.mentionsEnabl
             const myPostsSnap = await getDocs(query(getPublicCollection('posts'), where('authorId', '==', uid)));
             myPostsSnap.forEach(d => operations.push({ type: 'delete', ref: d.ref }));
 
+            // --- NEW: THE GHOST LIKE PURGER ---
+            const likedPostsSnap = await getDocs(query(getPublicCollection('posts'), where('likes', 'array-contains', uid)));
+            likedPostsSnap.forEach(d => {
+                operations.push({ type: 'update', ref: d.ref, data: { likes: arrayRemove(uid) } });
+            });
+            // ----------------------------------
+
             const notifsSnap = await getDocs(query(getPublicCollection('notifications'), where('receiverId', '==', uid)));
             notifsSnap.forEach(d => operations.push({ type: 'delete', ref: d.ref }));
 
