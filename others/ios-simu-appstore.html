@@ -1598,7 +1598,16 @@ body.dark-mode #sl-tab-preview[style*="600"] {
     <span>True Tone</span>
     <input type="checkbox" class="ios-switch" id="setting-truetone" onchange="iOS.toggleTrueTone(this)">
 </div>
-                        </div>
+
+<div class="ios-row" id="row-truetone-warmth" style="display:none; flex-direction:column; align-items:flex-start; gap:10px;">
+    <div style="display:flex; justify-content:space-between; width:100%; font-size:11px; color:#8E8E93; text-transform:uppercase; font-weight:600;">
+        <span>Cold</span><span>Warm</span>
+    </div>
+    <div class="ios-slider-container">
+        <input type="range" class="ios-slider" id="setting-truetone-warmth" min="0" max="100" value="50" oninput="iOS.setTrueToneWarmth(this.value)">
+    </div>
+</div>
+</div>
 
 
 
@@ -5074,6 +5083,13 @@ const SecureStorage = {
             
             // Dark Mode
             os.isDarkMode = false;
+            
+            
+            if (os.toggleTrueTone) os.toggleTrueTone({ checked: false }, false); // Hides layer & row instantly
+        if (os.setTrueToneWarmth) os.setTrueToneWarmth(50); // Snaps color math back to middle default
+            
+            
+            
             document.body.classList.remove('dark-mode');
             if (os.checkWallpaperBrightness) os.checkWallpaperBrightness();
             
@@ -5100,7 +5116,8 @@ const SecureStorage = {
             // 4. Sync UI Checkboxes and Sliders
             const uiDefaults = {
                 'setting-brightness': 100,
-                'setting-truetone': false,
+     'setting-truetone': false,          // Resets the Eye Shield toggle box visually
+            'setting-truetone-warmth': 50,
                 'setting-airplane': false,
                 'setting-strict-notifs': true,
                 'setting-notif-dev-only': false,
@@ -5447,10 +5464,18 @@ this.bootBackgroundServices();
         if (brightSlider) brightSlider.value = brightVal;
 
         // 2. Load True Tone
-        const savedTT = localStorage.getItem('ios_truetone') === 'true';
-        this.toggleTrueTone({ checked: savedTT }, false);
-        const ttSwitch = document.getElementById('setting-truetone');
-        if (ttSwitch) ttSwitch.checked = savedTT;
+        
+const savedTT = localStorage.getItem('ios_truetone') === 'true';
+this.toggleTrueTone({ checked: savedTT }, false);
+const ttSwitch = document.getElementById('setting-truetone');
+if (ttSwitch) ttSwitch.checked = savedTT;
+
+// --- INJECT THE WARMTH LOAD HERE ---
+const savedWarmth = localStorage.getItem('ios_truetone_warmth');
+const warmthVal = savedWarmth !== null ? parseInt(savedWarmth) : 50;
+this.setTrueToneWarmth(warmthVal);
+const warmthSlider = document.getElementById('setting-truetone-warmth');
+if (warmthSlider) warmthSlider.value = warmthVal;
 
         // 3. Load Airplane Mode
         const savedAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
@@ -5506,13 +5531,17 @@ initNetworkListeners() {
     }
 
     toggleTrueTone(el, save = true) {
-        const layer = document.getElementById('truetone-layer');
-        const isActive = el.checked;
-        
-        if (layer) layer.style.opacity = isActive ? '1' : '0';
-        
-        if (save) localStorage.setItem('ios_truetone', isActive);
-    }
+    const layer = document.getElementById('truetone-layer');
+    const warmthRow = document.getElementById('row-truetone-warmth'); // Grab the new row
+    const isActive = el.checked;
+    
+    if (layer) layer.style.opacity = isActive ? '1' : '0';
+    
+    // Reveal or hide the sub-slider
+    if (warmthRow) warmthRow.style.display = isActive ? 'flex' : 'none';
+    
+    if (save) localStorage.setItem('ios_truetone', isActive);
+}
 
     toggleAirplaneMode(el, save = true) {
                 const isActive = el.checked;
@@ -5673,6 +5702,31 @@ toggleIslandEvents(el) {
     this.islandEventsEnabled = el.checked;
     localStorage.setItem('ios_island_enabled', el.checked);
 }
+
+
+
+
+
+
+setTrueToneWarmth(value) {
+    // Math: Interpolate from Cold (0) to Warm (100)
+    // 0 = rgba(200, 220, 255, 0.15) | 50 = rgba(255, 220, 150, 0.15) | 100 = rgba(255, 180, 50, 0.2)
+    
+    const t = value < 50 ? value / 50 : (value - 50) / 50; const r = value < 50 ? Math.floor(t * 255) : 255; const g = value < 50 ? Math.floor(90 + t * 125) : Math.floor(215 - t * 135); const b = value < 50 ? Math.floor(255 - t * 105) : Math.floor(150 - t * 150); const alpha = value < 50 ? (0.38 - t * 0.23) : (0.15 + t * 0.25);
+
+    const layer = document.getElementById('truetone-layer');
+    if (layer) {
+        layer.style.background = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    
+    // Save state instantly
+    localStorage.setItem('ios_truetone_warmth', value);
+}
+
+
+
+
+
 
 
 
