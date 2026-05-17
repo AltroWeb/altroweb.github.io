@@ -2079,6 +2079,8 @@ console.log = function() {};
             }
 
             async init() {
+        this.isKernelReady = false; // 1. LOCK THE SYSTEM
+
         await this.initFirebase();
         this.initSearch();
         
@@ -2087,6 +2089,8 @@ console.log = function() {};
             this.fetchTrustedApps() 
         ]);
         this.fetchApps();
+
+        this.isKernelReady = true; // 2. UNLOCK THE SYSTEM
 
         // 1. Auto-Refresh on Reconnect (PRO FIX)
         window.addEventListener('online', () => {
@@ -5727,35 +5731,38 @@ handleDeepLinks() {
             if (key !== 'app' && key !== 'safe') forwardParams.append(key, value);
         }
         
+        // --- PRO KERNEL SYNC LOCK (WITH UX DELAY) ---
         // Stage params globally so the router can inject them
         window.__deepLinkForwardParams = forwardParams.toString();
 
-        setTimeout(() => {
-            // C. Look for the App Locally
-            const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-            const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
-            const targetApp = [...installed, ...sideloaded].find(a => a.id === appId);
+        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+        const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+        const targetApp = [...installed, ...sideloaded].find(a => a.id === appId);
 
-            if (targetApp) {
-                // FOUND IT: Open the App
-                let appIcon = this.getVisibleIconElement(appId);
-                this.openApp(appIcon, appId, 'light');
-            } else {
-                // NOT FOUND: Route to App Store and lock search to this exact ID
-                const waitForStore = setInterval(() => {
-                    if (typeof appStore !== 'undefined') {
-                        clearInterval(waitForStore);
-                        const input = document.getElementById('store-search-input');
-                        if (input) input.value = appId;
-                        
-                        if (appStore.filterApps) appStore.filterApps(appId);
-                        
-                        const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
-                        if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
-                    }
-                }, 100);
+        const bootStartTime = Date.now(); // Track when the link was clicked
+
+        const bootWait = setInterval(() => {
+            const timeElapsed = Date.now() - bootStartTime;
+            const kernelReady = !targetApp || (window.appStore && window.appStore.isKernelReady);
+
+            // 1. MUST wait at least 1500ms for smooth UX
+            // 2. MUST wait for Kernel to finish syncing
+            if (kernelReady && timeElapsed >= 1500) {
+                clearInterval(bootWait);
+                
+                if (targetApp) {
+                    let appIcon = this.getVisibleIconElement(appId);
+                    this.openApp(appIcon, appId, 'light');
+                } else {
+                    const input = document.getElementById('store-search-input');
+                    if (input) input.value = appId;
+                    if (window.appStore && window.appStore.filterApps) window.appStore.filterApps(appId);
+                    
+                    const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
+                    if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
+                }
             }
-        }, 2500); // Wait for system to boot
+        }, 50); // Still checks rapidly, but respects the 1500ms lock
     }
 }
 
