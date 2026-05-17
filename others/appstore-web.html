@@ -1797,7 +1797,7 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
         const div = document.createElement('div');
         div.className = 'store-item';
         div.innerHTML = `
-            <img src="${app.iconUrl}" class="store-icon" onerror="this.src='https://via.placeholder.com/62?text=App'">
+            <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
             
             <div class="store-info">
                 <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
