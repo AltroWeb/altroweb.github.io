@@ -383,9 +383,10 @@
         .md-mention { color: var(--text); font-weight: 600; text-decoration: none; transition: 0.2s; cursor:pointer; }
         .md-mention:hover { text-decoration: underline; }
 
-        .post-actions { 
+.post-actions { 
             display: flex; justify-content: space-between; color: var(--dim); 
-            max-width: 400px; margin-top: 14px; margin-bottom: 4px; padding-top: 4px;
+            max-width: 100%; /* <--- THE PRO FIX */
+            margin-top: 14px; margin-bottom: 4px; padding-top: 4px;
         }
         .action-btn { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: 0.2s; color: var(--dim); }
         .action-btn:hover { color: var(--text); }
@@ -638,6 +639,31 @@ svg, .pfp-nav, .pfp-sm, .pfp-lg {
         
         
         
+        /* --- PRO TOAST NOTIFICATION --- */
+        #toast-notification {
+            position: fixed;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text);
+            color: var(--bg);
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #toast-notification.show {
+            bottom: 80px; /* Floats just above your bottom nav bar */
+            opacity: 1;
+        }
+        
+        
+        
         
         
     </style>
@@ -646,6 +672,13 @@ svg, .pfp-nav, .pfp-sm, .pfp-lg {
 
     <!-- APP CONTAINER -->
     <div class="app-container" id="app"></div>
+
+<div id="toast-notification">Link copied to clipboard</div>
+
+
+
+
+
 
     <!-- GLOBAL MODALS -->
     <div id="modal-container" class="modal-overlay">
@@ -1106,6 +1139,23 @@ window.updateCharCount = (inputEl, counterId) => {
             if (len >= max) counter.className = 'char-counter text-xs danger';
             else if (len >= max * 0.8) counter.className = 'char-counter text-xs warning';
             else counter.className = 'char-counter text-xs text-dim';
+        };
+
+
+
+// --- PRO TOAST CONTROLLER ---
+        window.toastTimeout = null;
+        window.showToast = (msg) => {
+            const toast = document.getElementById('toast-notification');
+            if (!toast) return;
+            
+            toast.innerText = msg;
+            toast.classList.add('show');
+            
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500); // Disappears gracefully after 2.5 seconds
         };
 
 
@@ -2174,10 +2224,22 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
 
 
 
-        const renderProfile = async (container, uid) => {
+        const renderProfile = async (container, uidOrHandle) => {
             container.innerHTML = '<div style="padding:2rem;text-align:center; color:var(--dim)"><div class="spinner"></div></div>';
             
             try {
+                let uid = uidOrHandle; 
+
+                // PRO FIX: Handle Interceptor
+                // If the URL passes a clean handle (no @), we format it and look it up
+                let searchHandle = uidOrHandle.toLowerCase();
+                if (!searchHandle.startsWith('@')) searchHandle = '@' + searchHandle;
+
+                const handleRef = await getDoc(getPublicDoc('handleRegistry', searchHandle));
+                if (handleRef.exists()) {
+                    uid = handleRef.data().uid; // Swap handle for the real UID
+                }
+
                 const docRef = await getDoc(getPublicDoc('profiles', uid));
                 if(!docRef.exists()) {
                     container.innerHTML = '<div style="padding:2rem;text-align:center; color:var(--dim)">User not found.</div>';
@@ -2186,11 +2248,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 const user = docRef.data();
                 const isMe = uid === currentUser.uid;
                 const amFollowing = currentProfile.following?.includes(uid);
-                
-                
                 const isFollowingMe = currentProfile.followers?.includes(uid);
-                
-                
                 const isVerified = await window.checkVerified(uid);
 
                 container.innerHTML = `
@@ -2212,7 +2270,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
     </div>
 `}
                             
-                            <button class="profile-btn flex items-center gap-2" style="font-size: 0.85rem; padding: 0.5rem 0.8rem;" onclick="window.shareProfile('${uid}')">${getIcon('share')} <span style="font-weight:600;">Share</span></button>
+                            <button class="profile-btn flex items-center gap-2" style="font-size: 0.85rem; padding: 0.5rem 0.8rem;" onclick="window.shareProfile('${user.handle.replace('@', '')}')">${getIcon('share')} <span style="font-weight:600;">Share</span></button>
                             
                             
                         </div>
@@ -3371,10 +3429,23 @@ if (totalUsers >= 500) {
             }, true);
         };
         
-        window.sharePost = (postId) => {
+        window.sharePost = async (postId) => {
             const dynamicUrl = `${window.location.origin}${window.location.pathname}?post=${postId}`;
-            navigator.clipboard.writeText(dynamicUrl);
-            window.showModal('Copied', 'Post Link copied to clipboard.');
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'gibbl.',
+                        text: 'Check out this post on gibbl.\n\n',
+                        url: dynamicUrl
+                    });
+                } catch (err) {
+                    // User closed the share sheet manually, ignore quietly
+                }
+            } else {
+                navigator.clipboard.writeText(dynamicUrl);
+                window.showToast('Post link copied'); 
+            }
         };
 
 
@@ -3454,11 +3525,24 @@ window.removeFollower = (targetUid, targetHandle) => {
         
         
         
-        window.shareProfile = (uid) => {
-    const url = `${window.location.origin}${window.location.pathname}?u=${uid}`;
-    navigator.clipboard.writeText(url);
-    window.showModal('Copied', 'Profile link copied to clipboard.');
-};
+        window.shareProfile = async (cleanHandle) => {
+            const cleanUrl = `${window.location.origin}${window.location.pathname}?u=${cleanHandle}`;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'gibbl.',
+                        text: `Check out @${cleanHandle} on gibbl.\n\n`,
+                        url: cleanUrl
+                    });
+                } catch (err) {
+                    // User closed the share sheet manually, ignore quietly
+                }
+            } else {
+                navigator.clipboard.writeText(cleanUrl);
+                window.showToast('Profile link copied'); 
+            }
+        };
         
         
         
