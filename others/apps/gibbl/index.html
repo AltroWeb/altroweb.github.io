@@ -259,12 +259,14 @@
         .filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
         /* Scalable Load More Button */
-        .load-more-btn {
+.load-more-btn {
             display: block; width: 100%; padding: 1.2rem; text-align: center;
             color: var(--text); font-weight: 600; cursor: pointer; transition: 0.2s;
             border-top: 1px solid var(--border); background: var(--surface);
+            
+            /* PRO FIX: Forces the button to the absolute bottom of flex containers */
+            order: 9999 !important; 
         }
-        .load-more-btn:hover { background: var(--surface-hover); }
 
         .create-post-fab {
             position: fixed;
@@ -661,6 +663,41 @@ svg, .pfp-nav, .pfp-sm, .pfp-lg {
             bottom: 80px; /* Floats just above your bottom nav bar */
             opacity: 1;
         }
+        
+        
+        /* Fix 1: Release the 80px height lock on GIF containers to stop UI overlap */
+.image-preview-container .preview-thumb {
+    width: 100% !important;
+    height: auto !important;
+    border: none !important;
+}
+        
+        
+        
+        
+        /* Fix 2: Force GIFs to render at full width with standard max-heights */
+.image-preview-container .preview-thumb img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 280px !important;
+    border: 1px solid var(--border);
+}
+        
+        
+        /* Fix 3: Lock textareas to prevent horizontal dragging/layout breaking */
+        textarea.custom-input {
+            resize: vertical !important; 
+        }
+
+        /* Fix 4: Keep the FAB locked to the app column on desktop monitors */
+        @media (min-width: 640px) {
+            .create-post-fab {
+                right: auto !important;
+                left: calc(50% + 220px) !important; /* Locks it to the right side of the 600px container */
+            }
+        }
+        
+        
         
         
         
@@ -3597,11 +3634,16 @@ window.removeFollower = (targetUid, targetHandle) => {
             window.LIMITS.feed += 30; 
             
             // Failsafe Timer: If Firebase lags, it unlocks the button so you can manually tap it!
-            setTimeout(() => { 
-                window.isPaginating = false; 
-                const checkBtn = document.getElementById('feed-load-more');
-                if(checkBtn && checkBtn.innerHTML.includes('spinner')) checkBtn.innerHTML = 'Load More'; 
-            }, 4000);
+            
+setTimeout(() => { 
+    window.isPaginating = false; 
+    const checkBtn = document.getElementById('feed-load-more');
+    if(checkBtn && checkBtn.innerHTML.includes('spinner')) {
+        checkBtn.innerHTML = 'Load More'; 
+        checkBtn.disabled = false; // <-- The Fix: Force the button to unlock
+        checkBtn.style.opacity = '1';
+    }
+}, 4000);
 
             renderFeed(document.getElementById('main-content'), false); 
         };
@@ -3638,6 +3680,22 @@ window.removeFollower = (targetUid, targetHandle) => {
             if (window.lastProfilePosts.length > window.LIMITS.profile) {
                 document.getElementById('profile-posts').insertAdjacentHTML('beforeend', `<div class="load-more-btn" onclick="window.appendProfilePosts('${uid}')">Load More</div>`);
             }
+            
+            
+            // Drop this at the absolute bottom of window.appendProfilePosts
+            setTimeout(() => {
+                const activeSearch = document.getElementById('profile-search-input');
+                const searchBar = document.getElementById('profile-search-bar');
+                // If search is open and active, slam the filter down on the newly loaded posts
+                if (activeSearch && searchBar && !searchBar.classList.contains('hidden') && activeSearch.value.trim() !== '') {
+                    window.localProfileSearch(activeSearch.value);
+                }
+            }, 10); // 10ms micro-delay to let the DOM settle
+            
+            
+            
+            
+            
         };
 
         window.appendThreadReplies = async (postId) => {
@@ -3698,13 +3756,13 @@ window.removeFollower = (targetUid, targetHandle) => {
             const loadBtn = document.querySelector('#profile-posts .load-more-btn');
             
             cards.forEach(card => {
-                const text = card.innerText.toLowerCase();
-                // Hides posts that don't match the search text instantly
+                // PRO FIX: textContent reads instantly. innerText causes race conditions on newly injected HTML.
+                const text = card.textContent.toLowerCase();
                 card.style.display = text.includes(q) ? 'flex' : 'none';
             });
             
-            // Hides the "Load More" button while searching so the pagination logic stays safe
-            if(loadBtn) loadBtn.style.display = q ? 'none' : 'block';
+            // Allow the user to keep loading older posts WHILE searching!
+            if(loadBtn) loadBtn.style.display = 'block'; 
         };
 
  
