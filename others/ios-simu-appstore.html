@@ -319,6 +319,15 @@ margin-top: 90px; /* This physically pushes the scroller (and its bar) below the
         }
         
         
+        #music-window .scroll-inner-padding { 
+    justify-content: center !important; 
+    padding-bottom: 100px; /* Adds breathing room at the bottom */
+    overflow-y: auto;
+}
+        
+ 
+        
+        
         
         
         
@@ -2083,6 +2092,9 @@ console.log = function() {};
                 this.backgroundApps = []; // Track IDs of apps kept alive [id1, id2]
                 this.MAX_BG_APPS = 3;     // Limit to save RAM
                 this.lockedAppId = null;
+                this.lastAppDoc = null; 
+                this.isLoadingMore = false; 
+                this.scrollObserver = null;
                 // FIX: Call init() here instead of individual methods
                 this.init();
             }
@@ -2270,82 +2282,152 @@ async fetchTrustedApps() {
           
             
 
-          async fetchApps() {
-    // 1. ROBUST CONNECTIVITY GUARD
-    const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
-    const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
-    const isRealNetwork = navigator.onLine;
+          async fetchApps(isLoadMore = false) {
+        if (this.isLoadingMore) return;
+        this.isLoadingMore = true;
 
-    const isConnected = !isAirplane && isWifiOn && isRealNetwork;
-    this.isOfflineMode = !isConnected; 
+        // 1. ROBUST CONNECTIVITY GUARD
+        const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+        const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
+        const isRealNetwork = navigator.onLine;
 
-    if (this.isOfflineMode) {
-        const updateHeader = document.getElementById('store-update-section');
-        if (updateHeader) updateHeader.remove(); 
-        if (isAirplane) this.offlineReason = 'airplane';
-        else if (!isWifiOn) this.offlineReason = 'wifi';
-        else this.offlineReason = 'network';
-    }
+        const isConnected = !isAirplane && isWifiOn && isRealNetwork;
+        this.isOfflineMode = !isConnected; 
 
-    // 2. LOAD LOCAL APPS FIRST
-    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-    this.apps = [...installed];
+        if (this.isOfflineMode) {
+            const updateHeader = document.getElementById('store-update-section');
+            if (updateHeader) updateHeader.remove(); 
+            if (isAirplane) this.offlineReason = 'airplane';
+            else if (!isWifiOn) this.offlineReason = 'wifi';
+            else this.offlineReason = 'network';
+        }
 
-    // 3. ONLINE SYNC
-    if (isConnected && this.db) {
-        this.flushPendingDecrements();
-        try {
-            const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
-            const serverApps = [];
-            snapshot.forEach(doc => {
-                serverApps.push({ id: doc.id, ...doc.data() });
-            });
+        // 2. LOAD LOCAL APPS FIRST
+        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+        if (!isLoadMore) this.apps = [...installed]; // Only wipe RAM on fresh load
 
-            // Merge: Server is source of truth
-            this.apps = [...serverApps];
-            installed.forEach(localApp => {
-                if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
-                    this.apps.push(localApp);
+        // 3. ONLINE SYNC
+        if (isConnected && this.db) {
+            this.flushPendingDecrements();
+            try {
+                // PRO FIX: Chunked Data Loading
+                let query = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').limit(15);
+                
+                if (isLoadMore && this.lastAppDoc) {
+                    query = query.startAfter(this.lastAppDoc);
                 }
-            });
-            
-            
-            
-            this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
-            
-        } catch (e) {
-            console.error("Fetch Error:", e);
-            this.isOfflineMode = true; 
-            this.offlineReason = 'network';
+
+                const snapshot = await query.get();
+                
+                if (!snapshot.empty) {
+                    this.lastAppDoc = snapshot.docs[snapshot.docs.length - 1];
+                } else if (isLoadMore) {
+                    this.lastAppDoc = null; // Reached the end of the database
+                }
+
+                const serverApps = [];
+                snapshot.forEach(doc => {
+                    serverApps.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Merge: Server is source of truth
+                if (isLoadMore) {
+                    serverApps.forEach(serverApp => {
+                        if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
+                    });
+                } else {
+                    this.apps = [...serverApps];
+                    installed.forEach(localApp => {
+                        if (!this.apps.some(serverApp => serverApp.id === localApp.id)) this.apps.push(localApp);
+                    });
+                }
+                
+                this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
+                
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                this.isOfflineMode = true; 
+                this.offlineReason = 'network';
+            }
+        }
+
+        this.isLoadingMore = false;
+
+        // 4. SMART RENDER 
+        const searchInput = document.getElementById('store-search-input');
+        if (searchInput && searchInput.value.trim().length > 0) {
+            this.filterApps(searchInput.value);
+        } else {
+        	
+        
+        if (this.activeDevFilter) {
+    const devTarget = this.activeDevFilter.toLowerCase();
+    const filteredDevApps = this.apps.filter(app => app.author && app.author.toLowerCase().includes(devTarget));
+    this.renderStore(filteredDevApps);
+    return;
+}
+        
+        
+        
+            this.renderStore(this.apps);
+            this.setupScrollObserver(); // Trigger next batch when reaching bottom
+        }
+        
+        if (!searchInput || searchInput.value === '') {
+            this.checkUrlParams();
         }
     }
 
-    // 4. SMART RENDER (THE FIX)
-    // Check if user (or deep link) has already typed something. 
-    // If so, don't overwrite their filtered view with the full list.
-    const searchInput = document.getElementById('store-search-input');
-    if (searchInput && searchInput.value.trim().length > 0) {
-      // console.log("⚡ Skipping default render (Search active)");
-        this.filterApps(searchInput.value);
-    } else {
-        this.renderStore(this.apps);
-    }
-    
-    // Check params only if we haven't already processed them
-    if (!searchInput || searchInput.value === '') {
-        this.checkUrlParams();
-    }
-}
+            
+            
+            setupScrollObserver() {
+        const storeList = document.getElementById('store-list');
+        if (!storeList) return;
+        
+        const cards = storeList.querySelectorAll('.store-item');
+        if (cards.length === 0) return;
+        
+        const lastCard = cards[cards.length - 1];
 
+        // Disconnect previous observer if exists to prevent duplicates
+        if (this.scrollObserver) this.scrollObserver.disconnect();
+
+        this.scrollObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !this.isLoadingMore && this.lastAppDoc) {
+                this.fetchApps(true); 
+            }
+        }, { threshold: 0.1 });
+
+        this.scrollObserver.observe(lastCard);
+    }
+            
+            
+            
+            
+            
+            
             
 initSearch() {
-                const input = document.getElementById('store-search-input');
-                if(!input) return;
-                
-                input.addEventListener('input', (e) => {
-                    this.filterApps(e.target.value);
-                });
+        const input = document.getElementById('store-search-input');
+        
+        // Network Debouncer (Protects your free tier budget)
+        let searchTimeout;
+        input.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            
+            const query = e.target.value;
+            // If they clear the bar, execute immediately
+            if (!query.trim()) {
+                this.filterApps('');
+                return;
             }
+            
+            // Otherwise, wait 400ms after they stop typing to hit the database
+            searchTimeout = setTimeout(() => {
+                this.filterApps(query);
+            }, 400);
+        });
+    }
 
 
 
@@ -2453,114 +2535,139 @@ checkUrlParams() {
 
 
 filterApps(query) {
-    // 1. HANDLE EMPTY SEARCH
-    if (!query) {
-        this.lockedAppId = null;
+        // 1. HANDLE EMPTY SEARCH
+        if (!query) {
+            this.lockedAppId = null;
+            this.activeDevFilter = null;
+            this.isLoadingMore = false; 
+            const card = document.getElementById('store-dev-card');
+            const header = document.getElementById('store-dev-header');
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore(this.apps);
+            this.setupScrollObserver(); 
+            return;
+        }
+
+        const rawTerm = query.trim();
+        const term = rawTerm.toLowerCase();
+        
         const card = document.getElementById('store-dev-card');
         const header = document.getElementById('store-dev-header');
-        if (card) card.style.display = 'none';
-        if (header) header.style.display = 'none';
-        this.renderStore(this.apps);
-        return;
-    }
+        const input = document.getElementById('store-search-input');
 
-    const rawTerm = query.trim();
-    const term = rawTerm.toLowerCase();
-    
-    const card = document.getElementById('store-dev-card');
-    const header = document.getElementById('store-dev-header');
-    const input = document.getElementById('store-search-input');
+        // --- 2. EXACT APP ID MATCH (The Lock) ---
+        const exactIdMatch = this.apps.find(a => a.id === rawTerm);
 
-    // --- 2. EXACT APP ID MATCH (The Lock) ---
-    const exactIdMatch = this.apps.find(a => a.id === rawTerm);
+        if (exactIdMatch) {
+            this.lockedAppId = exactIdMatch.id;
+            const appName = exactIdMatch.storeName || exactIdMatch.name;
+            if (input && input.value !== appName) input.value = appName;
+            
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
 
-    if (exactIdMatch) {
-        console.log("Locking Search to ID:", rawTerm);
-        this.lockedAppId = exactIdMatch.id;
-
-        // UI Swap: ID -> Name
-        const appName = exactIdMatch.storeName || exactIdMatch.name;
-        if (input && input.value !== appName) {
-            input.value = appName;
+            this.renderStore([exactIdMatch]);
+            return;
         }
 
-        // Hide Dev UI
-        if (card) card.style.display = 'none';
-        if (header) header.style.display = 'none';
-
-        this.renderStore([exactIdMatch]);
-        return;
-    }
-
-    // --- 3. CHECK LOCK STATE ---
-    if (this.lockedAppId) {
-        const lockedApp = this.apps.find(a => a.id === this.lockedAppId);
-        if (lockedApp) {
-            const appName = (lockedApp.storeName || lockedApp.name).toLowerCase();
-            if (term === appName) {
-                this.renderStore([lockedApp]);
-                return;
+        // --- 3. CHECK LOCK STATE ---
+        if (this.lockedAppId) {
+            const lockedApp = this.apps.find(a => a.id === this.lockedAppId);
+            if (lockedApp) {
+                const appName = (lockedApp.storeName || lockedApp.name).toLowerCase();
+                if (term === appName) {
+                    this.renderStore([lockedApp]);
+                    return;
+                }
             }
+            this.lockedAppId = null; 
         }
-        this.lockedAppId = null; 
-    }
 
-    // --- 4. DEV SEARCH ---
+// --- 4. DEV SEARCH (PRO FIX: ROBUST OFFLINE RAM MATCH & CONTINUOUS SCROLL) ---
     if (term.startsWith('dev:')) {
         const targetDev = rawTerm.substring(4).trim();
         
         if (targetDev.length === 0) {
+            this.activeDevFilter = null;
             if (card) card.style.display = 'none';
             if (header) header.style.display = 'none';
             this.renderStore([]); 
             return;
         }
 
-        // Check for UUID (Author ID)
+        // --- FORCE CARD TO UNHIDE INSTANTLY (0ms) ---
+        if (card) card.style.display = 'flex';
+        if (header) header.style.display = 'block';
+
+        // Track developer state for infinite scrolling
+        this.activeDevFilter = targetDev;
+        let localDevApps = [];
+
+        // --- YOUR ORIGINAL ROBUST LOGIC ---
+        // Strategy 1: Check for Exact UUID (Author ID)
         const appsByUUID = this.apps.filter(app => app.authorId === targetDev);
+        
         if (appsByUUID.length > 0) {
+            localDevApps = appsByUUID;
             const authorName = appsByUUID[0].author;
-            if (input) input.value = "dev:" + authorName;
-            
-            this.updateDevCard(appsByUUID[0]);
-            this.renderStore(appsByUUID);
-            return;
+            if (input && document.activeElement !== input) input.value = "dev:" + authorName;
+        } 
+        // Strategy 2: Fallback to Name Search
+        else {
+            localDevApps = this.apps.filter(app => 
+                (app.author || '').toLowerCase().includes(targetDev.toLowerCase())
+            );
+            if (localDevApps.length > 0 && input && document.activeElement !== input) {
+                input.value = "dev:" + localDevApps[0].author;
+            }
         }
 
-        // Search by Name
-        const devApps = this.apps.filter(app => 
-            (app.author || '').toLowerCase().includes(targetDev.toLowerCase())
-        );
-
-        if (devApps.length > 0) {
-            this.updateDevCard(devApps[0]);
-            this.renderStore(devApps);
+        // RENDER INSTANTLY (Works flawlessly offline or with cached RAM)
+        if (localDevApps.length > 0) {
+            this.updateDevCard(localDevApps[0]); // Fires instantly
+            this.renderStore(localDevApps);      // Renders instantly
         } else {
-            if (card) card.style.display = 'none';
-            if (header) header.style.display = 'none';
-            this.renderStore([]);
+            // Only show spinner if absolutely 0 apps are in RAM
+            const listEl = document.getElementById('store-list');
+            if (listEl) listEl.innerHTML = '<div class="loading-spinner" style="text-align:center; padding:40px; color:#8E8E93;">Loading Developer Profile...</div>';
         }
-        return;
+
+        // --- RE-ARM CONTINUOUS SCROLL TRIPWIRE ---
+        // This ensures if there are MORE apps in the database, scrolling down fetches them
+        const listEl = document.getElementById('store-list');
+        const lastCard = listEl ? listEl.lastElementChild : null;
+        if (lastCard) {
+            if (this.scrollObserver) this.scrollObserver.disconnect();
+            this.scrollObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && !this.isLoadingMore && this.lastAppDoc) {
+                    this.fetchApps(true); // Automatically loads next batch
+                }
+            }, { threshold: 0.1 });
+            this.scrollObserver.observe(lastCard);
+        }
+
+        return; // CRITICAL: Stop execution so it doesn't run the standard search below
     }
 
     // --- 5. STANDARD SEARCH (Updated with Tags) ---
-    if (card) card.style.display = 'none';
-    if (header) header.style.display = 'none';
+        if (card) card.style.display = 'none';
+        if (header) header.style.display = 'none';
 
-    const filtered = this.apps.filter(app => {
-        const displayName = (app.storeName || app.name || '').toLowerCase();
-        const author = (app.author || '').toLowerCase();
-        const desc = (app.description || '').toLowerCase();
-        const tags = (app.tags || '').toLowerCase(); // <--- Added Tags
+        const filtered = this.apps.filter(app => {
+            const displayName = (app.storeName || app.name || '').toLowerCase();
+            const author = (app.author || '').toLowerCase();
+            const desc = (app.description || '').toLowerCase();
+            const tags = (app.tags || '').toLowerCase();
 
-        return displayName.includes(term) || 
-               author.includes(term) || 
-               desc.includes(term) || 
-               tags.includes(term); // <--- Added Check
-    });
-    
-    this.renderStore(filtered);
-}
+            return displayName.includes(term) || 
+                   author.includes(term) || 
+                   desc.includes(term) || 
+                   tags.includes(term); 
+        });
+        
+        this.renderStore(filtered);
+    }
 
 
 
@@ -2870,7 +2977,7 @@ renderBio(text) {
 }
 
 
-   async updateDevCard(app) {
+   updateDevCard(app) {
         const card = document.getElementById('store-dev-card');
         const header = document.getElementById('store-dev-header');
         
@@ -2890,33 +2997,32 @@ renderBio(text) {
         const authorName = app.author || "Unknown";
         const authorId = app.authorId;
 
-        // --- INSTANT CACHE LOAD ---
         const cacheKey = `store_dev_profile_${authorId}`;
         const cached = localStorage.getItem(cacheKey);
-        
+
+        // 1. INSTANT UNHIDE - Force card visible immediately
+        card.style.display = 'flex';
+        header.style.display = 'block';
+
+        // 2. Render Basic Text
+        nameEl.innerText = authorName;
+        header.innerText = `Apps by ${authorName}`;
+
         if (cached) {
             try {
                 const d = JSON.parse(cached);
-                // PRO FIX: Force overwrite to prevent state leakage from previous dev cards
                 bioEl.innerHTML = this.renderBio(d.authorBio); 
                 if (d.authorIcon) avatarEl.innerHTML = `<img src="${d.authorIcon}" class="dev-avatar-circle">`;
                 else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
             } catch(e) {}
-        }
-
-        // 1. Render Basic Text
-        nameEl.innerText = authorName;
-        header.innerText = `Apps by ${authorName}`;
-
-        if (!cached) {
-            // PRO FIX: Force overwrite
+        } else {
             bioEl.innerHTML = this.renderBio(app.authorBio);
             if (app.authorIcon) avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
             else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
         }
 
-        // 2. Render Badges
-        const badgeType = this.userBadges.get(authorId);
+        // 3. Render Badges
+        const badgeType = this.userBadges ? this.userBadges.get(authorId) : undefined;
         if (badgeType === 'member') {
             badgeEl.innerHTML = `<span class="verified-badge member"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
         } else if (badgeType === 'verified') {
@@ -2925,32 +3031,22 @@ renderBio(text) {
             badgeEl.innerHTML = '';
         }
 
-        // 3. Show Card
-        card.style.display = 'flex';
-        header.style.display = 'block';
-
-        // --- LIVE DB FETCH ---
-        try {
-            const userDoc = await this.db.collection('artifacts').doc(this.appId)
+        // --- 4. LIVE DB FETCH (Fire and Forget) ---
+        if (this.db) {
+            this.db.collection('artifacts').doc(this.appId)
                 .collection('public').doc('data')
-                .collection('user_info').doc(authorId).get();
-
-            if (userDoc.exists) {
-                if (this.currentViewedDevId !== authorId) return; // Prevent race conditions
-                const profile = userDoc.data();
-                
-                localStorage.setItem(cacheKey, JSON.stringify(profile)); // Save Cache
-                
-                // PRO FIX: Force overwrite regardless of if it's empty, to stop state leakage
-                bioEl.innerHTML = this.renderBio(profile.authorBio);
-                
-                if (profile.authorIcon) {
-                    avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
-                } else {
-                    avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
-                }
-            }
-        } catch(e) { console.warn(e); }
+                .collection('user_info').doc(authorId).get()
+                .then(userDoc => {
+                    if (userDoc.exists && this.currentViewedDevId === authorId) {
+                        const profile = userDoc.data();
+                        localStorage.setItem(cacheKey, JSON.stringify(profile)); 
+                        bioEl.innerHTML = this.renderBio(profile.authorBio);
+                        if (profile.authorIcon) {
+                            avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
+                        }
+                    }
+                }).catch(e => console.warn(e));
+        }
     }
 
 
@@ -2974,12 +3070,12 @@ formatAppText(text) {
     // 3. Standard Links
     safe = safe.replace(/\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, (match, txt, url) => {
         const label = txt || url;
-        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">${label}</a>`;
+        return `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='${url}'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStore?.showAlert ? appStore.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">${label}</a>`;
     });
 
     // 4. Raw Links
     safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
-        `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
+        `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStore?.showAlert ? appStore.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
 
     // 5. PRO FIX: Cap newlines at 2 (prevents abuse), keep raw \n intact for CSS to handle
 return safe.replace(/\n{3,}/g, '\n\n');
@@ -3155,7 +3251,7 @@ else {
                     const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
                     
                     // Create Clickable Link
-                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
+                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; sObj.filterApps('dev:${safeAuthor}'); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
 
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
@@ -9051,6 +9147,7 @@ window.addEventListener('IOS_DEEP_LINK', function(e) {
         }
     });
 })();
+        
         
         
         
