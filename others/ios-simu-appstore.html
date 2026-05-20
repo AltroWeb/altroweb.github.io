@@ -2474,7 +2474,7 @@ initSearch() {
 
 checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    const query = params.get('s');
+    const query = params.get('s') || params.get('app'); // Pro Lock: Capture both standard search and direct app params
 
     // 1. CLEAN URL (Fixes Persistence/Back Button Loop)
     if (query && window.history.replaceState) {
@@ -2483,14 +2483,12 @@ checkUrlParams() {
     }
 
     // 2. SET INPUT
-    if (query) {
+    if (query && !query.startsWith('dev:')) {
         const input = document.getElementById('store-search-input');
-        if (input) input.value = query;
+        if (input && !input.value) input.value = query;
     }
 
-    // 3. INSTALL THE FIREWALL (The "Pro" Fix)
-    // We patch the render function once. This ensures that NO MATTER who calls render 
-    // (fetchApps, background sync, etc.), the filter is respected.
+    // 3. ENFORCE ULTIMATE FIREWALL OVERRIDE
     if (!this._hasInstalledFirewall) {
         this._hasInstalledFirewall = true;
         
@@ -2498,34 +2496,28 @@ checkUrlParams() {
         const originalFilter = this.filterApps.bind(this);
         let isInternalFilter = false;
 
-        // Patch Filter: Mark when WE are doing the rendering
         this.filterApps = (q) => {
             isInternalFilter = true;
             originalFilter(q);
             isInternalFilter = false;
         };
 
-        // Patch Render: Intercept unwanted updates
         this.renderStore = (list) => {
-            const currentSearch = document.getElementById('store-search-input')?.value;
+            const searchInput = document.getElementById('store-search-input');
+            const currentSearch = searchInput ? searchInput.value.trim() : "";
 
-            // IF: We have a search term AND this render call didn't come from our filter...
-            // THEN: It's an unwanted overwrite (like fetchApps finishing). BLOCK IT.
-            if (currentSearch && currentSearch.trim() !== "" && !isInternalFilter) {
-                console.log("🛡️ Firewall: Blocked overwrite, enforcing filter:", currentSearch);
-                this.filterApps(currentSearch); // Re-run filter on the NEW data
+            // If a targeted query exists but render was called globally by Firestore, re-route it
+            if (currentSearch !== "" && !isInternalFilter) {
+                console.log("🛡️ Firewall Enforced: Directing live sync to deep link filter ->", currentSearch);
+                this.filterApps(currentSearch);
                 return;
             }
-
-            // ELSE: Allow normal render
             originalRender(list);
         };
     }
 
     // 4. TRIGGER IMMEDIATE FILTER
     if (query) {
-        // We use a small timeout to ensure the UI is ready, 
-        // but the Firewall above handles the data whenever it arrives.
         setTimeout(() => this.filterApps(query), 50);
     }
 }
@@ -5888,64 +5880,45 @@ handleDeepLinks() {
                 const input = document.getElementById('store-search-input');
                 if (input) input.value = searchQuery;
 
-                if (appStore.renderStore) {
-                    const originalRender = appStore.renderStore.bind(appStore);
-                    appStore.renderStore = function(list) {
-                        const searchVal = document.getElementById('store-search-input')?.value.toLowerCase().trim();
-                        if (searchVal && searchVal.startsWith('dev:')) { originalRender(list); return; }
-                        if (searchVal && list.length > 0) {
-                            const filtered = list.filter(app => {
-                                const displayName = (app.storeName || app.name).toLowerCase();
-                                const author = (app.author || '').toLowerCase();
-                                const desc = (app.description || '').toLowerCase();
-                                return displayName.includes(searchVal) || author.includes(searchVal) || desc.includes(searchVal);
-                            });
-                            originalRender(filtered);
-                        } else { originalRender(list); }
-                    };
+                if (appStore.renderStore && !appStore._hasInstalledFirewall) {
+                    appStore.checkUrlParams();
                 }
 
                 setTimeout(() => {
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
                     if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
-                }, 1200); 
+                }, 200); 
             }
-        }, 100);
+        }, 50);
     }
 
     // 2. Universal App Deep Linking (?app=...)
     if (appId) {
         console.log("🔗 Direct App Link Detected:", appId);
 
-        // A. Security Guard
         if (this.isSafeMode) {
             console.warn("🛡️ Safe Mode: Blocked Deep Link auto-launch.");
             return;
         }
 
-        // B. Extract Forwarding Params (Everything except 'app' and 'safe')
         const forwardParams = new URLSearchParams();
         for (const [key, value] of params.entries()) {
             if (key !== 'app' && key !== 'safe') forwardParams.append(key, value);
         }
         
-        // --- PRO KERNEL SYNC LOCK (WITH UX DELAY) ---
-        // Stage params globally so the router can inject them
         window.__deepLinkForwardParams = forwardParams.toString();
 
         const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
         const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
         const targetApp = [...installed, ...sideloaded].find(a => a.id === appId);
 
-        const bootStartTime = Date.now(); // Track when the link was clicked
+        const bootStartTime = Date.now();
 
         const bootWait = setInterval(() => {
             const timeElapsed = Date.now() - bootStartTime;
             const kernelReady = !targetApp || (window.appStore && window.appStore.isKernelReady);
 
-            // 1. MUST wait at least 1500ms for smooth UX
-            // 2. MUST wait for Kernel to finish syncing
-            if (kernelReady && timeElapsed >= 1500) {
+            if (kernelReady && timeElapsed >= 600) { // Optimized delay for snappier, pro response
                 clearInterval(bootWait);
                 
                 if (targetApp) {
@@ -5954,13 +5927,17 @@ handleDeepLinks() {
                 } else {
                     const input = document.getElementById('store-search-input');
                     if (input) input.value = appId;
-                    if (window.appStore && window.appStore.filterApps) window.appStore.filterApps(appId);
+                    
+                    if (window.appStore) {
+                        window.appStore.checkUrlParams();
+                        window.appStore.filterApps(appId);
+                    }
                     
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
                     if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
                 }
             }
-        }, 50); // Still checks rapidly, but respects the 1500ms lock
+        }, 30);
     }
 }
 
