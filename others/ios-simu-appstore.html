@@ -2310,43 +2310,83 @@ async fetchTrustedApps() {
         if (isConnected && this.db) {
             this.flushPendingDecrements();
             try {
-                // PRO FIX: Chunked Data Loading
-                let query = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').limit(15);
+                const searchInput = document.getElementById('store-search-input');
+                const params = new URLSearchParams(window.location.search);
+                const urlQuery = params.get('s') || '';
+                const currentQuery = (searchInput?.value || urlQuery || '').trim();
                 
-                if (isLoadMore && this.lastAppDoc) {
-                    query = query.startAfter(this.lastAppDoc);
+                let serverApps = [];
+
+                // --- PRO FIX: DIRECT DOCUMENT POINT LOOKUP ---
+                const isDevQuery = currentQuery.toLowerCase().startsWith('dev:');
+                
+                if (!isLoadMore && currentQuery.length > 0 && !isDevQuery) {
+                    // Force query directly for this exact document ID on Firestore
+                    const exactDocRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(currentQuery);
+                    const exactDocSnap = await exactDocRef.get();
+                    
+                    if (exactDocSnap.exists) {
+                        const appData = { id: exactDocSnap.id, ...exactDocSnap.data() };
+                        if ((appData.reportCount || 0) < 10) {
+                            serverApps.push(appData);
+                            this.lastAppDoc = null; // Break pagination flow for single-targeted hit
+                        }
+                    }
                 }
 
-                const snapshot = await query.get();
+                // --- DEVELOPER PARAMETER OVERRIDE ---
+                if (serverApps.length === 0 && !isLoadMore && isDevQuery) {
+                    const targetDev = currentQuery.substring(4).trim();
+                    let devSnap;
+                    
+                    if (targetDev.length > 10) {
+                        devSnap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').where('authorId', '==', targetDev).get();
+                    }
+                    if (!devSnap || devSnap.empty) {
+                        devSnap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').where('author', '>=', targetDev).where('author', '<=', targetDev + '\uf8ff').get();
+                    }
+                    
+                    devSnap.forEach(doc => serverApps.push({ id: doc.id, ...doc.data() }));
+                    this.lastAppDoc = null; 
+                } 
                 
-                if (!snapshot.empty) {
-                    this.lastAppDoc = snapshot.docs[snapshot.docs.length - 1];
-                } else if (isLoadMore) {
-                    this.lastAppDoc = null; // Reached the end of the database
+                // --- BATCH STREAMING FALLBACK (CHUNKS OF 15) ---
+                if (serverApps.length === 0 && (!currentQuery || isLoadMore || isDevQuery)) {
+                    let query = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').limit(15);
+                    if (isLoadMore && this.lastAppDoc) {
+                        query = query.startAfter(this.lastAppDoc);
+                    }
+                    const snapshot = await query.get();
+                    if (!snapshot.empty) {
+                        this.lastAppDoc = snapshot.docs[snapshot.docs.length - 1];
+                    } else if (isLoadMore) {
+                        this.lastAppDoc = null;
+                    }
+                    snapshot.forEach(doc => serverApps.push({ id: doc.id, ...doc.data() }));
                 }
 
-                const serverApps = [];
-                snapshot.forEach(doc => {
-                    serverApps.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Merge: Server is source of truth
+                // Append/Merge into main execution array safely
                 if (isLoadMore) {
                     serverApps.forEach(serverApp => {
                         if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
                     });
                 } else {
-                    this.apps = [...serverApps];
+                    if (currentQuery && !isDevQuery && serverApps.length > 0) {
+                        // Keep previously loaded apps in memory so the background isn't wiped out when showing exact match
+                        serverApps.forEach(serverApp => {
+                            if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
+                        });
+                    } else {
+                        this.apps = [...serverApps];
+                    }
                     installed.forEach(localApp => {
                         if (!this.apps.some(serverApp => serverApp.id === localApp.id)) this.apps.push(localApp);
                     });
                 }
-                
                 this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
-                
             } catch (e) {
                 console.error("Fetch Error:", e);
-                this.isOfflineMode = true; 
+                this.isOfflineMode = true;
                 this.offlineReason = 'network';
             }
         }
@@ -2560,15 +2600,23 @@ filterApps(query) {
         const exactIdMatch = this.apps.find(a => a.id === rawTerm);
 
         if (exactIdMatch) {
+            console.log("Locking Search to ID:", rawTerm);
             this.lockedAppId = exactIdMatch.id;
             const appName = exactIdMatch.storeName || exactIdMatch.name;
-            if (input && input.value !== appName) input.value = appName;
-            
+            if (input && input.value !== appName) {
+                input.value = appName;
+            }
             if (card) card.style.display = 'none';
             if (header) header.style.display = 'none';
 
             this.renderStore([exactIdMatch]);
             return;
+        } else if (rawTerm.length > 5 && !rawTerm.includes(' ') && !term.startsWith('dev:')) {
+            // PRO FALLBACK: Target ID missing from current chunk array. Force network evaluation.
+            if (!this.isOfflineMode && this.db) {
+                // Fire fetchApps seamlessly. It updates this.apps and calls filterApps again natively.
+                this.fetchApps(false); 
+            }
         }
 
         // --- 3. CHECK LOCK STATE ---

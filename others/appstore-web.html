@@ -1051,51 +1051,112 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
             }
 
             async fetchApps(isLoadMore = false) {
-        // Initialize tracking variables if they don't exist yet
-        if (this.isLoadingMore === undefined) {
-            this.lastAppDoc = null; 
-            this.isLoadingMore = false; 
-            this.scrollObserver = null;
-        }
-
-        if (this.isLoadingMore) return;
-        this.isLoadingMore = true;
-
-        try {
-            let query = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').limit(15);
-            
-            if (isLoadMore && this.lastAppDoc) {
-                query = query.startAfter(this.lastAppDoc);
-            }
-
-            const snap = await query.get();
-            
-            if (!snap.empty) {
-                this.lastAppDoc = snap.docs[snap.docs.length - 1];
-            } else if (isLoadMore) {
-                this.lastAppDoc = null; // Reached the end
-            }
-
-            if (!isLoadMore) this.apps = [];
-
-            snap.forEach(doc => {
-                const data = doc.data();
-                if ((data.reportCount || 0) < 10) {
-                    // Prevent duplicates when merging batches
-                    if (!this.apps.some(a => a.id === doc.id)) {
-                        this.apps.push({ id: doc.id, ...data });
-                    }
+                if (this.isLoadingMore === undefined) {
+                    this.lastAppDoc = null; 
+                    this.isLoadingMore = false; 
+                    this.scrollObserver = null;
                 }
-            });
 
-            this.isLoadingMore = false;
-            this.checkUrlParams(); // Triggers renderStore
+                if (this.isLoadingMore) return;
+                this.isLoadingMore = true;
 
-        } catch (e) {
-            this.isLoadingMore = false;
-            document.getElementById('store-list').innerHTML = `<div class="loading-spinner">Could not load apps.<br>Check internet connection.</div>`;
-        }
-    }
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    // Support BOTH ?s= and ?app= and ?dev= parameters perfectly like pro
+                    let urlQuery = params.get('s') || params.get('app') || '';
+                    const devParam = params.get('dev');
+                    if (devParam) urlQuery = `dev:${devParam}`;
+
+                    const searchInput = document.getElementById('store-search-input');
+                    const currentQuery = (searchInput?.value || urlQuery || '').trim();
+                    const lowerQuery = currentQuery.toLowerCase();
+
+                    let serverApps = [];
+
+                    // 1. FORCE DIRECT POINT-LOOKUP FOR EXACT APP ID DEEP LINKS & SEARCHES
+                    if (!isLoadMore && currentQuery.length > 0 && !lowerQuery.startsWith('dev:') && !currentQuery.includes(' ')) {
+                        const exactDocRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(currentQuery);
+                        const exactDocSnap = await exactDocRef.get();
+                        
+                        if (exactDocSnap.exists) {
+                            const appData = { id: exactDocSnap.id, ...exactDocSnap.data() };
+                            if ((appData.reportCount || 0) < 10) {
+                                serverApps.push(appData);
+                                this.lastAppDoc = null; // Single-targeted hit breaks pagination restrictions
+                            }
+                        }
+                    }
+
+                    // 2. FORCE COMPLETE FETCH FOR TARGETED DEVELOPER DEEP LINKS
+                    if (serverApps.length === 0 && !isLoadMore && lowerQuery.startsWith('dev:')) {
+                        const targetDev = currentQuery.substring(4).trim();
+                        let devSnap;
+                        
+                        if (targetDev.length > 10) {
+                            devSnap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').where('authorId', '==', targetDev).get();
+                        }
+                        if (!devSnap || devSnap.empty) {
+                            devSnap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').where('author', '>=', targetDev).where('author', '<=', targetDev + '\uf8ff').get();
+                        }
+                        
+                        devSnap.forEach(doc => {
+                            if ((doc.data().reportCount || 0) < 10) serverApps.push({ id: doc.id, ...doc.data() });
+                        });
+                        this.lastAppDoc = null;
+                    }
+
+                    // 3. STANDARD HIGH-EFFICIENCY CHUNKED LOADING (BATCHES OF 15)
+                    if (serverApps.length === 0 && (!currentQuery || isLoadMore || lowerQuery.startsWith('dev:'))) {
+                        let query = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').limit(15);
+                        
+                        if (isLoadMore && this.lastAppDoc) {
+                            query = query.startAfter(this.lastAppDoc);
+                        }
+
+                        const snap = await query.get();
+                        if (!snap.empty) {
+                            this.lastAppDoc = snap.docs[snap.docs.length - 1];
+                        } else if (isLoadMore) {
+                            this.lastAppDoc = null;
+                        }
+
+                        snap.forEach(doc => {
+                            const data = doc.data();
+                            if ((data.reportCount || 0) < 10) serverApps.push({ id: doc.id, ...data });
+                        });
+                    }
+
+                    // 4. MEMORY SAFE MERGE
+                    if (isLoadMore) {
+                        serverApps.forEach(serverApp => {
+                            if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
+                        });
+                    } else {
+                        if (currentQuery && !lowerQuery.startsWith('dev:') && serverApps.length > 0) {
+                            // Retain current in-RAM layout so background isn't blanked when showing exact deep link match
+                            serverApps.forEach(serverApp => {
+                                if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
+                            });
+                        } else {
+                            this.apps = [...serverApps];
+                        }
+                    }
+
+                    this.isLoadingMore = false;
+                    
+                    // Route to smart filtering or check deep link parameters
+                    if (currentQuery.length > 0) {
+                        this.filterApps(currentQuery);
+                    } else {
+                        this.checkUrlParams();
+                    }
+
+                } catch (e) {
+                    this.isLoadingMore = false;
+                    console.error("Fetch Error: ", e);
+                    document.getElementById('store-list').innerHTML = `<div class="loading-spinner">Could not load apps.<br>Check internet connection.</div>`;
+                }
+            }
 
     setupScrollObserver() {
         const storeList = document.getElementById('store-list');
@@ -1158,22 +1219,19 @@ clearSearch() {
             checkUrlParams() {
                 const params = new URLSearchParams(window.location.search);
                 
-                // 1. Get Query
+                // Track both deep link structures simultaneously
                 let query = params.get('s') || params.get('app');
-                const devParam = params.get('dev'); // Support strict ?dev= param
+                const devParam = params.get('dev');
 
-                // 2. Normalize "dev" param into a search string
                 if (devParam) {
                     query = `dev:${devParam}`;
                 }
 
-                // 3. Update Search Bar & Filter
                 if (query) {
                     const input = document.getElementById('store-search-input');
                     if (input) input.value = query;
                     this.filterApps(query);
                 } else {
-                    // Default Home: Render All Apps
                     this.renderStore(this.apps);
                 }
             }
@@ -1207,7 +1265,7 @@ clearSearch() {
         const header = document.getElementById('dev-section-header');
         const input = document.getElementById('store-search-input');
 
-        // --- 1. ROBUST APP ID LOOKUP ---
+        // --- 1. ROBUST APP ID LOOKUP (With Firestore Point Fallback) ---
         const exactIdMatch = this.apps.find(a => a.id === term);
 
         if (exactIdMatch) {
@@ -1217,6 +1275,12 @@ clearSearch() {
             if (header) header.style.display = 'none';
             this.renderStore([exactIdMatch]);
             return;
+        } else if (term.length > 5 && !term.includes(' ') && !lowerTerm.startsWith('dev:')) {
+            // PRO FALLBACK: ID is missing from local array. Force fallback direct Firestore lookup.
+            if (this.db) {
+                this.fetchApps(false);
+                return;
+            }
         }
 
         // --- 2. DEV SEARCH (0ms UI + Background Fetch) ---
