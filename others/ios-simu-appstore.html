@@ -241,6 +241,18 @@
 
 
 
+#music-window .scroll-inner-padding { 
+    justify-content: center !important; 
+    padding-bottom: 100px; /* Adds breathing room at the bottom */
+    overflow-y: auto;
+}
+        
+
+
+
+
+
+
 /* Settings App Background - Light Mode */
         .app-window[data-app="Settings"] {
             background: #F2F2F7; /* iOS System Gray */
@@ -317,15 +329,6 @@ margin-top: 90px; /* This physically pushes the scroller (and its bar) below the
 
  -webkit-overflow-scrolling: touch;
         }
-        
-        
-        #music-window .scroll-inner-padding { 
-    justify-content: center !important; 
-    padding-bottom: 100px; /* Adds breathing room at the bottom */
-    overflow-y: auto;
-}
-        
- 
         
         
         
@@ -1719,6 +1722,15 @@ body.dark-mode #sl-tab-preview[style*="600"] {
         <span>Dynamic Island Updates</span>
         <input type="checkbox" class="ios-switch" id="setting-island" onchange="iOS.toggleIslandEvents(this)">
     </div>
+    
+    <div class="ios-row">
+    <span>Untrusted App Island Access</span>
+    <input type="checkbox" class="ios-switch" id="setting-untrusted-island" onchange="window.iOS.toggleUntrustedIsland(this)">
+</div>
+    
+    
+    
+    
 </div>
                         
                         <div class="ios-list" style="background:transparent;">
@@ -2092,9 +2104,6 @@ console.log = function() {};
                 this.backgroundApps = []; // Track IDs of apps kept alive [id1, id2]
                 this.MAX_BG_APPS = 3;     // Limit to save RAM
                 this.lockedAppId = null;
-                this.lastAppDoc = null; 
-                this.isLoadingMore = false; 
-                this.scrollObserver = null;
                 // FIX: Call init() here instead of individual methods
                 this.init();
             }
@@ -2282,199 +2291,89 @@ async fetchTrustedApps() {
           
             
 
-          async fetchApps(isLoadMore = false) {
-        if (this.isLoadingMore) return;
-        this.isLoadingMore = true;
+          async fetchApps() {
+    // 1. ROBUST CONNECTIVITY GUARD
+    const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
+    const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
+    const isRealNetwork = navigator.onLine;
 
-        // 1. ROBUST CONNECTIVITY GUARD
-        const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
-        const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false'; 
-        const isRealNetwork = navigator.onLine;
+    const isConnected = !isAirplane && isWifiOn && isRealNetwork;
+    this.isOfflineMode = !isConnected; 
 
-        const isConnected = !isAirplane && isWifiOn && isRealNetwork;
-        this.isOfflineMode = !isConnected; 
+    if (this.isOfflineMode) {
+        const updateHeader = document.getElementById('store-update-section');
+        if (updateHeader) updateHeader.remove(); 
+        if (isAirplane) this.offlineReason = 'airplane';
+        else if (!isWifiOn) this.offlineReason = 'wifi';
+        else this.offlineReason = 'network';
+    }
 
-        if (this.isOfflineMode) {
-            const updateHeader = document.getElementById('store-update-section');
-            if (updateHeader) updateHeader.remove(); 
-            if (isAirplane) this.offlineReason = 'airplane';
-            else if (!isWifiOn) this.offlineReason = 'wifi';
-            else this.offlineReason = 'network';
+    // 2. LOAD LOCAL APPS FIRST
+    const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
+    this.apps = [...installed];
+
+    // 3. ONLINE SYNC
+    if (isConnected && this.db) {
+        this.flushPendingDecrements();
+        try {
+            const snapshot = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').get();
+            const serverApps = [];
+            snapshot.forEach(doc => {
+                serverApps.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Merge: Server is source of truth
+            this.apps = [...serverApps];
+            installed.forEach(localApp => {
+                if (!this.apps.some(serverApp => serverApp.id === localApp.id)) {
+                    this.apps.push(localApp);
+                }
+            });
+            
+            
+            
+            this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
+            
+        } catch (e) {
+            console.error("Fetch Error:", e);
+            this.isOfflineMode = true; 
+            this.offlineReason = 'network';
         }
+    }
 
-        // 2. LOAD LOCAL APPS FIRST
-        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-        if (!isLoadMore) this.apps = [...installed]; // Only wipe RAM on fresh load
-
-        // 3. ONLINE SYNC
-        if (isConnected && this.db) {
-            this.flushPendingDecrements();
-            try {
-                const searchInput = document.getElementById('store-search-input');
-                const params = new URLSearchParams(window.location.search);
-                const urlQuery = params.get('s') || '';
-                const currentQuery = (searchInput?.value || urlQuery || '').trim();
-                
-                let serverApps = [];
-
-                // --- PRO FIX: DIRECT DOCUMENT POINT LOOKUP ---
-                const isDevQuery = currentQuery.toLowerCase().startsWith('dev:');
-                
-                if (!isLoadMore && currentQuery.length > 0 && !isDevQuery) {
-                    // Force query directly for this exact document ID on Firestore
-                    const exactDocRef = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(currentQuery);
-                    const exactDocSnap = await exactDocRef.get();
-                    
-                    if (exactDocSnap.exists) {
-                        const appData = { id: exactDocSnap.id, ...exactDocSnap.data() };
-                        if ((appData.reportCount || 0) < 10) {
-                            serverApps.push(appData);
-                            this.lastAppDoc = null; // Break pagination flow for single-targeted hit
-                        }
-                    }
-                }
-
-                // --- DEVELOPER PARAMETER OVERRIDE ---
-                if (serverApps.length === 0 && !isLoadMore && isDevQuery) {
-                    const targetDev = currentQuery.substring(4).trim();
-                    let devSnap;
-                    
-                    if (targetDev.length > 10) {
-                        devSnap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').where('authorId', '==', targetDev).get();
-                    }
-                    if (!devSnap || devSnap.empty) {
-                        devSnap = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').where('author', '>=', targetDev).where('author', '<=', targetDev + '\uf8ff').get();
-                    }
-                    
-                    devSnap.forEach(doc => serverApps.push({ id: doc.id, ...doc.data() }));
-                    this.lastAppDoc = null; 
-                } 
-                
-                // --- BATCH STREAMING FALLBACK (CHUNKS OF 15) ---
-                if (serverApps.length === 0 && (!currentQuery || isLoadMore || isDevQuery)) {
-                    let query = this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').limit(15);
-                    if (isLoadMore && this.lastAppDoc) {
-                        query = query.startAfter(this.lastAppDoc);
-                    }
-                    const snapshot = await query.get();
-                    if (!snapshot.empty) {
-                        this.lastAppDoc = snapshot.docs[snapshot.docs.length - 1];
-                    } else if (isLoadMore) {
-                        this.lastAppDoc = null;
-                    }
-                    snapshot.forEach(doc => serverApps.push({ id: doc.id, ...doc.data() }));
-                }
-
-                // Append/Merge into main execution array safely
-                if (isLoadMore) {
-                    serverApps.forEach(serverApp => {
-                        if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
-                    });
-                } else {
-                    if (currentQuery && !isDevQuery && serverApps.length > 0) {
-                        // Keep previously loaded apps in memory so the background isn't wiped out when showing exact match
-                        serverApps.forEach(serverApp => {
-                            if (!this.apps.some(a => a.id === serverApp.id)) this.apps.push(serverApp);
-                        });
-                    } else {
-                        this.apps = [...serverApps];
-                    }
-                    installed.forEach(localApp => {
-                        if (!this.apps.some(serverApp => serverApp.id === localApp.id)) this.apps.push(localApp);
-                    });
-                }
-                this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
-            } catch (e) {
-                console.error("Fetch Error:", e);
-                this.isOfflineMode = true;
-                this.offlineReason = 'network';
-            }
-        }
-
-        this.isLoadingMore = false;
-
-        // 4. SMART RENDER 
-        const searchInput = document.getElementById('store-search-input');
-        if (searchInput && searchInput.value.trim().length > 0) {
-            this.filterApps(searchInput.value);
-        } else {
-        	
-        
-        if (this.activeDevFilter) {
-    const devTarget = this.activeDevFilter.toLowerCase();
-    const filteredDevApps = this.apps.filter(app => app.author && app.author.toLowerCase().includes(devTarget));
-    this.renderStore(filteredDevApps);
-    return;
+    // 4. SMART RENDER (THE FIX)
+    // Check if user (or deep link) has already typed something. 
+    // If so, don't overwrite their filtered view with the full list.
+    const searchInput = document.getElementById('store-search-input');
+    if (searchInput && searchInput.value.trim().length > 0) {
+      // console.log("⚡ Skipping default render (Search active)");
+        this.filterApps(searchInput.value);
+    } else {
+        this.renderStore(this.apps);
+    }
+    
+    // Check params only if we haven't already processed them
+    if (!searchInput || searchInput.value === '') {
+        this.checkUrlParams();
+    }
 }
-        
-        
-        
-            this.renderStore(this.apps);
-            this.setupScrollObserver(); // Trigger next batch when reaching bottom
-        }
-        
-        if (!searchInput || searchInput.value === '') {
-            this.checkUrlParams();
-        }
-    }
 
-            
-            
-            setupScrollObserver() {
-        const storeList = document.getElementById('store-list');
-        if (!storeList) return;
-        
-        const cards = storeList.querySelectorAll('.store-item');
-        if (cards.length === 0) return;
-        
-        const lastCard = cards[cards.length - 1];
-
-        // Disconnect previous observer if exists to prevent duplicates
-        if (this.scrollObserver) this.scrollObserver.disconnect();
-
-        this.scrollObserver = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !this.isLoadingMore && this.lastAppDoc) {
-                this.fetchApps(true); 
-            }
-        }, { threshold: 0.1 });
-
-        this.scrollObserver.observe(lastCard);
-    }
-            
-            
-            
-            
-            
-            
             
 initSearch() {
-        const input = document.getElementById('store-search-input');
-        
-        // Network Debouncer (Protects your free tier budget)
-        let searchTimeout;
-        input.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            
-            const query = e.target.value;
-            // If they clear the bar, execute immediately
-            if (!query.trim()) {
-                this.filterApps('');
-                return;
+                const input = document.getElementById('store-search-input');
+                if(!input) return;
+                
+                input.addEventListener('input', (e) => {
+                    this.filterApps(e.target.value);
+                });
             }
-            
-            // Otherwise, wait 400ms after they stop typing to hit the database
-            searchTimeout = setTimeout(() => {
-                this.filterApps(query);
-            }, 400);
-        });
-    }
 
 
 
 
 checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    const query = params.get('s') || params.get('app'); // Pro Lock: Capture both standard search and direct app params
+    const query = params.get('s');
 
     // 1. CLEAN URL (Fixes Persistence/Back Button Loop)
     if (query && window.history.replaceState) {
@@ -2483,12 +2382,14 @@ checkUrlParams() {
     }
 
     // 2. SET INPUT
-    if (query && !query.startsWith('dev:')) {
+    if (query) {
         const input = document.getElementById('store-search-input');
-        if (input && !input.value) input.value = query;
+        if (input) input.value = query;
     }
 
-    // 3. ENFORCE ULTIMATE FIREWALL OVERRIDE
+    // 3. INSTALL THE FIREWALL (The "Pro" Fix)
+    // We patch the render function once. This ensures that NO MATTER who calls render 
+    // (fetchApps, background sync, etc.), the filter is respected.
     if (!this._hasInstalledFirewall) {
         this._hasInstalledFirewall = true;
         
@@ -2496,28 +2397,34 @@ checkUrlParams() {
         const originalFilter = this.filterApps.bind(this);
         let isInternalFilter = false;
 
+        // Patch Filter: Mark when WE are doing the rendering
         this.filterApps = (q) => {
             isInternalFilter = true;
             originalFilter(q);
             isInternalFilter = false;
         };
 
+        // Patch Render: Intercept unwanted updates
         this.renderStore = (list) => {
-            const searchInput = document.getElementById('store-search-input');
-            const currentSearch = searchInput ? searchInput.value.trim() : "";
+            const currentSearch = document.getElementById('store-search-input')?.value;
 
-            // If a targeted query exists but render was called globally by Firestore, re-route it
-            if (currentSearch !== "" && !isInternalFilter) {
-                console.log("🛡️ Firewall Enforced: Directing live sync to deep link filter ->", currentSearch);
-                this.filterApps(currentSearch);
+            // IF: We have a search term AND this render call didn't come from our filter...
+            // THEN: It's an unwanted overwrite (like fetchApps finishing). BLOCK IT.
+            if (currentSearch && currentSearch.trim() !== "" && !isInternalFilter) {
+                console.log("🛡️ Firewall: Blocked overwrite, enforcing filter:", currentSearch);
+                this.filterApps(currentSearch); // Re-run filter on the NEW data
                 return;
             }
+
+            // ELSE: Allow normal render
             originalRender(list);
         };
     }
 
     // 4. TRIGGER IMMEDIATE FILTER
     if (query) {
+        // We use a small timeout to ensure the UI is ready, 
+        // but the Firewall above handles the data whenever it arrives.
         setTimeout(() => this.filterApps(query), 50);
     }
 }
@@ -2567,147 +2474,114 @@ checkUrlParams() {
 
 
 filterApps(query) {
-        // 1. HANDLE EMPTY SEARCH
-        if (!query) {
-            this.lockedAppId = null;
-            this.activeDevFilter = null;
-            this.isLoadingMore = false; 
-            const card = document.getElementById('store-dev-card');
-            const header = document.getElementById('store-dev-header');
-            if (card) card.style.display = 'none';
-            if (header) header.style.display = 'none';
-            this.renderStore(this.apps);
-            this.setupScrollObserver(); 
-            return;
-        }
-
-        const rawTerm = query.trim();
-        const term = rawTerm.toLowerCase();
-        
+    // 1. HANDLE EMPTY SEARCH
+    if (!query) {
+        this.lockedAppId = null;
         const card = document.getElementById('store-dev-card');
         const header = document.getElementById('store-dev-header');
-        const input = document.getElementById('store-search-input');
+        if (card) card.style.display = 'none';
+        if (header) header.style.display = 'none';
+        this.renderStore(this.apps);
+        return;
+    }
 
-        // --- 2. EXACT APP ID MATCH (The Lock) ---
-        const exactIdMatch = this.apps.find(a => a.id === rawTerm);
+    const rawTerm = query.trim();
+    const term = rawTerm.toLowerCase();
+    
+    const card = document.getElementById('store-dev-card');
+    const header = document.getElementById('store-dev-header');
+    const input = document.getElementById('store-search-input');
 
-        if (exactIdMatch) {
-            console.log("Locking Search to ID:", rawTerm);
-            this.lockedAppId = exactIdMatch.id;
-            const appName = exactIdMatch.storeName || exactIdMatch.name;
-            if (input && input.value !== appName) {
-                input.value = appName;
-            }
-            if (card) card.style.display = 'none';
-            if (header) header.style.display = 'none';
+    // --- 2. EXACT APP ID MATCH (The Lock) ---
+    const exactIdMatch = this.apps.find(a => a.id === rawTerm);
 
-            this.renderStore([exactIdMatch]);
-            return;
-        } else if (rawTerm.length > 5 && !rawTerm.includes(' ') && !term.startsWith('dev:')) {
-            // PRO FALLBACK: Target ID missing from current chunk array. Force network evaluation.
-            if (!this.isOfflineMode && this.db) {
-                // Fire fetchApps seamlessly. It updates this.apps and calls filterApps again natively.
-                this.fetchApps(false); 
-            }
+    if (exactIdMatch) {
+        console.log("Locking Search to ID:", rawTerm);
+        this.lockedAppId = exactIdMatch.id;
+
+        // UI Swap: ID -> Name
+        const appName = exactIdMatch.storeName || exactIdMatch.name;
+        if (input && input.value !== appName) {
+            input.value = appName;
         }
 
-        // --- 3. CHECK LOCK STATE ---
-        if (this.lockedAppId) {
-            const lockedApp = this.apps.find(a => a.id === this.lockedAppId);
-            if (lockedApp) {
-                const appName = (lockedApp.storeName || lockedApp.name).toLowerCase();
-                if (term === appName) {
-                    this.renderStore([lockedApp]);
-                    return;
-                }
-            }
-            this.lockedAppId = null; 
-        }
+        // Hide Dev UI
+        if (card) card.style.display = 'none';
+        if (header) header.style.display = 'none';
 
-// --- 4. DEV SEARCH (PRO FIX: ROBUST OFFLINE RAM MATCH & CONTINUOUS SCROLL) ---
+        this.renderStore([exactIdMatch]);
+        return;
+    }
+
+    // --- 3. CHECK LOCK STATE ---
+    if (this.lockedAppId) {
+        const lockedApp = this.apps.find(a => a.id === this.lockedAppId);
+        if (lockedApp) {
+            const appName = (lockedApp.storeName || lockedApp.name).toLowerCase();
+            if (term === appName) {
+                this.renderStore([lockedApp]);
+                return;
+            }
+        }
+        this.lockedAppId = null; 
+    }
+
+    // --- 4. DEV SEARCH ---
     if (term.startsWith('dev:')) {
         const targetDev = rawTerm.substring(4).trim();
         
         if (targetDev.length === 0) {
-            this.activeDevFilter = null;
             if (card) card.style.display = 'none';
             if (header) header.style.display = 'none';
             this.renderStore([]); 
             return;
         }
 
-        // --- FORCE CARD TO UNHIDE INSTANTLY (0ms) ---
-        if (card) card.style.display = 'flex';
-        if (header) header.style.display = 'block';
-
-        // Track developer state for infinite scrolling
-        this.activeDevFilter = targetDev;
-        let localDevApps = [];
-
-        // --- YOUR ORIGINAL ROBUST LOGIC ---
-        // Strategy 1: Check for Exact UUID (Author ID)
+        // Check for UUID (Author ID)
         const appsByUUID = this.apps.filter(app => app.authorId === targetDev);
-        
         if (appsByUUID.length > 0) {
-            localDevApps = appsByUUID;
             const authorName = appsByUUID[0].author;
-            if (input && document.activeElement !== input) input.value = "dev:" + authorName;
-        } 
-        // Strategy 2: Fallback to Name Search
-        else {
-            localDevApps = this.apps.filter(app => 
-                (app.author || '').toLowerCase().includes(targetDev.toLowerCase())
-            );
-            if (localDevApps.length > 0 && input && document.activeElement !== input) {
-                input.value = "dev:" + localDevApps[0].author;
-            }
+            if (input) input.value = "dev:" + authorName;
+            
+            this.updateDevCard(appsByUUID[0]);
+            this.renderStore(appsByUUID);
+            return;
         }
 
-        // RENDER INSTANTLY (Works flawlessly offline or with cached RAM)
-        if (localDevApps.length > 0) {
-            this.updateDevCard(localDevApps[0]); // Fires instantly
-            this.renderStore(localDevApps);      // Renders instantly
+        // Search by Name
+        const devApps = this.apps.filter(app => 
+            (app.author || '').toLowerCase().includes(targetDev.toLowerCase())
+        );
+
+        if (devApps.length > 0) {
+            this.updateDevCard(devApps[0]);
+            this.renderStore(devApps);
         } else {
-            // Only show spinner if absolutely 0 apps are in RAM
-            const listEl = document.getElementById('store-list');
-            if (listEl) listEl.innerHTML = '<div class="loading-spinner" style="text-align:center; padding:40px; color:#8E8E93;">Loading Developer Profile...</div>';
+            if (card) card.style.display = 'none';
+            if (header) header.style.display = 'none';
+            this.renderStore([]);
         }
-
-        // --- RE-ARM CONTINUOUS SCROLL TRIPWIRE ---
-        // This ensures if there are MORE apps in the database, scrolling down fetches them
-        const listEl = document.getElementById('store-list');
-        const lastCard = listEl ? listEl.lastElementChild : null;
-        if (lastCard) {
-            if (this.scrollObserver) this.scrollObserver.disconnect();
-            this.scrollObserver = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && !this.isLoadingMore && this.lastAppDoc) {
-                    this.fetchApps(true); // Automatically loads next batch
-                }
-            }, { threshold: 0.1 });
-            this.scrollObserver.observe(lastCard);
-        }
-
-        return; // CRITICAL: Stop execution so it doesn't run the standard search below
+        return;
     }
 
     // --- 5. STANDARD SEARCH (Updated with Tags) ---
-        if (card) card.style.display = 'none';
-        if (header) header.style.display = 'none';
+    if (card) card.style.display = 'none';
+    if (header) header.style.display = 'none';
 
-        const filtered = this.apps.filter(app => {
-            const displayName = (app.storeName || app.name || '').toLowerCase();
-            const author = (app.author || '').toLowerCase();
-            const desc = (app.description || '').toLowerCase();
-            const tags = (app.tags || '').toLowerCase();
+    const filtered = this.apps.filter(app => {
+        const displayName = (app.storeName || app.name || '').toLowerCase();
+        const author = (app.author || '').toLowerCase();
+        const desc = (app.description || '').toLowerCase();
+        const tags = (app.tags || '').toLowerCase(); // <--- Added Tags
 
-            return displayName.includes(term) || 
-                   author.includes(term) || 
-                   desc.includes(term) || 
-                   tags.includes(term); 
-        });
-        
-        this.renderStore(filtered);
-    }
+        return displayName.includes(term) || 
+               author.includes(term) || 
+               desc.includes(term) || 
+               tags.includes(term); // <--- Added Check
+    });
+    
+    this.renderStore(filtered);
+}
 
 
 
@@ -3017,7 +2891,7 @@ renderBio(text) {
 }
 
 
-   updateDevCard(app) {
+   async updateDevCard(app) {
         const card = document.getElementById('store-dev-card');
         const header = document.getElementById('store-dev-header');
         
@@ -3037,32 +2911,33 @@ renderBio(text) {
         const authorName = app.author || "Unknown";
         const authorId = app.authorId;
 
+        // --- INSTANT CACHE LOAD ---
         const cacheKey = `store_dev_profile_${authorId}`;
         const cached = localStorage.getItem(cacheKey);
-
-        // 1. INSTANT UNHIDE - Force card visible immediately
-        card.style.display = 'flex';
-        header.style.display = 'block';
-
-        // 2. Render Basic Text
-        nameEl.innerText = authorName;
-        header.innerText = `Apps by ${authorName}`;
-
+        
         if (cached) {
             try {
                 const d = JSON.parse(cached);
+                // PRO FIX: Force overwrite to prevent state leakage from previous dev cards
                 bioEl.innerHTML = this.renderBio(d.authorBio); 
                 if (d.authorIcon) avatarEl.innerHTML = `<img src="${d.authorIcon}" class="dev-avatar-circle">`;
                 else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
             } catch(e) {}
-        } else {
+        }
+
+        // 1. Render Basic Text
+        nameEl.innerText = authorName;
+        header.innerText = `Apps by ${authorName}`;
+
+        if (!cached) {
+            // PRO FIX: Force overwrite
             bioEl.innerHTML = this.renderBio(app.authorBio);
             if (app.authorIcon) avatarEl.innerHTML = `<img src="${app.authorIcon}" class="dev-avatar-circle">`;
             else avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
         }
 
-        // 3. Render Badges
-        const badgeType = this.userBadges ? this.userBadges.get(authorId) : undefined;
+        // 2. Render Badges
+        const badgeType = this.userBadges.get(authorId);
         if (badgeType === 'member') {
             badgeEl.innerHTML = `<span class="verified-badge member"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
         } else if (badgeType === 'verified') {
@@ -3071,22 +2946,32 @@ renderBio(text) {
             badgeEl.innerHTML = '';
         }
 
-        // --- 4. LIVE DB FETCH (Fire and Forget) ---
-        if (this.db) {
-            this.db.collection('artifacts').doc(this.appId)
+        // 3. Show Card
+        card.style.display = 'flex';
+        header.style.display = 'block';
+
+        // --- LIVE DB FETCH ---
+        try {
+            const userDoc = await this.db.collection('artifacts').doc(this.appId)
                 .collection('public').doc('data')
-                .collection('user_info').doc(authorId).get()
-                .then(userDoc => {
-                    if (userDoc.exists && this.currentViewedDevId === authorId) {
-                        const profile = userDoc.data();
-                        localStorage.setItem(cacheKey, JSON.stringify(profile)); 
-                        bioEl.innerHTML = this.renderBio(profile.authorBio);
-                        if (profile.authorIcon) {
-                            avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
-                        }
-                    }
-                }).catch(e => console.warn(e));
-        }
+                .collection('user_info').doc(authorId).get();
+
+            if (userDoc.exists) {
+                if (this.currentViewedDevId !== authorId) return; // Prevent race conditions
+                const profile = userDoc.data();
+                
+                localStorage.setItem(cacheKey, JSON.stringify(profile)); // Save Cache
+                
+                // PRO FIX: Force overwrite regardless of if it's empty, to stop state leakage
+                bioEl.innerHTML = this.renderBio(profile.authorBio);
+                
+                if (profile.authorIcon) {
+                    avatarEl.innerHTML = `<img src="${profile.authorIcon}" class="dev-avatar-circle">`;
+                } else {
+                    avatarEl.innerHTML = `<div class="dev-avatar-circle">${authorName.charAt(0).toUpperCase()}</div>`;
+                }
+            }
+        } catch(e) { console.warn(e); }
     }
 
 
@@ -3291,7 +3176,7 @@ else {
                     const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
                     
                     // Create Clickable Link
-                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; sObj.filterApps('dev:${safeAuthor}'); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
+                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
 
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
@@ -5210,7 +5095,7 @@ const SecureStorage = {
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
                 'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects', 'ios_untrusted_fs',
                 'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
-                'ios_fullscreen_always', 'ios_sideloading_enabled', 'ios_island_enabled'
+                'ios_fullscreen_always', 'ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled'
             ];
             settingsKeys.forEach(k => localStorage.removeItem(k));
 
@@ -5265,7 +5150,8 @@ const SecureStorage = {
                 'setting-fullscreen-always': false,
                 'setting-sideload': false,
                 'setting-island': true,
-                'setting-untrusted-fs': false
+                'setting-untrusted-fs': false,
+                'setting-untrusted-island': false
             };
 
             // Fix the dark mode toggle (it lacks an ID in the HTML)
@@ -5743,7 +5629,10 @@ const untrustedFSSwitch = document.getElementById('setting-untrusted-fs');
 if (untrustedFSSwitch) untrustedFSSwitch.checked = savedUntrustedFS;
                 
                 
-                
+// Sync visual state for Untrusted Island preference from engine storage
+const savedUntrustedIsland = localStorage.getItem('ios_untrusted_island') === 'true';
+const untrustedIslandSwitch = document.getElementById('setting-untrusted-island');
+if (untrustedIslandSwitch) untrustedIslandSwitch.checked = savedUntrustedIsland;                
                 
                 
                 
@@ -5880,45 +5769,64 @@ handleDeepLinks() {
                 const input = document.getElementById('store-search-input');
                 if (input) input.value = searchQuery;
 
-                if (appStore.renderStore && !appStore._hasInstalledFirewall) {
-                    appStore.checkUrlParams();
+                if (appStore.renderStore) {
+                    const originalRender = appStore.renderStore.bind(appStore);
+                    appStore.renderStore = function(list) {
+                        const searchVal = document.getElementById('store-search-input')?.value.toLowerCase().trim();
+                        if (searchVal && searchVal.startsWith('dev:')) { originalRender(list); return; }
+                        if (searchVal && list.length > 0) {
+                            const filtered = list.filter(app => {
+                                const displayName = (app.storeName || app.name).toLowerCase();
+                                const author = (app.author || '').toLowerCase();
+                                const desc = (app.description || '').toLowerCase();
+                                return displayName.includes(searchVal) || author.includes(searchVal) || desc.includes(searchVal);
+                            });
+                            originalRender(filtered);
+                        } else { originalRender(list); }
+                    };
                 }
 
                 setTimeout(() => {
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
                     if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
-                }, 200); 
+                }, 1200); 
             }
-        }, 50);
+        }, 100);
     }
 
     // 2. Universal App Deep Linking (?app=...)
     if (appId) {
         console.log("🔗 Direct App Link Detected:", appId);
 
+        // A. Security Guard
         if (this.isSafeMode) {
             console.warn("🛡️ Safe Mode: Blocked Deep Link auto-launch.");
             return;
         }
 
+        // B. Extract Forwarding Params (Everything except 'app' and 'safe')
         const forwardParams = new URLSearchParams();
         for (const [key, value] of params.entries()) {
             if (key !== 'app' && key !== 'safe') forwardParams.append(key, value);
         }
         
+        // --- PRO KERNEL SYNC LOCK (WITH UX DELAY) ---
+        // Stage params globally so the router can inject them
         window.__deepLinkForwardParams = forwardParams.toString();
 
         const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
         const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
         const targetApp = [...installed, ...sideloaded].find(a => a.id === appId);
 
-        const bootStartTime = Date.now();
+        const bootStartTime = Date.now(); // Track when the link was clicked
 
         const bootWait = setInterval(() => {
             const timeElapsed = Date.now() - bootStartTime;
             const kernelReady = !targetApp || (window.appStore && window.appStore.isKernelReady);
 
-            if (kernelReady && timeElapsed >= 600) { // Optimized delay for snappier, pro response
+            // 1. MUST wait at least 1500ms for smooth UX
+            // 2. MUST wait for Kernel to finish syncing
+            if (kernelReady && timeElapsed >= 1500) {
                 clearInterval(bootWait);
                 
                 if (targetApp) {
@@ -5927,17 +5835,13 @@ handleDeepLinks() {
                 } else {
                     const input = document.getElementById('store-search-input');
                     if (input) input.value = appId;
-                    
-                    if (window.appStore) {
-                        window.appStore.checkUrlParams();
-                        window.appStore.filterApps(appId);
-                    }
+                    if (window.appStore && window.appStore.filterApps) window.appStore.filterApps(appId);
                     
                     const appStoreIcon = document.querySelector('.app-item[onclick*="AppStore"]');
                     if (appStoreIcon) this.openApp(appStoreIcon, 'AppStore', 'light');
                 }
             }
-        }, 30);
+        }, 50); // Still checks rapidly, but respects the 1500ms lock
     }
 }
 
@@ -5967,9 +5871,13 @@ initMessageListeners() {
         const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
         const isSideloaded = sideloaded.some(a => a.id === senderAppId);
         
-        // 3. ZERO TRUST POLICY (The "Jail" Logic)
-        // If Safe Mode is ON, 'canTrigger' is ALWAYS FALSE. No exceptions.
-        const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isSideloaded);
+       // 3. ZERO TRUST POLICY (The "Jail" Logic)
+// Read real-time hardware virtualization tokens
+const allowUntrustedIsland = localStorage.getItem('ios_untrusted_island') === 'true';
+
+// If Safe Mode is ON, 'canTrigger' is ALWAYS FALSE. No exceptions.
+// If allowUntrustedIsland is true, skip the strict whitelist/sideload restriction check.
+const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isSideloaded || allowUntrustedIsland);
 
         // 4. EXECUTE
         if (event.data.type === 'IOS_ISLAND_TRIGGER') {
@@ -6281,6 +6189,9 @@ initFullscreenListener() {
 toggleUntrustedFS(el) {
     localStorage.setItem('ios_untrusted_fs', el.checked);
     
+    
+    
+    
     // --- PRO REAL-TIME FIX ---
     // Trusted apps have the sandbox attribute completely removed.
     // By targeting 'iframe[sandbox]', we surgically kill ONLY untrusted background apps.
@@ -6294,6 +6205,12 @@ toggleUntrustedFS(el) {
 
 
 
+toggleUntrustedIsland(el) {
+    localStorage.setItem('ios_untrusted_island', el.checked);
+    console.log("Kernel Security Architecture Sync: Island access tokens flushed.");
+}
+    
+    
 
 
 
@@ -9172,7 +9089,6 @@ window.addEventListener('IOS_DEEP_LINK', function(e) {
         }
     });
 })();
-        
         
         
         
