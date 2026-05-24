@@ -7642,7 +7642,7 @@ renderAssistiveTouch() {
     };
 
     btn.addEventListener('mousedown', onStart); btn.addEventListener('touchstart', onStart, {passive:false});
-    document.body.appendChild(btn); document.body.appendChild(menu);
+    const targetScreen = document.getElementById('screen'); if(targetScreen){ targetScreen.appendChild(btn); targetScreen.appendChild(menu); }else{ document.body.appendChild(btn); document.body.appendChild(menu); }
 }
 
     // 3. Remove Elements
