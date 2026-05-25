@@ -430,6 +430,17 @@
                     <span id="ringtone-status" style="color: var(--text-secondary); font-size:12px;">Default</span>
                     <input type="file" id="ringtone-upload" accept="audio/*">
                 </div>
+                
+                
+                
+                <div class="settings-item upload-wrapper">
+    <span>Text Tone (Max 500KB)</span>
+    <span id="notif-status" style="color: var(--text-secondary); font-size:12px;">Default</span>
+    <input type="file" id="notif-upload" accept="audio/*">
+</div>
+                
+                
+                
                 <div class="settings-item" onclick="$('blocklist-view').classList.remove('hidden'); $('blocklist-view').classList.add('active'); renderBlocklist()">
                     <span>Blocked</span>
                     <span id="blocklist-count" style="color: var(--text-secondary);">0</span>
@@ -454,7 +465,7 @@
                 </div>
                 <div class="settings-item">
                     <span>Version</span>
-                    <span style="color: var(--text-secondary);">1.3.0 Pro</span>
+                    <span style="color: var(--text-secondary);">1.4.5 notify</span>
                 </div>
             </div>
         </div>
@@ -530,6 +541,16 @@
         const $ = id => document.getElementById(id);
         const generateShortId = () => Math.floor(10000000 + Math.random() * 90000000).toString();
         const uuid = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+        
+        
+        
+        
+
+        
+        
+        
+        
+        
         
         let mySavedId = localStorage.getItem('my_peer_id') || generateShortId();
         localStorage.setItem('my_peer_id', mySavedId);
@@ -733,8 +754,25 @@
             currentMessages: []
         };
 
-        // Initialize App
-        (async function initApp() {
+// ⚡ NATIVE BACKGROUND REGISTRATION & INITIALIZER ⚡
+        (async function() {
+            const APP_ID = 'ma5tm0GTnvPleVBs0VUx';
+
+            // 1. Ask OS for Background Privileges (Custom API Parameters)
+            if (window.parent && window.parent.iOS && window.parent.iOS.registerBackgroundService) {
+                const reg = window.parent.iOS.registerBackgroundService(APP_ID, { 
+                    notifications: true, 
+                    audio: true, 
+                    sandbox: false,
+                    priority: 'high' 
+                });
+                
+                if (reg.success && window.parent.console) {
+                    window.parent.console.log(`✅ App confirmed Background Service registration.`);
+                }
+            }
+
+            // 2. STANDARD APP INITIALIZATION
             try {
                 await IDB.init();
                 await Security.init(); 
@@ -749,33 +787,57 @@
                 
                 const ringtone = await IDB.get('settings', 'custom_ringtone');
                 if(ringtone) $('ringtone-status').textContent = "Custom Set";
+                
+                const customNotif = await IDB.get('settings', 'custom_notif_tone');
+                if(customNotif) $('notif-status').textContent = "Custom Set";
 
                 applySettings();
                 renderContacts();
+                
                 initPeer();
+                if (window.parent && window.parent.console) window.parent.console.log("🚀 iMessage Secure Connection Established.");
             } catch (e) {
-                console.error("DB Init Failed", e);
-                showModal("Database error. Please reload.");
+                if (window.parent && window.parent.console) window.parent.console.error("Init Failed:", e);
             }
         })();
 
-        /* --- NOTIFICATION BRIDGE INTEGRATION --- */
+/* --- NOTIFICATION BRIDGE INTEGRATION --- */
         let isWindowFocused = true;
         window.addEventListener('focus', () => isWindowFocused = true);
         window.addEventListener('blur', () => isWindowFocused = false);
 
-        function notify(title, body) {
-            if (window.parent === window) return;
+        async function notify(title, body) {
+            // PRO GUARD: Ask the Kernel if we are currently the active app on screen
+            let isForeground = false;
+            if (window.parent && window.parent.iOS && window.parent.iOS.activeWindow) {
+                if (window.parent.iOS.activeWindow.getAttribute('data-app') === 'sl_yeev5foo') {
+                    isForeground = true;
+                }
+            }
+            
+            // If on screen and looking at the chat, do not drop a banner
+            if (isForeground && currentChatId) return; 
+            if (window.parent === window) return; 
+            
+            let activeTone = 'https://download-apple-sms-ringtones-free.mobilesringtones.com/storage/2018/08/30/24645/24645.mp3'; 
+            try {
+                const savedTone = await IDB.get('settings', 'custom_notif_tone');
+                if (savedTone) activeTone = savedTone;
+            } catch(e) {}
+
             const payload = {
-                appId: 'iMessage',
+                appId: 'sl_yeev5foo', 
                 title: title,
                 msg: body,
                 showAfter: Date.now(),
                 uuid: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                sound: 'https://download-apple-sms-ringtones-free.mobilesringtones.com/storage/2018/08/30/24645/24645.mp3'
+                sound: activeTone 
             };
-            try { window.parent.postMessage({ type: 'IOS_NOTIFICATION_QUEUE', payload: payload }, '*'); } catch (e) {}
+            
+            window.parent.postMessage({ type: 'IOS_NOTIFICATION_QUEUE', payload: payload }, '*'); 
+            if (window.parent.console) window.parent.console.log(`🔔 Notification pushed to OS: ${title}`);
         }
+
 
         const Ringer = {
             audioCtx: null,
@@ -1893,6 +1955,29 @@ scrollBtn.onclick = () => {
             }
             e.target.value = ''; 
         };
+
+
+
+
+
+
+$('notif-upload').onchange = (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    if(f.size > 500 * 1024) return showModal('Error', 'Max 500KB allowed.', null, [{text:'OK'}]);
+    
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+        await IDB.put('settings', evt.target.result, 'custom_notif_tone');
+        $('notif-status').textContent = "Custom Set";
+        showModal('Success', 'Text tone updated.', null, [{text:'OK'}]);
+    };
+    reader.readAsDataURL(f); // Store as DataURL for easy injection into the API
+};
+
+
+
+
 
     </script>
 </body>
