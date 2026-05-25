@@ -1710,6 +1710,17 @@ body.dark-mode #sl-tab-preview[style*="600"] {
         <span>Enable Sideloading</span>
         <input type="checkbox" class="ios-switch" id="setting-sideload" onchange="sideloader.toggleSystem(this)">
     </div>
+    
+    <div class="ios-row">
+    
+        <span>Untrusted Apps God Mode</span>
+        
+    
+    <input type="checkbox" class="ios-switch" id="setting-untrusted-godmode" onchange="window.iOS.handleGodModeToggleClick(this)">
+</div>
+    
+    
+    
 </div>  
 
 
@@ -2070,7 +2081,7 @@ body.dark-mode #sl-tab-preview[style*="600"] {
     <script>
   
 
-console.log = function() {};
+// console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -5102,7 +5113,7 @@ const SecureStorage = {
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
                 'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects', 'ios_untrusted_fs',
                 'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
-                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled'
+                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled', 'ios_untrusted_godmode'
             ];
             settingsKeys.forEach(k => localStorage.removeItem(k));
 
@@ -5159,7 +5170,8 @@ const SecureStorage = {
                 'setting-island': true,
                 'setting-untrusted-fs': false,
                 'setting-untrusted-island': false,
-                'setting-untrusted-links': true, // <--- INJECT
+                'setting-untrusted-links': true,
+                'setting-untrusted-godmode': false
             };
 
             // Fix the dark mode toggle (it lacks an ID in the HTML)
@@ -5641,6 +5653,24 @@ if (untrustedFSSwitch) untrustedFSSwitch.checked = savedUntrustedFS;
 const savedUntrustedIsland = localStorage.getItem('ios_untrusted_island') === 'true';
 const untrustedIslandSwitch = document.getElementById('setting-untrusted-island');
 if (untrustedIslandSwitch) untrustedIslandSwitch.checked = savedUntrustedIsland;                
+                
+                
+                
+                
+                
+                
+                // Append this target execution row right inside your IOSEngine.initSettings() pipeline
+const savedGodMode = localStorage.getItem('ios_untrusted_godmode') === 'true';
+const godModeSwitch = document.getElementById('setting-untrusted-godmode');
+if (godModeSwitch) godModeSwitch.checked = savedGodMode;
+                
+                
+                
+                
+                
+                
+                
+                
                 
                 
                 
@@ -6239,6 +6269,56 @@ toggleUntrustedLinks(el) {
 }
     
     
+
+// =========================================================================
+// LIGHTWEIGHT GOD MODE CONTROL METHOD
+// =========================================================================
+
+handleGodModeToggleClick(el) {
+    // Intercept checking instantly. Only toggles if alert is accepted.
+    if (el.checked) {
+        el.checked = false; 
+
+        // Native iOS Confirmation Dialog
+        this.showAlert(
+            "Enable God Mode?",
+            "WARNING: This will allow untrusted apps to gain system privileges and may cause instability.",
+            () => {
+                // Confirm Enable
+                el.checked = true;
+                localStorage.setItem('ios_untrusted_godmode', 'true');
+                this.flushUntrustedAppsFromRAM();
+            },
+            true,        // isDestructive (Red Button)
+            "Enable",    // Action text
+            "Cancel"     // Cancel text
+        );
+    } else {
+        // Simply disable if user flips the switch off
+        localStorage.setItem('ios_untrusted_godmode', 'false');
+        this.flushUntrustedAppsFromRAM();
+    }
+}
+
+flushUntrustedAppsFromRAM() {
+    const container = document.getElementById('dynamic-app-container');
+    if (container) {
+        // Surgically wipe running untrusted contexts so they re-render with fresh constraints
+        container.querySelectorAll('iframe[sandbox]').forEach(iframe => {
+            console.log(`🛡️ Evicting container frame instance: ${iframe.getAttribute('data-app-id')}`);
+            iframe.remove();
+        });
+    }
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7029,35 +7109,118 @@ if (window.__deepLinkForwardParams) {
                             // but Trusted Store Apps are now blocked if Safe Mode is on.
                             const isTrusted = SAFE_LIST.includes(appName) || (isSideloaded && !this.isSafeMode);
 
-                           // Locate inside IOSEngine.routeContent(appName) where unprivileged/untrusted containers are sandbox-configured:
-
 if (isTrusted) {
-    console.log(`🔓 Launching TRUSTED App: ${appName}`);
-    iframe.removeAttribute('sandbox'); // Full Access
+    console.log(`🔓 Launching TRUSTED System Architecture: ${appName}`);
+    
+    if (this.isSafeMode) {
+        console.warn(`🛡️ SAFE MODE ACTIVE: Forcing standard core jail profile on '${appName}'`);
+        iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
+        iframe.removeAttribute('allow');
+    } else {
+        iframe.removeAttribute('sandbox'); // ORIGINAL FULL PRIVILEGED ACCESS
+    }
 } else {
-    console.log(`🔒 Launching RESTRICTED App: ${appName}`);
+    console.log(`🔒 Launching RESTRICTED Sandbox Environment: ${appName}`);
     
-    // Read synchronized system state keys
-    const allowUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
-    const allowUntrustedLinks = localStorage.getItem('ios_untrusted_links') !== 'false'; // ON BY DEFAULT
+    // Read the master keys and sub-toggles
+    const isGodModeEnabled = !this.isSafeMode && (localStorage.getItem('ios_untrusted_godmode') === 'true');
+    const allowUntrustedFS = (localStorage.getItem('ios_untrusted_fs') === 'true');
+    const allowUntrustedLinks = (localStorage.getItem('ios_untrusted_links') !== 'false');
 
-    // Core application execution tokens
-    let sandboxTokens = ['allow-scripts', 'allow-forms'];
+    if (isGodModeEnabled) {
+        console.log(`⚡ GOD MODE MASTER CONFIGURATION ENGAGED FOR UNTRUSTED APP: ${appName}`);
+        
+        // Base sandbox attributes with same-origin compatibility for old legacy browsers (Chrome 112)
+        let sandboxTokens = ['allow-scripts', 'allow-forms', 'allow-same-origin']; 
+        
+        // God Mode standard capabilities (No individual toggles associated)
+        sandboxTokens.push(
+            'allow-downloads',
+            'allow-modals',
+            'allow-pointer-lock',
+            'allow-presentation',
+            'allow-top-navigation',
+            'allow-top-navigation-by-user-activation'
+        );
 
-    if (allowUntrustedFS) {
-        sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
-    }
+        if (allowUntrustedFS) {
+            sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
+        }
+        
+        // --- FIXED: APPLIES POPUP TOKENS SO LINKS OPEN SUCCESSFULLY ---
+        if (allowUntrustedLinks) {
+            sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-to-custom-protocols');
+        }
 
-    if (allowUntrustedLinks) {
-        // PERMANENT POPUP ENGAGEMENT VECTORS: Permits target="_blank" threads to safely spawn new browser tabs
-        sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox');
-    }
+        iframe.setAttribute('sandbox', sandboxTokens.join(' '));
 
-    // Bind permissions safely to container layout while locking down top-level layout environments from hijacking
-    iframe.setAttribute('sandbox', sandboxTokens.join(' '));
-    
-    if (allowUntrustedFS) {
-        iframe.setAttribute('allow', 'fullscreen');
+        // Inject loose physical hardware capabilities
+        const godHardwareVectors = [
+            'accelerometer', 'ambient-light-sensor', 'autoplay', 'battery',
+            'camera', 'display-capture', 'geolocation', 'gyroscope', 'microphone'
+        ];
+        iframe.setAttribute('allow', godHardwareVectors.join('; '));
+
+        // =========================================================================
+        // PRO KERNEL SECURITY WALL - PROXY METHOD (COMPATIBILITY LAYER)
+        // =========================================================================
+        iframe.addEventListener('load', function() {
+            try {
+                const targetWindow = iframe.contentWindow;
+                if (targetWindow && !targetWindow.__security_jail_installed__) {
+                    
+                    const interceptorScript = targetWindow.document.createElement('script');
+                    interceptorScript.textContent = `
+                        (function() {
+                            try {
+                                const originalWindow = window;
+                                const safeProxy = new Proxy(originalWindow, {
+                                    get: function(target, prop) {
+                                        if (prop === 'parent' || prop === 'top') {
+                                            return safeProxy; 
+                                        }
+                                        if (prop === 'frameElement') {
+                                            return null;
+                                        }
+                                        const val = target[prop];
+                                        return (typeof val === 'function') ? val.bind(target) : val;
+                                    }
+                                });
+                                
+                                window.parent = safeProxy;
+                                window.top = safeProxy;
+                                
+                                if (document.prototype) {
+                                    Object.defineProperty(document.prototype, 'referrer', { get: () => '', configurable: true });
+                                }
+                            } catch (e) {}
+                        })();
+                    `;
+                    
+                    targetWindow.document.head.insertBefore(interceptorScript, targetWindow.document.head.firstChild);
+                    targetWindow.__security_jail_installed__ = true;
+                }
+            } catch (err) {}
+        });
+
+    } else {
+        // =========================================================================
+        // ORIGINAL STRICT ULTRA-SECURE CONSTRAINTS FALLBACK
+        // =========================================================================
+        console.log(`🛡️ SECURITY KERNEL: Enforcing unhackable standard fallback prison on '${appName}'`);
+        
+        // Read link token fallback toggle states even in standard strict execution profile
+        const allowUntrustedLinksFallback = (localStorage.getItem('ios_untrusted_links') !== 'false');
+        
+        let strictTokens = ['allow-scripts', 'allow-forms'];
+        
+        if (allowUntrustedLinksFallback) {
+            // Allows standard frame navigation and external target windows, but blocks same-origin breakouts!
+            strictTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-by-user-activation');
+        }
+        
+        iframe.setAttribute('sandbox', strictTokens.join(' '));
+        iframe.removeAttribute('allow'); // Hard revoke all hardware APIs instantly
     }
 }
                             // -----------------------------
@@ -9134,7 +9297,51 @@ window.addEventListener('IOS_DEEP_LINK', function(e) {
         
         
         
-        
+        function initSafeModeToggleInterceptor() {
+    // List of IDs for security settings switches
+    const targetToggleIds = [
+        'setting-untrusted-godmode',
+        'setting-untrusted-fs',
+        'setting-untrusted-links',
+        'setting-untrusted-island'
+    ];
+
+    targetToggleIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (!element) return;
+
+        // Visual setup for Safe Mode on boot
+        if (window.iOS && window.iOS.isSafeMode) {
+            element.checked = false;
+            if (element.parentElement) element.parentElement.style.opacity = "0.4";
+        }
+
+        // Intercept click capture phase before original onchange events run
+        element.addEventListener('click', function(event) {
+            if (window.iOS && window.iOS.isSafeMode) {
+                // Stop the toggle from switching and ignore the native onchange behavior
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                
+                this.checked = false;
+
+                // Show the standard alert window framework
+                window.iOS.showAlert(
+                    "Access Denied",
+                    "Security toggles disabled in safe mode.",
+                    null,
+                    false,
+                    "OK"
+                );
+            }
+        }, true); // 'true' triggers click capture to intercept BEFORE regular events execute
+    });
+}
+
+// Call this once right after the main layout setup code runs or DOM content loads
+document.addEventListener('DOMContentLoaded', initSafeModeToggleInterceptor);
+// In case script runs after DOMContentLoaded, call it instantly too
+setTimeout(initSafeModeToggleInterceptor, 500);
         
         
     </script>
