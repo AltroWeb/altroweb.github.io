@@ -505,6 +505,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 	#file-name-display { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; margin: 0 auto; }
 	
 	
+	#bio-preview-view a, #desc-preview-view a { pointer-events: none; cursor: default; }
 	
 	
 
@@ -3678,9 +3679,7 @@ function renderBio(text) {
             // Smart Auth Guard: Prevent swiping back to login if already authenticated
             if (target === 'login' && firebase.auth().currentUser) target = 'dashboard';
             origUpdateUI.call(appBuilder, target, true);
-        } else {
-            origUpdateUI.call(appBuilder, 'login', true);
-        }
+        } else { origUpdateUI.call(appBuilder, firebase.auth().currentUser ? 'dashboard' : 'login', true); }
     }, true); // Capture phase ensures we intercept the swipe first
 })();
 </script>

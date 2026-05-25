@@ -1732,8 +1732,12 @@ formatAppText(text) {
     safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
         `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStoreWeb?.showAlert ? appStoreWeb.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
 
-    // 5. PRO FIX: Cap newlines at 2 (prevents abuse), keep raw \n intact for CSS to handle
-return safe.replace(/\n{3,}/g, '\n\n');
+    // 5. CAP EXCESSIVE NEWLINES (prevents abuse)
+    safe = safe.replace(/\n{3,}/g, '\n\n');
+
+    // 6. THE CRITICAL FIX: Convert single remaining newlines (\n) to HTML break tags (<br>)
+    // This stops block elements from collapsing into line items and preserves linebreaks exactly as written.
+    return safe.replace(/\n/g, '<br>');
 }
 
 

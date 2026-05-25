@@ -1694,7 +1694,10 @@ body.dark-mode #sl-tab-preview[style*="600"] {
     <input type="checkbox" class="ios-switch" id="setting-untrusted-fs" onchange="window.iOS.toggleUntrustedFS(this)">
 </div>
     
-    
+    <div class="ios-row">
+    <span>Untrusted App Links</span>
+    <input type="checkbox" class="ios-switch" id="setting-untrusted-links" checked onchange="window.iOS.toggleUntrustedLinks(this)">
+</div>
     
     
 </div>
@@ -3002,8 +3005,12 @@ formatAppText(text) {
     safe = safe.replace(/\$\[(https?:\/\/[^\]]+)\]/g, 
         `<a href="#" onclick="event.preventDefault(); event.stopPropagation(); const u='$1'; const f=()=>window.open(u, '_blank'); window.iOS?.showAlert ? iOS.showAlert('External Link', 'Go to '+u+'?', f) : window.appStore?.showAlert ? appStore.showAlert('External Link', 'Go to '+u+'?', f) : (confirm('Go to '+u+'?') && f())" style="color:var(--accent-color, #007AFF); text-decoration:underline; pointer-events:auto; word-break: break-all;">$1</a>`);
 
-    // 5. PRO FIX: Cap newlines at 2 (prevents abuse), keep raw \n intact for CSS to handle
-return safe.replace(/\n{3,}/g, '\n\n');
+    // 5. CAP EXCESSIVE NEWLINES (prevents abuse)
+    safe = safe.replace(/\n{3,}/g, '\n\n');
+
+    // 6. THE CRITICAL FIX: Convert single remaining newlines (\n) to HTML break tags (<br>)
+    // This stops block elements from collapsing into line items and preserves linebreaks exactly as written.
+    return safe.replace(/\n/g, '<br>');
 }
 
 
@@ -5095,7 +5102,7 @@ const SecureStorage = {
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
                 'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects', 'ios_untrusted_fs',
                 'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
-                'ios_fullscreen_always', 'ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled'
+                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled'
             ];
             settingsKeys.forEach(k => localStorage.removeItem(k));
 
@@ -5151,7 +5158,8 @@ const SecureStorage = {
                 'setting-sideload': false,
                 'setting-island': true,
                 'setting-untrusted-fs': false,
-                'setting-untrusted-island': false
+                'setting-untrusted-island': false,
+                'setting-untrusted-links': true, // <--- INJECT
             };
 
             // Fix the dark mode toggle (it lacks an ID in the HTML)
@@ -5656,7 +5664,12 @@ if (untrustedIslandSwitch) untrustedIslandSwitch.checked = savedUntrustedIsland;
 
 
 
+// Inside your IOSEngine.initSettings() initialization function, append this execution block:
 
+// Guard Logic: Defaults to true unless explicitly written as false in engine storage
+const savedUntrustedLinks = localStorage.getItem('ios_untrusted_links') !== 'false';
+const untrustedLinksSwitch = document.getElementById('setting-untrusted-links');
+if (untrustedLinksSwitch) untrustedLinksSwitch.checked = savedUntrustedLinks;
 
 
 
@@ -6208,6 +6221,21 @@ toggleUntrustedFS(el) {
 toggleUntrustedIsland(el) {
     localStorage.setItem('ios_untrusted_island', el.checked);
     console.log("Kernel Security Architecture Sync: Island access tokens flushed.");
+}
+    
+    
+    
+    // Add this surgically inside your IOSEngine Class definitions:
+
+toggleUntrustedLinks(el) {
+    localStorage.setItem('ios_untrusted_links', el.checked);
+    
+    // PRO PERFORMANCE GUARD: Evict active sandboxed containers from RAM instantly
+    const container = document.getElementById('dynamic-app-container');
+    if (container) {
+        container.querySelectorAll('iframe[sandbox]').forEach(iframe => iframe.remove());
+        console.log("🛡️ Kernel Security Architecture: Flushed sandboxed containers due to Link Permission update.");
+    }
 }
     
     
@@ -7001,23 +7029,37 @@ if (window.__deepLinkForwardParams) {
                             // but Trusted Store Apps are now blocked if Safe Mode is on.
                             const isTrusted = SAFE_LIST.includes(appName) || (isSideloaded && !this.isSafeMode);
 
-                           if (isTrusted) {
-                                console.log(`🔓 Launching TRUSTED App: ${appName}`);
-                                iframe.removeAttribute('sandbox'); // FULL ACCESS
-                            } else {
-                                console.log(`🔒 Launching RESTRICTED App: ${appName}`);
-                                
-                                // --- PRO DYNAMIC ENTITLEMENTS ---
-const allowUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
+                           // Locate inside IOSEngine.routeContent(appName) where unprivileged/untrusted containers are sandbox-configured:
 
-if (allowUntrustedFS) {
-    // We append allow-orientation-lock so games can dictate their own aspect ratio
-    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-fullscreen allow-orientation-lock');
-    iframe.setAttribute('allow', 'fullscreen'); 
+if (isTrusted) {
+    console.log(`🔓 Launching TRUSTED App: ${appName}`);
+    iframe.removeAttribute('sandbox'); // Full Access
 } else {
-    iframe.setAttribute('sandbox', 'allow-scripts allow-forms');
+    console.log(`🔒 Launching RESTRICTED App: ${appName}`);
+    
+    // Read synchronized system state keys
+    const allowUntrustedFS = localStorage.getItem('ios_untrusted_fs') === 'true';
+    const allowUntrustedLinks = localStorage.getItem('ios_untrusted_links') !== 'false'; // ON BY DEFAULT
+
+    // Core application execution tokens
+    let sandboxTokens = ['allow-scripts', 'allow-forms'];
+
+    if (allowUntrustedFS) {
+        sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
+    }
+
+    if (allowUntrustedLinks) {
+        // PERMANENT POPUP ENGAGEMENT VECTORS: Permits target="_blank" threads to safely spawn new browser tabs
+        sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox');
+    }
+
+    // Bind permissions safely to container layout while locking down top-level layout environments from hijacking
+    iframe.setAttribute('sandbox', sandboxTokens.join(' '));
+    
+    if (allowUntrustedFS) {
+        iframe.setAttribute('allow', 'fullscreen');
+    }
 }
-                            }
                             // -----------------------------
 
                             container.appendChild(iframe);
