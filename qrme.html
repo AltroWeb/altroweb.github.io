@@ -244,6 +244,35 @@ background-color: #d49fbe; /* Slightly darker on hover */
 }
         
         
+        #qr-code {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+#qr-code canvas {
+    padding: 20px;
+    background-color: white;
+    width: auto; /* Ensures the padding doesn't distort the code */
+}
+        
+        
+        
+        #input-text {
+    padding: 5px;
+    border-radius: 5px;
+    border: 0px solid #ccc;
+    background-color: #ffc7c7;
+    color: #8a1616;
+    text-align: center;
+}
+        
+        
+        #input-text:focus {
+    outline: none;
+    border: 2px solid #8a1616; /* This matches your secondary theme color */
+}
+        
     </style>
 </head>
 <body>
@@ -269,7 +298,7 @@ background-color: #d49fbe; /* Slightly darker on hover */
         
     </div>
  
- 
+ <br>
  
  
  
@@ -287,7 +316,7 @@ background-color: #d49fbe; /* Slightly darker on hover */
  
 <div>
  	<p id ="bottom" align="center">Improvements will be made over time!</p>
- 	<br><br><br><br>
+ 	<br><br><br>
     </div>
     
     <div>
@@ -300,12 +329,18 @@ background-color: #d49fbe; /* Slightly darker on hover */
     <!-- download section -->
     <h4>Download the QRMe Android app</h4> 
     
-    <p>Use the QRMe application even when offline: <br><br><a href="https://github.com/AltroWeb/altroweb.github.io/releases/download/resources/QRMe_signed.apk">Download Android APK</a></p>
+    <p>Use the QRMe application even when offline: <br><br><a href="https://github.com/AltroWeb/altroweb.github.io/releases/download/resources/QRMe_v1.2_signed.apk">Download Android APK</a></p>
      <!-- download section -->
-     <br><br>
+     <br>
     
+    <p><b>Changelog:</b><br><br>v1.2<br><br>- Added quiet zone in the generated QR code.<br><br>- Bug fixes and UI improvements.
+</p>
     
+    <br>
     
+    <p><b>NOTE:</b> On newer Android versions, it may show a toast on start, you can ignore it. It may contain bugs. 
+</p>
+    <br><br>
     
     <!-- Link to change font (Start) -->
   <p>For Fun Only:</p>
@@ -321,7 +356,7 @@ background-color: #d49fbe; /* Slightly darker on hover */
     
     <!-- Link to change font (End) -->
     <a href="https://altroweb.github.io">< Back to AltroWeb</a><br><br>
-    <p align="center">Last Updated: 20 May 2025, 4:00 PM</p>
+    <p align="center">Last Updated: 27 May 2026, 11:28 PM</p>
  	<p align=center>Source Code: <a href="https://github.com/AltroWeb/altroweb.github.io/">AltroWeb Source</a>
 </p>
 <!-- 
@@ -394,21 +429,29 @@ toggleButton.addEventListener('click', () => {
         });
 
         document.getElementById('download-btn').addEventListener('click', function() {
-            const qrCodeCanvas = document.querySelector('#qr-code canvas');
-            
-            if (!qrCodeCanvas) {
-                alert("Please generate a QR code first.");
-                return;
-            }
+    const originalCanvas = document.querySelector('#qr-code canvas');
+    if (!originalCanvas) { alert("Generate a QR code first."); return; }
 
-            // Convert canvas to image and download
-            const link = document.createElement('a');
-            link.href = qrCodeCanvas.toDataURL("image/png");
-            link.download = 'qr_code.png';
-            
-            // Trigger download
-            link.click();
-        });
+    // Create a new canvas with extra space for the quiet zone
+    const padding = 20;
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width = originalCanvas.width + (padding * 2);
+    newCanvas.height = originalCanvas.height + (padding * 2);
+    const ctx = newCanvas.getContext('2d');
+
+    // Fill with white background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+    // Draw the original QR code onto the new canvas with offset
+    ctx.drawImage(originalCanvas, padding, padding);
+
+    // Trigger download of the new canvas
+    const link = document.createElement('a');
+    link.href = newCanvas.toDataURL("image/png");
+    link.download = 'qr_code_with_border.png';
+    link.click();
+});
 
 
 
