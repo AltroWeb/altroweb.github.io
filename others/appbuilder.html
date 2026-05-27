@@ -830,16 +830,21 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 
         <!-- EDITOR VIEW -->
         <div id="editor-view" class="view">
-            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
-             <button class="btn secondary sm" onclick="appBuilder.discardChangesGuard(() => appBuilder.showDashboard())">
-    &larr; Back
-</button>
-                <div style="flex:1;">
-    <h1 style="margin:0;" id="editor-title">Create App</h1>
-    <div id="editor-date" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; display: none;"></div>
-</div>
-</div>
-
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                    <button class="btn secondary sm" onclick="appBuilder.discardChangesGuard(() => appBuilder.showDashboard())">
+                        &larr; Back
+                    </button>
+                    <div style="flex:1;">
+                        <h1 style="margin:0;" id="editor-title">Create App</h1>
+                        <div id="editor-date" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; display: none;"></div>
+                    </div>
+                </div>
+                <button id="editor-view-live-btn" class="btn secondary sm" style="display: none; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; height: 32px;" onclick="appBuilder.redirectToLiveApp()">
+                    <span>View App</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </button>
+            </div>
 
 
 
@@ -1002,11 +1007,17 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 
         <!-- SETTINGS VIEW -->
         <div id="settings-view" class="view">
-            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px;">
-                <button class="btn secondary sm" onclick="appBuilder.showDashboard()">
-                    &larr; Back
+            <div style="display: flex; align-items: center; margin-bottom: 20px; gap: 15px; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button class="btn secondary sm" onclick="appBuilder.showDashboard()">
+                        &larr; Back
+                    </button>
+                    <h1 style="margin:0;">Account Settings</h1>
+                </div>
+                <button class="btn secondary sm" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; height: 32px;" onclick="appBuilder.redirectToLiveProfile()">
+                    <span>Profile</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </button>
-                <h1 style="margin:0;">Account Settings</h1>
             </div>
 
             <div class="card">
@@ -2079,9 +2090,64 @@ async fetchMyApps() {
                 }
             }
 
+
+
+async redirectToLiveApp() {
+                if (!this.currentEditingId) return;
+                
+                const confirmed = await this.showConfirm(
+                    "Redirect to App Store", 
+                    "You are going to view this published application on the live App Store Web dashboard.", 
+                    "View Live App"
+                );
+                
+                if (confirmed) {
+                    const targetUrl = `appstore-web.html?s=${encodeURIComponent(this.currentEditingId)}`;
+                    window.open(targetUrl, '_blank');
+                }
+            }
+
+            async redirectToLiveProfile() {
+                // Securely query or fall back to cached system credentials if auth is asynchronously locked
+                let authorUid = this.devProfile ? this.devProfile.uid : null;
+                if (!authorUid && this.auth.currentUser) {
+                    authorUid = this.auth.currentUser.uid;
+                }
+                
+                if (!authorUid) {
+                    await this.showAlert("Profile Verification", "Your developer account context could not be parsed safely. Please try again in a moment.", true);
+                    return;
+                }
+
+                const confirmed = await this.showConfirm(
+                    "Redirect to Developer Profile", 
+                    "You are going to exit to the external App Store Web workspace to examine your public developer profile card.", 
+                    "View Live Profile"
+                );
+                
+                if (confirmed) {
+                    const targetUrl = `appstore-web.html?dev=${encodeURIComponent(authorUid)}`;
+                    window.open(targetUrl, '_blank');
+                }
+            }
+
+
+
+
+
+
+
+
+
+
+
+
                         createNewApp() {
                 this.currentEditingId = null;
                 document.getElementById('editor-title').innerText = "Create New App";
+                
+                // Reset live view link button state
+                document.getElementById('editor-view-live-btn').style.display = 'none';
                 
                 
                 document.getElementById('editor-meta-card').style.display = 'none';
@@ -2132,6 +2198,11 @@ this.updateTagsCounter(tagInput); // Reset counter to 0/1000
                 try {
                     const doc = await this.db.collection('artifacts').doc(this.appId).collection('public').doc('data').collection('store_apps').doc(appId).get();
                     if (!doc.exists) return;
+                    
+                    
+                    // Reveal external web redirect button safely
+                    document.getElementById('editor-view-live-btn').style.display = 'inline-flex';
+                    
                     
                     const data = doc.data();
                     this.currentEditingId = appId;
