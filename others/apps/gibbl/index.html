@@ -385,6 +385,19 @@
         .md-mention { color: var(--text); font-weight: 600; text-decoration: none; transition: 0.2s; cursor:pointer; }
         .md-mention:hover { text-decoration: underline; }
 
+.md-hashtag {
+    opacity: 1;
+}
+.md-hashtag:hover {
+    opacity: 1;
+    text-decoration: underline !important;
+    
+}
+
+
+
+
+
 .post-actions { 
             display: flex; justify-content: space-between; color: var(--dim); 
             max-width: 100%; /* <--- THE PRO FIX */
@@ -1242,34 +1255,54 @@ window.updateCharCount = (inputEl, counterId) => {
         };
 
         const markdown = (text) => {
-            if (!text) return '';
-            let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            
-            html = html.replace(/\*\*(.*?)\*\*/g, '<span class="md-bold">$1</span>');
-            html = html.replace(/\*(.*?)\*/g, '<span class="md-italic">$1</span>');
-            html = html.replace(/(^|\s)(@[a-zA-Z0-9_.]+)/g, '$1<span class="md-mention break-words" onclick="event.stopPropagation(); window.handleMentionClick(\'$2\')">$2</span>');
+    if (!text) return '';
+    let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    
+    html = html.replace(/\*\*(.*?)\*\*/g, '<span class="md-bold">$1</span>');
+    html = html.replace(/\*(.*?)\*/g, '<span class="md-italic">$1</span>');
+    html = html.replace(/(^|\s)(@[a-zA-Z0-9_.]+)/g, '$1<span class="md-mention break-words" onclick="event.stopPropagation(); window.handleMentionClick(\'$2\')">$2</span>');
 
-            let linkCounter = 0; const linkMap = {};
-            
-            html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (match, title, url) => {
-                const key = `__LINK_${linkCounter++}__`;
-                linkMap[key] = `<span class="md-link break-words" onclick="window.confirmLink(event, '${url}')">${title}</span>`;
-                return key;
-            });
-            html = html.replace(/(https?:\/\/[^\s<]+)/g, (match, url) => {
-                const key = `__LINK_${linkCounter++}__`;
-                linkMap[key] = `<span class="md-link break-words" onclick="window.confirmLink(event, '${url}')">${url}</span>`;
-                return key;
-            });
-            
-            for (const [key, value] of Object.entries(linkMap)) html = html.replace(key, value);
-            return html;
-        };
+    // --- PRO HASHTAG EXTENSION ---
+    // Safely matches alphabetic/numeric strings starting with # but ignores lone hashes or numbers-only tags
+html = html.replace(/(?:^|\s)#([^\s()<>«»"']*(?:[\p{Emoji_Presentation}\p{Extended_Pictographic}]{1}[^\s()<>«»"']*)?)(?=\s|$)/gu, (m, g) => m.replace('#' + g, `<span class="md-mention break-words md-hashtag" onclick="event.stopPropagation(); window.handleHashtagClick('${g}')">#${g}</span>`));
+
+    let linkCounter = 0; const linkMap = {};
+    
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (match, title, url) => {
+        const key = `__LINK_${linkCounter++}__`;
+        linkMap[key] = `<span class="md-link break-words" onclick="window.confirmLink(event, '${url}')">${title}</span>`;
+        return key;
+    });
+    html = html.replace(/(https?:\/\/[^\s<]+)/g, (match, url) => {
+        const key = `__LINK_${linkCounter++}__`;
+        linkMap[key] = `<span class="md-link break-words" onclick="window.confirmLink(event, '${url}')">${url}</span>`;
+        return key;
+    });
+    
+    for (const [key, value] of Object.entries(linkMap)) html = html.replace(key, value);
+    return html;
+};
 
         window.handleMentionClick = async (handle) => {
             const snap = await getDocs(getPublicCollection('profiles'));
             snap.forEach(d => { if (d.data().handle === handle) window.setView('profile', d.data().uid); });
         };
+
+
+
+window.handleHashtagClick = (tag) => {
+    // Protect database queries from messy trailing syntax markers
+    const safeTag = tag.trim();
+    
+    window.searchType = 'posts';
+    window.currentSearchQuery = '#' + safeTag;
+    window.setView('search');
+};
+
+
+
+
+
 
         const notifyMentions = async (text, sourcePostId) => {
             const mentionsMatch = text.match(/(?:^|\s)(@[a-zA-Z0-9_.]+)/g);
@@ -2426,7 +2459,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                     <h3 style="margin-bottom:1rem;">Edit Profile</h3>
                     <div class="input-group">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Display Name</label>
-                        <input id="edit-name" class="custom-input" value="${currentProfile.displayName}" maxlength="50" oninput="window.updateCharCount(this, 'edit-name-count')">
+                        <input id="edit-name" class="custom-input" placeholder="Display Name" value="${currentProfile.displayName}" maxlength="50" oninput="window.updateCharCount(this, 'edit-name-count')">
                         <div id="edit-name-count" class="char-counter text-xs text-dim">${currentProfile.displayName.length}/50</div>
                     </div>
                     <div class="input-group">
@@ -2441,7 +2474,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                                 ${getIcon('eye')}
                             </button>
                         </div>
-                        <textarea id="edit-bio" class="custom-input break-words" rows="4" maxlength="200" oninput="window.updateCharCount(this, 'edit-bio-count')">${currentProfile.bio || ''}</textarea>
+                        <textarea id="edit-bio" class="custom-input break-words" placeholder="Write about yourself..." rows="4" maxlength="200" oninput="window.updateCharCount(this, 'edit-bio-count')">${currentProfile.bio || ''}</textarea>
                         
                         <div id="edit-bio-count" class="char-counter text-xs text-dim" style="margin-bottom: 12px;">${(currentProfile.bio || '').length}/200</div>
                         
