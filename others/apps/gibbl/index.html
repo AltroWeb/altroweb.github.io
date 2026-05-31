@@ -711,7 +711,21 @@ svg, .pfp-nav, .pfp-sm, .pfp-lg {
         }
         
         
-        
+        /* Specific guard for the handle inside the profile header block */
+.profile-header div[class^="handle-uid-"] {
+    display: block;
+    max-width: 100%;
+    
+    /* Allow the text to wrap to a second line if it hits a wall */
+    white-space: normal; 
+    
+    /* Force continuous strings without dots/underscores to break safely */
+    overflow-wrap: break-word;
+    word-break: break-all; 
+    
+    color: var(--dim);
+    margin-top: 2px;
+}
         
         
         
