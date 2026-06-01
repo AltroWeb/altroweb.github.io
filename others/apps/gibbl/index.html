@@ -2070,7 +2070,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 }
 
                 if (isMedia || f.type === 'image/gif') {
-                    if (f.size > 800000) { input.value = ''; return window.showModal("Error", "File too heavy (>800KB strict limit)."); }
+                    if (f.size > 600000) { input.value = ''; return window.showModal("Error", "File too heavy (>600KB strict limit)."); }
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         tempReplyImage = e.target.result;
@@ -2266,7 +2266,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 }
 
                 if (isMedia || f.type === 'image/gif') {
-                    if (f.size > 800000) { input.value = ''; return window.showModal("Error", "File too heavy (>800KB strict limit)."); }
+                    if (f.size > 600000) { input.value = ''; return window.showModal("Error", "File too heavy (>600KB strict limit)."); }
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         tempImage = e.target.result;
@@ -2534,7 +2534,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
 <div class="flex items-center justify-between" style="margin-bottom: 1.5rem; background: var(--surface); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
                         <div>
                             <div class="bold text-sm">Enable Media Uploads</div>
-                            <div class="text-xs text-dim" style="line-height: 1.3; margin-top:2px;">Allow uploading audio and video (up to 800KB).</div>
+                            <div class="text-xs text-dim" style="line-height: 1.3; margin-top:2px;">Allow uploading audio and video (up to 600KB).</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="edit-media" ${currentProfile.mediaEnabled === true ? 'checked' : ''}>
