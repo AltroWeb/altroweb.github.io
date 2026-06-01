@@ -2081,7 +2081,7 @@ body.dark-mode #sl-tab-preview[style*="600"] {
     <script>
   
 
-// console.log = function() {};
+ console.log = function() {};
 // console.warn = function() {};
 // console.error = function() {};
     
@@ -2346,7 +2346,19 @@ async fetchTrustedApps() {
             
             
             
-            this.apps = this.apps.filter(app => (app.reportCount || 0) < 10);
+            // >>> KERNEL REGISTRY FILTER <<<
+// Explicitly flag if an app has been scrubbed from the server database entirely
+this.apps = this.apps.filter(app => {
+    const isLocalInstalled = installed.some(ia => ia.id === app.id);
+    const missingFromServer = !serverApps.some(sa => sa.id === app.id);
+    
+    if (isLocalInstalled && missingFromServer) {
+        app.isDeveloperRemoved = true; // Flag it globally right at boot layer
+        return true; 
+    }
+    
+    return (app.reportCount || 0) < 10 || isLocalInstalled;
+});
             
         } catch (e) {
             console.error("Fetch Error:", e);
@@ -3043,8 +3055,9 @@ formatAppText(text) {
 
                 const installedApps = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
 
-                // --- UPDATES LOGIC ---
-                const updates = [];
+
+// --- UPDATES LOGIC ---
+const updates = [];
                 if (!this.isOfflineMode) {
                     appList.forEach(app => {
                         const localApp = installedApps.find(ia => ia.id === app.id);
@@ -3079,12 +3092,11 @@ formatAppText(text) {
                 appList.forEach(app => {
                 	
                 
-                // >>> TRIPWIRE CHECK (Shadow Ban) <<<
-        // If reports >= 10, completely skip rendering this app.
-        // It effectively ceases to exist in the store UI.
-        if ((app.reportCount || 0) >= 10) {
-            return; // App is shadow-banned.
-        }
+// >>> TRIPWIRE CHECK (Shadow Ban Override for Installed Apps) <<<
+const isAppInstalled = installedApps.some(ia => ia.id === app.id);
+if ((app.reportCount || 0) >= 10 && !isAppInstalled) {
+    return; // Completely skip if shadow-banned and NOT installed
+}
                 
                 
                 
@@ -3196,13 +3208,29 @@ else {
                     // Create Clickable Link
                     const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
 
+                    // --- REMOVED WARNING BADGE ---
+let removedBadgeHTML = '';
+if (app.isDeveloperRemoved) {
+    removedBadgeHTML = `
+        <span style="display:inline-flex; align-items:center; background:#8E8E93; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
+            DELETED
+        </span>
+    `;
+} else if ((app.reportCount || 0) >= 10) {
+    removedBadgeHTML = `
+        <span style="display:inline-flex; align-items:center; background:#FF9500; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
+            REMOVED
+        </span>
+    `;
+}
+
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-    <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML}</div> 
-    <div class="store-author">${authorHTML}${badgeHTML}</div>
-    <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
-</div>
+                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML} ${removedBadgeHTML}</div> 
+                            <div class="store-author">${authorHTML}${badgeHTML}</div>
+                            <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
+                        </div>
                         ${actionHTML}
                     `;
                     listEl.appendChild(div);
@@ -3688,23 +3716,32 @@ directOpen(appId) {
     if (btn.classList.contains('loading')) return; 
 
     if (isInstalled) {
-        // UNINSTALL FLOW
-        iOS.showAlert(
-            `Delete "${app.name}"?`,
-            "Deleting this app will also delete its data.",
-            () => {
-            	
-           btn.parentElement.querySelectorAll('button').forEach(b => { if(b !== btn) b.style.display = 'none'; });
+    // UNINSTALL FLOW
+    let alertMsg = "Deleting this app will also delete its data.";
+    
+    // Find the exact app reference being clicked from our list cache
+    const targetAppInstance = this.apps.find(a => a.id === appId);
+    
+    if (targetAppInstance && targetAppInstance.isDeveloperRemoved) {
+        alertMsg = "Deleting this app will also delete its data.\n\nNotice: This app has been removed from the App Store by the developer. You will not be able to install it next time.";
+    } else if ((app.reportCount || 0) >= 10) {
+        alertMsg = "Deleting this app will also delete its data.\n\nNotice: This app has been removed from the App Store due to user reports. You will not be able to download it again until it's re-approved.";
+    }
+
+    iOS.showAlert(
+        `Delete "${app.name}"?`,
+        alertMsg,
+        () => {
+            btn.parentElement.querySelectorAll('button').forEach(b => { if(b !== btn) b.style.display = 'none'; });
             
-            
-                // LOCK immediately on confirm
-                btn.classList.add('loading');
-                btn.disabled = true;
-                this.performUninstall(app, btn);
-            }, 
-            true 
-        );
-    } else {
+            // LOCK immediately on confirm
+            btn.classList.add('loading');
+            btn.disabled = true;
+            this.performUninstall(app, btn);
+        }, 
+        true 
+    );
+} else {
         // INSTALL FLOW
         if (!this.isNetworkStrict()) {
             iOS.showAlert('No Connection', 'Turn off Airplane Mode or connect to Wi-Fi to install.');
