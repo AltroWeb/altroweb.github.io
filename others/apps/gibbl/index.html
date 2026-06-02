@@ -728,6 +728,19 @@ svg, .pfp-nav, .pfp-sm, .pfp-lg {
 }
         
         
+        #report-reason-select option {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            padding: 10px;
+        }
+        #report-reason-select:focus {
+            border-color: var(--text);
+            background-color: var(--bg);
+        }
+        
+        
+        
         
         
     </style>
@@ -870,6 +883,10 @@ const appCheck = initializeAppCheck(app, {
         let unsubscribeProfile = null; // PRO FIX: Profile memory management
         
         let currentView = 'home';
+        window.sessionReportCache = {}; // Holds reported postIds and timestamps for this active login session
+        
+        
+        
         window.currentViewParam = null;
         let feedSort = 'newest';
         let tempImage = null;
@@ -878,6 +895,16 @@ const appCheck = initializeAppCheck(app, {
         let isDarkMode = localStorage.getItem('gibbl_dark') === 'true';
         
         window.LIMITS = { feed: 20, profile: 20, notifs: 20, thread: 50 };
+
+        // --- AUTOMATIC CONTENT MODERATION SYSTEM ---
+        window.shouldHidePost = (post) => {
+            return (post.reportCount >= 10) && (post.authorId !== currentUser.uid);
+        };
+
+        window.getRemovalReason = (post) => {
+            if (!post.reportReasons || Object.keys(post.reportReasons).length === 0) return 'Inappropriate Content';
+            return Object.entries(post.reportReasons).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+        };
 
         // --- ICONS ---
         const getIcon = (name) => {
@@ -951,6 +978,25 @@ const appCheck = initializeAppCheck(app, {
                 currentUser = user;
                 if (user) {
                     await loadUserProfile(user.uid);
+                    
+                    // --- STRATUP MODERATION SNAPSHOT SYNC ---
+                    try {
+                        const fortyEightHoursAgo = new Date(Date.now() - (48 * 60 * 60 * 1000)).toISOString();
+                        const activeReportsQ = query(
+                            getPublicCollection('reports'),
+                            where('reporterUid', '==', user.uid),
+                            where('timestamp', '>=', fortyEightHoursAgo)
+                        );
+                        const reportsSnapshot = await getDocs(activeReportsQ);
+                        window.sessionReportCache = {};
+                        reportsSnapshot.forEach(docSnap => {
+                            const data = docSnap.data();
+                            window.sessionReportCache[data.reportedPostId] = new Date(data.timestamp).getTime();
+                        });
+                    } catch (e) {
+                        console.warn("Moderation cache warm-up skipped:", e);
+                    }
+
                     renderApp();
                     
                     
@@ -1686,7 +1732,6 @@ if(window.feedObserver) { window.feedObserver.disconnect(); window.feedObserver 
     const avatar = window.getAvatar(post.authorPfp, post.authorName);
     
     let replyingToHTML = '';
-// PRO FIX: Always show context if it's a reply, even in Main Thread view
 if (post.replyToHandle) {
     replyingToHTML = `
         <div class="replying-to" style="${isMainThread ? 'margin-bottom: 12px; font-size: 0.95rem;' : ''}">
@@ -1696,24 +1741,25 @@ if (post.replyToHandle) {
             </span>
         </div>`;
 }
-    
-    
-    
-    
-    
-    
-    
 
-let mediaHTML = '';
+    let mediaHTML = '';
     if (post.image) {
         if (post.image.startsWith('data:video/')) {
-            // Pro full-width stealth player. 100% width gives controls maximum room to breathe.
             mediaHTML = `<div style="position:relative; display:block; width:100%; margin-top:0.5rem; cursor:pointer;" onclick="event.stopPropagation(); this.querySelector('.vid-badge').style.display='none'; const v=this.querySelector('video'); v.setAttribute('controls','controls'); v.play();"><video src="${post.image}#t=0.001" style="width:100%; height:auto; display:block; margin:0; border-radius:var(--radius-md); border:1px solid var(--border); background:#000;" playsinline preload="metadata" controlsList="noplaybackrate"></video><div class="vid-badge" style="position:absolute; bottom:12px; left:12px; pointer-events:none; color:rgba(255,255,255,0.9); filter:drop-shadow(0px 2px 4px rgba(0,0,0,0.8)); display:flex;"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div></div>`;
         } else if (post.image.startsWith('data:audio/')) {
             mediaHTML = `<audio src="${post.image}" style="width:100%; margin-top:0.5rem; border-radius:var(--radius-full);" controls preload="metadata" onclick="event.stopPropagation();" controlsList="noplaybackrate"></audio>`;
         } else {
             mediaHTML = `<img src="${post.image}" onclick="event.stopPropagation(); window.showImgModal('${post.image}')">`;
         }
+    }
+
+    let removalBadge = '';
+    if (post.reportCount >= 10 && post.authorId === currentUser.uid) {
+        const primaryReason = window.getRemovalReason(post);
+        removalBadge = `
+            <div style="background: rgba(244, 33, 46, 0.08); color: var(--error); border: 1px dashed var(--error); padding: 0.7rem 1rem; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; user-select: none;">
+                REMOVED: (${primaryReason.toUpperCase()})
+            </div>`;
     }
 
     return `
@@ -1730,6 +1776,7 @@ let mediaHTML = '';
                         <span class="text-dim" style="font-size:0.85rem; flex-shrink: 0;">· ${timeAgo(post.timestamp)}</span>
                     </div>
                     ${replyingToHTML}
+                    ${removalBadge}
                     <div class="post-content break-words">${markdown(post.content)}${mediaHTML}<span style="display:none;">${post.tags || ''}</span></div>
                     <div class="post-actions">
                         <button class="action-btn" onclick="event.stopPropagation(); window.setView('thread', '${post.id}')">
@@ -1743,7 +1790,14 @@ let mediaHTML = '';
                         </button>
                         ${post.authorId === currentUser.uid ? `
                             <button class="action-btn" onclick="event.stopPropagation(); window.deletePost('${post.id}')">${getIcon('trash-2')}</button>
-                        ` : ''}
+                        ` : `
+                            <button class="action-btn" id="flag-${post.id}" onclick="event.stopPropagation(); window.openReportModal('${post.id}', '${post.authorHandle}')" title="Report Content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+    <line x1="4" y1="22" x2="4" y2="15"></line>
+</svg>
+                            </button>
+                        `}
                     </div>
                 </div>
             </div>
@@ -1800,6 +1854,16 @@ let mediaHTML = '';
                 const resolvePromises = changes.map(async (change) => {
                     const post = { id: change.doc.id, ...change.doc.data() };
                     if (post.replyTo) return null; 
+                    
+                    if (window.shouldHidePost(post)) {
+                        const existingEl = document.getElementById(`post-${post.id}`);
+                        if (existingEl) existingEl.remove();
+                        return null;
+                    }
+                    
+                    
+                    
+                    
                     const isLiked = post.likes && post.likes.includes(currentUser.uid);
                     
                     if (change.type === 'added' && !document.getElementById(`post-${post.id}`)) {
@@ -2401,7 +2465,12 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                     if(!pList || currentView !== 'profile') return;
 
                     let posts = [];
-                    snap.forEach(d => posts.push({id: d.id, ...d.data()}));
+                    snap.forEach(d => {
+                        const pData = {id: d.id, ...d.data()};
+                        if (!window.shouldHidePost(pData)) {
+                            posts.push(pData);
+                        }
+                    });
                     posts.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                     
                     // 1. Initial Load
@@ -3113,7 +3182,9 @@ const renderSearch = async (container) => {
                     
                     snap.forEach(doc => {
                         const p = {id: doc.id, ...doc.data()};
-                        if ((p.content && p.content.toLowerCase().includes(val.trim())) || 
+                        if (window.shouldHidePost(p)) return;
+                        
+                        if ((p.content && p.content.toLowerCase().includes(val.trim())) ||
                             (p.tags && p.tags.toLowerCase().includes(val.trim())) || 
                             (p.authorName && p.authorName.toLowerCase().includes(val.trim())) || 
                             (p.authorHandle && p.authorHandle.toLowerCase().includes(val.trim()))) {
@@ -3850,8 +3921,87 @@ setTimeout(() => {
             
             list.innerHTML = fullHTML;
         };
-        
-        
+
+        // --- HIGH-PERFORMANCE SECURE MODERATION ENGINE ---
+        window.openReportModal = (postId, authorHandle) => {
+            // 1. Instant Memory Matrix Evaluation (0 Database Reads)
+            const priorIncidentTimestamp = window.sessionReportCache[postId];
+
+            if (priorIncidentTimestamp) {
+                const elapsedTimelineDelta = (Date.now() - priorIncidentTimestamp) / (1000 * 60 * 60);
+                if (elapsedTimelineDelta < 48) {
+                    const remainderLockoutDuration = Math.ceil(48 - elapsedTimelineDelta);
+                    window.showModal('Action Locked', `You have already filed a report against this content. Lock lifted in ${remainderLockoutDuration} hours.`, null, false);
+                    return;
+                }
+            }
+
+            // 2. High-Fidelity Custom Dropdown Template
+            const selectionInterfaceTemplate = `
+                <div class="flex flex-col gap-2" style="text-align: left; margin-top: 1.2rem; width: 100%;">
+                    <label class="text-xs bold text-dim" style="text-transform: uppercase; letter-spacing: 0.5px;">Reason for Content Report:</label>
+                    <div style="position: relative; width: 100%;">
+                        <select id="report-reason-select" class="custom-input" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); width: 100%; color: var(--text); padding: 1.1rem 2.5rem 1.1rem 1.1rem; font-size: 0.95rem; font-family: var(--font-head); font-weight: 700; cursor: pointer; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, background 0.2s;">
+                            <option value="Inappropriate Content">Inappropriate Content</option>
+                            <option value="Abuse or Harassment">Abuse or Harassment</option>
+                            <option value="Hate Speech">Hate Speech</option>
+                            <option value="Spam and Scams">Spam and Scams</option>
+                            <option value="Violence or Harm">Violence or Harm</option>
+                            <option value="Intellectual Property Violation">Intellectual Property Violation</option>
+                        </select>
+                        <div style="position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--dim); display: flex; align-items: center; justify-content: center;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                </div>`;
+
+            window.showModal(`Report Content`, `Report this post by ${authorHandle}?`, async () => {
+                const processingSelectorNode = document.getElementById('report-reason-select');
+                const prioritizedReasonString = processingSelectorNode ? processingSelectorNode.value : 'Inappropriate Content';
+                const confirmationTriggerNode = document.getElementById('modal-confirm');
+                
+                window.setLoading(confirmationTriggerNode, true);
+
+                try {
+                    const uniqueIncidentId = `${postId}_${currentUser.uid}`;
+                    const submissionTimeNow = Date.now();
+
+                    // File the permanent structural block entry
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reports', uniqueIncidentId), {
+                        reportId: uniqueIncidentId,
+                        reportedPostId: postId,
+                        reporterHandle: currentProfile.handle,
+                        reporterUid: currentUser.uid,
+                        reason: prioritizedReasonString,
+                        timestamp: new Date(submissionTimeNow).toISOString()
+                    });
+
+                    // Mutate targeting document state counts
+                    const targetingDocumentReference = getPublicDoc('posts', postId);
+                    const targetedSnapshotMetadata = await getDoc(targetingDocumentReference);
+
+                    if (targetedSnapshotMetadata.exists()) {
+                        const documentActiveState = targetedSnapshotMetadata.data();
+                        const dynamicReasonsDataMatrix = documentActiveState.reportReasons || {};
+                        dynamicReasonsDataMatrix[prioritizedReasonString] = (dynamicReasonsDataMatrix[prioritizedReasonString] || 0) + 1;
+
+                        await updateDoc(targetingDocumentReference, {
+                            reportCount: (documentActiveState.reportCount || 0) + 1,
+                            reportReasons: dynamicReasonsDataMatrix
+                        });
+                    }
+
+                    // Dynamically push the restriction token into memory cache without reading database
+                    window.sessionReportCache[postId] = submissionTimeNow;
+
+                    window.closeModal();
+                    setTimeout(() => { window.showToast('Report submitted for verification.'); }, 150);
+                } catch (executionException) {
+                    window.closeModal();
+                    setTimeout(() => { window.showModal('Error', executionException.message); }, 300);
+                }
+            }, true, selectionInterfaceTemplate);
+        };
         
         
         
