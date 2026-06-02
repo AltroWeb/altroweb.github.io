@@ -4413,18 +4413,34 @@ handleIAPFile(file) {
 installIAP(pkg) {
         // 1. Construct App Object
         const appId = pkg.meta.id || 'iap_' + Date.now();
+        
+        // --- PRO LIFE-CYCLE TRACKING ---
+        const existingApp = this.apps.find(a => a.id === appId);
+        
+        // Keeps the developer's original build/export timestamp intact
+        const resolvedCreated = pkg.meta.created || Date.now();
+        const resolvedUpdated = existingApp ? Date.now() : resolvedCreated;
+        
+        // Track local install history: if it's an overwrite, keep the original device install time.
+        // If it's a fresh install, stamp right now.
+        const localInstalledTime = existingApp ? (existingApp.localInstalledAt || existingApp.updatedAt || Date.now()) : Date.now();
+
         const appData = {
             id: appId,
             name: pkg.meta.name,
-            description: pkg.meta.description || '', // ⚡ FIXED: Now extracts desc from package
+            description: pkg.meta.description || '', 
             iconUrl: pkg.meta.icon,
             author: pkg.meta.author || 'Sideloaded Package',
             type: pkg.meta.type,
-            embedUrl: '', // Will be filled below
-            isPacked: true, // Flag to disable editing
+            embedUrl: '', 
+            isPacked: true, 
             
-            createdAt: pkg.meta.created || Date.now(),
-            updatedAt: pkg.meta.created || Date.now()
+            createdAt: resolvedCreated, // Original file birth certificate
+            updatedAt: resolvedUpdated, // Local last-updated date
+            
+            // --- THE NEW TRACKERS ---
+            localInstalledAt: localInstalledTime,
+            isIAPUpdate: existingApp ? true : false
         };
 
         // 2. Handle Payload (Native vs Legacy)
@@ -4765,16 +4781,28 @@ async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
             let timeHTML = '';
             if (app.createdAt || app.updatedAt) {
                 const createdStr = this.formatTime(app.createdAt || app.updatedAt);
-                // Replace the updatedStr logic with this:
-// REPLACE your current isModified logic with this:
+          
+
+
+      // --- PRO TIME-LINE LIFECYCLE FLASH RENDERING ---
+// 1. Render Local Installed time ONLY if it is an IAP package file
+const localInstalledStr = (app.isPacked && app.localInstalledAt)
+    ? `<br><span style="color:var(--accent);">Installed: ${this.formatTime(app.localInstalledAt)}</span>`
+    : '';
+
+// 2. Core Update execution handler block
 const isModified = app.updatedAt && (app.updatedAt > (app.createdAt || 0) + 1000);
+
 const hasContentChange = app.description && app.description.trim() !== "";
 
-// Force show 'Updated' if there is a real time gap AND it's not a fresh install
-const updatedStr = (isModified && !app.isPacked) 
+
+const updatedStr = ((isModified && !app.isPacked) || app.isIAPUpdate) 
     ? `<br><span style="color:var(--accent);">Updated: ${this.formatTime(app.updatedAt)}</span>` 
     : '';
-                timeHTML = `<div style="font-size:10.5px; color:#8E8E93; margin-top:4px; line-height:1.4;">Created: ${createdStr}${updatedStr}</div>`;
+    
+    
+    
+                timeHTML = `<div style="font-size:10.5px; color:#8E8E93; margin-top:4px; line-height:1.4;">Created: ${createdStr}${localInstalledStr}${updatedStr}</div>`;
             }
             
             
