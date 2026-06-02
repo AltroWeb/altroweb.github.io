@@ -1580,6 +1580,14 @@ body.dark-mode #sl-tab-preview[style*="600"] {
                                 <span>Dark Mode</span>
                                 <input type="checkbox" class="ios-switch" onchange="iOS.toggleDarkMode(this)">
                             </div>
+                            
+                            <div class="ios-row">
+        <span>24-Hour Time</span>
+        <input type="checkbox" class="ios-switch" id="setting-24hr" onchange="iOS.toggle24Hour(this)">
+    </div>
+                            
+                            
+                            
                         </div>
 
                         <div class="section-header">Connectivity</div>
@@ -5150,7 +5158,7 @@ const SecureStorage = {
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
                 'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects', 'ios_untrusted_fs',
                 'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
-                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled', 'ios_untrusted_godmode'
+                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled', 'ios_untrusted_godmode', 'ios_24hr_mode'
             ];
             settingsKeys.forEach(k => localStorage.removeItem(k));
 
@@ -5208,7 +5216,8 @@ const SecureStorage = {
                 'setting-untrusted-fs': false,
                 'setting-untrusted-island': false,
                 'setting-untrusted-links': true,
-                'setting-untrusted-godmode': false
+                'setting-untrusted-godmode': false,
+                'setting-24hr': true
             };
 
             // Fix the dark mode toggle (it lacks an ID in the HTML)
@@ -5693,7 +5702,10 @@ if (untrustedIslandSwitch) untrustedIslandSwitch.checked = savedUntrustedIsland;
                 
                 
                 
-                
+                const saved24Hr = localStorage.getItem('ios_24hr_mode') !== 'false'; // Default to true if not set
+    this.is24Hr = saved24Hr;
+    const hrSwitch = document.getElementById('setting-24hr');
+    if (hrSwitch) hrSwitch.checked = saved24Hr;
                 
                 
                 // Append this target execution row right inside your IOSEngine.initSettings() pipeline
@@ -5807,6 +5819,16 @@ toggleIslandEvents(el) {
     this.islandEventsEnabled = el.checked;
     localStorage.setItem('ios_island_enabled', el.checked);
 }
+
+
+
+toggle24Hour(el) {
+    const is24Hr = el.checked;
+    localStorage.setItem('ios_24hr_mode', is24Hr);
+    this.is24Hr = is24Hr;
+    this.updateClock(); // Force an immediate refresh
+}
+
 
 
 
@@ -6762,12 +6784,24 @@ this.checkWallpaperBrightness();
             }
 
             initClock() {
-                setInterval(() => {
-                    const now = new Date();
-                    document.getElementById('clock').innerText = 
-                        `${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
-                }, 1000);
-            }
+    setInterval(() => {
+        const now = new Date();
+        let hours = now.getHours();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        
+        let timeString;
+        if (this.is24Hr) {
+            timeString = `${hours}:${minutes}`;
+        } else {
+            const ampm = hours >= 12 ? ' PM' : ' AM';
+            hours = hours % 12 || 12; // Convert 0 to 12 for midnight
+            timeString = `${hours}:${minutes}`;
+        }
+        
+        const clockEl = document.getElementById('clock');
+        if (clockEl) clockEl.innerText = timeString;
+    }, 1000);
+}
 
             getIconTransform(iconEl) {
                 if (!iconEl) return { scaleX: 0.5, scaleY: 0.5, transX: 0, transY: 0 };
