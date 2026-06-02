@@ -1728,6 +1728,20 @@ if(window.feedObserver) { window.feedObserver.disconnect(); window.feedObserver 
 
 
         const buildPostHTML = async (post, isLiked, isMainThread = false) => {
+        	
+        
+        // --- THE PRO GLOBAL KILLER ---
+    // If the post is reported/banned, return an empty string or a "Hidden" placeholder
+    if (window.shouldHidePost(post) && post.authorId !== currentUser.uid) {
+        return `<div class="post-card" style="pointer-events: none;">
+                    <div style="padding: 1rem; color: var(--dim); font-size: 0.85rem; font-style: italic;">
+                        Content removed due to community reports.
+                    </div>
+                </div>`;
+    }
+        
+        
+        
     const isVerified = await window.checkVerified(post.authorId);
     const avatar = window.getAvatar(post.authorPfp, post.authorName);
     
