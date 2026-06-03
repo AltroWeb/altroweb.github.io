@@ -1560,7 +1560,7 @@ window.handleHashtagClick = (tag) => {
                     
 <!-- PRO FIX: Natural Document Flow Footer with Legal Links -->
                     <div class="text-dim w-full" style="padding-top: 2rem; margin-top: auto; font-size: 0.7rem; line-height: 1.6;">
-                        <div style="margin-bottom: 20px; opacity: 0.6;">
+                        <div style="margin-bottom: 20px; opacity: 0.7;">
                             Protected by reCAPTCHA. Google <a href="https://policies.google.com/privacy" style="text-decoration:underline;">Privacy</a> & <a href="https://policies.google.com/terms" style="text-decoration:underline;">Terms</a> apply.
                         </div>
                         
@@ -1575,7 +1575,7 @@ window.handleHashtagClick = (tag) => {
                                 <a href="legal.html#terms" style="color: var(--text); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: 0.35; transition: 0.3s ease; text-decoration: none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.35'">Terms</a>
                             </div>
 
-                            <div style="opacity: 0.4; margin-top: 4px;">&copy; gibbl Social. All rights reserved.</div>
+                            <div style="opacity: 0.7; margin-top: 4px;">&copy; gibbl Social. All rights reserved.</div>
                         </div>
                     </div>
                 </div> `;
@@ -1734,7 +1734,7 @@ if(window.feedObserver) { window.feedObserver.disconnect(); window.feedObserver 
     // If the post is reported/banned, return an empty string or a "Hidden" placeholder
     if (window.shouldHidePost(post) && post.authorId !== currentUser.uid) {
         return `<div class="post-card" style="pointer-events: none;">
-                    <div style="padding: 1rem; color: var(--dim); font-size: 0.85rem; font-style: italic;">
+                    <div style="padding: 1rem; color: var(--dim); font-style: italic; text-align: center;">
                         Content removed due to community reports.
                     </div>
                 </div>`;
