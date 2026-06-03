@@ -2980,15 +2980,38 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
 
 
 
-// A reusable component to keep our HTML clean
+// Global verification cache to prevent duplicate Firestore network lookups
+window.verifiedCache = window.verifiedCache || {};
+
 window.buildUserRow = (u) => {
     const safeName = u.displayName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const uniqueBadgeId = `badge-hydrate-${u.uid}-${Math.random().toString(36).substring(2, 7)}`;
+    
+    // Check if we have already resolved this user's verification badge status
+    const cachedBadge = window.verifiedCache[u.uid];
+    const initialBadgeHTML = typeof cachedBadge === 'string' ? cachedBadge : '';
+
+    // If it's not cached yet, fetch it asynchronously and update the DOM + Cache
+    if (cachedBadge === undefined) {
+        window.verifiedCache[u.uid] = null; // Mark as pending
+        window.checkVerified(u.uid).then(badgeHtml => {
+            window.verifiedCache[u.uid] = badgeHtml || ''; // Store HTML string or empty
+            if (badgeHtml) {
+                const targetNode = document.getElementById(uniqueBadgeId);
+                if (targetNode) targetNode.innerHTML = badgeHtml;
+            }
+        });
+    }
+
     return `
          <div class="user-row pointer" onclick="window.setView('profile', '${u.uid}')">
              <div class="user-info-row">
                  <img src="${window.getAvatar(u.pfp, u.displayName)}" class="pfp-sm">
                  <div>
-                    <div class="bold display-name" style="width:200px;"><span class="display-name-text">${safeName}</span></div>
+                    <div class="bold display-name" style="width:200px; display: flex; align-items: center; gap: 4px;">
+                        <span class="display-name-text">${safeName}</span>
+                        <span id="${uniqueBadgeId}" style="display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">${initialBadgeHTML}</span>
+                    </div>
                     <div class="text-xs text-dim handle" style="width:200px;">${u.handle}</div>
                  </div>
              </div>
