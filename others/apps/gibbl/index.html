@@ -977,6 +977,23 @@ const appCheck = initializeAppCheck(app, {
             onAuthStateChanged(auth, async (user) => {
                 currentUser = user;
                 if (user) {
+                    // Start a live document listener on the user's profile
+                    if (window.unsubscribeUserProfileSync) window.unsubscribeUserProfileSync();
+                    window.unsubscribeUserProfileSync = onSnapshot(getPublicDoc('profiles', user.uid), (docSnap) => {
+                        if (docSnap.exists()) {
+                            currentProfile = docSnap.data();
+                            if (currentProfile.mentionsEnabled === undefined) currentProfile.mentionsEnabled = true;
+                            
+                            // Live UI Sync: If the user is currently staring at their connection list when a change happens, update it live!
+                            if (currentView === 'connections') {
+                                const activeTab = window.currentViewParam; // 'followers' or 'following'
+                                const content = document.getElementById('main-content');
+                                if (content) renderConnections(content, activeTab);
+                            }
+                        }
+                    });
+
+                    // Wait a tiny fraction for the initial profile profile snapshot cache array to warm up before building views
                     await loadUserProfile(user.uid);
                     
                     // --- STRATUP MODERATION SNAPSHOT SYNC ---
@@ -1344,8 +1361,20 @@ html = html.replace(/(?:^|\s)#([^\s()<>«»"']*(?:[\p{Emoji_Presentation}\p{Exte
 };
 
         window.handleMentionClick = async (handle) => {
-            const snap = await getDocs(getPublicCollection('profiles'));
-            snap.forEach(d => { if (d.data().handle === handle) window.setView('profile', d.data().uid); });
+            // Protect lookups from trailing punctuation markers
+            const cleanHandle = handle.trim().toLowerCase();
+            try {
+                const handleRegistryRef = getPublicDoc('handleRegistry', cleanHandle);
+                const registrySnap = await getDoc(handleRegistryRef);
+                
+                if (registrySnap.exists()) {
+                    window.setView('profile', registrySnap.data().uid);
+                } else {
+                    window.showToast('User profile not found.');
+                }
+            } catch (e) {
+                console.error("Mention routing failed:", e);
+            }
         };
 
 
@@ -2200,11 +2229,13 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
             if (!txt.trim() && !tempReplyImage) return;
             
             let mediaTags = '';
-            if (tempReplyImage) {
-                const tagEl = document.getElementById('reply-media-tags');
-                if (!tagEl || !tagEl.value.trim()) return window.showModal('Required', 'You MUST add tags to your media before posting.');
-                mediaTags = tagEl.value.trim().toLowerCase();
-            }
+                if (tempImage || tempReplyImage) {
+                    const targetInputId = tempImage ? 'post-media-tags' : 'reply-media-tags';
+                    const tagEl = document.getElementById(targetInputId);
+                    if (!tagEl || !tagEl.value.trim()) return window.showModal('Required', 'You MUST add tags to your media before posting.');
+                    // Strips tags down to lowercase alpha-numeric values, removing injection script tags completely
+                    mediaTags = tagEl.value.trim().toLowerCase().replace(/[^a-z0-9\s,._-]/g, '');
+                }
 
             window.setLoading(btn, true);
 
@@ -2275,10 +2306,12 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 if (!txt.trim() && !tempImage) return;
                 
                 let mediaTags = '';
-                if (tempImage) {
-                    const tagEl = document.getElementById('post-media-tags');
+                if (tempImage || tempReplyImage) {
+                    const targetInputId = tempImage ? 'post-media-tags' : 'reply-media-tags';
+                    const tagEl = document.getElementById(targetInputId);
                     if (!tagEl || !tagEl.value.trim()) return window.showModal('Required', 'You MUST add tags to your media before posting.');
-                    mediaTags = tagEl.value.trim().toLowerCase();
+                    // Strips tags down to lowercase alpha-numeric values, removing injection script tags completely
+                    mediaTags = tagEl.value.trim().toLowerCase().replace(/[^a-z0-9\s,._-]/g, '');
                 }
                 
                 
@@ -2308,16 +2341,28 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                     await setDoc(newPostRef, postData);
                     await notifyMentions(txt, newPostRef.id);
 
-                    if (!replyToId && currentProfile.followers && currentProfile.followers.length > 0) {
-                        const batch = writeBatch(db);
-                        const followersToNotify = currentProfile.followers.slice(0, 100);
-                        followersToNotify.forEach(followerId => {
-                            batch.set(doc(getPublicCollection('notifications')), {
-                                receiverId: followerId, senderId: currentUser.uid, senderName: currentProfile.displayName,
-                                type: 'post', postId: newPostRef.id, read: false, timestamp: new Date().toISOString()
+   if (!replyToId && currentProfile.followers && currentProfile.followers.length > 0) {
+                        const totalFollowers = currentProfile.followers;
+                        const CHUNK_SIZE = 450; // Under the hard 500 atomic ceiling to prevent batch errors
+
+                        for (let i = 0; i < totalFollowers.length; i += CHUNK_SIZE) {
+                            const currentBatch = writeBatch(db);
+                            const currentChunk = totalFollowers.slice(i, i + CHUNK_SIZE);
+
+                            currentChunk.forEach(followerId => {
+                                const newNotifRef = doc(getPublicCollection('notifications'));
+                                currentBatch.set(newNotifRef, {
+                                    receiverId: followerId, 
+                                    senderId: currentUser.uid, 
+                                    senderName: currentProfile.displayName,
+                                    type: 'post', 
+                                    postId: newPostRef.id, 
+                                    read: false, 
+                                    timestamp: new Date().toISOString()
+                                });
                             });
-                        });
-                        await batch.commit();
+                            await currentBatch.commit(); // Resolves sequentially to avoid connection blocking
+                        }
                     }
 
                     tempImage = null;
@@ -2715,11 +2760,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
             
             const pass = document.getElementById('edit-pass').value;
             const mentionsEnabled = document.getElementById('edit-mentions').checked;
-            
-            
-            
-const mediaEnabled = document.getElementById('edit-media').checked; 
-            
+            const mediaEnabled = document.getElementById('edit-media').checked; 
             
             let pfp = document.getElementById('edit-pfp').value.trim();
             let newHandle = document.getElementById('edit-handle').value.trim().toLowerCase();
@@ -2749,14 +2790,19 @@ const mediaEnabled = document.getElementById('edit-media').checked;
 
             try {
                 let passwordChanged = false;
-                if (pass) { if (unsubscribeSecurity) unsubscribeSecurity(); await updateDoc(getPublicDoc('profiles', currentUser.uid), { lastRevokeTime: Date.now() }); await updatePassword(currentUser, pass); passwordChanged = true; }
+                if (pass) { 
+                    if (unsubscribeSecurity) unsubscribeSecurity(); 
+                    await updateDoc(getPublicDoc('profiles', currentUser.uid), { lastRevokeTime: Date.now() }); 
+                    await updatePassword(currentUser, pass); 
+                    passwordChanged = true; 
+                }
 
                 const isVerified = await window.checkVerified(currentUser.uid);
                 document.querySelectorAll(`.pfp-uid-${currentUser.uid}`).forEach(el => el.src = window.getAvatar(pfp, name));
                 document.querySelectorAll(`.name-uid-${currentUser.uid}`).forEach(el => el.innerHTML = `<span class="display-name-text">${name}</span> ${isVerified}`);
                 document.querySelectorAll(`.handle-uid-${currentUser.uid}`).forEach(el => el.innerText = newHandle);
 
-                // PRO FIX: Chunked Batching for Profile Sync
+                // Build core registration changes array
                 let operations = [];
                 
                 if (newHandle !== currentProfile.handle) {
@@ -2765,24 +2811,25 @@ const mediaEnabled = document.getElementById('edit-media').checked;
                 }
                 
                 const profileUpdateData = { displayName: name, handle: newHandle, bio: bio, pfp: pfp, mentionsEnabled: mentionsEnabled, mediaEnabled: mediaEnabled };
-                
-                
-                
-                if (passwordChanged) profileUpdateData.lastRevokeTime = Date.now(); // KILL SWITCH
+                if (passwordChanged) profileUpdateData.lastRevokeTime = Date.now();
                 
                 operations.push({ 
                     type: 'update', ref: getPublicDoc('profiles', currentUser.uid), 
                     data: profileUpdateData
                 });
 
-                // PRO FIX: Targeted Query
-                const myPostsQ = query(getPublicCollection('posts'), where('authorId', '==', currentUser.uid));
-                const postsSnap = await getDocs(myPostsQ);
-                postsSnap.forEach(d => {
-                    operations.push({ type: 'update', ref: d.ref, data: { authorHandle: newHandle, authorName: name, authorPfp: pfp } });
-                });
+                // Safety bubble for background timeline propagation
+                try {
+                    const myPostsQ = query(getPublicCollection('posts'), where('authorId', '==', currentUser.uid));
+                    const postsSnap = await getDocs(myPostsQ);
+                    postsSnap.forEach(d => {
+                        operations.push({ type: 'update', ref: d.ref, data: { authorHandle: newHandle, authorName: name, authorPfp: pfp } });
+                    });
+                } catch (timelineErr) {
+                    console.warn("Timeline batch gathering skipped or unindexed:", timelineErr);
+                }
 
-                // Execute safely in chunks of 450
+                // Execute transactional mutations safely in chunks of 450 items
                 for (let i = 0; i < operations.length; i += 450) {
                     const batch = writeBatch(db);
                     const chunk = operations.slice(i, i + 450);
@@ -2794,12 +2841,16 @@ const mediaEnabled = document.getElementById('edit-media').checked;
                     await batch.commit();
                 }
 
-                currentProfile.displayName = name; currentProfile.handle = newHandle;
-currentProfile.bio = bio; currentProfile.pfp = pfp; currentProfile.mentionsEnabled = mentionsEnabled; currentProfile.mediaEnabled = mediaEnabled;
+                // Sync internal user session states
+                currentProfile.displayName = name; 
+                currentProfile.handle = newHandle;
+                currentProfile.bio = bio; 
+                currentProfile.pfp = pfp; 
+                currentProfile.mentionsEnabled = mentionsEnabled; 
+                currentProfile.mediaEnabled = mediaEnabled;
 
-
-
-                window.tempPfpData = null; document.getElementById('edit-pass').value = '';
+                window.tempPfpData = null; 
+                if (document.getElementById('edit-pass')) document.getElementById('edit-pass').value = '';
                 
                 window.setLoading(btn, false);
                 
@@ -2881,44 +2932,40 @@ currentProfile.bio = bio; currentProfile.pfp = pfp; currentProfile.mentionsEnabl
             const handle = currentProfile?.handle;
             const myFollowers = currentProfile.followers || [];
             const myFollowing = currentProfile.following || [];
-            let operations = [];
             
-            // 1. CLEAR CONNECTIONS (The "Unfollow All" Logic)
-            // Remove ME from the 'following' list of people who follow me
+            // Phase 1: Clear Account Graphs & Registry Indices
+            let graphBatch = writeBatch(db);
             myFollowers.forEach(followerId => {
-                operations.push({ type: 'update', ref: getPublicDoc('profiles', followerId), data: { following: arrayRemove(uid) } });
+                graphBatch.update(getPublicDoc('profiles', followerId), { following: arrayRemove(uid) });
             });
-            // Remove ME from the 'followers' list of people I follow
             myFollowing.forEach(followedId => {
-                operations.push({ type: 'update', ref: getPublicDoc('profiles', followedId), data: { followers: arrayRemove(uid) } });
+                graphBatch.update(getPublicDoc('profiles', followedId), { followers: arrayRemove(uid) });
             });
+            if (handle) graphBatch.delete(getPublicDoc('handleRegistry', handle));
+            graphBatch.delete(getPublicDoc('profiles', uid));
+            await graphBatch.commit();
 
-            // 2. WIPE CONTENT
-            const myPostsSnap = await getDocs(query(getPublicCollection('posts'), where('authorId', '==', uid)));
-            myPostsSnap.forEach(d => operations.push({ type: 'delete', ref: d.ref }));
+            // Phase 2: Memory-Bounded Targeted Queries (Clears thousands of posts sequentially without crashing)
+            const cleanCollectionSequentially = async (queryInstance, deletionType = 'delete') => {
+                let activeSnapshot = await getDocs(query(queryInstance, limit(200)));
+                while (!activeSnapshot.empty) {
+                    const iterativeBatch = writeBatch(db);
+                    activeSnapshot.forEach(documentDoc => {
+                        if (deletionType === 'delete') {
+                            iterativeBatch.delete(documentDoc.ref);
+                        } else {
+                            iterativeBatch.update(documentDoc.ref, { likes: arrayRemove(uid) });
+                        }
+                    });
+                    await iterativeBatch.commit();
+                    activeSnapshot = await getDocs(query(queryInstance, limit(200)));
+                }
+            };
 
-            // --- NEW: THE GHOST LIKE PURGER ---
-            const likedPostsSnap = await getDocs(query(getPublicCollection('posts'), where('likes', 'array-contains', uid)));
-            likedPostsSnap.forEach(d => {
-                operations.push({ type: 'update', ref: d.ref, data: { likes: arrayRemove(uid) } });
-            });
-            // ----------------------------------
-
-            const notifsSnap = await getDocs(query(getPublicCollection('notifications'), where('receiverId', '==', uid)));
-            notifsSnap.forEach(d => operations.push({ type: 'delete', ref: d.ref }));
-
-            if (handle) operations.push({ type: 'delete', ref: getPublicDoc('handleRegistry', handle) });
-            operations.push({ type: 'delete', ref: getPublicDoc('profiles', uid) });
-
-            // Execute in Chunks
-            for (let i = 0; i < operations.length; i += 450) {
-                const batch = writeBatch(db);
-                operations.slice(i, i + 450).forEach(op => {
-                    if (op.type === 'delete') batch.delete(op.ref);
-                    if (op.type === 'update') batch.update(op.ref, op.data);
-                });
-                await batch.commit();
-            }
+            // Pure structural clear steps
+            await cleanCollectionSequentially(query(getPublicCollection('posts'), where('authorId', '==', uid)), 'delete');
+            await cleanCollectionSequentially(query(getPublicCollection('posts'), where('likes', 'array-contains', uid)), 'unlike');
+            await cleanCollectionSequentially(query(getPublicCollection('notifications'), where('receiverId', '==', uid)), 'delete');
 
             await currentUser.delete();
             window.location.reload();
@@ -3336,19 +3383,35 @@ const renderSearch = async (container) => {
             }, (err) => {});
         };
 
-        window.clearNotifications = async () => {
-            const snap = await getDocs(getPublicCollection('notifications'));
-            window.showModal('Clear', 'Clear all notifications?', async () => {
-                const batch = writeBatch(db);
-                snap.forEach(d => {
-                    if (d.data().receiverId === currentUser.uid) batch.delete(d.ref);
-                });
-                await batch.commit();
-                window.setView('notifications');
-                
-                // FIX: Close modal on success
-                window.closeModal(); 
-                
+        window.clearNotifications = () => {
+            window.showModal('Clear All', 'Are you sure you want to permanently clear your notification history?', async () => {
+                try {
+                    // 1. Constrain query directly to match Security Rules to avoid permission blocks
+                    const targetNotifQuery = query(
+                        getPublicCollection('notifications'), 
+                        where('receiverId', '==', currentUser.uid),
+                        limit(400) // Stay safely below the 500-batch limit per pass
+                    );
+
+                    let snapshotInstance = await getDocs(targetNotifQuery);
+                    
+                    // 2. Loop page by page to handle accounts with thousands of accumulated logs
+                    while (!snapshotInstance.empty) {
+                        const executionBatch = writeBatch(db);
+                        snapshotInstance.forEach(notificationDoc => {
+                            executionBatch.delete(notificationDoc.ref);
+                        });
+                        await executionBatch.commit();
+                        snapshotInstance = await getDocs(targetNotifQuery);
+                    }
+
+                    window.closeModal();
+                    window.setView('notifications');
+                    setTimeout(() => { window.showToast('Notification logs cleared.'); }, 150);
+                } catch (err) {
+                    window.closeModal();
+                    setTimeout(() => { window.showModal('Execution Error', err.message); }, 300);
+                }
             }, true);
         };
 
@@ -3627,15 +3690,24 @@ window.removeFollower = (targetUid, targetHandle) => {
             const myRef = getPublicDoc('profiles', currentUser.uid);
             const targetRef = getPublicDoc('profiles', targetUid);
             
-            // 1. Update your local cache instantly
+            // 1. Clear local cache arrays immediately
             currentProfile.followers = currentProfile.followers.filter(id => id !== targetUid);
             
-            // 2. Remove them from your followers, and remove you from their following list
+            window.closeModal();
+
+            // 2. Perform database synchronization updates
             await updateDoc(myRef, { followers: arrayRemove(targetUid) });
             await updateDoc(targetRef, { following: arrayRemove(currentUser.uid) });
             
-            window.closeModal();
-            window.setView('profile', targetUid); // Refresh the UI
+            // 3. FORCE SCREEN RELOAD ROUTINE: Settles the server writes before refreshing the profile view state
+            setTimeout(() => {
+                if (currentView === 'profile') {
+                    window.setView('profile', targetUid);
+                } else if (currentView === 'connections') {
+                    window.setView('connections', 'followers');
+                }
+            }, 150);
+            
         } catch(e) {
             window.closeModal();
             setTimeout(() => window.showModal('Error', getGibblError(e)), 300);
@@ -3654,24 +3726,51 @@ window.removeFollower = (targetUid, targetHandle) => {
     const targetRef = getPublicDoc('profiles', targetUid);
     
     if(!currentProfile.following.includes(targetUid)) {
-        // Follow (No confirmation needed)
-        currentProfile.following.push(targetUid);
-        await updateDoc(myRef, { following: arrayUnion(targetUid) });
-        await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
-        await addDoc(getPublicCollection('notifications'), {
-            receiverId: targetUid, senderId: currentUser.uid, senderName: currentProfile.displayName,
-            type: 'follow', read: false, timestamp: new Date().toISOString()
-        });
-        window.setView('profile', targetUid); 
+        // --- SECURE FOLLOW CORE ---
+        if (!currentProfile.following.includes(targetUid)) currentProfile.following.push(targetUid);
+        
+        try {
+            await updateDoc(myRef, { following: arrayUnion(targetUid) });
+            await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
+            await addDoc(getPublicCollection('notifications'), {
+                receiverId: targetUid, senderId: currentUser.uid, senderName: currentProfile.displayName,
+                type: 'follow', read: false, timestamp: new Date().toISOString()
+            });
+            
+            // FORCE SCREEN RELOAD ROUTINE: Re-syncs counts and lists completely
+            setTimeout(() => {
+                if (currentView === 'profile' && window.currentViewParam === targetUid) {
+                    window.setView('profile', targetUid);
+                }
+            }, 150);
+        } catch(e) {
+            currentProfile.following = currentProfile.following.filter(id => id !== targetUid);
+            window.setView('profile', targetUid);
+            console.warn("Follow update failed:", e);
+        }
     } else {
-        // Unfollow (WITH confirmation)
+        // Unfollow (WITH confirmation modal mechanism)
         window.showModal('Unfollow', `Are you sure you want to unfollow ${targetHandle}?`, async () => {
             currentProfile.following = currentProfile.following.filter(id => id !== targetUid);
-            await updateDoc(myRef, { following: arrayRemove(targetUid) });
-            await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
             
             window.closeModal();
-            window.setView('profile', targetUid); 
+
+            try {
+                await updateDoc(myRef, { following: arrayRemove(targetUid) });
+                await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
+                
+                // FORCE SCREEN RELOAD ROUTINE: Clear unfollow records and refresh states instantly
+                setTimeout(() => {
+                    if (currentView === 'profile' && window.currentViewParam === targetUid) {
+                        window.setView('profile', targetUid);
+                    } else if (currentView === 'connections') {
+                        window.setView('connections', 'following');
+                    }
+                }, 150);
+            } catch(e) {
+                window.setView('profile', targetUid);
+                console.warn("Unfollow update failed:", e);
+            }
         }, true);
     }
 };
