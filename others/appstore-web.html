@@ -877,7 +877,15 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
     word-break: break-word !important;
 }
 
-
+#dev-profile-card .verified-badge{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    
+    top: 0px !important;
+    
+}
 
 #dev-profile-card .dev-bio, .dev-bio {
     margin: 0 !important;
@@ -1427,7 +1435,7 @@ clearSearch() {
     if (badgeType === 'member') {
         badgeEl.innerHTML = `<span class="verified-badge member verified-badge-large"><svg viewBox="0 0 12 12"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#007AFF" stroke-width="2" fill="none"/></svg></span>`;
     } else if (badgeType === 'verified') {
-        badgeEl.innerHTML = `<span class="verified-badge verified" style="width:22px; height:22px; top: 0px !important;"><svg style="width:11px; height:11px;" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
+        badgeEl.innerHTML = `<span class="verified-badge verified" style="width:22px; height:22px;"><svg style="width:11px; height:11px;" viewBox="0 0 12 12"><path d="M4.5 9.5L1.5 6.5L2.9 5.1L4.5 6.7L9.1 2.1L10.5 3.5L4.5 9.5Z"/></svg></span>`;
     } else {
         badgeEl.innerHTML = '';
     }
