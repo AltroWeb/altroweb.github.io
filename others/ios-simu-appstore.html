@@ -429,7 +429,7 @@ body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
         }
         
         .ios-search-bar {
-            width: 100%; padding: 10px 16px; background: #E9E9EA;
+            width: 100%; padding: 10px 16px; background: #f2f2f7;
             border-radius: 10px; border: none; font-size: 17px; color: #000;
             margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
             transition: background 0.3s, color 0.3s;
@@ -864,7 +864,7 @@ body.dark-mode #sideloader-window .ios-row:active {
 
 
 #sideloader-window .ios-search-bar {
-    background: #E9E9EA !important; 
+    background: #fff !important; 
 }
 
 
@@ -1018,14 +1018,24 @@ body.dark-mode .dev-profile-card {
     left: 16px;
     width: 32px; height: 32px;
     border-radius: 50%;
-    background: rgba(120, 120, 128, 0.12);
+    background: rgba(120, 120, 190, 0.12);
     border: none;
     display: flex; align-items: center; justify-content: center;
     color: #007AFF; cursor: pointer;
     transition: transform 0.2s;
     z-index: 10;
 }
-.dev-back-btn:active { transform: scale(0.9); background: rgba(120, 120, 128, 0.24); }
+.dev-back-btn:active { transform: scale(0.9); background: rgba(120, 120, 190, 0.24); }
+
+
+body.dark-mode .dev-back-btn { 
+background: rgba(120, 120, 128, 0.12);
+ }
+
+
+body.dark-mode .dev-back-btn:active { transform: scale(0.9); background: rgba(120, 120, 128, 0.24); }
+
+
 
 /* Avatar - Big & Centered */
 .dev-avatar-container {
