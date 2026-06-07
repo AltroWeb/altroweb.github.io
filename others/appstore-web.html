@@ -275,7 +275,7 @@
             margin-left: 4px;
             vertical-align: middle;
             position: relative;
-            
+            top: -1px;
         }
         .verified-badge.verified {
             width: 14px; height: 14px; background: var(--accent-color); border-radius: 50%;
@@ -596,17 +596,7 @@ body.dark-mode .dev-back-btn:active {
     color: var(--text-color); 
     display: flex; 
     align-items: center; 
-    justify-content: center;
-    flex-wrap: wrap; /* Keep badge next to name */
-    
-    
-    gap: 4px !important;
-    
-    width: 100% !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-    word-break: break-word !important;
-    
+    flex-wrap: nowrap; /* Keep badge next to name */
 }
 
 
@@ -858,9 +848,28 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
     gap: 6px !important; /* Vertical separation gap for title and description layers */
 }
 
+/* Core Wrap-Safe Title Metrics */
+#dev-profile-card .dev-name, .dev-name {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important; /* Drops the verified icon cleanly beneath text strings if 1000+ chars break bounds */
+    gap: 4px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+}
 
-
-
+#dev-profile-card .verified-badge-large, .verified-badge-large {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+}
 
 #dev-profile-card .dev-bio, .dev-bio {
     margin: 0 !important;
@@ -871,6 +880,7 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 
 /* --- MINIMAL WEB DEV CARD PFP-TO-NAME GAP --- */
 #dev-profile-card .dev-name { margin-top: 15px !important; }
+
 
 
 
