@@ -275,7 +275,7 @@
             margin-left: 4px;
             vertical-align: middle;
             position: relative;
-            top: -1px;
+            
         }
         .verified-badge.verified {
             width: 14px; height: 14px; background: var(--accent-color); border-radius: 50%;
@@ -598,6 +598,28 @@ body.dark-mode .dev-back-btn:active {
     align-items: center; 
     flex-wrap: nowrap; /* Keep badge next to name */
 }
+
+
+/* Badge Styling (Fixed Distortion) */
+.verified-badge-large {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* CRITICAL: Prevents squashing */
+    width: 24px;
+    height: 24px;
+    margin-left: 6px;
+}
+.verified-badge-large svg {
+    width: 24px !important;
+    height: 24px !important;
+    display: block;
+}
+
+
+
+
+
 
 
 
