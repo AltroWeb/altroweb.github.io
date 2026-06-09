@@ -1854,11 +1854,11 @@ async submitReport(reason) {
 
 
 
-const shareText = `Check out ${appName} by ${author} on App Store Web!\n\n`;
+const shareText = `Check out ${appName} by ${author} on App Store!\n\n`;
 
                 if (navigator.share) {
                     try {
-                        await navigator.share({ title: appName, text: `Check out ${appName} by ${author} on App Store Web!\n\n`, url: shareUrl });
+                        await navigator.share({ title: appName, text: `Check out ${appName} by ${author} on App Store!\n\n`, url: shareUrl });
                     } catch (err) { this.copyToClipboard(shareText+''+shareUrl); }
                 } else {
                     this.copyToClipboard(shareText+''+shareUrl);
