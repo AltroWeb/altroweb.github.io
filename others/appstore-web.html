@@ -912,7 +912,7 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 
 
 
-
+.navbar-fixed.scrolled { cursor: pointer; }
 
 
     </style>
@@ -920,7 +920,7 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 <body>
 
     <!-- Fixed Navbar (Overlay) -->
-    <div class="navbar-fixed" id="navbar-fixed">
+    <div class="navbar-fixed" id="navbar-fixed" onclick="window.scrollTo({ top: 0, behavior: 'smooth' });">
         <span class="nav-small-title">App Store Web</span>
     </div>
 
@@ -1065,15 +1065,19 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
                 this.init();
             }
 
-            // --- PRO: DEVICE TOKEN ---
-            getDeviceId() {
+            /// --- PRO: PURE SIMULATOR COHESION IDENTIFIER (1-STEP SWAP) ---
+getDeviceId() {
+    // 1. Instantly pull the raw string from localStorage synchronously to feed the report pipeline
     let did = localStorage.getItem('ios_device_unique_id');
-    if (!did) {
-        did = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-        localStorage.setItem('ios_device_unique_id', did);
+    
+    // 2. Failsafe: If a malicious user wipes local storage mid-session, grab it from the window frame context
+    if (!did && window.parent && window.parent.localStorage) {
+        did = window.parent.localStorage.getItem('ios_device_unique_id');
     }
-    this.backupDeviceIdToDB(did);
-    return did;
+
+    // 3. Fallback: If both storage areas are completely nuked, return an empty string to force Firestore 
+    // rules to throw an immediate validation block instead of executing a new rogue generation.
+    return did || '';
 }
 
             async init() {
@@ -1346,17 +1350,72 @@ clearSearch() {
     if (card) card.style.display = 'none';
     if (header) header.style.display = 'none';
 
-    const filtered = this.apps.filter(app => {
-        const displayName = (app.storeName || app.name || '').toLowerCase();
-        const author = (app.author || '').toLowerCase();
-        const desc = (app.description || '').toLowerCase();
-        const tags = (app.tags || '').toLowerCase(); 
+    // --- HYPER-OPTIMIZED PRO PARAMETRIC SEARCH FILTER (WEB EDITION) ---
+        const filtered = this.apps.filter(app => {
+            // 1. Short-circuit instantly for badge prefix commands to maximize velocity
+            if (lowerTerm.startsWith('badge:')) {
+                const targetBadge = lowerTerm.substring(6).trim();
+                
+                // Administrative flags matching web architecture thresholds
+                const isTrusted = Array.isArray(this.trustedList) && this.trustedList.includes(app.id);
+                
+                const uploadedTime = Number(app.createdAt || app.updatedAt || 0);
+                const isNew = (Date.now() - uploadedTime) <= (7 * 24 * 60 * 60 * 1000); // 6-Month rolling release window
 
-        return displayName.includes(lowerTerm) || 
-               author.includes(lowerTerm) || 
-               desc.includes(lowerTerm) || 
-               tags.includes(lowerTerm);
-    });
+                // Fetch developer certification status from web map collections
+                const badgeType = this.userBadges ? this.userBadges.get(app.authorId) : null;
+
+                // Core execution routing trees
+                if (targetBadge === 'new') return isNew;
+                if (targetBadge === 'trusted') return isTrusted;
+                
+                // Ecosystem alignment mapping (Swapped for absolute visual consistency across platforms)
+                if (targetBadge === 'member') return badgeType === 'verified';     // Shows full circle badge devs
+                if (targetBadge === 'verified') return badgeType === 'member';     // Shows outline badge devs
+                if (targetBadge === 'newdev') return !badgeType || (badgeType !== 'member' && badgeType !== 'verified');
+                
+                return false; // Drops unsupported badge targets safely
+            }
+
+            // 2. Short-circuit instantly for download metric queries
+            if (lowerTerm.startsWith('download:')) {
+                const dlQuery = lowerTerm.substring(9).trim();
+                const dlText = this.formatDownloadCount(app.downloadCount || 0);
+                if (!dlText) return false;
+                
+                const dlString = dlText.toLowerCase();
+                const baseNum = dlString.replace(/[^0-9]/g, '');
+                const suffix = dlString.replace(/[0-9+]/g, '');
+                
+                let fullZeros = '';
+                if (suffix === 'k') fullZeros = '000';
+                if (suffix === 'm') fullZeros = '000000';
+                if (suffix === 'b') fullZeros = '000000000';
+                if (suffix === 't') fullZeros = '000000000000';
+                const fullValueStr = baseNum + fullZeros;
+
+                const searchTargets = [
+                    dlString,
+                    dlString.replace('+', ''),
+                    baseNum + '+',
+                    baseNum,
+                    fullValueStr,
+                    fullValueStr + '+'
+                ];
+                return searchTargets.some(target => target === dlQuery || target.startsWith(dlQuery));
+            }
+
+            // 3. LIGHTSPEED STANDARD FALLBACK INDEX (Zero overhead during normal text searches)
+            const displayName = (app.storeName || app.name || '').toLowerCase();
+            const author = (app.author || '').toLowerCase();
+            const desc = (app.description || '').toLowerCase();
+            const tags = (app.tags || '').toLowerCase();
+
+            return displayName.includes(lowerTerm) || 
+                   author.includes(lowerTerm) || 
+                   desc.includes(lowerTerm) || 
+                   tags.includes(lowerTerm);
+        });
 
     this.renderStore(filtered);
 }
@@ -1890,6 +1949,32 @@ formatAppText(text) {
     appList.forEach(app => {
         const displayName = app.storeName || app.name;
         
+        
+        
+              // --- PRO ROLLING TIMESTAMP EVALUATION ENGINE ---
+const uploadedTime = Number(app.createdAt || app.updatedAt || 0);
+const sevenDaysInMs = (7 * 24 * 60 * 60 * 1000);
+const isNewRelease = (Date.now() - uploadedTime) <= sevenDaysInMs;
+
+let newBadgeHTML = '';
+if (isNewRelease) {
+    newBadgeHTML = `
+        <span style="display: inline-flex !important; margin-top: -1px !important; vertical-align: middle !important; align-items:center; background:#007AFF; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
+            NEW
+        </span>
+    `;
+}
+                    
+                    
+        
+        
+        
+        
+        
+        
+        
+        
+        
         // --- BADGE LOGIC (List Size) ---
         const badgeType = this.userBadges.get(app.authorId);
         let badgeHTML = '';
@@ -1917,7 +2002,7 @@ formatAppText(text) {
         const safeAuthorName = (app.author || 'Unknown').replace(/'/g, "\\'");
         
         // This span triggers the search for "dev:Name"
-        const authorHTML = `<span class="author-link" onclick="appStoreWeb.savedScroll = window.scrollY; window.scrollTo(0,0); appStoreWeb.filterApps('dev:${safeAuthorName}')">${app.author || 'Unknown'}</span>`;
+        const authorHTML = `<span class="author-link" onclick="appStoreWeb.savedScroll = window.scrollY; window.scrollTo(0,0); document.getElementById('store-search-input').value='dev:${safeAuthorName}'; appStoreWeb.filterApps('dev:${safeAuthorName}')">${app.author || 'Unknown'}</span>`;
 
         // USE APP ID FOR ROBUST LINKING
 const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
@@ -1929,7 +2014,7 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
             <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
             
             <div class="store-info">
-                <div class="store-name">${displayName} ${shieldHTML} ${dlHTML}</div>
+                <div class="store-name">${displayName} ${shieldHTML} ${dlHTML} ${newBadgeHTML}</div>
                 <div class="store-author">${authorHTML}${badgeHTML}</div>
                 <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
             </div>

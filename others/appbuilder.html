@@ -508,6 +508,18 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 	#bio-preview-view a, #desc-preview-view a { pointer-events: none; cursor: default; }
 	
 	
+	
+	
+	
+	#alert-modal>div, #confirm-modal>div, #prompt-modal>div { max-height: 85dvh !important; display: flex !important; flex-direction: column !important; align-items: center !important; } #alert-msg, #confirm-msg, #prompt-msg { overflow-y: auto !important; max-height: 50dvh !important; text-align: center !important; -webkit-overflow-scrolling: touch; width: 100%; }
+	
+	
+	
+	
+	
+	
+	
+	
 
     </style>
 </head>
@@ -1944,16 +1956,33 @@ async fetchMyApps() {
             }
 
             filterMyApps() {
-    const searchInput = document.getElementById('dashboard-search');
-    const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    
-    const filtered = this.myAppsCache.filter(app => {
-        return app.name.toLowerCase().includes(term) || 
-               (app.id && app.id.toLowerCase().includes(term)) ||
-               (app.tags && app.tags.toLowerCase().includes(term)); // <--- Added Tags Check
-    });
-    
-    this.renderMyApps(filtered);
+    const term = document.getElementById('dashboard-search')?.value.toLowerCase().trim() || '';
+    const TIME = 7 * 24 * 60 * 60 * 1000; // Time threshold for badge:new
+
+    this.renderMyApps(this.myAppsCache.filter(app => {
+        // 1. Calculate dynamic system state values
+        const isTrustedApp = this.trustedList && this.trustedList.includes(app.id);
+        const isNewApp = (Date.now() - (app.createdAt || 0)) < TIME;
+
+        // 2. Build explicit match strings for your keywords
+        const trustedTag = isTrustedApp ? 'badge:trusted' : '';
+        const newTag = isNewApp ? 'badge:new' : '';
+
+        // 3. Flatten data matrix for comprehensive include checks
+        return [
+            app.name, 
+            app.storeName, 
+            app.id, 
+            app.author, 
+            app.description, 
+            app.type, 
+            trustedTag, 
+            newTag, 
+            (app.tags || '').toLowerCase(), 
+            new Date(app.createdAt).toLocaleDateString(), 
+            new Date(app.updatedAt).toLocaleTimeString()
+        ].some(field => String(field || '').toLowerCase().includes(term));
+    }));
 }
 
             renderMyApps(apps) {
@@ -2000,6 +2029,14 @@ async fetchMyApps() {
         // 2. Determine Badge UI
         let statusTag = '<span class="tag">Live</span>';
         
+        
+        
+        const isNewApp = (Date.now() - (app.createdAt || 0)) < (7 * 24 * 60 * 60 * 1000);
+const newBadgeHTML = isNewApp && (app.reportCount || 0) < 10 ? `<span class="tag" style="background:var(--accent); color:white; font-weight:700; margin-left:6px; margin-top:4px;">NEW</span>` : '';
+        
+        
+        
+        
         if (isShadowed) {
             // FIX: Fetch the reason saved in the database, default to "Policy" if missing
             const reason = app.lastReportReason || "Policy Violation";
@@ -2024,7 +2061,7 @@ async fetchMyApps() {
         li.innerHTML = `
             <img src="${app.iconUrl || ''}" class="list-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
             <div class="list-info">
-                <div class="list-name">${app.name} ${shieldHTML} ${statusTag}</div>
+                <div class="list-name">${app.name} ${shieldHTML} ${statusTag} ${newBadgeHTML}</div>
                 <div class="list-meta">v1.0${badgeHTML} • ${new Date(app.createdAt).toLocaleDateString()}</div>
             </div>
             <div class="list-actions">

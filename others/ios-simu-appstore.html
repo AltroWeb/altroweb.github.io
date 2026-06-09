@@ -403,15 +403,39 @@ body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
 			width: 100%; height: 6px;
             background: #E9E9EA; border-radius: 3px; outline: none; transition: background 0.3s;
         }
-        .ios-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
--moz-appearance: none;
-			appearance: none;
+/* --- 1. WEBKIT & BLINK (Safari iOS/macOS, Chrome, Edge, Opera) --- */
+.ios-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    margin-top: -11px; /* CRITICAL WEBKIT FIX: Centers 28px thumb on 6px track to prevent clipping in Safari */
+    border: none;
+}
+
+/* --- 2. GECKO (Firefox) --- */
+.ios-slider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    border: none; /* Removes default Firefox inner element border */
+}
+
+/* --- 3. ENGINE TRACK SANITIZATION --- */
+.ios-slider::-webkit-slider-runnable-track { background: transparent; border: none; height: 6px; }
+.ios-slider::-moz-range-track { background: transparent; border: none; height: 6px; }
 
 
-			width: 28px; height: 28px; background: #fff;
-            border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.2); cursor: pointer;
-        }
+
+
+
 
         .ios-btn {
             background: #007AFF; color: #fff; border: none;
@@ -640,7 +664,7 @@ body.dark-mode .store-update-section span {
             background: #000; width: 126px; height: 37px; border-radius: 18.5px;
             transition: width 0.5s var(--ease-island), height 0.5s var(--ease-island), border-radius 0.5s var(--ease-island);
             overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;
-            pointer-events: auto; box-shadow: 0 1px 1px rgba(0,0,0,0.5); z-index: 5001; cursor: pointer;
+            pointer-events: auto; z-index: 5001; cursor: pointer;
             transform: translate3d(0,0,0); backface-visibility: hidden;
             -webkit-font-smoothing: subpixel-antialiased;
         }
@@ -1437,6 +1461,67 @@ body.dark-mode #sl-tab-preview[style*="600"] {
 #store-dev-card #store-dev-bio { white-space: pre-wrap !important; max-width: 100% !important; }
 
 
+
+
+/* --- ACCENT COHESION LAYER OVERRIDES --- */
+.report-btn {
+    margin-top: 0px !important;
+    padding: 6px 4px !important;
+}
+
+body.dark-mode .report-btn {
+    color: #98989d !important;
+}
+
+/* Light / Dark structural card anchors */
+#store-dev-card #dev-card-share-floating-trigger {
+    background: rgba(120, 120, 190, 0.12);
+    color: #007AFF;
+}
+
+body.dark-mode #store-dev-card #dev-card-share-floating-trigger {
+    background: rgba(120, 120, 128, 0.12);
+    color: #007AFF;
+}
+
+#store-dev-card #dev-card-share-floating-trigger:active {
+    transform: scale(0.9);
+    background: rgba(120, 120, 190, 0.24);
+}
+
+body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
+    background: rgba(120, 120, 128, 0.24);
+}
+
+
+
+/* --- PRO FIX: TITLE-ONLY SCROLL HITBOX INTERCEPTION --- */
+
+/* 1. Ensure the overall background bar remains a touch ghost at all times */
+.app-window .app-navbar {
+    pointer-events: none !important;
+}
+
+/* 2. Deactivate the title text link hitbox by default when at the top */
+.app-window .app-navbar .nav-title {
+    pointer-events: none !important;
+}
+
+/* 3. ONLY unlock touch inputs on the title text string when scrolled down and open */
+.app-window[style*="display: flex"] .app-navbar.scrolled .nav-title,
+.app-window.force-visible .app-navbar.scrolled .nav-title {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    display: inline-block; /* Ensures correct boundary sizing for the string */
+}
+
+
+/* --- PRO FIX: PIXEL-PERFECT BADGE WRAP ALIGNMENT --- */
+.store-name span, .dl-badge { display: inline-flex !important; align-items: center; vertical-align: middle; margin-bottom: 2px; }
+
+
+
+
     </style>
 </head>
 <body>
@@ -1572,8 +1657,8 @@ body.dark-mode #sl-tab-preview[style*="600"] {
         <!-- MAIN APP WINDOW -->
         <div class="app-window" id="main-window">
             <div class="app-navbar" id="main-navbar">
-                <span class="nav-title" id="nav-title-text">App</span>
-            </div>
+    <span class="nav-title" id="nav-title-text" onclick="document.getElementById('main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });">App</span>
+</div>
 
             <div class="app-content-scroll" id="main-scroll">
                 <div class="scroll-inner-padding">
@@ -1803,8 +1888,8 @@ body.dark-mode #sl-tab-preview[style*="600"] {
         <!-- APP STORE WINDOW -->
         <div class="app-window" id="appstore-window">
             <div class="app-navbar" id="store-navbar">
-                <span class="nav-title">App Store</span>
-            </div>
+    <span class="nav-title" onclick="document.getElementById('store-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });">App Store</span>
+</div>
             <div class="app-content-scroll" id="store-scroll">
                 <div class="scroll-inner-padding">
                     <h1 class="app-header-large">Search</h1>
@@ -1823,6 +1908,19 @@ body.dark-mode #sl-tab-preview[style*="600"] {
             <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
     </button>
+    <button class="dev-back-btn" id="dev-card-share-floating-trigger" style="left: auto !important; right: 16px !important;" onclick="const rawAuth = document.getElementById('store-dev-name').innerText; window.appStoreShareSuite.executeShare('dev', { name: rawAuth }, event);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+    </button>
+    
+    
+    
+    
     
     <div id="store-dev-avatar" class="dev-avatar-container"></div>
     
@@ -1854,8 +1952,8 @@ body.dark-mode #sl-tab-preview[style*="600"] {
 
    <div class="app-window" id="sideloader-window">
     <div class="app-navbar" id="sideloader-navbar">
-        <span class="nav-title">Sideloader</span>
-    </div>
+    <span class="nav-title" onclick="document.getElementById('sideloader-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });">Sideloader</span>
+</div>
     
     <div class="app-content-scroll" id="sideloader-scroll">
         <div class="scroll-inner-padding">
@@ -2616,17 +2714,117 @@ filterApps(query) {
     if (card) card.style.display = 'none';
     if (header) header.style.display = 'none';
 
-    const filtered = this.apps.filter(app => {
-        const displayName = (app.storeName || app.name || '').toLowerCase();
-        const author = (app.author || '').toLowerCase();
-        const desc = (app.description || '').toLowerCase();
-        const tags = (app.tags || '').toLowerCase(); // <--- Added Tags
+// --- PRE-FETCH CLIENT ECOSYSTEM STATE (ONCE) TO PREVENT LOOP LAGGING ---
+        let installedAppsMap = {};
+        if (term.startsWith('badge:')) {
+            try {
+                const rawInstalled = localStorage.getItem('ios_installed_apps');
+                if (rawInstalled) {
+                    const parsed = JSON.parse(rawInstalled);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(item => {
+                            if (item && typeof item === 'object' && item.id) {
+                                installedAppsMap[item.id] = item; // Preserves local version, updatedAt, etc.
+                            } else if (item && typeof item === 'string') {
+                                installedAppsMap[item] = { id: item };
+                            }
+                        });
+                    } else if (parsed && typeof parsed === 'object') {
+                        installedAppsMap = parsed;
+                    }
+                }
+            } catch (e) {}
+        }
 
-        return displayName.includes(term) || 
-               author.includes(term) || 
-               desc.includes(term) || 
-               tags.includes(term); // <--- Added Check
-    });
+        // --- HYPER-OPTIMIZED PRO PARAMETRIC SEARCH FILTER ---
+        const filtered = this.apps.filter(app => {
+            // 1. Short-circuit instantly for badge prefix commands
+            if (term.startsWith('badge:')) {
+                const targetBadge = term.substring(6).trim();
+                
+                // Static administrative flags
+                const isDeleted = !!app.isDeveloperRemoved;
+                const isRemoved = !isDeleted && (app.reportCount || 0) >= 10;
+                const isTrusted = Array.isArray(this.trustedList) && this.trustedList.includes(app.id);
+                
+                const uploadedTime = Number(app.createdAt || app.updatedAt || 0);
+                const isNew = (Date.now() - uploadedTime) <= (7 * 24 * 60 * 60 * 1000); // 6-Month rolling release
+
+                // Pull developer type mapping
+                const badgeType = this.userBadges ? this.userBadges.get(app.authorId) : null;
+
+                // Core execution routing trees
+                if (targetBadge === 'new') return isNew;
+                if (targetBadge === 'removed') return isRemoved;
+                if (targetBadge === 'deleted') return isDeleted;
+                if (targetBadge === 'trusted') return isTrusted;
+                
+                // Swapped developer authentication filters for visual mapping parity
+                if (targetBadge === 'member') return badgeType === 'verified';     // Shows full circle badge devs
+                if (targetBadge === 'verified') return badgeType === 'member';     // Shows outline badge devs
+                if (targetBadge === 'newdev') return !badgeType || (badgeType !== 'member' && badgeType !== 'verified');
+                
+                // --- STRICT UPDATE CHECK ENGINE ---
+                if (targetBadge === 'update') {
+                    const localApp = installedAppsMap[app.id];
+                    if (!localApp) return false; // CRITICAL CHOKEPOINT: Must be installed to have an update
+
+                    // Check server timestamp vs local device timestamp
+                    const hasServerNewerTime = localApp.updatedAt && app.updatedAt && Number(app.updatedAt) > Number(localApp.updatedAt);
+                    // Check version string inequalities (e.g., "1.0.1" !== "1.0.0")
+                    const hasDifferentVersion = localApp.version && app.version && String(app.version).trim() !== String(localApp.version).trim();
+                    // Fallback to explicit update flags sent by the core DB
+                    const hasExplicitUpdateFlag = !!(app.hasUpdate || app.updateAvailable || app.isUpdateAvailable);
+
+                    return !!(hasServerNewerTime || hasDifferentVersion || hasExplicitUpdateFlag);
+                }
+
+                if (targetBadge === 'installed') {
+                    return !!(app.isInstalled || app.installed) || !!installedAppsMap[app.id];
+                }
+                
+                return false; // Drops unsupported badge targets safely
+            }
+
+            // 2. Short-circuit instantly for download metric queries
+            if (term.startsWith('download:')) {
+                const dlQuery = term.substring(9).trim();
+                const dlText = this.formatDownloadCount(app.downloadCount || 0);
+                if (!dlText) return false;
+                
+                const dlString = dlText.toLowerCase();
+                const baseNum = dlString.replace(/[^0-9]/g, '');
+                const suffix = dlString.replace(/[0-9+]/g, '');
+                
+                let fullZeros = '';
+                if (suffix === 'k') fullZeros = '000';
+                if (suffix === 'm') fullZeros = '000000';
+                if (suffix === 'b') fullZeros = '000000000';
+                if (suffix === 't') fullZeros = '000000000000';
+                const fullValueStr = baseNum + fullZeros;
+
+                const searchTargets = [
+                    dlString,
+                    dlString.replace('+', ''),
+                    baseNum + '+',
+                    baseNum,
+                    fullValueStr,
+                    fullValueStr + '+'
+                ];
+                return searchTargets.some(target => target === dlQuery || target.startsWith(dlQuery));
+            }
+
+            // 3. LIGHTSPEED STANDARD FALLBACK INDEX (Zero overhead during normal text searches)
+            const displayName = (app.storeName || app.name || '').toLowerCase();
+            const author = (app.author || '').toLowerCase();
+            const desc = (app.description || '').toLowerCase();
+            const tags = (app.tags || '').toLowerCase();
+
+            return displayName.includes(term) || 
+                   author.includes(term) || 
+                   desc.includes(term) || 
+                   tags.includes(term);
+        });
     
     this.renderStore(filtered);
 }
@@ -3127,6 +3325,28 @@ if ((app.reportCount || 0) >= 10 && !isAppInstalled) {
                     const serverTime = app.updatedAt || 0;
                     const localTime = localApp ? (localApp.updatedAt || 0) : 0;
                     const displayName = app.storeName || app.name;
+                    
+                    
+                    // --- PRO ROLLING TIMESTAMP EVALUATION ENGINE ---
+const uploadedTime = Number(app.createdAt || app.updatedAt || 0);
+const sevenDaysInMs = (7 * 24 * 60 * 60 * 1000);
+const isNewRelease = (Date.now() - uploadedTime) <= sevenDaysInMs;
+
+let newBadgeHTML = '';
+if (isNewRelease) {
+    newBadgeHTML = `
+        <span style="display: inline-flex !important; vertical-align: middle !important; align-items:center; background:#007AFF; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
+            NEW
+        </span>
+    `;
+}
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     const isUpdateAvailable = !this.isOfflineMode && isInstalled && (serverTime > localTime);
                     
                     // --- 1. BADGES (Verified/Member) ---
@@ -3178,22 +3398,65 @@ if ((app.reportCount || 0) >= 10 && !isAppInstalled) {
                     const div = document.createElement('div');
                     div.className = 'store-item';
                     
-                    // 1. Define Report Button with Icon
-const reportBtn = this.isNetworkStrict() ? 
-    `<button class="report-btn" onclick="appStore.showReportOptions('${app.id}')">
-        <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
-        <span>Report</span>
-    </button>` : '';
-                    
-                    // --- INSIDE AppStore.renderStore() ---
-// Replace the existing actionHTML logic with this:
+                    // --- PIXEL-PERFECT SIDE BY SIDE ACTION LAYER ---
+const shareBtnHTML = `<button class="report-btn" onclick="window.appStoreShareSuite.executeShare('app', { id: '${app.id}', name: '${(app.storeName || app.name).replace(/'/g, "\\'")}', author: '${(app.author || '').replace(/'/g, "\\'")}' }, event)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; fill:none !important;"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+    <span></span>
+</button>`;
 
+const reportBtn = this.isNetworkStrict() ? 
+    `<div style="display:flex; width:100%; gap:4px; align-items:center; justify-content:center;">
+        ${shareBtnHTML}
+        <div style="width:1px; height:10px; background:rgba(128,128,128,0.25); flex-shrink:0;"></div>
+        <button class="report-btn" style="margin-top:0 !important;" onclick="appStore.showReportOptions('${app.id}')">
+            <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+            <span></span>
+        </button>
+    </div>` : shareBtnHTML;
+                    
+                    // ==========================================================
+// --- PRO UNIFIED BUTTON ARCHITECTURE LAYER ---
+// ==========================================================
 let actionHTML = '';
 
-// 1. UPDATE AVAILABLE STATE
+// 1. SURGICAL CONDITION FLAGS
+const isDeletedMode = !!app.isDeveloperRemoved;
+const isBannedMode = !isDeletedMode && (app.reportCount || 0) >= 10;
+
+// 2. PIXEL-PERFECT SUB-ACTION ACTION WRAPPERS
+let subActionTrayHTML = '';
+
+if (isDeletedMode) {
+    // Completely gone: Do not show share or report blocks
+    subActionTrayHTML = '';
+} else if (isBannedMode) {
+    // Banned/Shadow-banned: Only show report button centered perfectly
+    subActionTrayHTML = `
+        <div style="display:flex; width:100%; align-items:center; justify-content:center; margin-top:6px;">
+            <button class="report-btn" style="margin-top:0 !important; padding:4px 0 !important; width:auto !important; min-width:0 !important;" onclick="appStore.showReportOptions('${app.id}')">
+                <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+                <span>Report</span>
+            </button>
+        </div>
+    `;
+} else {
+    // Healthy state: Both share and report align identically to the center pixel without left shifting
+    subActionTrayHTML = `
+        <div style="display:flex; width:100%; gap:8px; align-items:center; justify-content:center; margin-top:6px;">
+            <button class="report-btn" style="margin-top:0 !important; padding:4px 0 !important; width:auto !important; min-width:0 !important; flex:1;" onclick="window.appStoreShareSuite.executeShare('app', { id: '${app.id}', name: '${(app.storeName || app.name).replace(/'/g, "\\'")}', author: '${(app.author || '').replace(/'/g, "\\'")}' }, event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; fill:none !important;"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg></button>
+            ${this.isNetworkStrict() ? `
+            <div style="width:1px; height:9px; background:rgba(128,128,128,0.25); flex-shrink:0;"></div>
+            <button class="report-btn" style="margin-top:0 !important; padding:4px 0 !important; width:auto !important; min-width:0 !important; flex:1;" onclick="appStore.showReportOptions('${app.id}')">
+                <svg viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg></button>` : ''}
+        </div>
+    `;
+}
+
+// 3. MAIN ACTION ROUTER RENDER
 if (isUpdateAvailable) {
     actionHTML = `
-        <div class="store-actions">
+        <div class="store-actions" data-app-container-id="${app.id}">
             <button class="store-get-btn update-mode" style="background:#007AFF; color:white;" onclick="appStore.handleUpdateClick(this, '${app.id}')" data-update-id="${app.id}">
                 <span>UPDATE</span>
                 <div class="spinner"></div>
@@ -3201,26 +3464,24 @@ if (isUpdateAvailable) {
             <button class="store-get-btn" onclick="appStore.directOpen('${app.id}')">
                 <span>OPEN</span>
             </button>
-             <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
+            <button class="store-get-btn installed" onclick="appStore.handleGetClick(this, '${app.id}')">
                 <span>UNINSTALL</span>
             </button>
+            ${subActionTrayHTML}
         </div>`;
-} 
-// 2. STANDARD STATE
-else {
-    // FIX: "OPEN" button is now standard Grey/Blue (No more Green #34C759)
+} else {
     const openBtn = isInstalled 
         ? `<button class="store-get-btn" onclick="appStore.directOpen('${app.id}')"><span>OPEN</span></button>` 
         : '';
         
     actionHTML = `
-    <div class="store-actions">
+    <div class="store-actions" data-app-container-id="${app.id}">
         ${openBtn}
         <button class="store-get-btn ${isInstalled ? 'installed' : ''}" onclick="appStore.handleGetClick(this, '${app.id}')">
             <span>${isInstalled ? 'UNINSTALL' : 'GET'}</span>
             <div class="spinner"></div>
         </button>
-        ${reportBtn} 
+        ${subActionTrayHTML}
     </div>`;
 }
 
@@ -3234,13 +3495,13 @@ else {
 let removedBadgeHTML = '';
 if (app.isDeveloperRemoved) {
     removedBadgeHTML = `
-        <span style="display:inline-flex; align-items:center; background:#8E8E93; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
+        <span style="display: inline-flex !important; vertical-align: middle !important; align-items:center; background:#8E8E93; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
             DELETED
         </span>
     `;
 } else if ((app.reportCount || 0) >= 10) {
     removedBadgeHTML = `
-        <span style="display:inline-flex; align-items:center; background:#FF9500; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
+        <span style="display: inline-flex !important; vertical-align: middle !important; align-items:center; background:#FF9500; padding:2px 6px; border-radius:6px; margin-left:6px; font-size:10px; color:#fff; font-weight:700; letter-spacing:-0.1px;">
             REMOVED
         </span>
     `;
@@ -3249,7 +3510,7 @@ if (app.isDeveloperRemoved) {
                     div.innerHTML = `
                         <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                         <div class="store-info">
-                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML} ${removedBadgeHTML}</div> 
+                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML} ${newBadgeHTML} ${removedBadgeHTML}</div> 
                             <div class="store-author">${authorHTML}${badgeHTML}</div>
                             <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
                         </div>
@@ -3754,7 +4015,10 @@ directOpen(appId) {
         `Delete "${app.name}"?`,
         alertMsg,
         () => {
-            btn.parentElement.querySelectorAll('button').forEach(b => { if(b !== btn) b.style.display = 'none'; });
+            // --- PRO TARGETED SELECTION LAYER (PRESERVES SUB-ACTION BANNERS) ---
+btn.parentElement.querySelectorAll(':scope > .store-get-btn').forEach(b => { 
+    if (b !== btn) b.style.display = 'none'; 
+});
             
             // LOCK immediately on confirm
             btn.classList.add('loading');
@@ -3806,16 +4070,15 @@ async performInstall(app, btn, isUpdate = false, forceBackfill = false) {
             
             
             
-            // >>> PRO FIX: INSTANT OPEN BUTTON INJECTION <<<
-            // This ensures the button appears immediately without a page refresh
-            if (!btn.parentElement.querySelector('button[onclick*="directOpen"]')) {
-                const openBtn = document.createElement('button');
-                openBtn.className = 'store-get-btn';
-                openBtn.style.cssText = 'margin-bottom:4px;';
-                openBtn.onclick = () => this.directOpen(app.id);
-                openBtn.innerHTML = '<span>OPEN</span>';
-                btn.parentElement.insertBefore(openBtn, btn);
-            }
+            // >>> PRO PIXEL-PERFECT INSTANT OPEN FIX ---
+if (!btn.parentElement.querySelector('button[onclick*="directOpen"]')) {
+    const openBtn = document.createElement('button');
+    openBtn.className = 'store-get-btn';
+    openBtn.onclick = () => this.directOpen(app.id);
+    openBtn.innerHTML = '<span>OPEN</span>';
+    // Insert smoothly right above the uninstall switch node anchor point
+    btn.parentElement.insertBefore(openBtn, btn);
+}
             
             
             
@@ -3957,7 +4220,95 @@ uninstallApp(app, btn, skipRefresh = false) {
 }}
         
         
+       
+// ==========================================
+// --- PRO GLOBAL SHARE LAYER ARCHITECTURE ---
+// ==========================================
+window.appStoreShareSuite = {
+    // EDITABLE TARGET DOMAIN SETTING (Change 'appstore-web.html' to match your exact file or URL)
+    targetAppStorePage: "appstore-web.html",
+
+    async executeShare(type, data, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         
+        // --- SAFE MODE SECURITY TRIPWIRE ---
+        if (window.iOS && window.iOS.isSafeMode) {
+            window.iOS.showAlert(
+                "Access Denied",
+                "Share is disabled in safe mode.",
+                null,
+                false,
+                "OK"
+            );
+            return;
+        }
+
+        // Build the precise domain base and target clean link routing URL
+        const baseOrigin = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        let shareText = "";
+        let pathQuery = "";
+
+        // Define premium text templates matched directly to your specifications
+        if (type === 'app') {
+            // data matches: { id, name, author }
+            shareText = `Check out ${data.name} by ${data.author} on App Store Web!\n\n`;
+            pathQuery = `s=${encodeURIComponent(data.id)}`;
+        } else if (type === 'dev') {
+            // data matches: { name }
+            shareText = `View ${data.name} on App Store\n\n`;
+            pathQuery = `s=${encodeURIComponent('dev:' + data.name)}`;
+        }
+
+        const targetUrl = `${baseOrigin}${this.targetAppStorePage}?${pathQuery}`;
+        const fullPayloadText = `${shareText}${targetUrl}`;
+
+        // Native Web Share API Interceptor Handshake
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: type === 'app' ? data.name : data.name,
+                    text: shareText,
+                    url: targetUrl
+                });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        // --- BACKWARD COMPATIBLE ULTRA FALLBACK LINK + TEXT COPY SYSTEM ---
+        try {
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = fullPayloadText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            tempTextArea.setSelectionRange(0, 99999); 
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            
+            if (window.iOS && typeof window.iOS.showAlert === 'function') {
+                window.iOS.showAlert("Link Copied", "Shareable details copied to clipboard.");
+            } else {
+                alert("Link and Details Copied to Clipboard!");
+            }
+        } catch (copyErr) {
+            console.error("Copy operation rejected by native architecture constraints", copyErr);
+        }
+    }
+};
+
+
+
+
+
+
+
+
+
+ 
         
         
         class Sideloader {
@@ -4758,7 +5109,7 @@ async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
             return;
         }
 
-        const filtered = this.apps.filter(app => app.name.toLowerCase().includes(term));
+        const filtered = this.apps.filter(app => [app.name, app.id, app.author, app.description, app.type, app.isPacked ? 'iap' : '', this.formatTime(app.createdAt), this.formatTime(app.updatedAt), this.formatTime(app.localInstalledAt)].some(field => String(field || '').toLowerCase().includes(term)));
 
         filtered.forEach(app => {
             const row = document.createElement('div');
