@@ -1957,18 +1957,50 @@ async fetchMyApps() {
 
             filterMyApps() {
     const term = document.getElementById('dashboard-search')?.value.toLowerCase().trim() || '';
-    const TIME = 7 * 24 * 60 * 60 * 1000; // Time threshold for badge:new
+    const TIME = 7 * 24 * 60 * 60 * 1000;
 
     this.renderMyApps(this.myAppsCache.filter(app => {
-        // 1. Calculate dynamic system state values
+        // --- 1. PRO SEARCH PARAMETER INTERCEPTOR (Fast-pass) ---
+        
+        // Update parsing: matches "update#4", "update #4", "update 4"
+        const updateMatch = term.match(/update\s*#?(\d+)/i);
+        if (updateMatch) {
+            const target = parseInt(updateMatch[1]);
+            return (app.updateCount || 0) === target;
+        }
+
+        // Download parsing: download:50 (exact) or download:50+ (min)
+        if (term.startsWith('download:')) {
+            const val = term.split(':')[1];
+            const count = app.downloadCount || 0;
+            return val.includes('+') ? count >= parseInt(val) : count === parseInt(val);
+        }
+
+        // Active parsing: active:5
+        if (term.startsWith('active:')) {
+            const val = parseInt(term.split(':')[1]);
+            return (app.installCount || 0) === val;
+        }
+
+
+
+if (term.startsWith('type:')) {
+    const val = term.split(':')[1];
+    if (val === 'native') return (app.type || '').toLowerCase() === 'native';
+    if (val === 'legacy') return (app.type || '').toLowerCase() === 'web' && (app.embedUrl || '').startsWith('data:text/html');
+    if (val === 'embed') return (app.type || '').toLowerCase() === 'web' && !(app.embedUrl || '').startsWith('data:text/html');
+}
+
+
+
+
+
+        // --- 2. ORIGINAL LOGIC (PRESERVED & EXPANDED) ---
         const isTrustedApp = this.trustedList && this.trustedList.includes(app.id);
         const isNewApp = (Date.now() - (app.createdAt || 0)) < TIME;
-
-        // 2. Build explicit match strings for your keywords
         const trustedTag = isTrustedApp ? 'badge:trusted' : '';
         const newTag = isNewApp ? 'badge:new' : '';
 
-        // 3. Flatten data matrix for comprehensive include checks
         return [
             app.name, 
             app.storeName, 
@@ -1980,7 +2012,9 @@ async fetchMyApps() {
             newTag, 
             (app.tags || '').toLowerCase(), 
             new Date(app.createdAt).toLocaleDateString(), 
-            new Date(app.updatedAt).toLocaleTimeString()
+            new Date(app.updatedAt).toLocaleTimeString(),
+            // Expand: Include the dynamic update string in search
+            (app.updateCount ? `update #${app.updateCount}` : 'edited')
         ].some(field => String(field || '').toLowerCase().includes(term));
     }));
 }
@@ -2267,7 +2301,7 @@ this.updateTagsCounter(tagInput); // Reset counter to 0/1000
         // 2. ROW 2: Last Active
         if (data.updatedAt) {
             const updatedStr = new Date(data.updatedAt).toLocaleDateString(undefined, { 
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
             });
             
             const count = data.updateCount ? `Update #${data.updateCount}` : 'Edited';
