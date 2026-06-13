@@ -1521,6 +1521,27 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
 
 
 
+/* --- PRO LIVE TIMESTAMPS TRAY --- */
+.store-desc-dates {
+    display: none;
+    font-size: 10px;
+    color: #8E8E93;
+    margin-top: 15px;
+    line-height: 1.4;
+    white-space: normal;
+    word-break: break-word;
+}
+/* Triggers layout reveal dynamically when description expands */
+.store-desc.expanded + .store-desc-dates {
+    display: block !important;
+}
+
+
+
+
+
+
+
 
     </style>
 </head>
@@ -2634,6 +2655,16 @@ filterApps(query) {
     const rawTerm = query.trim();
     const term = rawTerm.toLowerCase();
     
+    
+    // --- DATE FORMATTER LAYER ---
+    const fmt = (ms) => { 
+        if(!ms) return ''; 
+        const d = new Date(Number(ms)); 
+        const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; 
+        return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`.toLowerCase(); 
+    };
+    
+    
     const card = document.getElementById('store-dev-card');
     const header = document.getElementById('store-dev-header');
     const input = document.getElementById('store-search-input');
@@ -2738,7 +2769,14 @@ filterApps(query) {
 
         // --- HYPER-OPTIMIZED PRO PARAMETRIC SEARCH FILTER ---
         const filtered = this.apps.filter(app => {
-            // 1. Short-circuit instantly for badge prefix commands
+        
+
+if (term.startsWith('updated:')) return new RegExp('\\b' + term.substring(8).trim()).test(fmt(app.updatedAt));
+if (term.startsWith('published:')) return new RegExp('\\b' + term.substring(10).trim()).test(fmt(app.createdAt));
+
+
+
+    // 1. Short-circuit instantly for badge prefix commands
             if (term.startsWith('badge:')) {
                 const targetBadge = term.substring(6).trim();
                 
@@ -3312,6 +3350,21 @@ const updates = [];
                 appList.forEach(app => {
                 	
                 
+                const formatStoreDate = (ms) => {
+    if (!ms) return '';
+    const d = new Date(ms);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+const pubDate = app.createdAt || app.updatedAt || Date.now();
+const upDate = app.updatedAt || pubDate;
+const showUpdated = upDate && Math.abs(upDate - pubDate) > 1000; // Show only if different
+                
+                
+                
+                
+                
 // >>> TRIPWIRE CHECK (Shadow Ban Override for Installed Apps) <<<
 const isAppInstalled = installedApps.some(ia => ia.id === app.id);
 if ((app.reportCount || 0) >= 10 && !isAppInstalled) {
@@ -3508,14 +3561,18 @@ if (app.isDeveloperRemoved) {
 }
 
                     div.innerHTML = `
-                        <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
-                        <div class="store-info">
-                            <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML} ${newBadgeHTML} ${removedBadgeHTML}</div> 
-                            <div class="store-author">${authorHTML}${badgeHTML}</div>
-                            <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
-                        </div>
-                        ${actionHTML}
-                    `;
+    <img src="${app.iconUrl}" class="store-icon" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
+    <div class="store-info">
+        <div class="store-name">${displayName} ${shieldHTML} ${dlBadgeHTML} ${newBadgeHTML} ${removedBadgeHTML}</div> 
+        <div class="store-author">${authorHTML}${badgeHTML}</div>
+        <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
+        <div class="store-desc-dates">
+            Published on: ${formatStoreDate(pubDate)}
+            ${showUpdated ? `<br>Updated on: ${formatStoreDate(upDate)}` : ''}
+        </div>
+    </div>
+    ${actionHTML}
+`;
                     listEl.appendChild(div);
                 });
 

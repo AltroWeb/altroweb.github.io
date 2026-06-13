@@ -185,7 +185,7 @@
             align-items: center;
             padding: 16px 0;
             border-bottom: 0.5px solid var(--border-color);
-            animation: fadeIn 0.4s ease;
+            
         }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -514,7 +514,7 @@
     border-radius: 22px;
     gap: 20px;
     
-    animation: fadeIn 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    
     box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
@@ -649,7 +649,7 @@ body.dark-mode .dev-back-btn:active {
     font-weight: 700;
     color: var(--text-color);
     display: none; /* Hidden by default */
-    animation: fadeIn 0.4s ease;
+    
 }
 
 /* Mobile Responsiveness */
@@ -913,6 +913,25 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 
 
 .navbar-fixed.scrolled { cursor: pointer; }
+
+
+/* --- PRO LIVE TIMESTAMPS TRAY --- */
+.store-desc-dates {
+    display: none;
+    font-size: 10px;
+    color: var(--sub-text);
+    margin-top: 15px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+/* Reveals the dates automatically when the preceding description gains the .expanded class */
+.store-desc.expanded + .store-desc-dates {
+    display: block !important;
+}
+
+
+
 
 
     </style>
@@ -1279,6 +1298,16 @@ clearSearch() {
         return;
     }
 
+
+// --- DATE FORMATTER LAYER ---
+    const fmt = (ms) => { 
+        if(!ms) return ''; 
+        const d = new Date(Number(ms)); 
+        const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; 
+        return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`.toLowerCase(); 
+    };
+
+
     let term = query.trim(); // Keep original case for ID checks
     const lowerTerm = term.toLowerCase();
     
@@ -1352,7 +1381,15 @@ clearSearch() {
 
     // --- HYPER-OPTIMIZED PRO PARAMETRIC SEARCH FILTER (WEB EDITION) ---
         const filtered = this.apps.filter(app => {
-            // 1. Short-circuit instantly for badge prefix commands to maximize velocity
+          
+
+if (lowerTerm.startsWith('updated:')) return new RegExp('\\b' + lowerTerm.substring(8).trim()).test(fmt(app.updatedAt));
+if (lowerTerm.startsWith('published:')) return new RegExp('\\b' + lowerTerm.substring(10).trim()).test(fmt(app.createdAt));
+
+
+
+
+  // 1. Short-circuit instantly for badge prefix commands to maximize velocity
             if (lowerTerm.startsWith('badge:')) {
                 const targetBadge = lowerTerm.substring(6).trim();
                 
@@ -1414,7 +1451,7 @@ clearSearch() {
             return displayName.includes(lowerTerm) || 
                    author.includes(lowerTerm) || 
                    desc.includes(lowerTerm) || 
-                   tags.includes(lowerTerm);
+                   tags.includes(lowerTerm)
         });
 
     this.renderStore(filtered);
@@ -1951,6 +1988,22 @@ formatAppText(text) {
         
         
         
+        const formatStoreDate = (ms) => {
+            if (!ms) return '';
+            const d = new Date(Number(ms));
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+        };
+
+        const pubDate = app.createdAt || app.updatedAt || Date.now();
+        const upDate = app.updatedAt || pubDate;
+        const showUpdated = upDate && Math.abs(Number(upDate) - Number(pubDate)) > 1000;
+        
+        
+        
+        
+        
+        
               // --- PRO ROLLING TIMESTAMP EVALUATION ENGINE ---
 const uploadedTime = Number(app.createdAt || app.updatedAt || 0);
 const sevenDaysInMs = (7 * 24 * 60 * 60 * 1000);
@@ -2017,6 +2070,10 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
                 <div class="store-name">${displayName} ${shieldHTML} ${dlHTML} ${newBadgeHTML}</div>
                 <div class="store-author">${authorHTML}${badgeHTML}</div>
                 <div class="store-desc" onclick="this.classList.toggle('expanded')" title="Tap to expand/collapse">${this.formatAppText(app.description)}</div>
+                <div class="store-desc-dates">
+                    Published on: ${formatStoreDate(pubDate)}
+                    ${showUpdated ? `<br>Updated on: ${formatStoreDate(upDate)}` : ''}
+                </div>
             </div>
             
             <div class="action-stack">
