@@ -1414,6 +1414,23 @@ if (lowerTerm.startsWith('published:')) return new RegExp('\\b' + lowerTerm.subs
                 return false; // Drops unsupported badge targets safely
             }
 
+
+
+// --- 1. SEARCH PARAMETER TYPE INTERCEPTORS ---
+        if (lowerTerm.startsWith('type:')) {
+            const val = lowerTerm.split(':')[1];
+            if (val === 'native') return (app.type || '').toLowerCase() === 'native';
+            if (val === 'legacy') return (app.type || '').toLowerCase() === 'web' && (app.embedUrl || '').startsWith('data:text/html');
+            if (val === 'embed') return (app.type || '').toLowerCase() === 'web' && !(app.embedUrl || '').startsWith('data:text/html');
+        }
+
+
+
+
+
+
+
+
             // 2. Short-circuit instantly for download metric queries
             if (lowerTerm.startsWith('download:')) {
                 const dlQuery = lowerTerm.substring(9).trim();

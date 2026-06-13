@@ -2776,6 +2776,21 @@ if (term.startsWith('published:')) return new RegExp('\\b' + term.substring(10).
 
 
 
+// --- 1. SEARCH PARAMETER TYPE INTERCEPTORS ---
+        if (term.startsWith('type:')) {
+            const val = term.split(':')[1];
+            if (val === 'native') return (app.type || '').toLowerCase() === 'native';
+            if (val === 'legacy') return (app.type || '').toLowerCase() === 'web' && (app.embedUrl || '').startsWith('data:text/html');
+            if (val === 'embed') return (app.type || '').toLowerCase() === 'web' && !(app.embedUrl || '').startsWith('data:text/html');
+        }
+
+
+
+
+
+
+
+
     // 1. Short-circuit instantly for badge prefix commands
             if (term.startsWith('badge:')) {
                 const targetBadge = term.substring(6).trim();
