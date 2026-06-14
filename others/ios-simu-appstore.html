@@ -6347,7 +6347,7 @@ handleDeepLinks() {
                     const originalRender = appStore.renderStore.bind(appStore);
                     appStore.renderStore = function(list) {
                         const searchVal = document.getElementById('store-search-input')?.value.toLowerCase().trim();
-                        if (searchVal && searchVal.startsWith('dev:')) { originalRender(list); return; }
+                        if (!searchVal || searchVal.includes(':') || (window.appStore && window.appStore.lockedAppId)) { originalRender(list); return; }
                         if (searchVal && list.length > 0) {
                             const filtered = list.filter(app => {
                                 const displayName = (app.storeName || app.name).toLowerCase();
