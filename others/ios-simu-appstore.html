@@ -2846,33 +2846,61 @@ if (term.startsWith('published:')) return new RegExp('\\b' + term.substring(10).
                 return false; // Drops unsupported badge targets safely
             }
 
-            // 2. Short-circuit instantly for download metric queries
-            if (term.startsWith('download:')) {
-                const dlQuery = term.substring(9).trim();
-                const dlText = this.formatDownloadCount(app.downloadCount || 0);
-                if (!dlText) return false;
-                
-                const dlString = dlText.toLowerCase();
-                const baseNum = dlString.replace(/[^0-9]/g, '');
-                const suffix = dlString.replace(/[0-9+]/g, '');
-                
-                let fullZeros = '';
-                if (suffix === 'k') fullZeros = '000';
-                if (suffix === 'm') fullZeros = '000000';
-                if (suffix === 'b') fullZeros = '000000000';
-                if (suffix === 't') fullZeros = '000000000000';
-                const fullValueStr = baseNum + fullZeros;
+// 2. Short-circuit instantly for download metric queries (HYBRID DUAL-ENGINE PRO SYSTEM)
+if (term.startsWith('download:')) {
+    const dlQuery = term.substring(9).trim();
+    const rawCount = app.downloadCount || 0;
+    
+    // ENGINE A: Shorthand Badge-Tier Matcher (100% Legacy Backward Compatibility)
+    const dlText = this.formatDownloadCount(rawCount);
+    let badgeMatches = false;
+    if (dlText) {
+        const dlString = dlText.toLowerCase();
+        const baseNum = dlString.replace(/[^0-9]/g, '');
+        const suffix = dlString.replace(/[0-9+]/g, '');
+        
+        let fullZeros = '';
+        if (suffix === 'k') fullZeros = '000';
+        if (suffix === 'm') fullZeros = '000000';
+        if (suffix === 'b') fullZeros = '000000000';
+        if (suffix === 't') fullZeros = '000000000000';
+        const fullValueStr = baseNum + fullZeros;
 
-                const searchTargets = [
-                    dlString,
-                    dlString.replace('+', ''),
-                    baseNum + '+',
-                    baseNum,
-                    fullValueStr,
-                    fullValueStr + '+'
-                ];
-                return searchTargets.some(target => target === dlQuery || target.startsWith(dlQuery));
-            }
+        const searchTargets = [
+            dlString,
+            dlString.replace('+', ''),
+            baseNum + '+',
+            baseNum,
+            fullValueStr,
+            fullValueStr + '+'
+        ];
+        badgeMatches = searchTargets.some(target => target === dlQuery);
+    }
+
+    // ENGINE B: Live Accurate Evaluator (Adds precise integers & conditional comparison ops)
+    let accurateMatches = false;
+    const matchOp = dlQuery.match(/^([><]=?|=)?([0-9\.]+)([kmbt]?)$/i);
+    if (matchOp) {
+        const op = matchOp[1] || '=';
+        let valNum = parseFloat(matchOp[2]);
+        const unit = matchOp[3].toLowerCase();
+        
+        if (unit === 'k') valNum *= 1000;
+        if (unit === 'm') valNum *= 1000000;
+        if (unit === 'b') valNum *= 1000000000;
+        if (unit === 't') valNum *= 1000000000000;
+
+        if (op === '>') accurateMatches = rawCount > valNum;
+        else if (op === '<') accurateMatches = rawCount < valNum;
+        else if (op === '>=') accurateMatches = rawCount >= valNum;
+        else if (op === '<=') accurateMatches = rawCount <= valNum;
+        else accurateMatches = rawCount === valNum;
+    } else {
+        accurateMatches = String(rawCount).includes(dlQuery);
+    }
+
+    return badgeMatches || accurateMatches;
+}
 
             // 3. LIGHTSPEED STANDARD FALLBACK INDEX (Zero overhead during normal text searches)
             const displayName = (app.storeName || app.name || '').toLowerCase();

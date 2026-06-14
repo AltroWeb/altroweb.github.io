@@ -2142,8 +2142,8 @@ const myVar = params.get('showtext');</div>
         <strong style="color: #007AFF;">App Builder Query Filters:</strong>
         <ul style="margin: 10px 0 0 0; padding-left: 20px; line-height: 1.8;">
             <li><code>badge:trusted</code> — Filters by apps that have the trusted badge.</li>
-            <li><code>active:(count)</code> — Filters by active install count of the apps.</li>
-            <li><code>download:(count)</code> — Filters by total download count of the apps.</li>
+            <li><code>active:(count)</code> — Filters by active install count of the apps. You can even use operators like <code><</code>, <code>></code>, <code><=</code>, or <code>>=</code> before the value.</li>
+            <li><code>download:(count)</code> — Filters by total download count of the apps. You can even use operators like <code><</code>, <code>></code>, <code><=</code>, or <code>>=</code> before the value.</li>
             <li><code>type:native/embed/legacy</code> — Filters apps by their types; Legacy - Legacy Data URI HTML, Embed- Directly embed URLs or websites, Native - Native full permission HTML apps.</li>
             
             <li><code>update #(count)</code> — Filters apps by update metric counts, how many times the got updated since creation. Usage: Update #(any number of times to search).</li>
@@ -2188,7 +2188,7 @@ const myVar = params.get('showtext');</div>
             <h3>Download Metrics Parser</h3>
             <p>Filter by absolute user volume milestones utilizing the format layout: <code>download:(value)</code>.</p>
             <p style="margin-top: 8px; font-size: 13px; opacity: 0.85;">
-                <strong>Supported Syntaxes:</strong> Raw integers up to 1,000,000,000 or custom dynamic format strings such as <code>5+</code>, <code>10+</code>, <code>5k+</code>, <code>10k</code>, <code>1M</code>, <code>5M</code>, or <code>1B</code>.
+                <strong>Supported Syntaxes:</strong> Raw integers up to 1,000,000,000 or custom dynamic format strings such as <code>5+</code>, <code>10+</code>, <code>5k+</code>, <code>10k</code>, <code>1M</code>, <code>5M</code>, or <code>1B</code>. You can even use operators like <code><</code>, <code>></code>, <code><=</code>, or <code>>=</code> before the value.
             </p>
         </div>
     </div>

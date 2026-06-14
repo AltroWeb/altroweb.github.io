@@ -1987,18 +1987,66 @@ async fetchMyApps() {
     if (term.startsWith('published:')) return new RegExp('\\b' + term.substring(10).trim()).test(fmt(app.createdAt));
 
 
-        // Download parsing: download:50 (exact) or download:50+ (min)
-        if (term.startsWith('download:')) {
-            const val = term.split(':')[1];
-            const count = app.downloadCount || 0;
-            return val.includes('+') ? count >= parseInt(val) : count === parseInt(val);
-        }
+        // Download parsing (HYBRID DUAL-ENGINE PRO SYSTEM)
+if (term.startsWith('download:')) {
+    const dlQuery = term.substring(9).trim();
+    const rawCount = app.downloadCount || 0;
 
-        // Active parsing: active:5
-        if (term.startsWith('active:')) {
-            const val = parseInt(term.split(':')[1]);
-            return (app.installCount || 0) === val;
-        }
+    // ENGINE A: Legacy Backward Compatibility (e.g., download:50+)
+    let legacyMatches = dlQuery.includes('+') ? rawCount >= parseInt(dlQuery) : rawCount === parseInt(dlQuery);
+
+    // ENGINE B: Precise Operators & Multipliers Window (>500, <=10k, etc.)
+    let accurateMatches = false;
+    const matchOp = dlQuery.match(/^([><]=?|=)?([0-9\.]+)([kmbt]?)$/i);
+    if (matchOp) {
+        const op = matchOp[1] || '=';
+        let valNum = parseFloat(matchOp[2]);
+        const unit = matchOp[3].toLowerCase();
+        
+        if (unit === 'k') valNum *= 1000;
+        if (unit === 'm') valNum *= 1000000;
+        if (unit === 'b') valNum *= 1000000000;
+        if (unit === 't') valNum *= 1000000000000;
+
+        if (op === '>') accurateMatches = rawCount > valNum;
+        else if (op === '<') accurateMatches = rawCount < valNum;
+        else if (op === '>=') accurateMatches = rawCount >= valNum;
+        else if (op === '<=') accurateMatches = rawCount <= valNum;
+        else accurateMatches = rawCount === valNum;
+    } else {
+        accurateMatches = String(rawCount).includes(dlQuery);
+    }
+
+    return legacyMatches || accurateMatches;
+}
+
+        // Active parsing: handles exact (active:5) AND operators (active:>5, active:>=10k)
+if (term.startsWith('active:')) {
+    const query = term.substring(7).trim(); // Extracts "5", ">5", ">=10k"
+    const count = app.installCount || 0;
+
+    // 1. Detect Operators (>, <, >=, <=)
+    const opMatch = query.match(/^([><]=?)/);
+    
+    if (opMatch) {
+        const op = opMatch[1];
+        const valStr = query.replace(op, ''); // Extract the number part
+        let val = parseFloat(valStr);
+        
+        // Multiplier handling
+        if (valStr.toLowerCase().includes('k')) val *= 1000;
+        if (valStr.toLowerCase().includes('m')) val *= 1000000;
+
+        if (op === '>') return count > val;
+        if (op === '<') return count < val;
+        if (op === '>=') return count >= val;
+        if (op === '<=') return count <= val;
+    } 
+    
+    // 2. OG Exact Match (If no operator, we perform strict equality)
+    return count === parseInt(query);
+}
+        
 
 
 
