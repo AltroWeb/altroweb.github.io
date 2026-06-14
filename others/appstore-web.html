@@ -2161,99 +2161,116 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
     
     
     <script>
-(function initProAppStoreWebRouter() {
-    // 1. Sync Initial State (Protects Deep Links on reload)
-    const initialInput = document.getElementById('store-search-input')?.value || '';
-    let currentQuery = initialInput;
-    history.replaceState({ screen: initialInput ? 'search' : 'home', q: initialInput }, '');
+    (function initProAppStoreWebRouter() {
+        let blockHistoryToggle = false;
+        const input = document.getElementById('store-search-input');
 
-    // 2. Monkey-Patch filterApps to inject history when Dev Card or Search opens
-    const origFilter = appStoreWeb.filterApps;
-    appStoreWeb.filterApps = function(query, isFromHistory = false) {
-        origFilter.call(this, query);
-        
-        if (!isFromHistory && query !== currentQuery) {
-            // If entering a Dev Card or starting a fresh search: PUSH new history.
-            // If just typing another letter in search: REPLACE history (prevents 100 clicks to go back).
-            if (query.startsWith('dev:') || currentQuery === '') {
-                history.pushState({ screen: 'search', q: query }, '');
-            } else {
-                history.replaceState({ screen: 'search', q: query }, '');
+        // Helper to cleanly construct target address bar URLs dynamically
+        function updateBrowserURL(query) {
+            const url = new URL(window.location.origin + window.location.pathname);
+            if (query) {
+                url.searchParams.set('s', query);
             }
-            currentQuery = query || '';
+            return url.toString();
         }
-    };
 
-    // 3. Monkey-Patch clearSearch to route home safely
-    const origClear = appStoreWeb.clearSearch;
-    appStoreWeb.clearSearch = function(isFromHistory = false) {
-        // Mute the buggy native pushState in the original function to prevent URL mangling
-        const origPushState = window.history.pushState;
-        window.history.pushState = function() {}; 
-        origClear.call(this);
-        window.history.pushState = origPushState; 
+        // 1. Sync and register initial page-load context
+        const initialInput = input?.value || '';
+        history.replaceState({ screen: initialInput ? 'search' : 'home', q: initialInput }, '', window.location.href);
 
-        currentQuery = '';
-        if (!isFromHistory) {
-            history.pushState({ screen: 'home', q: '' }, '');
-        }
-    };
+        // 2. Monkey-patch filterApps to update History and Address Bar concurrently
+        const origFilter = appStoreWeb.filterApps;
+        appStoreWeb.filterApps = function(query, isFromHistory = false) {
+            origFilter.call(this, query);
+            
+            if (!isFromHistory && !blockHistoryToggle) {
+                const nextURL = updateBrowserURL(query);
+                const currentState = history.state;
+                
+                // Block frame flooding if state context hasn't changed
+                if (currentState && currentState.screen === 'search' && currentState.q === query) return;
 
-    // 4. Monkey-Patch Modals to inject a "dummy" history state
-    const origOpenReport = appStoreWeb.openReport;
-    appStoreWeb.openReport = async function(appId) {
-        history.pushState({ screen: 'modal' }, ''); // Add dummy state
-        await origOpenReport.call(this, appId);
-    };
-
-    if (typeof appStoreWeb.showAlert === 'function') {
-        const origShowAlert = appStoreWeb.showAlert;
-        appStoreWeb.showAlert = function(title, msg, cb) {
-            history.pushState({ screen: 'modal' }, ''); // Add dummy state
-            origShowAlert.call(this, title, msg, cb);
+                if (query.startsWith('dev:') || !currentState || currentState.screen === 'home') {
+                    history.pushState({ screen: 'search', q: query }, '', nextURL);
+                } else {
+                    history.replaceState({ screen: 'search', q: query }, '', nextURL);
+                }
+            }
         };
-    }
 
-    // 5. The Hardware Back-Button Trap
-    window.addEventListener('popstate', function(e) {
-        e.stopImmediatePropagation(); // Strike first
+        // 3. Monkey-patch clearSearch to sanitize URL and state parameters seamlessly
+        const origClear = appStoreWeb.clearSearch;
+        appStoreWeb.clearSearch = function(isFromHistory = false) {
+            // Mute the internal unmanaged window.history call inside original function to prevent tracking pollution
+            const origPushState = window.history.pushState;
+            window.history.pushState = function() {}; 
+            origClear.call(this);
+            window.history.pushState = origPushState; 
 
-        const reportModal = document.getElementById('report-modal');
-        const alertModal = document.getElementById('sys-alert');
-        let modalClosed = false;
+            if (!isFromHistory && !blockHistoryToggle) {
+                const cleanURL = updateBrowserURL('');
+                history.pushState({ screen: 'home', q: '' }, '', cleanURL);
+            }
+        };
 
-        // TRAP 1: Modals
-        if (reportModal && reportModal.classList.contains('visible')) {
-            appStoreWeb.closeReport();
-            modalClosed = true;
+        // 4. Monkey-patch modal layers to inject safe step-back tracking tokens
+        const origOpenReport = appStoreWeb.openReport;
+        appStoreWeb.openReport = async function(appId) {
+            history.pushState({ screen: 'modal' }, '', window.location.href);
+            await origOpenReport.call(this, appId);
+        };
+
+        if (typeof appStoreWeb.showAlert === 'function') {
+            const origShowAlert = appStoreWeb.showAlert;
+            appStoreWeb.showAlert = function(title, msg, cb) {
+                history.pushState({ screen: 'modal' }, '', window.location.href);
+                origShowAlert.call(this, title, msg, cb);
+            };
         }
-        if (alertModal && alertModal.classList.contains('visible')) {
-            document.getElementById('sa-btn-ok')?.click();
-            alertModal.classList.remove('visible'); // Failsafe
-            modalClosed = true;
-        }
 
-        // If a modal was closed, the browser already popped the dummy state off the stack. 
-        // We are naturally back on the correct screen. Halt execution.
-        if (modalClosed) return;
+        // 5. Hardware & Browser Back-Button Navigation Core Interceptor Engine
+        window.addEventListener('popstate', function(e) {
+            e.stopImmediatePropagation(); // Capture event prioritization frame immediately
 
-        // TRAP 2: Sub-Pages (Dev Card) and Search
-        if (e.state) {
-            if (e.state.screen === 'home') {
-                appStoreWeb.clearSearch(true); // True = don't push history
-            } else if (e.state.screen === 'search') {
-                const input = document.getElementById('store-search-input');
-                if (input) input.value = e.state.q || '';
-                appStoreWeb.filterApps(e.state.q || '', true);
+            const reportModal = document.getElementById('report-modal');
+            const alertModal = document.getElementById('sys-alert');
+            let modalClosed = false;
+
+            // Handle Modal Dismissals First
+            if (reportModal && reportModal.classList.contains('visible')) {
+                appStoreWeb.closeReport();
+                modalClosed = true;
+            }
+            if (alertModal && alertModal.classList.contains('visible')) {
+                document.getElementById('sa-btn-ok')?.click();
+                alertModal.classList.remove('visible');
+                modalClosed = true;
+            }
+            if (modalClosed) return;
+
+            // Arm the recursion block lock flag
+            blockHistoryToggle = true;
+
+            if (e.state) {
+                if (e.state.screen === 'home') {
+                    appStoreWeb.clearSearch(true);
+                } else if (e.state.screen === 'search') {
+                    if (input) input.value = e.state.q || '';
+                    appStoreWeb.filterApps(e.state.q || '', true);
+                } else {
+                    appStoreWeb.clearSearch(true);
+                }
             } else {
                 appStoreWeb.clearSearch(true);
             }
-        } else {
-            appStoreWeb.clearSearch(true);
-        }
-    }, true);
-})();
-</script>
+
+            // Release the navigation state lifecycle lock safely
+            setTimeout(() => {
+                blockHistoryToggle = false;
+            }, 30);
+        }, true);
+    })();
+    </script>
     
     
     
