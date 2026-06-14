@@ -21,7 +21,7 @@
             --transition: cubic-bezier(0.165, 0.84, 0.44, 1);
             
             /* Dark Mode Variables (Default Light) */
-            --bg-nav: rgba(255, 255, 255, 0.85);
+            --bg-nav: rgba(255, 255, 255, 1);
             --border-color: rgba(0,0,0,0.05);
         }
 
@@ -33,7 +33,7 @@
             --text-secondary: #A1A1A6;
             --accent: #0A84FF;
             --accent-hover: #0077ED;
-            --bg-nav: rgba(28, 28, 30, 0.85);
+            --bg-nav: rgba(28, 28, 30, 1);
             --border-color: rgba(255,255,255,0.1);
             --shadow-lg: 0 18px 40px rgba(0,0,0,0.4);
         }
@@ -654,6 +654,41 @@ body.dark-mode .nav-more-trigger {
 }
 
 
+/* --- PRO MOBILE-LIKE SLEEK SCROLLBARS FOR DESKTOP --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.45);
+        }
+        /* Dark Mode compatibility */
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        body.dark-mode ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        /* Firefox Support fallback */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+        }
+        body.dark-mode * {
+            scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -727,7 +762,7 @@ body.dark-mode .nav-more-trigger {
             Launch Web Store
         </button>
             </div>
-            <p style="font-size: 13px; color: var(--text-secondary);">v2.0 • HTTPS Required</p>
+            <p style="font-size: 13px; color: var(--text-secondary);">Single HTML • Monolithic</p>
         </section>
 
         <section class="bento-section">
@@ -2866,11 +2901,13 @@ window.navigateToResult = function(view, hash) {
     }
 
     // 2. STATE CACHE (Prevents DOM Thrashing)
+    // 2. STATE CACHE (Prevents DOM Thrashing)
     const Cache = {
         navButtons: new Map(),      // Maps 'viewName' -> Array of Buttons
         sidebarLinks: new Map(),    // Maps 'sectionID' -> Link Element
         activeLink: null,           // Currently highlighted sidebar link
-        observer: null
+        observer: null,
+        isClickScrolling: false     // <-- LOCK FLAG: Prevents ScrollSpy hijack during clicks
     };
 
     // 3. BUILD CACHE (Run Once)
@@ -2885,15 +2922,31 @@ window.navigateToResult = function(view, hash) {
             }
         });
 
-        // Cache Sidebar Links
+// Cache Sidebar Links with Cross-Hijack Prevention Locks
         document.querySelectorAll('.docs-sidebar a').forEach(link => {
             const href = link.getAttribute('href');
             if (href && href.startsWith('#')) {
-                Cache.sidebarLinks.set(href.substring(1), link); // Map ID to Link
-                
-                
-                link.addEventListener('click', () => { document.querySelectorAll('.docs-sidebar a').forEach(el => el.classList.remove('active')); link.classList.add('active'); Cache.activeLink = link; });
-                
+                Cache.sidebarLinks.set(href.substring(1), link);
+
+                link.addEventListener('click', (e) => {
+                    // 1. Activate Scroll Lock to prevent intermediate scroll triggers
+                    Cache.isClickScrolling = true;
+
+                    // 2. Clear active states inside this specific sidebar container only
+                    const parentSidebar = link.closest('.docs-sidebar');
+                    if (parentSidebar) {
+                        parentSidebar.querySelectorAll('a').forEach(el => el.classList.remove('active'));
+                    }
+
+                    // 3. Force instant pristine highlight placement
+                    link.classList.add('active');
+                    Cache.activeLink = link;
+
+                    // 4. Safely release ScrollSpy engine tracking after smooth scroll completes
+                    setTimeout(() => {
+                        Cache.isClickScrolling = false;
+                    }, 550);
+                });
             }
         });
     }
@@ -2916,8 +2969,20 @@ window.navigateToResult = function(view, hash) {
                 });
             });
 
-            // B. Manage ScrollSpy Lifecycle (Lazy Load)
+            // B. Manage ScrollSpy Lifecycle (Lazy Load) & Clear Stale States
             if (viewName === 'docs' || viewName === 'support') {
+                const sidebarId = viewName === 'docs' ? 'docs-sidebar' : 'support-sidebar';
+                const sidebar = document.getElementById(sidebarId);
+                if (sidebar) {
+                    // Wipe any old active links instantly
+                    sidebar.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+                    // Force state engine focus back to the first anchor link item
+                    const firstLink = sidebar.querySelector('a[href^="#"]');
+                    if (firstLink) {
+                        firstLink.classList.add('active');
+                        Cache.activeLink = firstLink;
+                    }
+                }
                 if (!Cache.observer) initScrollSpy();
             } else {
                 shutdownScrollSpy(); // Save RAM when not needed
@@ -2937,6 +3002,9 @@ window.navigateToResult = function(view, hash) {
         if (targets.length === 0) return;
 
         Cache.observer = new IntersectionObserver((entries) => {
+            // FORCE HALT: Do absolutely nothing if the user caused the scroll via a direct click
+            if (Cache.isClickScrolling) return;
+
             // Find the first intersecting element
             const visible = entries.find(e => e.isIntersecting);
             if (visible) {

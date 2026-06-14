@@ -335,13 +335,18 @@ margin-top: 90px; /* This physically pushes the scroller (and its bar) below the
         
         
 /* --- PRO SLEEK SCROLLBARS (Toggleable) --- */
-.app-content-scroll::-webkit-scrollbar { 
-    width: 0; /* Default iOS Invisible */
+.app-content-scroll::-webkit-scrollbar,
+#music-window .app-content-scroll::-webkit-scrollbar { 
+    width: 0;
+    height: 0;
+    display: none; /* Emulates native hidden scrollbars natively */
 }
 
-body.sleek-scrollbars ::-webkit-scrollbar {
+body.sleek-scrollbars ::-webkit-scrollbar,
+body.sleek-scrollbars #music-window ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
+    display: block !important;
 }
 body.sleek-scrollbars ::-webkit-scrollbar-track {
     background: transparent;
@@ -667,6 +672,8 @@ body.dark-mode .store-update-section span {
             pointer-events: auto; z-index: 5001; cursor: pointer;
             transform: translate3d(0,0,0); backface-visibility: hidden;
             -webkit-font-smoothing: subpixel-antialiased;
+            /* Add this exact line inside your #dynamic-island rule block */
+border: 2px solid rgba(255, 255, 255, 0.1);
         }
         .island-capsule.motion-blur { filter: blur(1.5px); }
         .island-capsule.expanded { width: 324px; height: 80px; border-radius: 40px; }
@@ -2119,9 +2126,9 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
                 <span class="nav-title">Music</span>
             </div>
             <div class="app-content-scroll">
-                <div class="scroll-inner-padding" style="display:flex; flex-direction:column; height:100%; justify-content:flex-start;">
-                    <div class="mock-line" style="width:40%; height:5px; background:rgba(255,255,255,0.2); border-radius:4px; align-self:center; margin-bottom:10px;"></div>
-                    <div class="mock-card" style="width:100%; aspect-ratio:1/1; background:linear-gradient(45deg, #333, #666); border-radius:12px; margin: 20px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                <div class="scroll-inner-padding" >
+                    
+                    <div class="mock-card" style="width:100%; aspect-ratio:1/1; background:linear-gradient(45deg, #333, #666); border-radius:12px; margin: 10px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
                          <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=400&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover; border-radius:12px; opacity:0.8;">
                     </div>
                     <div style="margin-top:10px;">
@@ -2609,28 +2616,28 @@ checkUrlParams() {
    clearSearch() {
     const input = document.getElementById('store-search-input');
     
-    // 1. Reset UI
+    // 1. Reset UI value safely
     if (input) {
         input.value = '';
-        this.filterApps(''); // Reset to full list
     }
     document.getElementById('store-dev-card').style.display = 'none';
     document.getElementById('store-dev-header').style.display = 'none';
 
-    // 2. CRITICAL: Wipe URL Parameter
-    // This ensures that when you close and reopen the app, the ?s= param 
-    // is gone, so it doesn't auto-trigger the dev page again.
-    
+    // 2. Clear URL parameter safely to prevent routing loop locks
     if (window.history && window.history.replaceState) {
         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
     }
 
-    // 3. RESTORE SCROLL MEMORY
+    // 3. Clear parametric filters & evaluate through the search engine firewall
+    this.lockedAppId = null;
+    this.filterApps('');
+
+    // 4. Restore scroll coordinates smoothly
     if (this.savedScroll) {
         setTimeout(() => {
             document.getElementById('store-scroll').scrollTo({ top: this.savedScroll, behavior: 'smooth' });
-            this.savedScroll = 0; // Clear memory
+            this.savedScroll = 0;
         }, 10);
     }
 }
@@ -7193,6 +7200,31 @@ this.checkWallpaperBrightness();
     const storeScroll = document.getElementById('store-scroll');
     // 1. Get Sideloader Elements
     const slScroll = document.getElementById('sideloader-scroll');
+    
+    
+    
+const musicScroll = document.querySelector('#music-window .app-content-scroll');
+const musicNav = document.querySelector('#music-window .app-navbar');
+if (musicScroll && musicNav) {
+    musicScroll.addEventListener('scroll', () => {
+        if (musicScroll.scrollTop > 30) {
+            musicNav.classList.add('scrolled');
+        } else {
+            musicNav.classList.remove('scrolled');
+        }
+    });
+}
+    
+    
+    
+    
+const musicTitle = document.querySelector('#music-window .app-navbar .nav-title');
+if (musicTitle && musicScroll) {
+    musicTitle.addEventListener('click', () => {
+        musicScroll.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+    
     
     const navbar = document.getElementById('main-navbar');
     const storeNav = document.getElementById('store-navbar');
