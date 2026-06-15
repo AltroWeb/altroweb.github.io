@@ -2659,8 +2659,8 @@ filterApps(query) {
         return;
     }
 
-    const rawTerm = query.trim();
-    const term = rawTerm.toLowerCase();
+    let rawTerm = query.trim();
+    let term = rawTerm.toLowerCase();
     
     
     // --- DATE FORMATTER LAYER ---
@@ -2773,6 +2773,28 @@ filterApps(query) {
                 }
             } catch (e) {}
         }
+
+
+
+// --- PRO SURGICAL PARAMETRIC SORT ENGINE ---
+    let sortKey = null;
+    let sortOrder = 'desc'; // Pro Master Sorting Default Strategy
+
+    if (term.startsWith('download:asc'))   { sortKey = 'downloadCount'; sortOrder = 'asc';  term = ''; query = ''; }
+    else if (term.startsWith('download:desc'))  { sortKey = 'downloadCount'; sortOrder = 'desc'; term = ''; query = ''; }
+    else if (term.startsWith('published:asc')) { sortKey = 'createdAt';     sortOrder = 'asc';  term = ''; query = ''; }
+    else if (term.startsWith('published:desc')) { sortKey = 'createdAt';     sortOrder = 'desc'; term = ''; query = ''; }
+    else if (term.startsWith('updated:asc'))   { sortKey = 'updatedAt';     sortOrder = 'asc';  term = ''; query = ''; }
+    else if (term.startsWith('updated:desc'))  { sortKey = 'updatedAt';     sortOrder = 'desc'; term = ''; query = ''; }
+
+
+
+
+
+
+
+
+
 
         // --- HYPER-OPTIMIZED PRO PARAMETRIC SEARCH FILTER ---
         const filtered = this.apps.filter(app => {
@@ -2913,6 +2935,37 @@ if (term.startsWith('download:')) {
                    desc.includes(term) || 
                    tags.includes(term);
         });
+    
+    
+    
+    
+    
+    // --- SURGICAL METRIC COMPARATOR STACK ---
+    if (sortKey) {
+        filtered.sort((alpha, beta) => {
+            let metricA = alpha[sortKey];
+            let metricB = beta[sortKey];
+
+            if (sortKey === 'downloadCount') {
+                // Ensure exact numeric type sorting tracking integers securely
+                metricA = Number(metricA || 0);
+                metricB = Number(metricB || 0);
+            } else {
+                // Chronological Engine Layer: Strict fallback chain to clear missing index anomalies
+                metricA = Number(metricA || alpha.createdAt || alpha.updatedAt || Date.now());
+                metricB = Number(metricB || beta.createdAt || beta.updatedAt || Date.now());
+            }
+
+            if (metricA === metricB) return 0;
+            return sortOrder === 'asc' ? (metricA - metricB) : (metricB - metricA);
+        });
+    }
+    
+    
+    
+    
+    
+    
     
     this.renderStore(filtered);
 }

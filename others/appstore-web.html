@@ -1309,7 +1309,7 @@ clearSearch() {
 
 
     let term = query.trim(); // Keep original case for ID checks
-    const lowerTerm = term.toLowerCase();
+    let lowerTerm = term.toLowerCase();
     
     const card = document.getElementById('dev-profile-card');
     const header = document.getElementById('dev-section-header');
@@ -1378,6 +1378,24 @@ clearSearch() {
     // --- 3. STANDARD SEARCH (With Tags) ---
     if (card) card.style.display = 'none';
     if (header) header.style.display = 'none';
+
+
+
+
+// --- PRO SURGICAL PARAMETRIC SORT ENGINE ---
+    let sortKey = null;
+    let sortOrder = 'desc'; // Pro Master Sorting Default Strategy
+    window.isParametricSorting = false; // Reset on new inputs
+
+    if (lowerTerm.startsWith('download:asc'))   { sortKey = 'downloadCount'; sortOrder = 'asc';  term = ''; lowerTerm = ''; window.isParametricSorting = true; }
+    else if (lowerTerm.startsWith('download:desc'))  { sortKey = 'downloadCount'; sortOrder = 'desc'; term = ''; lowerTerm = ''; window.isParametricSorting = true; }
+    else if (lowerTerm.startsWith('published:asc')) { sortKey = 'createdAt';     sortOrder = 'asc';  term = ''; lowerTerm = ''; window.isParametricSorting = true; }
+    else if (lowerTerm.startsWith('published:desc')) { sortKey = 'createdAt';     sortOrder = 'desc'; term = ''; lowerTerm = ''; window.isParametricSorting = true; }
+    else if (lowerTerm.startsWith('updated:asc'))   { sortKey = 'updatedAt';     sortOrder = 'asc';  term = ''; lowerTerm = ''; window.isParametricSorting = true; }
+    else if (lowerTerm.startsWith('updated:desc'))  { sortKey = 'updatedAt';     sortOrder = 'desc'; term = ''; lowerTerm = ''; window.isParametricSorting = true; }
+
+
+
 
     // --- HYPER-OPTIMIZED PRO PARAMETRIC SEARCH FILTER (WEB EDITION) ---
         const filtered = this.apps.filter(app => {
@@ -1498,6 +1516,37 @@ if (lowerTerm.startsWith('download:')) {
                    desc.includes(lowerTerm) || 
                    tags.includes(lowerTerm)
         });
+
+
+
+
+// --- SURGICAL METRIC COMPARATOR STACK ---
+    if (sortKey) {
+        filtered.sort((alpha, beta) => {
+            let metricA = alpha[sortKey];
+            let metricB = beta[sortKey];
+
+            if (sortKey === 'downloadCount') {
+                // Ensure exact numeric type sorting tracking integers securely
+                metricA = Number(metricA || 0);
+                metricB = Number(metricB || 0);
+            } else {
+                // Chronological Engine Layer: Strict fallback chain to clear missing index anomalies
+                metricA = Number(metricA || alpha.createdAt || alpha.updatedAt || Date.now());
+                metricB = Number(metricB || beta.createdAt || beta.updatedAt || Date.now());
+            }
+
+            if (metricA === metricB) return 0;
+            return sortOrder === 'asc' ? (metricA - metricB) : (metricB - metricA);
+        });
+    }
+
+
+
+
+
+
+
 
     this.renderStore(filtered);
 }
@@ -2182,6 +2231,9 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
         const origFilter = appStoreWeb.filterApps;
         appStoreWeb.filterApps = function(query, isFromHistory = false) {
             origFilter.call(this, query);
+            
+            // SURGICAL FIX: Prevent history mutations from overwriting sorting view arrays
+            if (window.isParametricSorting) return; 
             
             if (!isFromHistory && !blockHistoryToggle) {
                 const nextURL = updateBrowserURL(query);

@@ -1967,10 +1967,23 @@ async fetchMyApps() {
             
             
             
-    const term = document.getElementById('dashboard-search')?.value.toLowerCase().trim() || '';
-    const TIME = 7 * 24 * 60 * 60 * 1000;
+let term = document.getElementById('dashboard-search')?.value.toLowerCase().trim() || '';
+        const TIME = 7 * 24 * 60 * 60 * 1000;
 
-    this.renderMyApps(this.myAppsCache.filter(app => {
+        // --- PRO SURGICAL PARAMETRIC SORT ENGINE ---
+        let sortKey = null;
+        let sortOrder = 'desc'; 
+
+        if (term === 'download:asc')        { sortKey = 'downloadCount'; sortOrder = 'asc';  term = ''; }
+        else if (term === 'download:desc')  { sortKey = 'downloadCount'; sortOrder = 'desc'; term = ''; }
+        else if (term === 'active:asc')     { sortKey = 'installCount';  sortOrder = 'asc';  term = ''; }
+        else if (term === 'active:desc')    { sortKey = 'installCount';  sortOrder = 'desc'; term = ''; }
+        else if (term === 'published:asc')  { sortKey = 'createdAt';     sortOrder = 'asc';  term = ''; }
+        else if (term === 'published:desc') { sortKey = 'createdAt';     sortOrder = 'desc'; term = ''; }
+        else if (term === 'updated:asc')    { sortKey = 'updatedAt';     sortOrder = 'asc';  term = ''; }
+        else if (term === 'updated:desc')   { sortKey = 'updatedAt';     sortOrder = 'desc'; term = ''; }
+
+        let filtered = this.myAppsCache.filter(app => {
         // --- 1. PRO SEARCH PARAMETER INTERCEPTOR (Fast-pass) ---
         
         // Update parsing: matches "update#4", "update #4", "update 4"
@@ -2068,22 +2081,33 @@ if (term.startsWith('type:')) {
         const newTag = isNewApp ? 'badge:new' : '';
 
         return [
-            app.name, 
-            app.storeName, 
-            app.id, 
-            app.author, 
-            app.description, 
-            app.type, 
-            trustedTag, 
-            newTag, 
-            (app.tags || '').toLowerCase(), 
-            new Date(app.createdAt).toLocaleDateString(), 
-            new Date(app.updatedAt).toLocaleTimeString(),
-            // Expand: Include the dynamic update string in search
-            (app.updateCount ? `update #${app.updateCount}` : 'edited')
-        ].some(field => String(field || '').toLowerCase().includes(term));
-    }));
-}
+                app.name, 
+                app.storeName, 
+                app.id, 
+                app.author, 
+                app.description, 
+                app.type, 
+                trustedTag, 
+                newTag, 
+                (app.tags || '').toLowerCase(), 
+                new Date(app.createdAt).toLocaleDateString(), 
+                new Date(app.updatedAt).toLocaleTimeString(),
+                // Expand: Include the dynamic update string in search
+                (app.updateCount ? `update #${app.updateCount}` : 'edited')
+            ].some(field => String(field || '').toLowerCase().includes(term));
+        });
+
+        // --- SURGICAL METRIC COMPARATOR STACK ---
+        if (sortKey) {
+            filtered.sort((alpha, beta) => {
+                let metricA = Number(alpha[sortKey] || 0);
+                let metricB = Number(beta[sortKey] || 0);
+                return sortOrder === 'asc' ? (metricA - metricB) : (metricB - metricA);
+            });
+        }
+
+        this.renderMyApps(filtered);
+    }
 
             renderMyApps(apps) {
     const list = document.getElementById('my-apps-list');
