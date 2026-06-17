@@ -4998,7 +4998,7 @@ finalizeInstall(appData) {
     iOS.injectSingleApp(appData);
     this.showList();
     iOS.applyCustomIcons();
-    iOS.showAlert('Installed', `${appData.name} has been unpacked and installed.`);
+    setTimeout(() => iOS.showAlert('Installed', `${appData.name} has been unpacked and installed.`), 300);
 }
 
 // 3. EXPORT .IAP (Creation)
@@ -5269,7 +5269,55 @@ async generatePackage(name, icon, type, payload, size, author, desc, forcedId) {
             return;
         }
 
-        const filtered = this.apps.filter(app => [app.name, app.id, app.author, app.description, app.type, app.isPacked ? 'iap' : '', this.formatTime(app.createdAt), this.formatTime(app.updatedAt), this.formatTime(app.localInstalledAt)].some(field => String(field || '').toLowerCase().includes(term)));
+        // --- START PRO HYBRID SEARCH & CHRONO SORT MATRIX ---
+        let sortKey = null;
+        let sortOrder = 'desc';
+        let queryStr = term.trim().toLowerCase();
+
+        // 1. Intercept Global Sorting Directives Natively
+        if (queryStr === 'installed:asc' || queryStr === 'installed:desc') { sortKey = 'localInstalledAt'; sortOrder = queryStr.split(':')[1]; queryStr = ''; }
+        else if (queryStr === 'updated:asc' || queryStr === 'updated:desc') { sortKey = 'updatedAt'; sortOrder = queryStr.split(':')[1]; queryStr = ''; }
+        else if (queryStr === 'created:asc' || queryStr === 'created:desc') { sortKey = 'createdAt'; sortOrder = queryStr.split(':')[1]; queryStr = ''; }
+
+        // Helper: Formats full readable timestamps matching your formatTime logic for complete text matching
+        const getSearchableTimeStr = (ms) => {
+            if (!ms) return '';
+            const d = new Date(Number(ms));
+            return (d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })).toLowerCase();
+        };
+
+        // 2. Surgical Evaluation Filter Loop
+        let filtered = this.apps.filter(app => {
+            if (!queryStr) return true; // Keep records for pure sorting commands
+
+            // Type Interceptors
+            if (queryStr.startsWith('type:')) {
+                const targetType = queryStr.substring(5).trim();
+                if (targetType === 'iap') return !!app.isPacked;
+                if (targetType === 'native') return (app.type || '').toLowerCase() === 'native';
+                if (targetType === 'legacy') return (app.type || '').toLowerCase() === 'sideloaded' && (app.embedUrl || '').startsWith('data:');
+                if (targetType === 'embed') return (app.type || '').toLowerCase() === 'sideloaded' && !(app.embedUrl || '').startsWith('data:');
+                return false;
+            }
+
+            // Date / Time Metric Interceptors
+            if (queryStr.startsWith('installed:')) return getSearchableTimeStr(app.localInstalledAt || app.updatedAt).includes(queryStr.substring(10).trim());
+            if (queryStr.startsWith('updated:')) return getSearchableTimeStr(app.updatedAt).includes(queryStr.substring(8).trim());
+            if (queryStr.startsWith('created:')) return getSearchableTimeStr(app.createdAt || app.updatedAt).includes(queryStr.substring(8).trim());
+
+            //lightspped native text index fallback scan
+            return [app.name, app.id, app.author, app.description].some(field => String(field || '').toLowerCase().includes(queryStr));
+        });
+
+        // 3. Chronological Engine Alignment Sorting Tiers
+        if (sortKey) {
+            filtered.sort((alpha, beta) => {
+                const metricA = Number(alpha[sortKey] || alpha.updatedAt || 0);
+                const metricB = Number(beta[sortKey] || beta.updatedAt || 0);
+                return sortOrder === 'asc' ? (metricA - metricB) : (metricB - metricA);
+            });
+        }
+        // --- END PRO HYBRID SEARCH & CHRONO SORT MATRIX ---
 
         filtered.forEach(app => {
             const row = document.createElement('div');
@@ -6994,10 +7042,15 @@ flushUntrustedAppsFromRAM() {
                 document.getElementById('sa-title').innerText = title;
                 document.getElementById('sa-msg').innerText = msg;
                 
-                this.alertOkBtn.onclick = () => {
-                    if (onOk) onOk();
-                    this.closeAlert();
-                };
+                /* --- DROP-IN REPLACEMENT INSIDE iOS.showAlert --- */
+this.alertOkBtn.onclick = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    this.closeAlert(); // 1. Close first to prevent state pollution
+    if (onOk) {
+        // 2. Clear the browser execution thread to insulate the next popup
+        setTimeout(() => onOk(), 50); 
+    }
+};
 
                 // Dynamic OK Text
                 if (customOkText) {
