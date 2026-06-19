@@ -1544,7 +1544,22 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
 }
 
 
+/* --- THE PRO FIX: OVERFLOW TERMINATOR --- */
+.notification-zone, #notification-container {
+    max-height: 85dvh !important;       /* Hard caps height bounds just short of the screen edges */
+    overflow-y: auto !important;         /* Instantly forces a vertical scrolling DOM layout engine */
+    pointer-events: auto !important;     /* Overrides passive pass-through so your gestures can grab it */
+    
+    /* Smooth native momentum scrolling behaviors */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;               /* Sleek design: Hides messy desktop scrollbars on Firefox */
+}
 
+/* Optional: Hides scrollbars on Chrome/Safari/Eruda to keep it looking clean like iOS */
+.notification-zone::-webkit-scrollbar, 
+#notification-container::-webkit-scrollbar {
+    display: none;
+}
 
 
 
@@ -1845,6 +1860,16 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
         <span>Enable Sideloading</span>
         <input type="checkbox" class="ios-switch" id="setting-sideload" onchange="sideloader.toggleSystem(this)">
     </div>
+    
+    
+    
+    <div class="ios-row">
+    <span>Console Logger</span>
+    <input type="checkbox" class="ios-switch" id="setting-console-logger" onchange="window.iOS.toggleConsoleLogger(this)">
+</div>
+    
+    
+    
     
     <div class="ios-row">
     
@@ -2229,12 +2254,18 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
     <script>
   
 
- console.log = function() {};
-// console.warn = function() {};
-// console.error = function() {};
-    
-    
-    
+ // ================= KERNEL CONSOLE BLACKHOLE =================
+window._originalConsoleLog = window.console.log;
+window._originalConsoleWarn = window.console.warn;
+window._originalConsoleError = window.console.error;
+
+// Immediately lock down the environment on boot
+if (localStorage.getItem('ios_console_logger_enabled') !== 'true') {
+    window.console.log = function() {};
+    window.console.warn = function() {};
+    window.console.error = function() {};
+}
+// ============================================================
     
     
         /* --- FIREBASE CONFIGURATION BLOCK --- */
@@ -3964,6 +3995,12 @@ directOpen(appId) {
                         this.isSyncing = false;
                         return;
                     }
+
+
+localStorage.setItem('ios_pending_decrements', '[]');
+
+
+
 
                     // Only log if there is actual work to do
                     console.log("🔄 Processing Offline Queue:", queue);
@@ -5759,7 +5796,7 @@ const SecureStorage = {
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
                 'ios_strict_notifs', 'ios_notif_dev_only', 'ios_reduce_effects', 'ios_untrusted_fs',
                 'ios_sleek_scrollbars', 'ios_assistive_touch', 'ios_assistive_autohide',
-                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled', 'ios_untrusted_godmode', 'ios_24hr_mode'
+                'ios_fullscreen_always', 'ios_untrusted_links','ios_sideloading_enabled', 'ios_untrusted_island', 'ios_island_enabled', 'ios_untrusted_godmode', 'ios_24hr_mode', 'ios_console_logger_enabled'
             ];
             settingsKeys.forEach(k => localStorage.removeItem(k));
 
@@ -5818,6 +5855,7 @@ const SecureStorage = {
                 'setting-untrusted-island': false,
                 'setting-untrusted-links': true,
                 'setting-untrusted-godmode': false,
+                'setting-console-logger': false,
                 'setting-24hr': true
             };
 
@@ -6081,6 +6119,67 @@ window.addEventListener('message', (event) => {
     
 });
 /* ------------------------------------------- */
+
+
+
+
+
+
+
+// Scoped memory pointers to protect native runtime methods
+this._originalConsoleLog = console.log;
+this._originalConsoleWarn = console.warn;
+this._originalConsoleError = console.error;
+
+this.initConsoleLogger = function() {
+    const isEnabled = localStorage.getItem('ios_console_logger_enabled') === 'true';
+    const toggleSwitch = document.getElementById('setting-console-logger');
+    if (toggleSwitch) toggleSwitch.checked = isEnabled;
+    this.applyConsoleInterception(isEnabled);
+};
+
+this.toggleConsoleLogger = function(el) {
+    const isEnabled = el.checked;
+    localStorage.setItem('ios_console_logger_enabled', isEnabled);
+    this.applyConsoleInterception(isEnabled);
+};
+
+// Initialize the state tracking flag at the top of your logger setup
+this._hasLoggedSinceToggle = false;
+
+this.applyConsoleInterception = function(enable) {
+    if (enable) {
+        this._hasLoggedSinceToggle = true;
+        
+        // Restore standard routing hooks from the global kernel cache
+        window.console.log = window._originalConsoleLog;
+        window.console.warn = window._originalConsoleWarn;
+        window.console.error = window._originalConsoleError;
+        console.log = window._originalConsoleLog;
+        console.warn = window._originalConsoleWarn;
+        console.error = window._originalConsoleError;
+    } else {
+        if (this._hasLoggedSinceToggle) {
+            try { console.clear(); } catch (e) {}
+            this._hasLoggedSinceToggle = false;
+        }
+
+        // Enforce absolute silence across all context frames
+        window.console.log = function() {};
+        window.console.warn = function() {};
+        window.console.error = function() {};
+        console.log = function() {};
+        console.warn = function() {};
+        console.error = function() {};
+    }
+};
+
+
+
+
+
+
+
 
 
 
@@ -6353,7 +6452,9 @@ if (untrustedLinksSwitch) untrustedLinksSwitch.checked = savedUntrustedLinks;
 
 
 
-
+if (typeof this.initConsoleLogger === 'function') {
+    this.initConsoleLogger();
+}
   
                 
                 

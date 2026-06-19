@@ -410,16 +410,20 @@
 /* --- ANALYTICS NUMBERS (Dynamic Scaling) --- */
 #glob-total, #glob-active, #ana-total, #ana-active {
     /* Override inline styles to enforce dynamic sizing */
-    font-size: clamp(28px, 5vw, 48px) !important; 
+    font-size: clamp(28px, 5vw, 48px) !important; /* Slightly optimized scaling bounds */
     
-    /* Safety Wrapping */
-    white-space: normal;
-    word-wrap: break-word;
-    line-height: 1.1;       /* Tight line height prevents card expansion */
+    /*  THE PRO WRAPPING STACK: Strict boundary enforcement */
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;  /* Forces breaks anywhere, breaking layout boundaries if needed */
+    word-break: break-all !important;     /* Hard-splits continuous number chains at the exact edge pixel */
+    line-height: 1.1;                     
     
-    /* Prevent layout breaking */
-    width: 100%;
-    display: block;
+    /* Lock structural width rules */
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    overflow: hidden;                     /* Safety net cutoff guarantee */
 }
 
 
