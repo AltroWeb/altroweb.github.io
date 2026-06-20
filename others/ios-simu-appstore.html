@@ -1565,6 +1565,161 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
 
 
 
+
+
+/* ==========================================================================
+   MASTER PRO TOGGLE & FLEX SPACING CONTAINMENT ENGINE
+   ========================================================================== */
+
+
+
+/* ==========================================================================
+   2. AUTOMATIC LEFT WORKSPACE ALLOCATION (Pro Wrapped Edition - Isolated)
+   ========================================================================== */
+
+/* Forces settings layout labels to wrap cleanly without ruining sideloader files or button blocks */
+.ios-row:not(#sideloader-window *):not(#sl-apps-list *):not([onclick]) > div:first-child, 
+.ios-row:not(#sideloader-window *):not(#sl-apps-list *):not([onclick]) > div:first-of-type {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+/* The target main label: Wrapped cleanly in place, NO ellipsis, zero side effects on app managers */
+.ios-row:not(#sideloader-window *):not(#sl-apps-list *):not([onclick]) > span:first-child {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: inline-block !important; /* Changed from block to inline-block to preserve vertical flex baseline alignment */
+    
+    /* THE WRAPPING ENGINE */
+    white-space: normal !important;      /* Unlocks multi-line wrapping */
+    overflow-wrap: anywhere !important;   /* Enforces card limits */
+    word-break: break-word !important;    /* Breaks naturally at word endings */
+    line-height: 1.3 !important;
+    
+    /* TOGGLE PROTECTION GAP */
+    padding-right: 12px !important;       /* Ensures text turns downward before touching the switch */
+}
+
+/* Right-side status strings: Constrained but clean, won't smash sideloader source checkmarks or action stacks */
+.ios-row:not(#sideloader-window *):not(#sl-apps-list *):not([onclick]) > span:last-child { 
+    max-width: 55% !important; 
+    white-space: normal !important; 
+    word-break: break-all !important; 
+    text-align: right !important; 
+}
+
+
+
+
+
+
+
+/* ---  UPDATE BAR & DYNAMIC ISLAND ISOLATION ENGINE --- */
+.store-update-section {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Enforce fluid wrapping on the left counter tracking span */
+.store-update-section > span {
+    flex: 1 !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Guard the action button from compression shifts */
+#update-all-btn {
+    flex-shrink: 0 !important;
+    margin-left: auto !important; /* Magnetically pins to the right edge boundary */
+    white-space: nowrap !important;
+}
+
+
+
+
+
+/*  THE VISUALIZER ARCHOR: Absolute immunity from fluid text expansion */
+.island-visualizer {
+    flex-shrink: 0 !important;      /* Forces bars to remain perfectly static */
+    display: flex !important;
+    align-items: flex-end !important;
+    margin-left: auto !important;   /* Keeps visualizer locked to the exact right edge */
+}
+
+
+
+
+
+/* ==========================================================================
+   SYSTEM ALERT & POPUP ABSOLUTE BOUNDS MATRIX (FINAL PRO CENTERING)
+   ========================================================================== */
+
+/* 1. FLEX CHASSIS LOCK: Hard-caps heights and shields containers from screen bleeding */
+.sys-alert-box, .report-alert-box {
+    max-height: 75dvh !important;       /* Hard limits height short of screen edges */
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;        /* Keeps border-radii corners clipped clean */
+}
+
+/* 2. DYNAMIC CONTENT SCROLL ENGINE: Turns long text zones into sleek scroll viewports */
+.sa-content, .ra-header {
+    flex: 1 !important;
+    overflow-y: auto !important;        /* Unlocks independent text box scrolling */
+    -webkit-overflow-scrolling: touch !important; /* Premium native momentum feedback */
+    scrollbar-width: none !important;   /* Clean UI: Hides desktop scrollbars on Firefox */
+}
+
+/* Clean UI: Hides desktop scrollbars on Chrome/Safari/Eruda toolbar viewports */
+.sa-content::-webkit-scrollbar, .ra-header::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* 3. HARD STRING SHIELD: Enforces word breaking for unspaced character streams */
+.sa-msg, .ra-msg {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    line-height: 1.4 !important;
+}
+
+/* 4. BUTTON ANCHORS: Keeps choice actions sticky to the base of the window layout */
+.sa-btn-group, .ra-options {
+    flex-shrink: 0 !important;          /* Protects action row heights from flattening */
+    margin-top: auto !important;        /* Magnetically pins choice cells to bottom */
+    display: flex !important;           /* Enforces structured side-by-side flex layout */
+    gap: 0px !important;                /* Keeps row layout tracking completely clean */
+}
+
+/* 5. THE INSULATED PRO BUTTON ENGINE (Absolute 1-Line Limit & Perfect Symmetric Gaps) */
+.sa-btn-group button, .ra-options button,
+.sys-alert-box button, .report-alert-box button {
+    flex: 1 !important;                 /* Distributes button widths perfectly even */
+    min-width: 0 !important;            /* Golden rule: allows text nodes to clip inside flex */
+    flex-shrink: 0 !important;          /* Prevents the buttons from flattening vertically */
+    width: 100% !important;             /* Ensures gray tap highlight fills total available width */
+    position: relative !important;      /* Properly grounds grey hover/active tap overlays */
+    
+    /* THE ABSOLUTE SINGLE-LINE TRUNCATION SHIELD */
+    display: block !important;          /* FORCES BLOCK MODEL: Restores structural padding layout control */
+    white-space: nowrap !important;     /* THE ULTIMATE FIREWALL: Text is physically incapable of breaking into line 2 */
+    overflow: hidden !important;        /* Instantly hides extra text characters */
+    text-overflow: ellipsis !important; /* Smoothly appends "..." right at the cushion boundary */
+    text-align: center !important;      /* Centers text perfectly across the layout axis */
+    
+    /* THE PRO SYMMETRIC BUFFER WALLS */
+    
+    box-sizing: border-box !important;  /* Locks padding calculation strictly inside total width footprint */
+}
+
+
+
     </style>
 </head>
 <body>
@@ -1716,6 +1871,20 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
                                    <div class="content-section" id="settings-content">
                         <h1 class="app-header-large">Settings</h1>
                         
+                        <div class="ios-search-bar" style="background: #ffffff; margin-bottom: 20px;">
+    <svg onclick="document.getElementById('settings-search-input').value=''; iOS.filterSettings('');" style="cursor: pointer; flex-shrink: 0;" width="16" height="16" fill="#8E8E93" viewBox="0 0 24 24">
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    </svg>
+    <input type="text" id="settings-search-input" placeholder="Search" 
+           style="background: transparent; border: none; outline: none; font-size: 17px; width: 100%; color: inherit;"
+           oninput="iOS.filterSettings(this.value)">
+</div>
+                        
+                        
+                        
+                        
+                        
+                        
                         <div class="section-header">Appearance</div>
                         <div class="ios-list">
                             <div class="ios-row">
@@ -1725,7 +1894,7 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
                             
                             <div class="ios-row">
         <span>24-Hour Time</span>
-        <input type="checkbox" class="ios-switch" id="setting-24hr" onchange="iOS.toggle24Hour(this)">
+        <input type="checkbox" class="ios-switch" id="setting-24hr" checked onchange="iOS.toggle24Hour(this)">
     </div>
                             
                             
@@ -3460,25 +3629,28 @@ const updates = [];
                 }
 
                 // --- UPDATE HEADER ---
-                let updateHeader = document.getElementById('store-update-section');
-                const storeList = document.getElementById('store-list');
-                
-                if (updates.length > 1) {
-                    if (!updateHeader) {
-                        updateHeader = document.createElement('div');
-                        updateHeader.id = 'store-update-section';
-                        updateHeader.className = 'store-update-section'; 
-                        storeList.parentNode.insertBefore(updateHeader, storeList);
-                        updateHeader.innerHTML = `
-                            <span>${updates.length} Updates Available</span>
-                            <button id="update-all-btn" onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
-                        `;
-                    } else {
-                        updateHeader.querySelector('span').innerText = `${updates.length} Updates Available`;
-                    }
-                } else if (updateHeader) {
-                    updateHeader.remove();
-                }
+let updateHeader = document.getElementById('store-update-section');
+const storeList = document.getElementById('store-list');
+
+if (updates.length > 1) {
+    //  THE PRO CEILING EVALUATOR: Caps view matrix strings elegantly at 100+
+    const displayCount = updates.length > 100 ? "100+" : updates.length;
+
+    if (!updateHeader) {
+        updateHeader = document.createElement('div');
+        updateHeader.id = 'store-update-section';
+        updateHeader.className = 'store-update-section'; 
+        storeList.parentNode.insertBefore(updateHeader, storeList);
+        updateHeader.innerHTML = `
+            <span>${displayCount} Updates Available</span>
+            <button id="update-all-btn" onclick="appStore.updateAllApps()" style="color: #007AFF; font-size: 15px; font-weight: 600; background: transparent; border: none; cursor: pointer;">Update All</button>
+        `;
+    } else {
+        updateHeader.querySelector('span').innerText = `${displayCount} Updates Available`;
+    }
+} else if (updateHeader) {
+    updateHeader.remove();
+}
 
                 // --- RENDER ITEMS ---
                 appList.forEach(app => {
@@ -6416,7 +6588,10 @@ if (godModeSwitch) godModeSwitch.checked = savedGodMode;
                 
                 
                 
-                
+                // Force 24hr engine state to true by default if no setting exists yet
+if (localStorage.getItem('ios_24hr_mode') === null) {
+    localStorage.setItem('ios_24hr_mode', 'true');
+}
                 
                 
                 
@@ -6528,10 +6703,17 @@ toggle24Hour(el) {
     const is24Hr = el.checked;
     localStorage.setItem('ios_24hr_mode', is24Hr);
     this.is24Hr = is24Hr;
-    this.updateClock(); // Force an immediate refresh
+    
+    // One-step inline fix to instantly refresh the status bar clock
+    const now = new Date();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const clockEl = document.getElementById('clock');
+    if (clockEl) {
+        clockEl.innerText = is24Hr 
+            ? `${now.getHours()}:${minutes}` 
+            : `${now.getHours() % 12 || 12}:${minutes}`;
+    }
 }
-
-
 
 
 
@@ -6696,9 +6878,9 @@ const canTrigger = !this.isSafeMode && (SAFE_LIST.includes(senderAppId) || isSid
         }
 
         // Allow dismissals even in Safe Mode to clear stuck UI
-        if (event.data.type === 'IOS_ISLAND_DISMISS') {
-            if (SAFE_LIST.includes(senderAppId) || isNativeSideload) this.dismissSystemNotification();
-        }
+if (event.data.type === 'IOS_ISLAND_DISMISS') {
+    if (SAFE_LIST.includes(senderAppId) || isSideloaded || allowUntrustedIsland) this.dismissSystemNotification();
+}
 
         if (event.data.type === 'IOS_AUDIO_REQUEST') this.audioManager.requestFocus(senderAppId);
         if (event.data.type === 'IOS_AUDIO_RELEASE') this.audioManager.releaseFocus(senderAppId);
@@ -8234,91 +8416,111 @@ checkWallpaperBrightness() {
 
 
 renderSafeModeUI() {
-        const settingsContent = document.getElementById('settings-content');
-        if (!settingsContent) return;
+    const settingsContent = document.getElementById('settings-content');
+    if (!settingsContent) return;
 
-        let safeGroup = document.getElementById('safe-mode-group');
-        if (safeGroup) safeGroup.remove();
+    let safeGroup = document.getElementById('safe-mode-group');
+    if (safeGroup) safeGroup.remove();
+    
+    if (this.isSafeMode) {
+        safeGroup = document.createElement('div');
+        safeGroup.id = 'safe-mode-group';
         
-        if (this.isSafeMode) {
-            safeGroup = document.createElement('div');
-            safeGroup.id = 'safe-mode-group';
-            
-            const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
-            
-            let listHTML = '';
+        const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+        
+        // PRO INLINE DATE ENGINE
+        const formatLogTime = (ms) => {
+            if (!ms) return 'Unknown Time';
+            const d = new Date(Number(ms));
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let hours = d.getHours();
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hours}:${minutes} ${ampm}`;
+        };
+        
+        let listHTML = '';
 
-            if (savedMods.length === 0) {
-                listHTML = `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Active Malware</div>`;
-            } else {
-                listHTML = savedMods.map(mod => {
-                    // Check if the source app still exists
-                    let sourceLabel = mod.originAppId;
-                    if(sourceLabel === 'Unknown') sourceLabel = 'System Injection';
-                    
-                    return `
-                    <div class="ios-row" style="padding: 12px 16px;">
-                        <div style="display:flex; flex-direction:column; gap:3px;">
-                            <span style="font-weight:600; font-size:16px; color:#000;">${mod.name}</span>
-                            <span style="font-size:12px; color:#8E8E93;">
-                                Source: <span style="color:#FF9500; font-weight:600;">${sourceLabel}</span>
-                            </span>
-                        </div>
-                        
-                        <button onclick="iOS.deletePersistentMod('${mod.id}', '${mod.originAppId}')" style="
-                            background: rgba(255, 59, 48, 0.1); color: #FF3B30; 
-                            border: none; padding: 6px 14px; border-radius: 14px; 
-                            font-size: 13px; font-weight: 600; cursor: pointer;">
-                            Delete
-                        </button>
-                    </div>`;
-                }).join('');
-            }
+        if (savedMods.length === 0) {
+            listHTML = `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Active Malware</div>`;
+        } else {
+            listHTML = savedMods.map(mod => {
+                let sourceLabel = mod.originAppId;
+                if(sourceLabel === 'Unknown') sourceLabel = 'System Injection';
 
-//  INJECT BACKGROUND SERVICES MANAGER INTO SAFE MODE UI 
-            const bgServices = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
-            let bgListHTML = bgServices.length === 0 
-                ? `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Background Services</div>`
-                : bgServices.map(s => {
-                    const safeOptions = JSON.stringify(s.options).replace(/"/g, '&quot;');
-                    return `
-                    <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
-                        <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:0;">
-      <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">${s.appId}</span>
-                            <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3;">
-                                ${safeOptions}
-                            </span>
-                        </div>
-                        <button onclick="window.iOS.showAlert('Revoke Service?', 'Stop ${s.appId} from running in the background?', () => window.iOS.removeBackgroundService('${s.appId}'), true)" 
-                            style="background: rgba(255, 59, 48, 0.1); color: #FF3B30; border: none; padding: 6px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
-                            Revoke
-                        </button>
-                    </div>`;
-                }).join('');
-
-            safeGroup.innerHTML = `
-                <div class="section-header">Critical Threats</div>
-                <div class="ios-list" style="border: 1px solid rgba(255, 59, 48, 0.3);">
-                    ${listHTML}
-                </div>
-                
-                <div class="section-header">Background Services (Max 3)</div>
-                <div class="ios-list">
-                    ${bgListHTML}
-                </div>
-
-                <div class="ios-list" style="margin-top:20px; background:transparent;">
-                    <button class="ios-btn" onclick="window.location.href = window.location.pathname">
-                        Respring & Exit Safe Mode
+                return `
+                <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
+                    <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0;">
+                        <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">
+                            ${mod.name}
+                        </span>
+                        <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3;">
+                            Source: <span style="color:#FF9500; font-weight:600;">${sourceLabel}</span>
+                        </span>
+                        <span style="font-size:10.5px; color:#8E8E93; opacity:0.85;">
+                            Installed: ${formatLogTime(mod.timestamp)}
+                        </span>
+                    </div>
+                    <button onclick="iOS.deletePersistentMod('${mod.id}', '${mod.originAppId}')" style="
+                        background: rgba(255, 59, 48, 0.1); color: #FF3B30; 
+                        border: none; padding: 6px 14px; border-radius: 14px; 
+                        font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
+                        Delete
                     </button>
-                </div>
-                <p style="text-align:center; color:#8E8E93; font-size:13px; margin-top:10px;">
-                    Deleting a mod will also offer to uninstall its source app. Revoking a background service frees up RAM.
-                </p>
-            `;
-            settingsContent.insertBefore(safeGroup, settingsContent.firstChild); 
+                </div>`;
+            }).join('');
         }
+
+        // BACKGROUND SERVICES MANAGER
+        const bgServices = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+        let bgListHTML = bgServices.length === 0 
+            ? `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Background Services</div>`
+            : bgServices.map(s => {
+                const safeOptions = JSON.stringify(s.options).replace(/"/g, '&quot;');
+                return `
+                <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
+                    <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0;">
+                        <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">
+                            ${s.appId}
+                        </span>
+                        <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3; text-overflow:ellipsis; overflow:hidden;">
+                            ${safeOptions}
+                        </span>
+                        <span style="font-size:10.5px; color:#8E8E93; opacity:0.85;">
+                            Registered: ${formatLogTime(s.registeredAt)}
+                        </span>
+                    </div>
+                    <button onclick="window.iOS.showAlert('Revoke Service?', 'Stop ${s.appId} from running in the background?', () => window.iOS.removeBackgroundService('${s.appId}'), true)" 
+                        style="background: rgba(255, 59, 48, 0.1); color: #FF3B30; border: none; padding: 6px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
+                        Revoke
+                    </button>
+                </div>`;
+            }).join('');
+
+        safeGroup.innerHTML = `
+            <div class="section-header">Critical Threats</div>
+            <div class="ios-list" style="border: 1px solid rgba(255, 59, 48, 0.3);">
+                ${listHTML}
+            </div>
+            
+            <div class="section-header">Background Services (Max 3)</div>
+            <div class="ios-list">
+                ${bgListHTML}
+            </div>
+
+            <div class="ios-list" style="margin-top:20px; background:transparent;">
+                <button class="ios-btn" onclick="window.location.href = window.location.pathname">
+                    Respring & Exit Safe Mode
+                </button>
+            </div>
+            <p style="text-align:center; color:#8E8E93; font-size:13px; margin-top:10px;">
+                Deleting a mod will also offer to uninstall its source app. Revoking a background service frees up RAM.
+            </p>
+        `;
+        settingsContent.insertBefore(safeGroup, settingsContent.firstChild); 
     }
+}
 
 
 
@@ -8328,7 +8530,7 @@ deletePersistentMod(modId, originAppId) {
                     "This will stop the script from running. You can choose to keep or delete the source app next.", 
                     () => {
                         // 1. Physically remove the script from Kernel Memory (Works for both OS versions)
-                        const storageKey = window.mixOSAPI ? 'mixOSAPI_persistent_mods' : 'ios_persistent_mods';
+                        const storageKey = window.iOS ? 'ios_persistent_mods' : 'ios_persistent_mods';
                         let mods = JSON.parse(localStorage.getItem(storageKey) || '[]');
                         mods = mods.filter(m => m.id !== modId);
                         localStorage.setItem(storageKey, JSON.stringify(mods));
@@ -9249,6 +9451,203 @@ if (this.activeWindow === this.musicWindow) {
         }
 
         // ... (AppStore class ends above)
+
+
+
+// Settings search scanner, parameter indexer, category matcher, and chronological sort engine
+IOSEngine.prototype.filterSettings = function(query) {
+    const term = query.trim().toLowerCase();
+    const content = document.getElementById('settings-content');
+    if (!content) return;
+
+    const rows = content.querySelectorAll('.ios-row');
+    const buttons = content.querySelectorAll('.ios-list button, .ios-btn, p');
+    const lists = content.querySelectorAll('.ios-list');
+    const headers = content.querySelectorAll('.section-header');
+    const safeGroup = document.getElementById('safe-mode-group');
+
+    // Sub-toggle row IDs dynamically mapped to their active parent switch elements
+    const subToggleMap = {
+        'row-truetone-warmth': 'setting-truetone',
+        'row-notif-dev-only': 'setting-strict-notifs',
+        'row-assistive-hide': 'setting-assistive',
+        'row-fullscreen-always': 'setting-fullscreen'
+    };
+
+    // Intercept and handle alphanumeric chronological sorting parameters in Safe Mode
+    if (this.isSafeMode && safeGroup && (term === 'bg:asc' || term === 'bg:desc' || term === 'mod:asc' || term === 'mod:desc')) {
+        headers.forEach(el => el.style.setProperty('display', 'none', 'important'));
+        lists.forEach(el => el.style.setProperty('display', 'none', 'important'));
+        buttons.forEach(el => el.style.setProperty('display', 'none', 'important'));
+        rows.forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+        const safeLists = safeGroup.querySelectorAll('.ios-list');
+        const safeHeaders = safeGroup.querySelectorAll('.section-header');
+
+        if (safeLists.length >= 2 && safeHeaders.length >= 2) {
+            if (term.startsWith('mod:')) {
+                const modsHeader = safeHeaders[0];
+                const modsContainer = safeLists[0];
+                const modRows = Array.from(modsContainer.querySelectorAll('.ios-row'));
+                const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
+                const order = term.split(':')[1];
+
+                modRows.sort((alpha, beta) => {
+                    const nameA = alpha.querySelector('.adaptive-text')?.textContent.trim();
+                    const nameB = beta.querySelector('.adaptive-text')?.textContent.trim();
+                    const dataA = savedMods.find(m => m.name === nameA);
+                    const dataB = savedMods.find(m => m.name === nameB);
+                    const timeA = dataA ? Number(dataA.timestamp || 0) : 0;
+                    const timeB = dataB ? Number(dataB.timestamp || 0) : 0;
+                    return order === 'asc' ? timeA - timeB : timeB - timeA;
+                });
+
+                modRows.forEach(row => {
+                    modsContainer.appendChild(row);
+                    row.style.setProperty('display', 'flex', 'important');
+                });
+                modsHeader.style.setProperty('display', 'block', 'important');
+                modsContainer.style.setProperty('display', 'block', 'important');
+                safeGroup.style.setProperty('display', 'block', 'important');
+
+            } else if (term.startsWith('bg:')) {
+                const bgHeader = safeHeaders[1];
+                const bgContainer = safeLists[1];
+                const bgRows = Array.from(bgContainer.querySelectorAll('.ios-row'));
+                const savedBg = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+                const order = term.split(':')[1];
+
+                bgRows.sort((alpha, beta) => {
+                    const idA = alpha.querySelector('.adaptive-text')?.textContent.trim();
+                    const idB = beta.querySelector('.adaptive-text')?.textContent.trim();
+                    const dataA = savedBg.find(s => s.appId === idA);
+                    const dataB = savedBg.find(s => s.appId === idB);
+                    const timeA = dataA ? Number(dataA.registeredAt || 0) : 0;
+                    const timeB = dataB ? Number(dataB.registeredAt || 0) : 0;
+                    return order === 'asc' ? timeA - timeB : timeB - timeA;
+                });
+
+                bgRows.forEach(row => {
+                    bgContainer.appendChild(row);
+                    row.style.setProperty('display', 'flex', 'important');
+                });
+                bgHeader.style.setProperty('display', 'block', 'important');
+                bgContainer.style.setProperty('display', 'block', 'important');
+                safeGroup.style.setProperty('display', 'block', 'important');
+            }
+        }
+        return;
+    }
+
+    if (term === '') {
+        // Reset default layout visibility frames
+        rows.forEach(el => el.style.display = '');
+        lists.forEach(el => el.style.display = '');
+        headers.forEach(el => el.style.display = '');
+        buttons.forEach(el => el.style.display = '');
+        if (safeGroup) safeGroup.style.display = '';
+        
+        // Restore standard conditional sub-settings rows based on active toggle states
+        const ttWarmth = document.getElementById('row-truetone-warmth');
+        if (ttWarmth) {
+            const ttSwitch = document.getElementById('setting-truetone');
+            ttWarmth.style.display = (ttSwitch && ttSwitch.checked) ? 'flex' : 'none';
+        }
+        const devRow = document.getElementById('row-notif-dev-only');
+        if (devRow) {
+            const strictSwitch = document.getElementById('setting-strict-notifs');
+            devRow.style.display = (strictSwitch && strictSwitch.checked) ? 'flex' : 'none';
+        }
+        const hideRow = document.getElementById('row-assistive-hide');
+        if (hideRow) {
+            const assistSwitch = document.getElementById('setting-assistive');
+            hideRow.style.display = (assistSwitch && assistSwitch.checked) ? 'flex' : 'none';
+        }
+        const fsAlwaysRow = document.getElementById('row-fullscreen-always');
+        if (fsAlwaysRow) {
+            const fsSwitch = document.getElementById('setting-fullscreen');
+            fsAlwaysRow.style.display = (fsSwitch && fsSwitch.checked) ? 'flex' : 'none';
+        }
+        return;
+    }
+
+    // 1. Process Section Headers and match child structural items dynamically
+    headers.forEach(header => {
+        const headerText = header.textContent.toLowerCase();
+        const isHeaderMatch = headerText.includes(term);
+        
+        // Locate matching adjacent list companion block
+        let associatedList = header.nextElementSibling;
+        while (associatedList && !associatedList.classList.contains('ios-list')) {
+            associatedList = associatedList.nextElementSibling;
+        }
+        
+        if (!associatedList) return;
+        
+        const sectionRows = associatedList.querySelectorAll('.ios-row');
+        const sectionButtons = associatedList.querySelectorAll('button');
+        let sectionHasMatchingContent = false;
+
+        // Scan rows inside this section container
+        sectionRows.forEach(row => {
+            if (row.id in subToggleMap) {
+                const parentSwitch = document.getElementById(subToggleMap[row.id]);
+                if (!parentSwitch || !parentSwitch.checked) {
+                    row.style.setProperty('display', 'none', 'important');
+                    return;
+                }
+            }
+
+            const rowText = row.textContent.toLowerCase();
+            if (isHeaderMatch || rowText.includes(term)) {
+                row.style.setProperty('display', 'flex', 'important');
+                sectionHasMatchingContent = true;
+            } else {
+                row.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // Scan internal action buttons inside this section container
+        sectionButtons.forEach(btn => {
+            const btnText = btn.textContent.toLowerCase();
+            if (isHeaderMatch || btnText.includes(term)) {
+                btn.style.setProperty('display', 'block', 'important');
+                sectionHasMatchingContent = true;
+            } else {
+                btn.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // Toggle entire section node visibility states based on structural content matches
+        if (sectionHasMatchingContent || isHeaderMatch) {
+            header.style.setProperty('display', 'block', 'important');
+            associatedList.style.setProperty('display', 'block', 'important');
+        } else {
+            header.style.setProperty('display', 'none', 'important');
+            associatedList.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    // 2. Process standalone layout buttons or information paragraphs outside structured headers
+    buttons.forEach(btn => {
+        let isInsideStructuredList = false;
+        lists.forEach(l => {
+            if (l.contains(btn)) isInsideStructuredList = true;
+        });
+        if (isInsideStructuredList) return;
+
+        const text = btn.textContent.toLowerCase();
+        if (text.includes(term)) {
+            btn.style.setProperty('display', 'block', 'important');
+        } else {
+            btn.style.setProperty('display', 'none', 'important');
+        }
+    });
+};
+
+
+
+
 
         window.iOS = new IOSEngine();
 window.appStore = new AppStore();
