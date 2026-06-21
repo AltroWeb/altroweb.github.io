@@ -9516,14 +9516,17 @@ IOSEngine.prototype.filterSettings = function(query) {
                 const order = term.split(':')[1];
 
                 bgRows.sort((alpha, beta) => {
-                    const idA = alpha.querySelector('.adaptive-text')?.textContent.trim();
-                    const idB = beta.querySelector('.adaptive-text')?.textContent.trim();
-                    const dataA = savedBg.find(s => s.appId === idA);
-                    const dataB = savedBg.find(s => s.appId === idB);
-                    const timeA = dataA ? Number(dataA.registeredAt || 0) : 0;
-                    const timeB = dataB ? Number(dataB.registeredAt || 0) : 0;
-                    return (timeA === timeB ? 0 : timeA > timeB ? 1 : -1) * (order === 'asc' ? 1 : -1);
-                });
+    // Extract the unique app IDs from the row layout
+    const idA = alpha.querySelector('.adaptive-text')?.textContent.trim();
+    const idB = beta.querySelector('.adaptive-text')?.textContent.trim();
+    
+    // Look up their precise registration timestamps securely
+    const timeA = Number(savedBg.find(s => s.appId === idA)?.registeredAt || 0);
+    const timeB = Number(savedBg.find(s => s.appId === idB)?.registeredAt || 0);
+    
+    // Direct, modern subtraction sorting that never glitches
+    return order === 'asc' ? timeA - timeB : timeB - timeA;
+});
 
                 bgRows.forEach(row => {
                     bgContainer.appendChild(row);
