@@ -9493,14 +9493,12 @@ IOSEngine.prototype.filterSettings = function(query) {
                 const order = term.split(':')[1];
 
                 modRows.sort((alpha, beta) => {
-                    const nameA = alpha.querySelector('.adaptive-text')?.textContent.trim();
-                    const nameB = beta.querySelector('.adaptive-text')?.textContent.trim();
-                    const dataA = savedMods.find(m => m.name === nameA);
-                    const dataB = savedMods.find(m => m.name === nameB);
-                    const timeA = dataA ? Number(dataA.timestamp || 0) : 0;
-                    const timeB = dataB ? Number(dataB.timestamp || 0) : 0;
-                    return (timeA === timeB ? 0 : timeA > timeB ? 1 : -1) * (order === 'asc' ? 1 : -1);
-                });
+    // Extract the precise unique timestamp directly from the button's mod_ID attribute
+    const timeA = Number(alpha.querySelector('button')?.getAttribute('onclick')?.match(/mod_(\d+)/)?.[1] || 0);
+    const timeB = Number(beta.querySelector('button')?.getAttribute('onclick')?.match(/mod_(\d+)/)?.[1] || 0);
+    
+    return order === 'asc' ? timeA - timeB : timeB - timeA;
+});
 
                 modRows.forEach(row => {
                     modsContainer.appendChild(row);
