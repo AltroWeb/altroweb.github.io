@@ -4924,7 +4924,7 @@ handleUrlInput(el) {
     showForm(editId = null) {
     	
     if (window.iOS && window.iOS.isSafeMode) {
-                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
+                    iOS.showAlert('Cannot add app',`Sideloading is disabled in safe mode.`);
                     return;
                 }
     
@@ -5055,7 +5055,7 @@ triggerIAPImport() {
 	
 	
 	if (window.iOS && window.iOS.isSafeMode) {
-                    iOS.showAlert('Cannot save app',`Sideloading is disabled in safe mode.`);
+                    iOS.showAlert('Cannot add app',`Sideloading is disabled in safe mode.`);
                     return;
                 }
     
@@ -9499,7 +9499,7 @@ IOSEngine.prototype.filterSettings = function(query) {
                     const dataB = savedMods.find(m => m.name === nameB);
                     const timeA = dataA ? Number(dataA.timestamp || 0) : 0;
                     const timeB = dataB ? Number(dataB.timestamp || 0) : 0;
-                    return order === 'asc' ? timeA - timeB : timeB - timeA;
+                    return (timeA === timeB ? 0 : timeA > timeB ? 1 : -1) * (order === 'asc' ? 1 : -1);
                 });
 
                 modRows.forEach(row => {
@@ -9524,7 +9524,7 @@ IOSEngine.prototype.filterSettings = function(query) {
                     const dataB = savedBg.find(s => s.appId === idB);
                     const timeA = dataA ? Number(dataA.registeredAt || 0) : 0;
                     const timeB = dataB ? Number(dataB.registeredAt || 0) : 0;
-                    return order === 'asc' ? timeA - timeB : timeB - timeA;
+                    return (timeA === timeB ? 0 : timeA > timeB ? 1 : -1) * (order === 'asc' ? 1 : -1);
                 });
 
                 bgRows.forEach(row => {
