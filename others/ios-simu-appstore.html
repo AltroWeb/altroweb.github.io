@@ -8116,35 +8116,45 @@ if (isTrusted) {
         console.log(`⚡ GOD MODE MASTER CONFIGURATION ENGAGED FOR UNTRUSTED APP: ${appName}`);
         
         // Base sandbox attributes with same-origin compatibility for old legacy browsers (Chrome 112)
-        let sandboxTokens = ['allow-scripts', 'allow-forms', 'allow-same-origin']; 
-        
-        // God Mode standard capabilities (No individual toggles associated)
-        sandboxTokens.push(
-            'allow-downloads',
-            'allow-modals',
-            'allow-pointer-lock',
-            'allow-presentation',
-            'allow-top-navigation',
-            'allow-top-navigation-by-user-activation'
-        );
+let sandboxTokens = ['allow-scripts', 'allow-forms', 'allow-same-origin']; 
 
-        if (allowUntrustedFS) {
-            sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
-        }
-        
-        // --- FIXED: APPLIES POPUP TOKENS SO LINKS OPEN SUCCESSFULLY ---
-        if (allowUntrustedLinks) {
-            sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-to-custom-protocols');
-        }
+// God Mode standard capabilities (No individual toggles associated)
+sandboxTokens.push(
+    'allow-downloads',
+    'allow-downloads-without-user-activation', // New literal token
+    'allow-modals',
+    'allow-pointer-lock',
+    'allow-presentation',
+    'allow-storage-access-by-user-activation', // New literal token
+    'allow-top-navigation',
+    'allow-top-navigation-by-user-activation'
+);
 
-        iframe.setAttribute('sandbox', sandboxTokens.join(' '));
+if (allowUntrustedFS) {
+    sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
+}
 
-        // Inject loose physical hardware capabilities
-        const godHardwareVectors = [
-            'accelerometer', 'ambient-light-sensor', 'autoplay', 'battery',
-            'camera', 'display-capture', 'geolocation', 'gyroscope', 'microphone'
-        ];
-        iframe.setAttribute('allow', godHardwareVectors.join('; '));
+// --- FIXED: APPLIES POPUP TOKENS SO LINKS OPEN SUCCESSFULLY ---
+if (allowUntrustedLinks) {
+    sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-to-custom-protocols');
+}
+
+// Exactly your original assignment structure
+iframe.setAttribute('sandbox', sandboxTokens.join(' '));
+
+// Inject complete physical hardware and API capability vectors (Every literal W3C token)
+const godHardwareVectors = [
+    'accelerometer', 'ambient-light-sensor', 'attribution-reporting', 'autoplay',
+    'battery', 'camera', 'clipboard-read', 'clipboard-write', 'display-capture',
+    'document-domain', 'encrypted-media', 'execution-while-not-rendered',
+    'execution-while-out-of-viewport', 'fullscreen', 'gamepad', 'geolocation',
+    'gyroscope', 'hid', 'identity-credentials-get', 'idle-detection',
+    'local-fonts', 'magnetometer', 'microphone', 'midi', 'otp-credentials',
+    'payment', 'picture-in-picture', 'publickey-credentials-get',
+    'screen-wake-lock', 'serial', 'speaker-selection', 'usb',
+    'web-share', 'window-management', 'xr-spatial-tracking'
+];
+iframe.setAttribute('allow', godHardwareVectors.join('; '));
 
         // =========================================================================
         // PRO KERNEL SECURITY WALL - PROXY METHOD (COMPATIBILITY LAYER)
