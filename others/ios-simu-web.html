@@ -1105,6 +1105,12 @@ body.dark-mode .nav-more-trigger {
 <div id="doc-bg-services" class="doc-block">
     <h3>Background Services API</h3>
     <p>The Background Services API allows critical applications to remain active in system memory even when they are minimized or the Simulator is restarted. This is essential for apps that require persistent connections, like iMessage or real-time trackers.</p>
+    
+    
+    <p><strong>NOTE: </strong>The background services API stores the services registered in a unique IndexedDB database. You can revoke them through safe mode.</p>
+                    
+    
+    
 
     <div class="alert-box" style="background: rgba(88, 86, 214, 0.05); border-color: rgba(88, 86, 214, 0.3);">
         <div class="alert-icon" style="color: #5856D6;">
@@ -1587,6 +1593,10 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
 <div id="doc-mods" class="doc-block">
                     <h3>System Mods & Root Access</h3>
                     <p>The <code>injectMod()</code> API allows an app to execute arbitrary JavaScript directly in the <strong>Host Operating System</strong> context. This is the most powerful and dangerous feature in the ecosystem.</p>
+                    
+                                <p><strong>NOTE: </strong>The injectMod API stores the mods in a unique IndexedDB database. You can remove the mods through safe mode.</p>
+                    
+                    
 
                     <div class="alert-box">
                   <div class="alert-icon">
@@ -1606,42 +1616,48 @@ window.parent.<span class="hl-f">postMessage</span>({ type: <span class="hl-s">'
                     <p>You pass a string of JavaScript code. The system evaluates this code in the top-level window context, allowing you to modify CSS variables, DOM elements, or system behavior.</p>
 
                     <strong>Example: Universal Theme Changer</strong>
-                    <p>This script injects a style tag into the Host OS to change the background color of the entire Simulator.</p>
-                    <div class="code-box">
-<span class="hl-k">const</span> THEME_MOD = <span class="hl-s">`
-    (function() {
-        // 1. Create a Style Tag
-        const style = document.createElement('style');
-        style.id = 'my-custom-theme';
-        style.innerHTML = \`
-            :root {
-                --bg-body: #1a1a1a !important; 
-                --accent: #FF2D55 !important;
-                --text-primary: #fff !important;
-            }
-            .navbar { background: rgba(0,0,0,0.8) !important; }
-        \`;
-        
-        // 2. Remove old version if exists (Prevent duplicates)
-        const old = document.getElementById('my-custom-theme');
-        if (old) old.remove();
+<p>This script registers a mod with the system kernel to securely update a style tag in the Host OS and change the look of the Simulator interface without duplicates.</p>
+<div class="code-box">
+<span class="hl-c">// 1. Define the Mod Configuration and Execution Payload</span>
+<span class="hl-k">const</span> modName = <span class="hl-s">"Universal Theme Changer"</span>;
+<span class="hl-k">const</span> version = <span class="hl-s">1.0</span>;
 
-        // 3. Inject into Host Head
-        document.head.appendChild(style);
-        
-        // 4. Notify User
-        if(window.iOS) window.iOS.showAlert('Theme Applied', 'Dark Neon Red installed.');
-    })();
-`</span>;
+<span class="hl-k">const</span> themePayload = <span class="hl-k">function</span>(system) {
+    <span class="hl-c">// A. Create a Style Tag</span>
+    <span class="hl-k">const</span> style = document.createElement(<span class="hl-s">'style'</span>);
+    style.id = <span class="hl-s">'my-custom-theme'</span>;
+    style.innerHTML = <span class="hl-s">`
+        :root {
+            --bg-body: #1a1a1a !important; 
+            --accent: #FF2D55 !important;
+            --text-primary: #fff !important;
+        }
+        .navbar { background: rgba(0,0,0,0.8) !important; }
+    `</span>;
+    
+    <span class="hl-c">// B. Remove old versions if they exist (Prevent DOM duplicates)</span>
+    <span class="hl-k">const</span> old = document.getElementById(<span class="hl-s">'my-custom-theme'</span>);
+    <span class="hl-k">if</span> (old) old.remove();
 
-<span class="hl-c">// Execute the Mod</span>
+    <span class="hl-c">// C. Inject directly into Host Head environment</span>
+    document.head.appendChild(style);
+    
+    <span class="hl-c">// D. Notify User safely using the passed system context handle</span>
+    system.showAlert(<span class="hl-s">'Theme Applied'</span>, <span class="hl-s">'Dark Neon Red installed successfully.'</span>);
+};
+
+<span class="hl-c">// 2. Execute Mod Registration with Kernel</span>
 <span class="hl-k">if</span> (window.parent.iOS) {
-    <span class="hl-k">const</span> success = window.parent.iOS.<span class="hl-f">injectMod</span>(THEME_MOD);
-    <span class="hl-k">if</span> (!success) {
-        console.error(<span class="hl-s">"Mod failed. App may not have Root privileges."</span>);
+    <span class="hl-c">// The system creates a unique combination tracking ID</span>
+    <span class="hl-k">const</span> success = window.parent.iOS.<span class="hl-f">injectMod</span>(modName, version, themePayload);
+    
+    <span class="hl-k">if</span> (success) {
+        console.log(<span class="hl-s">"Kernel: Mod injected/updated cleanly."</span>);
+    } <span class="hl-k">else</span> {
+        console.error(<span class="hl-s">"Kernel: Injection blocked. Requires Root privileges or Safe Mode is active."</span>);
     }
 }
-                    </div>
+</div>
 
                     <h4>2. Getting "Trusted" Status</h4>
                     <p>Store Apps run in a Restricted Sandbox by default. To distribute a Mod on the App Store, your App ID must be added to the <strong>Trusted List</strong>.</p>
@@ -2204,6 +2220,13 @@ const myVar = params.get('showtext');</div>
         <ul style="margin: 10px 0 0 0; padding-left: 20px; line-height: 1.8;">
             
                   <li><code>mod:(asc/desc)</code> — Sorts the installed mods by their installation date or time.</li>
+                  
+                  <li><code>modupdated:(asc/desc)</code> — Sorts mods by their last updated date or time.</li>
+                  
+                  
+                  
+                  
+                  
             <li><code>bg:(asc/desc)</code> — Sorts background services by their installation date or time.</li>
             
         </ul>

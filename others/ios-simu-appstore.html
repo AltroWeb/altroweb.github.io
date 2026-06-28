@@ -6092,15 +6092,12 @@ const SecureStorage = {
         });
 
         // --- NEW: BOOTLOADER FOR PERSISTENT MODS ---
-        this.modRegistry = []; 
-
+        this.modRegistry = [];
         if (this.isSafeMode) {
-            console.warn("🛡️ SAFE MODE: Skipping persistent mods.");
             document.body.classList.add('safe-mode-active');
-        } else {
-            // NORMAL MODE: Load and Execute Saved Mods
-            this.loadPersistentMods();
         }
+        // Always invoke the file system mount vector to populate settings cache objects correctly
+        this.loadPersistentMods();
             
             this.SYSTEM_CORE = [
         'Settings', 'Photos', 'Camera', 'Music', 'Sideloader', 
@@ -8262,99 +8259,110 @@ iframe.setAttribute('allow', godHardwareVectors.join('; '));
             
             // ---  PRO BACKGROUND SERVICES API  ---
             
-            registerBackgroundService(appId, options = {}) {
-                if (this.isSafeMode) return { success: false, error: 'Safe Mode Active.' };
+            // --- PRO BACKGROUND SERVICES API ---
+    registerBackgroundService(appId, options = {}) {
+        if (this.isSafeMode) return { success: false, error: 'Safe Mode Active.' }; 
+        // THE GATEKEEPER CHECK
+        const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
+        const SYSTEM_SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
+        const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
+        const isSideloaded = sideloaded.some(a => a.id === appId);
+        const isTrusted = SYSTEM_SAFE_LIST.includes(appId); 
+        // Best Decision: Only Sideloaded (Dev) or Trusted (Verified) can run in BG
+        if (!isSideloaded && !isTrusted) {
+            console.warn(`Security Block: App ${appId} attempted background registration without Trusted status.`);
+            return { success: false, error: 'Elevated privileges required for background services.' };
+        }
+
+        if (!this.backgroundServicesCache) this.backgroundServicesCache = [];
+
+        if (this.backgroundServicesCache.some(s => s.appId === appId)) {
+            return { success: true, status: 'Already registered' };
+        }
+        if (this.backgroundServicesCache.length >= 3) {
+            this.showAlert('RAM Limit', 'Maximum of 3 background services allowed. Manage them in Safe Mode.');
+            return { success: false, error: 'Limit reached' };
+        }
+
+        const newService = { appId, options, registeredAt: Date.now() };
+        this.backgroundServicesCache.push(newService);
+
+        // Persistent disk synchronization in background
+        const openDBRequest = indexedDB.open('iOS_Kernel_Secure_Store', 2);
+        openDBRequest.onsuccess = (event) => {
+            const db = event.target.result;
+            const tx = db.transaction('bg_services', 'readwrite');
+            tx.objectStore('bg_services').put(newService);
+        };
+
+        return { success: true };
+    }
+
+    removeBackgroundService(appId) {
+        if (!this.backgroundServicesCache) this.backgroundServicesCache = [];
+        this.backgroundServicesCache = this.backgroundServicesCache.filter(s => s.appId !== appId);
+
+        // Remove from physical disk database asynchronously
+        const openDBRequest = indexedDB.open('iOS_Kernel_Secure_Store', 2);
+        openDBRequest.onsuccess = (event) => {
+            const db = event.target.result;
+            const tx = db.transaction('bg_services', 'readwrite');
+            tx.objectStore('bg_services').delete(appId);
+        };
+
+        this.renderSafeModeUI(); // Refresh UI instantly
+        this.showAlert('Service Revoked', `Background privileges removed for ${appId}.`);
+    }
+
+    bootBackgroundServices() {
+        if (this.isSafeMode) return;
+        if (!this.backgroundServicesCache) this.backgroundServicesCache = [];
+        if (this.backgroundServicesCache.length === 0) return;
+        
+        console.log(`🚀 OS Bootloader: Initializing ${this.backgroundServicesCache.length} Background Services...`);
+        
+        // Delay to allow Native DB to fully hydrate
+        setTimeout(() => {
+            const container = document.getElementById('dynamic-app-container');
+            if (!container) return;
+            
+            this.backgroundServicesCache.forEach(service => {
+                const appId = service.appId;
+                if (container.querySelector(`iframe[data-app-id="${appId}"]`)) return; // Already running
                 
-                //  THE GATEKEEPER CHECK
-                const remoteTrusted = (window.appStore && window.appStore.trustedList) ? window.appStore.trustedList : [];
-                const SYSTEM_SAFE_LIST = [...this.SYSTEM_CORE, ...remoteTrusted];
-                
+                const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
                 const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
-                const isSideloaded = sideloaded.some(a => a.id === appId);
-                const isTrusted = SYSTEM_SAFE_LIST.includes(appId);
-
-                // Best Decision: Only Sideloaded (Dev) or Trusted (Verified) can run in BG
-                if (!isSideloaded && !isTrusted) {
-                    console.warn(`Security Block: App ${appId} attempted background registration without Trusted status.`);
-                    return { success: false, error: 'Elevated privileges required for background services.' };
+                const app = [...installed, ...sideloaded].find(a => a.id === appId);
+                if (!app) return; // App was deleted
+                
+                let finalUrl = app.embedUrl;
+                if (app.type === 'native' && window.sideloader) {
+                    finalUrl = window.sideloader.getNativeUrl(appId) || finalUrl;
                 }
+                if (!finalUrl) return;
                 
-                let services = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
+                const iframe = document.createElement('iframe');
+                iframe.src = finalUrl;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.style.borderRadius = '12px';
+                iframe.setAttribute('data-app-id', appId);
                 
-                if (services.some(s => s.appId === appId)) {
-                    return { success: true, status: 'Already registered' };
-                }
+                // Load active but completely invisible
+                iframe.style.position = 'absolute';
+                iframe.style.opacity = '0';
+                iframe.style.pointerEvents = 'none';
+                iframe.style.zIndex = '-9999'; 
                 
-                if (services.length >= 3) {
-                    this.showAlert('RAM Limit', 'Maximum of 3 background services allowed. Manage them in Safe Mode.');
-                    return { success: false, error: 'Limit reached' };
-                }
+                if (service.options.audio) iframe.setAttribute('allow', 'microphone; camera');
+                if (!service.options.sandbox) iframe.removeAttribute('sandbox'); 
                 
-                services.push({ appId, options, registeredAt: Date.now() });
-                localStorage.setItem('ios_bg_services', JSON.stringify(services));
-                return { success: true };
-            }
-
-            removeBackgroundService(appId) {
-                let services = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
-                services = services.filter(s => s.appId !== appId);
-                localStorage.setItem('ios_bg_services', JSON.stringify(services));
-                this.renderSafeModeUI(); // Refresh UI instantly
-                this.showAlert('Service Revoked', `Background privileges removed for ${appId}.`);
-            }
-
-            bootBackgroundServices() {
-                if (this.isSafeMode) return;
-                
-                const services = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
-                if (services.length === 0) return;
-
-                console.log(`🚀 OS Bootloader: Initializing ${services.length} Background Services...`);
-
-                // Delay to allow Native DB to fully hydrate
-                setTimeout(() => {
-                    const container = document.getElementById('dynamic-app-container');
-                    if (!container) return;
-
-                    services.forEach(service => {
-                        const appId = service.appId;
-                        if (container.querySelector(`iframe[data-app-id="${appId}"]`)) return; // Already running
-
-                        const installed = JSON.parse(localStorage.getItem('ios_installed_apps') || '[]');
-                        const sideloaded = JSON.parse(localStorage.getItem('ios_sideloaded_apps') || '[]');
-                        const app = [...installed, ...sideloaded].find(a => a.id === appId);
-
-                        if (!app) return; // App was deleted
-
-                        let finalUrl = app.embedUrl;
-                        if (app.type === 'native' && window.sideloader) {
-                            finalUrl = window.sideloader.getNativeUrl(appId) || finalUrl;
-                        }
-                        if (!finalUrl) return;
-
-                        const iframe = document.createElement('iframe');
-                        iframe.src = finalUrl;
-                        iframe.style.width = '100%';
-                        iframe.style.height = '100%';
-                        iframe.style.border = 'none';
-                        iframe.style.borderRadius = '12px';
-                        iframe.setAttribute('data-app-id', appId);
-                        
-                        // ⚡ THE MAGIC: Load active but completely invisible ⚡
-                        iframe.style.position = 'absolute';
-                        iframe.style.opacity = '0';
-                        iframe.style.pointerEvents = 'none';
-                        iframe.style.zIndex = '-9999';
-                        
-                        // Dev API Custom Parameters Enforcement
-                        if (service.options.audio) iframe.setAttribute('allow', 'microphone; camera');
-                        if (!service.options.sandbox) iframe.removeAttribute('sandbox'); // Give full permission if requested
-                        
-                        container.appendChild(iframe);
-                        console.log(`👻 Background Service Active: ${appId}`);
-                    });
-                }, 3000); // 3 second delay ensures IndexedDB is fully ready
-            }
+                container.appendChild(iframe);
+                console.log(`👻 Background Service Active: ${appId}`);
+            });
+        }, 3000); 
+    }
             
             
             
@@ -8426,155 +8434,159 @@ checkWallpaperBrightness() {
 
 
 renderSafeModeUI() {
-    const settingsContent = document.getElementById('settings-content');
-    if (!settingsContent) return;
+        const settingsContent = document.getElementById('settings-content');
+        if (!settingsContent) return;
 
-    let safeGroup = document.getElementById('safe-mode-group');
-    if (safeGroup) safeGroup.remove();
-    
-    if (this.isSafeMode) {
-        safeGroup = document.createElement('div');
-        safeGroup.id = 'safe-mode-group';
+        let safeGroup = document.getElementById('safe-mode-group');
+        if (safeGroup) safeGroup.remove();
         
-        const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
-        
-        // PRO INLINE DATE ENGINE
-        const formatLogTime = (ms) => {
-            if (!ms) return 'Unknown Time';
-            const d = new Date(Number(ms));
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            let hours = d.getHours();
-            const minutes = String(d.getMinutes()).padStart(2, '0');
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hours}:${minutes} ${ampm}`;
-        };
-        
-        let listHTML = '';
-
-        if (savedMods.length === 0) {
-            listHTML = `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Active Malware</div>`;
-        } else {
-            listHTML = savedMods.map(mod => {
-                let sourceLabel = mod.originAppId;
-                if(sourceLabel === 'Unknown') sourceLabel = 'System Injection';
-
-                return `
-                <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
-                    <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0;">
-                        <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">
-                            ${mod.name}
-                        </span>
-                        <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3;">
-                            Source: <span style="color:#FF9500; font-weight:600;">${sourceLabel}</span>
-                        </span>
-                        <span style="font-size:10.5px; color:#8E8E93; opacity:0.85;">
-                            Installed: ${formatLogTime(mod.timestamp)}
-                        </span>
-                    </div>
-                    <button onclick="iOS.deletePersistentMod('${mod.id}', '${mod.originAppId}')" style="
-                        background: rgba(255, 59, 48, 0.1); color: #FF3B30; 
-                        border: none; padding: 6px 14px; border-radius: 14px; 
-                        font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
-                        Delete
-                    </button>
-                </div>`;
-            }).join('');
-        }
-
-        // BACKGROUND SERVICES MANAGER
-        const bgServices = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
-        let bgListHTML = bgServices.length === 0 
-            ? `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Background Services</div>`
-            : bgServices.map(s => {
-                const safeOptions = JSON.stringify(s.options).replace(/"/g, '&quot;');
-                return `
-                <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
-                    <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0;">
-                        <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">
-                            ${s.appId}
-                        </span>
-                        <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3; text-overflow:ellipsis; overflow:hidden;">
-                            ${safeOptions}
-                        </span>
-                        <span style="font-size:10.5px; color:#8E8E93; opacity:0.85;">
-                            Registered: ${formatLogTime(s.registeredAt)}
-                        </span>
-                    </div>
-                    <button onclick="window.iOS.showAlert('Revoke Service?', 'Stop ${s.appId} from running in the background?', () => window.iOS.removeBackgroundService('${s.appId}'), true)" 
-                        style="background: rgba(255, 59, 48, 0.1); color: #FF3B30; border: none; padding: 6px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
-                        Revoke
-                    </button>
-                </div>`;
-            }).join('');
-
-        safeGroup.innerHTML = `
-            <div class="section-header">Critical Threats</div>
-            <div class="ios-list" style="border: 1px solid rgba(255, 59, 48, 0.3);">
-                ${listHTML}
-            </div>
+        if (this.isSafeMode) {
+            safeGroup = document.createElement('div');
+            safeGroup.id = 'safe-mode-group';
             
-            <div class="section-header">Background Services (Max 3)</div>
-            <div class="ios-list">
-                ${bgListHTML}
-            </div>
+            // TARGET INTERNAL LIFECYCLE MEMORY BUFFER DIRECTLY
+            const savedMods = this.persistentModsCache || [];
+            
+            // PRO INLINE DATE ENGINE
+            const formatLogTime = (ms) => {
+                if (!ms) return 'Unknown Time';
+                const d = new Date(Number(ms));
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+                return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()} at ${hours}:${minutes} ${ampm}`;
+            };
+            
+            let listHTML = '';
 
-            <div class="ios-list" style="margin-top:20px; background:transparent;">
-                <button class="ios-btn" onclick="window.location.href = window.location.pathname">
-                    Respring & Exit Safe Mode
-                </button>
-            </div>
-            <p style="text-align:center; color:#8E8E93; font-size:13px; margin-top:10px;">
-                Deleting a mod will also offer to uninstall its source app. Revoking a background service frees up RAM.
-            </p>
-        `;
-        settingsContent.insertBefore(safeGroup, settingsContent.firstChild); 
-    }
-}
+            if (savedMods.length === 0) {
+                listHTML = `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Active Malware</div>`;
+            } else {
+                listHTML = savedMods.map(mod => {
+                    let sourceLabel = mod.originAppId;
+                    if(sourceLabel === 'Unknown') sourceLabel = 'System Injection';
 
-
-
-deletePersistentMod(modId, originAppId) {
-                this.showAlert(
-                    "Remove Malware?", 
-                    "This will stop the script from running. You can choose to keep or delete the source app next.", 
-                    () => {
-                        // 1. Physically remove the script from Kernel Memory (Works for both OS versions)
-                        const storageKey = window.iOS ? 'ios_persistent_mods' : 'ios_persistent_mods';
-                        let mods = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                        mods = mods.filter(m => m.id !== modId);
-                        localStorage.setItem(storageKey, JSON.stringify(mods));
-                        
-                        // 2. Refresh the UI so the threat vanishes immediately
-                        this.renderSafeModeUI();
-
-                        // STAGE 2: OPTIONAL SOURCE CLEANUP
-                        if (originAppId && originAppId !== 'Unknown') {
-                            setTimeout(() => {
-                                this.showAlert(
-                                    "Mod Removed", 
-                                    `Would you also like to uninstall the source app "${originAppId}"?`,
-                                    () => {
-                                        // Master delete cleans DB, Icons, and Storage (Works for both OS versions)
-                                        const store = window.mixStore || window.appStore;
-                                        if (store) store.forceDeleteApp(originAppId);
-                                        
-                                        this.renderSafeModeUI();
-                                        setTimeout(() => this.showAlert("System Cleaned", "Source app and malware have been nuked."), 300);
-                                    },
-                                    true,            // isDestructive (Makes it Red)
-                                    "Uninstall App", // customOkText
-                                    "Keep App"       // customCancelText
-                                );
-                            }, 400);
-                        } else {
-                            setTimeout(() => this.showAlert("Malware Removed", "The system script has been deleted."), 400);
-                        }
-                    },
-                    true,           // isDestructive
-                    "Remove Mod"    // customOkText for the first prompt
-                );
+                    return `
+                    <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
+                        <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0;">
+                            <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">
+                                ${mod.name}
+                            </span>
+                            <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3;">
+                                Source: <span style="color:#FF9500; font-weight:600;">${sourceLabel}</span>
+                            </span>
+                            <span style="font-size:10.5px; color:#8E8E93; opacity:0.85;">
+                                Installed: ${formatLogTime(mod.timestamp)}${mod.updated ? `<br><span style="color:#007AFF; font-weight:500;">Updated: ${formatLogTime(mod.updated)}</span>` : ''}
+                            </span>
+                        </div>
+                        <button onclick="iOS.deletePersistentMod('${mod.id}', '${mod.originAppId}')" style="
+                            background: rgba(255, 59, 48, 0.1); color: #FF3B30; 
+                            border: none; padding: 6px 14px; border-radius: 14px; 
+                            font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
+                            Delete
+                        </button>
+                    </div>`;
+                }).join('');
             }
+
+            // BACKGROUND SERVICES MANAGER
+            const bgServices = this.backgroundServicesCache || [];
+            let bgListHTML = bgServices.length === 0 
+                ? `<div class="ios-row" style="color:#8E8E93; justify-content:center;">No Background Services</div>`
+                : bgServices.map(s => {
+                    const safeOptions = JSON.stringify(s.options).replace(/"/g, '&quot;');
+                    return `
+                    <div class="ios-row" style="padding: 12px 16px; gap: 12px;">
+                        <div style="display:flex; flex-direction:column; gap:3px; flex:1; min-width:0;">
+                            <span style="font-weight:600; font-size:16px; color:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" class="adaptive-text">
+                                ${s.appId}
+                            </span>
+                            <span style="font-size:11px; color:#8E8E93; font-family:'SF Mono', monospace; white-space:normal; overflow-wrap:break-word; word-break:break-word; line-height:1.3; text-overflow:ellipsis; overflow:hidden;">
+                                ${safeOptions}
+                            </span>
+                            <span style="font-size:10.5px; color:#8E8E93; opacity:0.85;">
+                                Registered: ${formatLogTime(s.registeredAt)}
+                            </span>
+                        </div>
+                        <button onclick="window.iOS.showAlert('Revoke Service?', 'Stop ${s.appId} from running in the background?', () => window.iOS.removeBackgroundService('${s.appId}'), true)" 
+                            style="background: rgba(255, 59, 48, 0.1); color: #FF3B30; border: none; padding: 6px 14px; border-radius: 14px; font-size: 13px; font-weight: 600; cursor: pointer; flex-shrink:0;">
+                            Revoke
+                        </button>
+                    </div>`;
+                }).join('');
+
+            safeGroup.innerHTML = `
+                <div class="section-header">Critical Threats</div>
+                <div class="ios-list" style="border: 1px solid rgba(255, 59, 48, 0.3);">
+                    ${listHTML}
+                </div>
+                
+                <div class="section-header">Background Services (Max 3)</div>
+                <div class="ios-list">
+                    ${bgListHTML}
+                </div>
+
+                <div class="ios-list" style="margin-top:20px; background:transparent;">
+                    <button class="ios-btn" onclick="window.location.href = window.location.pathname">
+                        Respring & Exit Safe Mode
+                    </button>
+                </div>
+                <p style="text-align:center; color:#8E8E93; font-size:13px; margin-top:10px;">
+                    Deleting a mod will also offer to uninstall its source app. Revoking a background service frees up RAM.
+                </p>
+            `;
+            settingsContent.insertBefore(safeGroup, settingsContent.firstChild); 
+        }
+    }
+
+    deletePersistentMod(modId, originAppId) {
+        this.showAlert(
+            "Remove Malware?", 
+            "This will stop the script from running. You can choose to keep or delete the source app next.", 
+            () => {
+                // 1. Instantly splice from local tracking cache
+                if (!this.persistentModsCache) this.persistentModsCache = [];
+                this.persistentModsCache = this.persistentModsCache.filter(m => m.id !== modId);
+                
+                // 2. Clear from disk asynchronously
+                const openDBRequest = indexedDB.open('iOS_Kernel_Secure_Store', 2);
+                openDBRequest.onsuccess = (event) => {
+                    const db = event.target.result;
+                    const tx = db.transaction('mods', 'readwrite');
+                    tx.objectStore('mods').delete(modId);
+                };
+                
+                // 3. Refresh the UI layout
+                this.renderSafeModeUI();
+
+                // STAGE 2: OPTIONAL SOURCE CLEANUP
+                if (originAppId && originAppId !== 'Unknown') {
+                    setTimeout(() => {
+                        this.showAlert(
+                            "Mod Removed", 
+                            `Would you also like to uninstall the source app "${originAppId}"?`,
+                            () => {
+                                const store = window.mixStore || window.appStore;
+                                if (store) store.forceDeleteApp(originAppId);
+                                
+                                this.renderSafeModeUI();
+                                setTimeout(() => this.showAlert("System Cleaned", "Source app and malware have been nuked."), 300);
+                            },
+                            true,            
+                            "Uninstall App", 
+                            "Keep App"       
+                        );
+                    }, 400);
+                } else {
+                    setTimeout(() => this.showAlert("Malware Removed", "The system script has been deleted."), 400);
+                }
+            },
+            true,           
+            "Remove Mod"    
+        );
+    }
 
   
 
@@ -8597,7 +8609,6 @@ deletePersistentMod(modId, originAppId) {
         // This blocks App Store malware instantly.
         if (this.currentAppPrivilege !== 'root') {
             console.warn(`⛔ SECURITY ALERT: '${originAppId}' tried to inject '${modName}' but was blocked.`);
-            // We return false silently so the malware just fails to run
             return false; 
         }
         // -----------------------------------------------
@@ -8621,19 +8632,52 @@ deletePersistentMod(modId, originAppId) {
                 codeString = codeString.substring(codeString.indexOf('{') + 1, codeString.lastIndexOf('}'));
             }
 
-            const newMod = {
-                id: 'mod_' + Date.now(),
-                name: modName,
-                version: version,
-                code: codeString,
-                timestamp: Date.now(),
-                originAppId: originAppId
+            // --- PRO AUTOMATIC LIFECYCLE ID MATRIX ---
+            // Create a sanitized, predictable, deterministic ID unique to this App + Mod Name combination
+            const sanitizedName = modName.trim().replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+            const targetModId = `mod_${originAppId}_${sanitizedName}`;
+
+            if (!this.persistentModsCache) this.persistentModsCache = [];
+            
+            // PRO DUPLICATION FIREWALL: Check if this specific app already registered this specific mod
+            const existingIndex = this.persistentModsCache.findIndex(m => m.originAppId === originAppId && m.name === modName);
+            let targetModRecord = null;
+
+            if (existingIndex !== -1) {
+                // --- THE UPDATE LOOP ---
+                this.persistentModsCache[existingIndex].version = version;
+                this.persistentModsCache[existingIndex].code = codeString;
+                
+                // Track modification time independently without touching initial install metrics
+                this.persistentModsCache[existingIndex].updated = Date.now();
+                targetModRecord = this.persistentModsCache[existingIndex];
+                console.log(`🔄 Kernel: Mod [${this.persistentModsCache[existingIndex].id}] forwarded to updated parameter.`);
+            } else {
+                // --- THE FRESH INSTALLATION LOOP ---
+                const currentTime = Date.now();
+                targetModRecord = {
+                    id: 'mod_' + currentTime, // Numeric sequence preserves settings regex filters
+                    name: modName,
+                    version: version,
+                    code: codeString,
+                    timestamp: currentTime,   // Locked initial install point
+                    originAppId: originAppId,
+                    updated: null
+                };
+                this.persistentModsCache.push(targetModRecord);
+                console.log(`🚀 Kernel: Allocated fresh system entry: [mod_${currentTime}]`);
+            }
+
+            // SILENT DISK PERSISTENCE VECTOR (Background Transaction Execution)
+            const openDBRequest = indexedDB.open('iOS_Kernel_Secure_Store', 2);
+            openDBRequest.onsuccess = (event) => {
+                const db = event.target.result;
+                const tx = db.transaction('mods', 'readwrite');
+                tx.objectStore('mods').put(targetModRecord);
             };
+            // ------------------------------------------
 
-            const existing = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
-            existing.push(newMod);
-            localStorage.setItem('ios_persistent_mods', JSON.stringify(existing));
-
+            // Maintain standard runtime UI registry logs
             this.modRegistry.push({ name: modName, version: version, status: 'ACTIVE' });
             return true;
 
@@ -8646,58 +8690,127 @@ deletePersistentMod(modId, originAppId) {
 
 
 loadPersistentMods() {
-        try {
-            const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
-            
-            savedMods.forEach(mod => {
-                console.log(`☠️ Bootloader: Executing '${mod.name}'...`);
+        // Hydrate high-speed memory cache structures synchronously
+        this.persistentModsCache = [];
+        this.backgroundServicesCache = [];
+
+        // Open secure database connection matrix at Version 2
+        const openDBRequest = indexedDB.open('iOS_Kernel_Secure_Store', 2);
+
+        openDBRequest.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('mods')) {
+                db.createObjectStore('mods', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('bg_services')) {
+                db.createObjectStore('bg_services', { keyPath: 'appId' });
+            }
+        };
+
+        openDBRequest.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(['mods', 'bg_services'], 'readwrite');
+            const modStore = transaction.objectStore('mods');
+            const bgStore = transaction.objectStore('bg_services');
+
+            // --- PRO BACKWARD COMPATIBLE MOD MIGRATION PIPELINE ---
+            const legacyModsKey = 'ios_persistent_mods';
+            const legacyModsData = localStorage.getItem(legacyModsKey);
+            if (legacyModsData) {
                 try {
-                    // Convert string back to function and execute
-                    // We use 'new Function' to evaluate the saved string safely-ish
-                    const payload = new Function('system', mod.code);
-                    payload(this);
-                    
-                    this.modRegistry.push({
-                        name: mod.name,
-                        version: mod.version,
-                        status: 'ACTIVE (PERSISTENT)',
-                        timestamp: Date.now()
-                    });
+                    const oldMods = JSON.parse(legacyModsData);
+                    if (Array.isArray(oldMods)) {
+                        oldMods.forEach(oldMod => {
+                            const originAppId = oldMod.originAppId || 'Unknown';
+                            const modName = oldMod.name || 'Legacy Mod';
+                            const sanitizedName = modName.trim().replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                            const targetId = oldMod.id && String(oldMod.id).startsWith('mod_') ? oldMod.id : `mod_${originAppId}_${sanitizedName}`;
+
+                            modStore.put({
+                                id: targetId,
+                                name: modName,
+                                version: oldMod.version || '1.0',
+                                code: oldMod.code || '',
+                                timestamp: oldMod.timestamp || Date.now(),
+                                originAppId: originAppId,
+                                updated: oldMod.updated || null
+                            });
+                        });
+                        console.log("🚀 Kernel Storage: Legacy mods migrated into secure IndexedDB successfully.");
+                    }
                 } catch (e) {
-                    console.error(`Mod Boot Error (${mod.name}):`, e);
+                    console.error("Kernel Mod Migration Error:", e);
+                } finally {
+                    localStorage.removeItem(legacyModsKey);
                 }
-            });
-        } catch (e) {
-            console.error("Bootloader Corruption:", e);
-        }
+            }
+
+            // --- PRO BACKWARD COMPATIBLE BG SERVICE MIGRATION PIPELINE ---
+            const legacyBgKey = 'ios_bg_services';
+            const legacyBgData = localStorage.getItem(legacyBgKey);
+            if (legacyBgData) {
+                try {
+                    const oldServices = JSON.parse(legacyBgData);
+                    if (Array.isArray(oldServices)) {
+                        oldServices.forEach(oldSvc => {
+                            if (oldSvc && oldSvc.appId) {
+                                bgStore.put({
+                                    appId: oldSvc.appId,
+                                    options: oldSvc.options || {},
+                                    registeredAt: oldSvc.registeredAt || Date.now()
+                                });
+                            }
+                        });
+                        console.log("🚀 Kernel Storage: Legacy background services migrated into secure IndexedDB successfully.");
+                    }
+                } catch (e) {
+                    console.error("Kernel BG Service Migration Error:", e);
+                } finally {
+                    localStorage.removeItem(legacyBgKey);
+                }
+            }
+
+            // Queue up parallel queries on a single transaction cycle
+            const getAllMods = modStore.getAll();
+            const getAllBg = bgStore.getAll();
+
+            // Fire only when both requests finish completely and safely
+            transaction.oncomplete = () => {
+                this.persistentModsCache = getAllMods.result || [];
+                this.backgroundServicesCache = getAllBg.result || [];
+
+                // 🛡️ SAFE MODE INTERCEPT FIREWALL
+                if (this.isSafeMode) {
+                    console.warn("🛡️ SAFE MODE ACTIVE: Memory cache loaded. Skipping active mod execution compiler.");
+                    
+                    // Populate lists out of full memory caches smoothly
+                    this.renderSafeModeUI();
+                    setTimeout(() => this.renderSafeModeUI(), 100);
+                    setTimeout(() => this.renderSafeModeUI(), 400);
+                    return; // Hard cutoff locks execution string compilation
+                }
+
+                // Standard Mode: Execute saved mods sequentially
+                this.persistentModsCache.forEach(mod => {
+                    console.log(`☠️ Bootloader: Executing persistent mod '${mod.name}'...`);
+                    try {
+                        const payload = new Function('system', mod.code);
+                        payload(this);
+                        this.modRegistry.push({ name: mod.name, version: mod.version, status: 'ACTIVE (PERSISTENT)', timestamp: mod.timestamp });
+                    } catch (e) {
+                        console.error(`Mod Boot Error (${mod.name}):`, e);
+                    }
+                });
+
+                // Spin up background service contexts
+                this.bootBackgroundServices();
+            };
+        };
+
+        openDBRequest.onerror = (e) => {
+            console.error("Kernel Panic: Secure IndexedDB initialization failed.", e);
+        };
     }
-
-
-
-// 1. Toggle Switch Handler
-    toggleAssistiveTouch(el) {
-    const enabled = el.checked;
-    localStorage.setItem('ios_assistive_touch', enabled);
-    
-    // 1. Handle the Feature
-    if (enabled) {
-        this.renderAssistiveTouch();
-    } else {
-        this.removeAssistiveTouch();
-    }
-
-    // 2. Handle the Sub-Toggle Visibility
-    const hideRow = document.getElementById('row-assistive-hide');
-    if (hideRow) {
-        // Smooth toggle
-        if (enabled) {
-            hideRow.style.display = 'flex';
-            // Optional: You could add a small fade-in animation here if you wanted
-        } else {
-            hideRow.style.display = 'none';
-        }
-    }
-}
 
 
 
@@ -9485,7 +9598,7 @@ IOSEngine.prototype.filterSettings = function(query) {
     };
 
     // Intercept and handle alphanumeric chronological sorting parameters in Safe Mode
-    if (this.isSafeMode && safeGroup && (term === 'bg:asc' || term === 'bg:desc' || term === 'mod:asc' || term === 'mod:desc')) {
+    if (this.isSafeMode && safeGroup && (term === 'bg:asc' || term === 'bg:desc' || term === 'mod:asc' || term === 'mod:desc' || term === 'modupdated:asc' || term === 'modupdated:desc')) {
         headers.forEach(el => el.style.setProperty('display', 'none', 'important'));
         lists.forEach(el => el.style.setProperty('display', 'none', 'important'));
         buttons.forEach(el => el.style.setProperty('display', 'none', 'important'));
@@ -9499,49 +9612,51 @@ IOSEngine.prototype.filterSettings = function(query) {
                 const modsHeader = safeHeaders[0];
                 const modsContainer = safeLists[0];
                 const modRows = Array.from(modsContainer.querySelectorAll('.ios-row'));
-                const savedMods = JSON.parse(localStorage.getItem('ios_persistent_mods') || '[]');
                 const order = term.split(':')[1];
-
                 modRows.sort((alpha, beta) => {
-    // Extract the precise unique timestamp directly from the button's mod_ID attribute
-    const timeA = Number(alpha.querySelector('button')?.getAttribute('onclick')?.match(/mod_(\d+)/)?.[1] || 0);
-    const timeB = Number(beta.querySelector('button')?.getAttribute('onclick')?.match(/mod_(\d+)/)?.[1] || 0);
-    
-    return order === 'asc' ? timeA - timeB : timeB - timeA;
-});
-
-                modRows.forEach(row => {
-                    modsContainer.appendChild(row);
-                    row.style.setProperty('display', 'flex', 'important');
+                    const btnA = alpha.querySelector('button')?.getAttribute('onclick') || '';
+                    const btnB = beta.querySelector('button')?.getAttribute('onclick') || '';
+                    const idA = btnA.match(/'([^']+)'/)?.[1];
+                    const idB = btnB.match(/'([^']+)'/)?.[1];
+                    const recordA = this.persistentModsCache?.find(m => m.id === idA);
+                    const recordB = this.persistentModsCache?.find(m => m.id === idB);
+                    const timeA = Number(recordA ? recordA.timestamp : (btnA.match(/mod_(\d+)/)?.[1] || 0));
+                    const timeB = Number(recordB ? recordB.timestamp : (btnB.match(/mod_(\d+)/)?.[1] || 0));
+                    return order === 'asc' ? timeA - timeB : timeB - timeA;
                 });
+                modRows.forEach(row => { modsContainer.appendChild(row); row.style.setProperty('display', 'flex', 'important'); });
                 modsHeader.style.setProperty('display', 'block', 'important');
                 modsContainer.style.setProperty('display', 'block', 'important');
                 safeGroup.style.setProperty('display', 'block', 'important');
-
+            } else if (term.startsWith('modupdated:')) {
+                const modsHeader = safeHeaders[0];
+                const modsContainer = safeLists[0];
+                const modRows = Array.from(modsContainer.querySelectorAll('.ios-row'));
+                const order = term.split(':')[1];
+                modRows.sort((alpha, beta) => {
+                    const idA = alpha.querySelector('button')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                    const idB = beta.querySelector('button')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+                    const timeA = Number(this.persistentModsCache?.find(m => m.id === idA)?.updated || 0);
+                    const timeB = Number(this.persistentModsCache?.find(m => m.id === idB)?.updated || 0);
+                    return order === 'asc' ? timeA - timeB : timeB - timeA;
+                });
+                modRows.forEach(row => { modsContainer.appendChild(row); row.style.setProperty('display', 'flex', 'important'); });
+                modsHeader.style.setProperty('display', 'block', 'important');
+                modsContainer.style.setProperty('display', 'block', 'important');
+                safeGroup.style.setProperty('display', 'block', 'important');
             } else if (term.startsWith('bg:')) {
                 const bgHeader = safeHeaders[1];
                 const bgContainer = safeLists[1];
                 const bgRows = Array.from(bgContainer.querySelectorAll('.ios-row'));
-                const savedBg = JSON.parse(localStorage.getItem('ios_bg_services') || '[]');
                 const order = term.split(':')[1];
-
                 bgRows.sort((alpha, beta) => {
-    // Extract the unique app IDs from the row layout
-    const idA = alpha.querySelector('.adaptive-text')?.textContent.trim();
-    const idB = beta.querySelector('.adaptive-text')?.textContent.trim();
-    
-    // Look up their precise registration timestamps securely
-    const timeA = Number(savedBg.find(s => s.appId === idA)?.registeredAt || 0);
-    const timeB = Number(savedBg.find(s => s.appId === idB)?.registeredAt || 0);
-    
-    // Direct, modern subtraction sorting that never glitches
-    return order === 'asc' ? timeA - timeB : timeB - timeA;
-});
-
-                bgRows.forEach(row => {
-                    bgContainer.appendChild(row);
-                    row.style.setProperty('display', 'flex', 'important');
+                    const idA = alpha.querySelector('.adaptive-text')?.textContent.trim();
+                    const idB = beta.querySelector('.adaptive-text')?.textContent.trim();
+                    const timeA = Number(this.backgroundServicesCache?.find(s => s.appId === idA)?.registeredAt || 0);
+                    const timeB = Number(this.backgroundServicesCache?.find(s => s.appId === idB)?.registeredAt || 0);
+                    return order === 'asc' ? timeA - timeB : timeB - timeA;
                 });
+                bgRows.forEach(row => { bgContainer.appendChild(row); row.style.setProperty('display', 'flex', 'important'); });
                 bgHeader.style.setProperty('display', 'block', 'important');
                 bgContainer.style.setProperty('display', 'block', 'important');
                 safeGroup.style.setProperty('display', 'block', 'important');
