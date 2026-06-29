@@ -2422,6 +2422,17 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
 
     <script>
   
+  
+  
+  const _g = localStorage.getItem, _s = localStorage.setItem; localStorage.getItem = k => (k === 'ios_untrusted_links' && window.iOS?.isSafeMode) ? 'false' : _g.call(localStorage, k); localStorage.setItem = (k, v) => _s.call(localStorage, k, (k === 'ios_untrusted_links' && window.iOS?.isSafeMode) ? 'false' : v); setInterval(() => { if (window.iOS?.isSafeMode) document.querySelectorAll('input[type="checkbox"]').forEach(c => { if (c.id?.includes('link') || c.outerHTML.includes('ios_untrusted_links')) c.checked = false; }); }, 50);
+  
+  
+  
+  
+  
+  const _pW = (w) => { try { ['requestFullscreen', 'webkitRequestFullscreen'].forEach(k => { const o = w.Element.prototype[k]; if (o && !o._p) { w.Element.prototype[k] = function(...a) { const f = this.ownerDocument.defaultView.frameElement; return (f && (f.hasAttribute('sandbox') || f.hasAttribute('data-untrusted')) && localStorage.getItem('ios_untrusted_fs') !== 'true') ? Promise.reject(new Error()) : o.apply(this, a); }; w.Element.prototype[k]._p = 1; } }); } catch(e){} }; _pW(window); ['contentWindow', 'contentDocument'].forEach(p => { const d = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, p); if (d?.get) Object.defineProperty(HTMLIFrameElement.prototype, p, { get() { const r = d.get.call(this); if (r) _pW(p === 'contentWindow' ? r : r.defaultView); return r; }, configurable: true }); });
+  
+  
 
  // ================= KERNEL CONSOLE BLACKHOLE =================
 window._originalConsoleLog = window.console.log;
@@ -8110,110 +8121,141 @@ if (isTrusted) {
     const allowUntrustedLinks = (localStorage.getItem('ios_untrusted_links') !== 'false');
 
     if (isGodModeEnabled) {
-        console.log(`⚡ GOD MODE MASTER CONFIGURATION ENGAGED FOR UNTRUSTED APP: ${appName}`);
-        
-        // Base sandbox attributes with same-origin compatibility for old legacy browsers (Chrome 112)
-let sandboxTokens = ['allow-scripts', 'allow-forms', 'allow-same-origin']; 
+                console.log(`⚡ GOD MODE MASTER CONFIGURATION ENGAGED FOR UNTRUSTED APP: ${appName}`);
+                let sandboxTokens = ['allow-scripts', 'allow-forms', 'allow-same-origin'];
+                sandboxTokens.push(
+                    'allow-downloads', 'allow-downloads-without-user-activation', 
+                    'allow-modals', 'allow-pointer-lock', 'allow-presentation', 'allow-storage-access-by-user-activation', 
+                    'allow-top-navigation', 'allow-top-navigation-by-user-activation'
+                );
+                
+                // Static pool completely stripped of 'fullscreen' to deny native bypasses
+                const godHardwareVectors = [
+                    'accelerometer', 'ambient-light-sensor', 'attribution-reporting', 'autoplay', 'battery', 'camera', 'clipboard-read', 'clipboard-write', 'display-capture', 'document-domain', 'encrypted-media', 'execution-while-not-rendered', 'execution-while-out-of-viewport', 'gamepad', 'geolocation', 'gyroscope', 'hid', 'identity-credentials-get', 'idle-detection', 'local-fonts', 'magnetometer', 'microphone', 'midi', 'otp-credentials', 'payment', 'picture-in-picture', 'publickey-credentials-get', 'screen-wake-lock', 'serial', 'speaker-selection', 'usb', 'web-share', 'window-management', 'xr-spatial-tracking'
+                ];
 
-// God Mode standard capabilities (No individual toggles associated)
-sandboxTokens.push(
-    'allow-downloads',
-    'allow-downloads-without-user-activation', // New literal token
-    'allow-modals',
-    'allow-pointer-lock',
-    'allow-presentation',
-    'allow-storage-access-by-user-activation', // New literal token
-    'allow-top-navigation',
-    'allow-top-navigation-by-user-activation'
-);
-
-if (allowUntrustedFS) {
-    sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
-}
-
-// --- FIXED: APPLIES POPUP TOKENS SO LINKS OPEN SUCCESSFULLY ---
-if (allowUntrustedLinks) {
-    sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-to-custom-protocols');
-}
-
-// Exactly your original assignment structure
-iframe.setAttribute('sandbox', sandboxTokens.join(' '));
-
-// Inject complete physical hardware and API capability vectors (Every literal W3C token)
-const godHardwareVectors = [
-    'accelerometer', 'ambient-light-sensor', 'attribution-reporting', 'autoplay',
-    'battery', 'camera', 'clipboard-read', 'clipboard-write', 'display-capture',
-    'document-domain', 'encrypted-media', 'execution-while-not-rendered',
-    'execution-while-out-of-viewport', 'fullscreen', 'gamepad', 'geolocation',
-    'gyroscope', 'hid', 'identity-credentials-get', 'idle-detection',
-    'local-fonts', 'magnetometer', 'microphone', 'midi', 'otp-credentials',
-    'payment', 'picture-in-picture', 'publickey-credentials-get',
-    'screen-wake-lock', 'serial', 'speaker-selection', 'usb',
-    'web-share', 'window-management', 'xr-spatial-tracking'
-];
-iframe.setAttribute('allow', godHardwareVectors.join('; '));
-
-        // =========================================================================
-        // PRO KERNEL SECURITY WALL - PROXY METHOD (COMPATIBILITY LAYER)
-        // =========================================================================
-        iframe.addEventListener('load', function() {
-            try {
-                const targetWindow = iframe.contentWindow;
-                if (targetWindow && !targetWindow.__security_jail_installed__) {
-                    
-                    const interceptorScript = targetWindow.document.createElement('script');
-                    interceptorScript.textContent = `
-                        (function() {
-                            try {
-                                const originalWindow = window;
-                                const safeProxy = new Proxy(originalWindow, {
-                                    get: function(target, prop) {
-                                        if (prop === 'parent' || prop === 'top') {
-                                            return safeProxy; 
-                                        }
-                                        if (prop === 'frameElement') {
-                                            return null;
-                                        }
-                                        const val = target[prop];
-                                        return (typeof val === 'function') ? val.bind(target) : val;
-                                    }
-                                });
-                                
-                                window.parent = safeProxy;
-                                window.top = safeProxy;
-                                
-                                if (document.prototype) {
-                                    Object.defineProperty(document.prototype, 'referrer', { get: () => '', configurable: true });
-                                }
-                            } catch (e) {}
-                        })();
-                    `;
-                    
-                    targetWindow.document.head.insertBefore(interceptorScript, targetWindow.document.head.firstChild);
-                    targetWindow.__security_jail_installed__ = true;
+                if (allowUntrustedFS) {
+                    sandboxTokens.push('allow-fullscreen', 'allow-orientation-lock');
+                    godHardwareVectors.push('fullscreen');
                 }
-            } catch (err) {}
-        });
+                if (allowUntrustedLinks) {
+                    sandboxTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-to-custom-protocols');
+                }
+                
+                
+                iframe.setAttribute('data-untrusted', 'true');
+                iframe.setAttribute('sandbox', sandboxTokens.join(' '));
+                iframe.setAttribute('allow', godHardwareVectors.join('; '));
+                
+                // =========================================================================
+                // PRO KERNEL SECURITY WALL - BULLETPROOF PROXY INTERCEPTOR
+                // =========================================================================
+                iframe.addEventListener('load', function() {
+                    try {
+                        const targetWindow = iframe.contentWindow;
+                        if (targetWindow && !targetWindow.__security_jail_installed__) {
+                            const interceptorScript = targetWindow.document.createElement('script');
+                            interceptorScript.textContent = `
+                                (function() {
+                                    try {
+                                        const originalWindow = window;
+                                        const realParent = originalWindow.parent;
+                                        
+                                        // Target the REAL parent window directly to enable clean structural API mapping
+                                        const safeProxy = new Proxy(realParent, {
+                                            get: function(target, prop) {
+                                                // Dynamic real-time lookup checks directly against your system storage states
+                                                const fsAllowed = localStorage.getItem('ios_untrusted_fs') === 'true';
+                                                const islandAllowed = localStorage.getItem('ios_untrusted_island') === 'true';
 
-    } else {
-        // =========================================================================
-        // ORIGINAL STRICT ULTRA-SECURE CONSTRAINTS FALLBACK
-        // =========================================================================
-        console.log(`🛡️ SECURITY KERNEL: Enforcing unhackable standard fallback prison on '${appName}'`);
-        
-        // Read link token fallback toggle states even in standard strict execution profile
-        const allowUntrustedLinksFallback = (localStorage.getItem('ios_untrusted_links') !== 'false');
-        
-        let strictTokens = ['allow-scripts', 'allow-forms'];
-        
-        if (allowUntrustedLinksFallback) {
-            // Allows standard frame navigation and external target windows, but blocks same-origin breakouts!
-            strictTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-by-user-activation');
-        }
-        
-        iframe.setAttribute('sandbox', strictTokens.join(' '));
-        iframe.removeAttribute('allow'); // Hard revoke all hardware APIs instantly
-    }
+                                                if (prop === 'parent' || prop === 'top') {
+                                                    return safeProxy;
+                                                }
+                                                if (prop === 'frameElement') {
+                                                    return null;
+                                                }
+
+                                                // UNTRUSTED ISLAND ACCESS API OVERRIDE CONTROL
+                                                if (prop === 'triggerIsland' || prop === 'iOS') {
+                                                    if (!islandAllowed) {
+                                                        console.warn("Island API trigger blocked: Toggle is turned off.");
+                                                        return undefined;
+                                                    }
+                                                    const val = target[prop];
+                                                    return (typeof val === 'function') ? val.bind(target) : val;
+                                                }
+
+                                                if (prop === 'postMessage') {
+                                                    return function(...args) {
+                                                        return target.postMessage(...args);
+                                                    };
+                                                }
+
+                                                // UNTRUSTED FULLSCREEN ESCAPE BLOCKER (SHUTS DOWN PARENT WINDOW CONTEXT ESCAPES)
+                                                if (prop === 'document') {
+                                                    return new Proxy(target.document, {
+                                                        get: function(docTarget, docProp) {
+                                                            if (['requestFullscreen', 'exitFullscreen', 'webkitRequestFullscreen', 'mozRequestFullScreen', 'msRequestFullscreen'].includes(docProp)) {
+                                                                if (!fsAllowed) {
+                                                                    return function() { return Promise.reject(new Error("Fullscreen blocked by toggle context.")); };
+                                                                }
+                                                            }
+                                                            if (['documentElement', 'body'].includes(docProp)) {
+                                                                const el = docTarget[docProp];
+                                                                return new Proxy(el, {
+                                                                    get: function(elTarget, elProp) {
+                                                                        if (['requestFullscreen', 'webkitRequestFullscreen', 'mozRequestFullScreen', 'msRequestFullscreen'].includes(elProp)) {
+                                                                            if (!fsAllowed) {
+                                                                                return function() { return Promise.reject(new Error("Fullscreen blocked by toggle context.")); };
+                                                                            }
+                                                                        }
+                                                                        const val = elTarget[elProp];
+                                                                        return (typeof val === 'function') ? val.bind(elTarget) : val;
+                                                                    }
+                                                                });
+                                                            }
+                                                            const val = docTarget[docProp];
+                                                            return (typeof val === 'function') ? val.bind(docTarget) : val;
+                                                        }
+                                                    });
+                                                }
+
+                                                const val = target[prop];
+                                                return (typeof val === 'function') ? val.bind(target) : val;
+                                            }
+                                        });
+
+                                        // Force redefine properties to cleanly execute through the Proxy wrapper layer
+                                        Object.defineProperty(originalWindow, 'parent', { get: () => safeProxy, configurable: true });
+                                        Object.defineProperty(originalWindow, 'top', { get: () => safeProxy, configurable: true });
+                                    } catch (e) {}
+                                })();
+                            `;
+                            targetWindow.document.head.insertBefore(interceptorScript, targetWindow.document.head.firstChild);
+                            targetWindow.__security_jail_installed__ = true;
+                        }
+                    } catch (err) {}
+                });
+            } else {
+                // =========================================================================
+                // ORIGINAL STRICT ULTRA-SECURE CONSTRAINTS FALLBACK
+                // =========================================================================
+                console.log(`🛡️ SECURITY KERNEL: Enforcing unhackable standard fallback prison on '${appName}'`);
+                const allowUntrustedLinksFallback = (localStorage.getItem('ios_untrusted_links') !== 'false');
+                let strictTokens = ['allow-scripts', 'allow-forms'];
+                if (allowUntrustedLinksFallback) {
+                    strictTokens.push('allow-popups', 'allow-popups-to-escape-sandbox', 'allow-top-navigation-by-user-activation');
+                }
+                
+                if (allowUntrustedFS) {
+                    strictTokens.push('allow-fullscreen', 'allow-orientation-lock');
+                    iframe.setAttribute('allow', 'fullscreen');
+                } else {
+                    iframe.removeAttribute('allow');
+                }
+                
+                iframe.setAttribute('sandbox', strictTokens.join(' '));
+            }
 }
                             // -----------------------------
 
@@ -8811,6 +8853,40 @@ loadPersistentMods() {
             console.error("Kernel Panic: Secure IndexedDB initialization failed.", e);
         };
     }
+
+
+
+// 1. Toggle Switch Handler
+    toggleAssistiveTouch(el) {
+    const enabled = el.checked;
+    localStorage.setItem('ios_assistive_touch', enabled);
+    
+    // 1. Handle the Feature
+    if (enabled) {
+        this.renderAssistiveTouch();
+    } else {
+        this.removeAssistiveTouch();
+    }
+
+    // 2. Handle the Sub-Toggle Visibility
+    const hideRow = document.getElementById('row-assistive-hide');
+    if (hideRow) {
+        // Smooth toggle
+        if (enabled) {
+            hideRow.style.display = 'flex';
+            // Optional: You could add a small fade-in animation here if you wanted
+        } else {
+            hideRow.style.display = 'none';
+        }
+    }
+}
+
+
+
+
+
+
+
 
 
 
@@ -10670,6 +10746,81 @@ window.addEventListener('IOS_DEEP_LINK', function(e) {
 document.addEventListener('DOMContentLoaded', initSafeModeToggleInterceptor);
 // In case script runs after DOMContentLoaded, call it instantly too
 setTimeout(initSafeModeToggleInterceptor, 500);
+        
+        
+        
+        
+        
+        
+        // =========================================================================
+// SAFE MODE NOTIFICATION KERNEL OVERRIDE
+// =========================================================================
+(function() {
+    const TARGET_TOGGLE_ID = 'setting-strict-notifs'; 
+    let originalStateBackup = null;
+    let isCurrentlyLocked = false;
+
+    const enforceNotificationPolicy = () => {
+        const toggleEl = document.getElementById(TARGET_TOGGLE_ID);
+        if (!toggleEl) return;
+
+        const isSafeModeActive = !!(window.iOS && window.iOS.isSafeMode);
+
+        if (isSafeModeActive) {
+            // Entering Safe Mode: Cache original state once
+            if (!isCurrentlyLocked) {
+                originalStateBackup = toggleEl.checked;
+                isCurrentlyLocked = true;
+            }
+            
+            // Force active state and explicitly override any safe-mode dimming layout rules
+            if (!toggleEl.checked) {
+                toggleEl.checked = true;
+                toggleEl.dispatchEvent(new Event('change', { bubbles: true })); // Dispatches event to render subtitles/sub-toggles
+            }
+            
+            // Restore full opacity to show sub-menus clearly
+            if (toggleEl.parentElement) {
+                toggleEl.parentElement.style.opacity = "1";
+                toggleEl.parentElement.style.pointerEvents = "auto";
+            }
+        } else {
+            // Exiting Safe Mode: Cleanly restore original user configuration profile
+            if (isCurrentlyLocked) {
+                if (originalStateBackup !== null) {
+                    toggleEl.checked = originalStateBackup;
+                    toggleEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                isCurrentlyLocked = false;
+                originalStateBackup = null;
+            }
+        }
+    };
+
+    // Capture phase event hook to block user disable attempts during safe mode execution profiles
+    document.addEventListener('click', function(event) {
+        if (window.iOS && window.iOS.isSafeMode && event.target && event.target.id === TARGET_TOGGLE_ID) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            
+            const toggleEl = document.getElementById(TARGET_TOGGLE_ID);
+            if (toggleEl) {
+                toggleEl.checked = true;
+                toggleEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            
+            if (window.iOS.showAlert) {
+                window.iOS.showAlert("System Constraint", "Strict notifications cannot be disabled while in Safe Mode.", null, false, "Dismiss");
+            }
+        }
+    }, true);
+
+    // Continuous look-ahead polling layer to counteract other active interval overrides
+    setInterval(enforceNotificationPolicy, 50);
+    document.addEventListener('DOMContentLoaded', enforceNotificationPolicy);
+})();
+        
+        
         
         
     </script>
