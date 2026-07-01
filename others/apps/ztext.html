@@ -227,8 +227,9 @@
             border: 1px solid var(--border) !important;
         }
 
-        /* AUTH SCREEN */
-        #login-screen { justify-content: center; align-items: center; background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 60%); }
+        /* Find your existing #login-screen rule near line 140 and update justify-content, then add margin to the card */
+#login-screen { justify-content: flex-start; align-items: center; background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 60%); }
+.auth-card { margin: auto 0; }
         .auth-card {
             background: rgba(24, 24, 27, 0.8); backdrop-filter: blur(10px);
             border: 1px solid var(--border); padding: 30px; border-radius: 16px;
@@ -471,6 +472,7 @@
                 <div style="display:flex; gap:5px;">
                     <input id="server-url-input" placeholder="https://your-server.com">
                     <button onclick="saveServerConfig()">Save</button>
+                    <button onclick="resetServerConfig()" class="danger" style="padding: 6px;">Reset</button>
                 </div>
             </div>
             <br>
@@ -1340,6 +1342,14 @@
             }
         }
         function toggleServerConfig() { const el=document.getElementById('server-config'); el.style.display=el.style.display==='none'?'block':'none'; }
+        
+        function resetServerConfig() {
+            localStorage.removeItem('server_url');
+            toast("Restored default server", "success");
+            setTimeout(() => location.reload(), 800);
+        }
+        
+        
         
         // --- ZEN PRO SYNC LOGIC ---
         document.getElementById('refreshBtn').addEventListener('click', async function() {
