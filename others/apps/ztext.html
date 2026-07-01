@@ -406,6 +406,9 @@
             text-underline-offset: 4px;  /* Modern "Pro" gap */
         }
         
+        #autosave-interval, #autosave-interval option { font-family: var(--font-ui); }
+        
+        
     </style>
 </head>
 <body>
@@ -709,6 +712,146 @@
             cache: { enabled: false }, autoConnect: true
         });
 
+        // --- THE ZEN PRO UNBREAKABLE RETRY KILL-SWITCH ---
+        (function injectInfiniteLoopBlocker(clientInstance) {
+            let loopBreakerTripped = false;
+            let totalFailureStrikes = 0;
+            const MAX_ALLOWED_STRIKES = 5; // Absolute lifetime limit for this session load
+
+            const nukeConnectionEngine = (triggerSource) => {
+                if (loopBreakerTripped) return;
+                
+                // Cumulative strike counter across ALL error categories combined
+                totalFailureStrikes++;
+                console.warn(`⚠️ [KILL-SWITCH] Strike #${totalFailureStrikes} registered via [${triggerSource}]`);
+                
+                // The exact moment the total count hits 5, terminate everything permanently
+                if (totalFailureStrikes >= MAX_ALLOWED_STRIKES) {
+                    loopBreakerTripped = true;
+                    console.error(`⛔ [CRITICAL] 5-Strike absolute limit reached via [${triggerSource}]. Terminating all connection loops PERMANENTLY.`);
+                    
+                    // 1. Force kill the networking instances instantly
+                    try { if (typeof clientInstance.close === 'function') clientInstance.close(); } catch(e) {}
+                    try { if (typeof clientInstance.disconnect === 'function') clientInstance.disconnect(); } catch(e) {}
+                    
+                    // 2. Hollow out all internal connection routines so they can NEVER fire again
+                    const deadOperation = () => { 
+                        console.warn("🚫 Reconnection attempt blocked permanently by frontend kill-switch."); 
+                        return Promise.resolve(); 
+                    };
+                    
+                    clientInstance.connect = deadOperation;
+                    if (clientInstance.api) {
+                        clientInstance.api.connect = deadOperation;
+                        if (clientInstance.api.socket) {
+                            clientInstance.api.socket.connect = deadOperation;
+                            if (clientInstance.api.socket.io) {
+                                clientInstance.api.socket.io.reconnect = deadOperation;
+                            }
+                        }
+                    }
+                    
+                    toast("Connection terminated: Sync loop broken.", "error");
+                }
+            };
+
+            // Catch explicit socket errors
+            clientInstance.on('connect_error', (err) => {
+                nukeConnectionEngine("connect_error");
+            });
+
+            // Catch unexpected socket drops 
+            clientInstance.on('disconnect', (reason) => {
+                // Ignore intentional system logouts
+                if (reason !== "io client disconnect" && reason !== "client namespace disconnect") {
+                    nukeConnectionEngine("disconnect_loop_detection");
+                }
+            });
+
+            // Catch background fetch promise failures before they can trigger a retry loop
+            window.addEventListener('unhandledrejection', function(event) {
+                const errorMsg = event.reason ? event.reason.toString().toLowerCase() : "";
+                if (errorMsg.includes("acebase") || errorMsg.includes("fetch") || errorMsg.includes("network error")) {
+                    nukeConnectionEngine("background_fetch_rejection");
+                }
+            });
+        })(db);
+
+
+
+// --- THE ZEN PRO STANDALONE WAKE-LOCK & CONNECTION OBSERVER ---
+        (function injectWakeLockAndObserver() {
+            let wakeLock = null;
+
+            // --- 1. PRO WAKE LOCK ACTIONS ---
+            async function requestScreenWakeLock() {
+                if ('wakeLock' in navigator) {
+                    if (wakeLock !== null) return; // Already locked
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        console.log("%c🟢 [WAKE LOCK] Screen lock active. Device sleep disabled.", "color: #22c55e; font-weight: bold;");
+                        
+                        // Listen for system-enforced lock releases (e.g., battery saver or minimizing)
+                        wakeLock.addEventListener('release', () => {
+                            console.log("%c🟡 [WAKE LOCK] Screen lock released by system.", "color: #eab308;");
+                            wakeLock = null;
+                        });
+                    } catch (err) {
+                        console.warn(`[WAKE LOCK] Request blocked by platform: ${err.message}`);
+                    }
+                } else {
+                    console.warn("[WAKE LOCK] Feature not supported on this browser/platform.");
+                }
+            }
+
+            async function releaseScreenWakeLock() {
+                if (wakeLock) {
+                    try {
+                        await wakeLock.release();
+                        console.log("%c⚪ [WAKE LOCK] Screen lock explicitly surrendered.", "color: #a1a1aa;");
+                    } catch (e) {}
+                    wakeLock = null;
+                }
+            }
+
+            // --- 2. THE RESILIENCE OBSERVER ---
+            // Automatically manages the lock status based on database state transitions
+            if (typeof db !== 'undefined') {
+                db.on('connect', () => {
+                    requestScreenWakeLock();
+                });
+
+                db.on('disconnect', () => {
+                    releaseScreenWakeLock();
+                });
+            }
+
+            // --- 3. BACKGROUND / FOREGROUND SYNCRONIZER ---
+            // If you switch apps or lock your phone manually, it cleans up. 
+            // The split-second you open the tab back up, it aggressively locks the screen back down.
+            document.addEventListener('visibilitychange', async () => {
+                if (document.hidden) {
+                    await releaseScreenWakeLock();
+                } else {
+                    console.log("%c⚡ [OBSERVER] App focused. Enforcing active state updates...", "color: #8b5cf6;");
+                    await requestScreenWakeLock();
+                    
+                    // Safe network recovery pulse: If internet dropped while away, wake it back up
+                    if (typeof db !== 'undefined' && typeof db.connect === 'function') {
+                        try { 
+                            // Only triggers a connect attempt if it isn't already running a routine
+                            if (!db.connected) db.connect(); 
+                        } catch(e) {}
+                    }
+                }
+            });
+
+            // Auto-fire immediately on boot setup
+            requestScreenWakeLock();
+        })();
+
+
+
         let currentUser = null;
         let currentFileId = null;
         let isSignup = false;
@@ -836,7 +979,8 @@
                     body: JSON.stringify({ username: u, password: p, email: email, displayName: u })
                 });
                 if(!res.ok) {
-                    await db.auth.signUp(email, password, { username, displayName: username });
+                    // FIXED: Wrapped all parameters into a single configuration object required by AceBase spec
+                    await db.auth.signUp({ username: u, password: p, email: email, displayName: u });
                     await db.auth.signOut();
                 }
                 const login = await db.auth.signIn(u, p);
@@ -845,8 +989,9 @@
                 toast("Account created!", "success");
                 onAuthSuccess(login.user);
                 setLoading(btn, false);
-            } catch(e) { toast("Signup Failed: " + e.message, "error");
-            setLoading(btn, false);
+            } catch(e) { 
+                toast("Signup Failed: " + e.message, "error");
+                setLoading(btn, false);
             }
         }
 
