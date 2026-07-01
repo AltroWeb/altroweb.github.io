@@ -1223,6 +1223,9 @@
                     await db.ref(`users/${currentUser.uid}`).remove();
                     await db.auth.deleteAccount();
                     toast("Account Deleted", "success");
+                    
+                    val('del-confirm-user', '');
+                    
                     currentUser = null; masterKey = null;
                     showScreen('login-screen');
                 } catch(e) { toast("Failed: " + e.message, "error"); }
