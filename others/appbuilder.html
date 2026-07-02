@@ -126,8 +126,8 @@
             position: relative;
         }
 
-        h1, h2, h3 { margin: 0 0 20px 0; }
-        h1 { font-size: 28px; }
+        h1, h2, h3 { margin: 0 0 20px 0; white-space: normal !important; overflow-wrap: anywhere !important; word-break: normal !important; }
+        h1 { font-size: 28px; white-space: normal !important; overflow-wrap: anywhere !important; word-break: normal !important; }
 
         /* --- FORMS --- */
         .form-group { margin-bottom: 24px; position: relative; }
@@ -799,7 +799,25 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 }
 
 	
-	
+	/* =========================================================
+   MINIMALIST ANTI-BLEED SHIELD - STRICT BOUNDARY CLAMP
+   ========================================================= */
+.tabs, 
+.tabs *,
+div[style*="rgba(118, 118, 128, 0.12)"],
+div[style*="rgba(118, 118, 128, 0.12)"] *,
+.form-group,
+.form-group > div {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    min-width: 0 !important; /* Permits components to flex down natively */
+}
+
+/* Force container boundaries to reject physical overflow */
+.card, 
+.form-group {
+    overflow: hidden !important;
+}
 	
 
     </style>
@@ -824,7 +842,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 </div>
       <div class="user-menu" id="user-menu" onclick="appBuilder.discardChangesGuard(() => appBuilder.showSettings())">
                  <span id="nav-username">User</span>
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        
              </div>
         </div>
     </div>
@@ -1078,21 +1096,19 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 
             <div class="card">
                 <!-- KPI CARDS -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; margin-bottom: 30px; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important;">
             
             
-            
-            
-<div style="display: block !important; width: 100% !important; box-sizing: border-box !important; margin-top: 30px; clear: both;">
-    
-    <h3 style="font-size:16px; margin: 0 0 15px 0; display:flex; justify-content:space-between; align-items:center; width:100%; box-sizing:border-box;">
+<div style="display: block !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; margin-top: 20px; clear: both; overflow: hidden !important;">
+     
+    <h3 style="font-size:16px; margin: 0 0 15px 0; display:flex; flex-wrap: wrap; justify-content:space-between; align-items:center; gap: 8px; width:100%; max-width: 100% !important; box-sizing:border-box;">
         Ecosystem Collaborators
-        <span style="font-size:12px; font-weight:400; color:var(--text-secondary); letter-spacing: 0;">Find developers</span>
+        <span style="font-size:12px; font-weight:400; color:var(--text-secondary); letter-spacing: 0; white-space: normal !important; overflow-wrap: anywhere !important;">Find developers</span>
     </h3>
 
-    <div style="margin-bottom: 15px; position: relative; width: 100%; box-sizing: border-box; display: block;">
+    <div style="margin-bottom: 15px; position: relative; width: 100%; max-width: 100% !important; box-sizing: border-box; display: block; overflow: hidden !important;">
         <input type="text" id="roster-search" placeholder="Search collaborators..." oninput="appBuilder.filterRoster()" 
-               style="width: 100% !important; height: 38px; padding: 0 14px 0 38px; font-size: 14px; border-radius: 30px; box-sizing: border-box !important; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-primary); outline: none; display: block;">
+               style="width: 100% !important; max-width: 100% !important; height: 38px; padding: 0 14px 0 38px; font-size: 14px; border-radius: 30px; box-sizing: border-box !important; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-primary); outline: none; display: block;">
         
         <svg onclick="const inp = document.getElementById('roster-search'); inp.value = ''; inp.blur(); appBuilder.filterRoster(); const roster = document.getElementById('glob-creators-roster'); if(roster) roster.scrollTo({ top: 0, behavior: 'smooth' });" 
              style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: auto; cursor: pointer; z-index: 5; display: block;" 
@@ -1101,56 +1117,55 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
         </svg>
     </div>
 
-    <div id="glob-creators-roster" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px; box-sizing: border-box; width: 100% !important;">
-        <div style="grid-column: 1/-1; text-align:center; color:var(--text-secondary); padding:20px; font-size: 14px;">Loading network directory...</div>
+    <div id="glob-creators-roster" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 130px), 1fr)); gap: 12px; margin-bottom: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px; box-sizing: border-box; width: 100% !important; max-width: 100% !important;">
+        <div style="grid-column: 1/-1; text-align:center; color:var(--text-secondary); padding:20px; font-size: 14px; white-space: normal !important; overflow-wrap: anywhere !important;">Loading network directory...</div>
     </div>
     
 </div>
             
             
-            
-            
-            
-            
-            
-            
-            <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; gap:12px;">
-                <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">Ecosystem Totals</div>
-                <div style="display:flex; justify-content:space-around; gap:10px; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:4px;">
-                    <div>
-                        <div style="font-size:11px; color:var(--text-secondary); font-weight:500;">Your Apps</div>
-                        <div id="glob-dev-apps-count" style="font-size:24px; font-weight:700; color:var(--text-primary); margin-top:4px;">0</div>
+            <div style="background:var(--bg-color); padding:16px 12px !important; border-radius:16px; text-align:center; display:flex; flex-direction:column; justify-content:space-between; gap:12px; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow: hidden !important;">
+                <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; white-space: normal !important; overflow-wrap: anywhere !important;">Ecosystem Totals</div>
+                <div style="display:flex; flex-wrap: wrap; justify-content:space-around; gap:10px; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:4px; width: 100% !important; box-sizing: border-box !important;">
+                    <div style="min-width: 0 !important; flex: 1 !important;">
+                        <div style="font-size:11px; color:var(--text-secondary); font-weight:500; white-space: normal !important; overflow-wrap: anywhere !important;">Your Apps</div>
+                        <div id="glob-dev-apps-count" style="font-size:clamp(18px, 5vw, 24px) !important; font-weight:700; color:var(--text-primary); margin-top:4px; word-break: break-all !important; overflow-wrap: anywhere !important; white-space: normal !important;">0</div>
                     </div>
-                    <div>
-                        <div style="font-size:11px; color:var(--text-secondary); font-weight:500;">Global Store</div>
-                        <div id="glob-store-apps-count" style="font-size:24px; font-weight:700; color:var(--accent); margin-top:4px;">0</div>
+                    <div style="min-width: 0 !important; flex: 1 !important;">
+                        <div style="font-size:11px; color:var(--text-secondary); font-weight:500; white-space: normal !important; overflow-wrap: anywhere !important;">Global Store</div>
+                        <div id="glob-store-apps-count" style="font-size:clamp(18px, 5vw, 24px) !important; font-weight:700; color:var(--accent); margin-top:4px; word-break: break-all !important; overflow-wrap: anywhere !important; white-space: normal !important;">0</div>
                     </div>
                 </div>
-                <div style="font-size:11px; color:var(--text-secondary); line-height:1.3;">Total deployed apps across the App Store.</div>
+                <div style="font-size:11px; color:var(--text-secondary); line-height:1.3; white-space: normal !important; overflow-wrap: anywhere !important;">Total deployed apps across the App Store.</div>
             </div>
 
 
 
-<div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center; display: flex; flex-direction: column; justify-content: center; align-items: center; box-sizing: border-box;">
-    <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">Ecosystem Creators</div>
-    <div id="glob-devs-count" style="font-size:48px; font-weight:700; color:var(--text-primary); margin-top:8px;">0</div>
+
+<div style="background:var(--bg-color); padding:16px 12px !important; border-radius:16px; text-align:center; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow: hidden !important;">
+    <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; white-space: normal !important; overflow-wrap: anywhere !important; max-width: 100% !important;">Ecosystem Creators</div>
+    <div id="glob-devs-count" style="font-size:clamp(24px, 7vw, 48px) !important; font-weight:700; color:var(--text-primary); margin-top:8px; line-height: 1.1; white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; width: 100% !important; max-width: 100% !important; display: block !important;">0</div>
 </div>
 
 
 
 
-            <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center; display: flex; flex-direction: column; justify-content: center; align-items: center; box-sizing: border-box;">
-    <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; width: 100%;">Total Ecosystem Downloads</div>
-    <div id="glob-total" style="font-size:48px; font-weight:700; color:var(--text-primary); margin-top:8px; width: 100%;">0</div>
+
+
+
+
+
+
+
+            <div style="background:var(--bg-color); padding:16px 12px !important; border-radius:16px; text-align:center; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow: hidden !important;">
+    <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; width: 100%; white-space: normal !important; overflow-wrap: anywhere !important;">Total Ecosystem Downloads</div>
+    <div id="glob-total" style="font-size:clamp(24px, 7vw, 48px) !important; font-weight:700; color:var(--text-primary); margin-top:8px; width: 100% !important; max-width: 100% !important; line-height: 1.1; white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; display: block !important;">0</div>
 </div>
 
-<div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center; display: flex; flex-direction: column; justify-content: center; align-items: center; box-sizing: border-box;">
-    <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; width: 100%;">Total Active Installs</div>
-    <div id="glob-active" style="font-size:48px; font-weight:700; color:var(--success); margin-top:8px; width: 100%;">0</div>
+<div style="background:var(--bg-color); padding:16px 12px !important; border-radius:16px; text-align:center; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow: hidden !important;">
+    <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px; width: 100%; white-space: normal !important; overflow-wrap: anywhere !important;">Total Active Installs</div>
+    <div id="glob-active" style="font-size:clamp(24px, 7vw, 48px) !important; font-weight:700; color:var(--success); margin-top:8px; width: 100% !important; max-width: 100% !important; line-height: 1.1; white-space: normal !important; word-break: break-all !important; overflow-wrap: anywhere !important; display: block !important;">0</div>
 </div>
-
-
-
 
 
         </div>
@@ -1199,7 +1214,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                         <div id="editor-date" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; display: none;"></div>
                     </div>
                 </div>
-                <button id="editor-view-live-btn" class="btn secondary sm" style="display: none; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; height: 32px;" onclick="appBuilder.redirectToLiveApp()">
+                <button id="editor-view-live-btn" class="btn secondary sm" onclick="appBuilder.redirectToLiveApp()">
                     <span>View App</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </button>
@@ -1373,7 +1388,7 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                     </button>
                     <h1 style="margin:0;">Account Settings</h1>
                 </div>
-                <button class="btn secondary sm" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 99px; height: 32px;" onclick="appBuilder.redirectToLiveProfile()">
+                <button class="btn secondary sm" onclick="appBuilder.redirectToLiveProfile()">
                     <span>Profile</span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </button>
