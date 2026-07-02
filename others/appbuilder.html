@@ -49,9 +49,11 @@
         }
 
         /* --- NAVBAR --- */
-        .navbar {
-            width: 100%;
-            padding: 15px 20px;
+.navbar {
+            width: 100vw !important; /* Force spans the absolute browser viewport width bounds */
+            left: 0;
+            right: 0;
+            padding: 14px 24px;
             background: var(--header-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -63,6 +65,8 @@
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
+            margin-left: calc(-50vw + 50%); /* Pulls the bar outward past center-aligned container constraints */
+            margin-right: calc(-50vw + 50%);
         }
 
         .brand {
@@ -527,8 +531,274 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
 	
 	
 	
-	
+	/* =========================================================
+   STRICT 240PX MAXIMUM ISOLATION SHIELD - ZERO COMPROMISE
+   ========================================================= */
+@media (max-width: 240px) {
+    
+    /* 1. HARD BOUNDS LIMITATIONS & OVERFLOW LOCKS */
+    html, body {
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    *, *::before, *::after {
+        box-sizing: border-box !important;
+    }
+    .container {
+        padding: 8px 4px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .card {
+        padding: 12px !important;
+        border-radius: 10px !important;
+        width: 100% !important;
+        margin-bottom: 14px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
 
+    /* 2. PIXEL-PERFECT NAVIGATION HEADER AUTO-STACK */
+    .navbar {
+        display: flex !important;
+        flex-direction: column !important; /* Stacks brand and menu on separate lines */
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px 6px !important;
+    }
+    .brand {
+        width: 100% !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+        gap: 6px !important;
+    }
+    .brand span {
+        font-size: 14px !important;
+        max-width: 120px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+    .logo-icon {
+        width: 24px !important;
+        height: 24px !important;
+        flex-shrink: 0 !important;
+    }
+    .nav-controls {
+        width: 100% !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        flex-shrink: 0 !important;
+    }
+    .user-menu {
+        max-width: 120px !important;
+        padding: 6px 10px !important;
+        gap: 6px !important;
+        min-width: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    #nav-username {
+        font-size: 12px !important;
+        display: inline-block !important;
+        max-width: 65px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important; /* Graceful text clipping before touching vector assets */
+        vertical-align: middle !important;
+    }
+    .user-menu svg, .verified-badge-nav {
+        flex-shrink: 0 !important; /* Absolute protection against icon crushing */
+    }
+
+    /* 3. EXPLICIT CONTAINER SAFETY TARGETS (PREVENTS GHOST MODAL EXPLOSIONS) */
+    #dashboard-view > div:first-child,
+    #analytics-view > div:first-child,
+    #global-analytics-view > div:first-child,
+    #editor-view > div:first-child,
+    #settings-view > div:first-child,
+    .settings-footer {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Target dashboard search row layout framework */
+    #dashboard-view > div:first-child > div:nth-child(2),
+    #dashboard-view > div:first-child > div[style*="justify-content: flex-end"],
+    .settings-controls {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    /* TYPOGRAPHY DOWN-SCALER SAFEGUARDS */
+    h1 { font-size: 18px !important; text-align: center !important; }
+    h2 { font-size: 16px !important; text-align: center !important; }
+    h3 { font-size: 14px !important; text-align: center !important; }
+
+    /* CHUNKY APPLE-STYLE PRIMARY SYSTEM ACTION BUTTONS */
+    .btn, 
+    #btn-publish,
+    #btn-save-settings,
+    #btn-login,
+    #btn-register {
+        width: 100% !important;
+        min-width: 0 !important; 
+        max-width: 100% !important;
+        height: 42px !important; /* Thick touch target size */
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        padding: 0 16px !important;
+        margin: 0 !important;
+        flex: none !important; 
+        border-radius: 22px !important;
+    }
+
+    /* 4. MARKDOWN EDITOR DEFENSIVE PROTECTION (FIXES WRITE/PREVIEW TABS) */
+    /* Forces description/bio section headers to hold row formats instead of breaking into columns */
+    .form-group > div[style*="display:flex; justify-content:space-between"],
+    .form-group > div[style*="display: flex; justify-content: space-between"] {
+        display: flex !important;
+        flex-direction: row !important; 
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    /* Hard-locks tab container to original size parameters */
+    div[style*="background:rgba(118, 118, 128, 0.12)"],
+    div[style*="background: rgba(118, 118, 128, 0.12)"] {
+        display: flex !important;
+        flex-direction: row !important; 
+        align-items: center !important;
+        width: 140px !important;
+        height: 28px !important;
+        padding: 2px !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Excludes tab toggle controls from full-width button overrides */
+    #tab-write, #tab-preview, #tab-desc-write, #tab-desc-preview {
+        width: auto !important;
+        height: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        display: block !important;
+        flex: 1 !important;
+        border-radius: 6px !important;
+        box-shadow: none !important;
+    }
+
+    /* TEXT FIELDS CONTROL PARAMETERS */
+    input, textarea, select {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 40px !important;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+    }
+    textarea { height: auto !important; }
+    #dashboard-search { padding-left: 36px !important; }
+
+    /* 5. APP DISPATCH CARDS & DYNAMIC SYSTEM PANEL CONTROLS */
+    .app-list-item {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px 10px !important;
+        gap: 10px !important;
+    }
+    .list-icon {
+        width: 44px !important;
+        height: 44px !important;
+        margin: 0 auto 4px auto !important;
+        border-radius: 10px !important;
+        flex-shrink: 0 !important;
+    }
+    .list-info {
+        text-align: center !important;
+        margin: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    .list-name {
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        word-break: break-all !important; /* Hard splits text strings at card boundaries */
+        overflow-wrap: anywhere !important;
+        white-space: normal !important;
+    }
+    .list-meta {
+        font-size: 11px !important;
+        justify-content: center !important;
+    }
+    .list-actions {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important; /* Keeps action items cleanly paired side-by-side */
+        justify-content: center !important;
+        gap: 8px !important;
+        margin-top: 4px !important;
+        flex-shrink: 0 !important;
+    }
+    .list-actions .btn {
+        flex: 1 !important; 
+        min-width: 0 !important;
+        height: 36px !important;
+        border-radius: 8px !important;
+    }
+    .list-actions .btn.icon-only {
+        flex: 0 0 36px !important; /* Secures delete button square dimensions */
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+    }
+
+    /* 6. GRID LAYOUT CASING (KPI AND COLLABORATIVE DISCOVERY) */
+    div[style*="display: grid"], 
+    div[style*="display:grid"],
+    #global-analytics-view .card > div[style*="display: grid"],
+    #glob-creators-roster {
+        grid-template-columns: 1fr !important; /* Decouples grids to cascade linearly downwards */
+        width: 100% !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
+    }
+    div[style*="background:var(--bg-color)"], 
+    div[style*="background: var(--bg-color)"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 12px 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Compresses large numeric strings safely within bounding fields */
+    #glob-total, #glob-active, #ana-total, #ana-active,
+    #glob-dev-apps-count, #glob-store-apps-count, #glob-devs-count {
+        font-size: 20px !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+    }
+}
+
+	
 	
 	
 
@@ -759,11 +1029,11 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
                     <img id="ana-icon" src="" style="width:64px; height:64px; border-radius:14px; background:#eee; object-fit:cover;">
                     <div>
                         <h2 id="ana-title" style="margin:0; font-size:22px; font-weight:700;">App Name</h2>
-                        <span id="ana-id" style="color:var(--text-secondary); font-size:13px; font-family:monospace;">ID: ...</span>
+                        <span id="ana-id" style="color:var(--text-secondary); font-size:13px; font-family:monospace; word-break: break-all !important; overflow-wrap: anywhere !important;">ID: ...</span>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; box-sizing: border-box;">
                     <div style="background:var(--bg-color); padding:24px; border-radius:16px; text-align:center;">
                         <div style="font-size:12px; text-transform:uppercase; color:var(--text-secondary); font-weight:700; letter-spacing:0.5px;">All Time Downloads</div>
                         <div id="ana-total" style="font-size:42px; font-weight:700; color:var(--text-primary); margin-top:8px;">0</div>

@@ -707,6 +707,96 @@ body.dark-mode .nav-more-trigger {
 
 
 
+
+/* =========================================================
+   PRO ULTRA-MOBILE & MICRO-VIEWPORT DEFENSIF ARCHITECTURE
+   ========================================================= */
+
+@media (max-width: 768px) {
+    /* --- NAVBAR LOGO TEXT-WRAP & HAMBURGER STABILITY --- */
+    .nav-content {
+        padding: 0 16px !important; /* Reclaims horizontal breathing room */
+        gap: 12px !important;        /* Prevents collision constraints */
+    }
+
+    .nav-logo {
+        white-space: normal !important; /* Core fix: allows text to drop down rows */
+        
+        line-height: 1.25 !important;
+        display: flex !important;
+        align-items: center !important;
+        padding-right: 8px !important;
+        word-break: break-word !important;
+    }
+
+    .nav-logo svg {
+        flex-shrink: 0 !important;    /* Hard lock layout geometry protection */
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .hamburger {
+        flex-shrink: 0 !important;    /* Total anti-crush immunity */
+        margin-left: auto !important;  /* Locks to perfect viewport right-bound */
+    }
+
+    /* --- SIDEBAR PANEL RADIAL SCALE DEFENSE --- */
+    .docs-sidebar, #support-sidebar {
+        width: 280px !important;
+        max-width: 85vw !important;    /* PRO FIX: Prevents sidebar blowing past screen limits on tiny screens */
+        padding: 70px 16px 100px !important; /* Harmonizes inner layout alignment */
+        box-sizing: border-box !important;
+    }
+
+    .sidebar-close-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        top: 14px !important;
+        right: 14px !important;
+        width: 36px !important;
+        height: 36px !important;
+        z-index: 10010 !important;    /* Ultimate layout layer priority */
+        background: var(--bg-card) !important; /* Guarantees theme visibility contrast */
+        border: 1px solid var(--border-color) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    }
+}
+
+/* --- DEEP MICRO-VIEWPORT OPTIMIZATION (SMARTWATCH & SUB-360PX SCREENS) --- */
+@media (max-width: 240px) {
+    .nav-logo {
+        font-size: 13px !important;    /* Scaled text footprint optimization */
+    }
+
+    /* Fixes massive navigation fonts overlapping view boxes */
+    .mobile-menu {
+        padding-top: 80px !important;
+        padding-left: 20px !important;
+    }
+
+    .mobile-menu a {
+        font-size: 20px !important;    /* Proportional micro text flow */
+        margin-bottom: 16px !important;
+        padding-right: 20px !important;
+    }
+    
+    /* Bento Card padding correction */
+    .card {
+        padding: 24px 16px !important;
+    }
+    
+    .card-content h3 {
+        font-size: 24px !important;
+    }
+    
+    /* Code Box container spill override protection */
+    .code-box {
+        padding: 12px !important;
+        font-size: 11px !important;
+    }
+}
+
     </style>
 </head>
 <body>
