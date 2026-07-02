@@ -2,4 +2,4 @@
 
 Official GitHub repo for AltroWeb.
 
-###### © AltroWeb. All rights reserved.
+##### © AltroWeb. All rights reserved.
