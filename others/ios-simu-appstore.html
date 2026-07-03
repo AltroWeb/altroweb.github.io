@@ -2519,6 +2519,7 @@ if (localStorage.getItem('ios_console_logger_enabled') !== 'true') {
     
 
             async initFirebase() {
+                if (typeof firebase === 'undefined') return; // SURGICAL FIX: Prevent offline ReferenceError crash
                 if (firebase.apps.length === 0) {
                     firebase.initializeApp(FIREBASE_CONFIG);
                 }
@@ -4163,6 +4164,10 @@ directOpen(appId) {
                 if (!queue.includes(appId)) {
                     queue.push(appId);
                     localStorage.setItem('ios_pending_decrements', JSON.stringify(queue));
+                    
+                    // PRO SHIELD LOG: Prints the explicit state change alongside the expandable array tree
+                    if (localStorage.getItem('ios_console_logger_enabled') === 'true')
+                        console.log(`Queue Mutation: Added "${appId}" | Full Active Pending Stack:`, queue);
                 }
             }
 
@@ -4357,6 +4362,7 @@ localStorage.setItem('ios_pending_decrements', '[]');
             
             // Helper: Strict Network Check
             isNetworkStrict() {
+                if (typeof firebase === 'undefined' || !this.db) return false; // SURGICAL FIX: Force offline fallback paths if DB is uninitialized
                 const isAirplane = localStorage.getItem('ios_airplane_mode') === 'true';
                 const isWifiOn = localStorage.getItem('ios_wifi_on') !== 'false';
                 const isRealNetwork = navigator.onLine;

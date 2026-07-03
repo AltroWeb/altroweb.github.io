@@ -23,6 +23,7 @@
             --success: #34C759;
             --header-bg: rgba(255, 255, 255, 0.8);
             --input-bg: #fff;
+            --chart-track: #E5E5EA;
         }
 
         body.dark-mode {
@@ -34,6 +35,7 @@
             --border: #38383A;
             --header-bg: rgba(28, 28, 30, 0.8);
             --input-bg: #2C2C2E;
+            --chart-track: #2C2C2E;
         }
 
         body {
@@ -1065,7 +1067,7 @@ div[style*="rgba(118, 118, 128, 0.12)"] *,
                 <h3 style="font-size:16px; margin-bottom:15px;">Live Performance</h3>
                 
                 <!-- PRO VISUALIZER CONTAINER -->
-                <div id="ana-chart" style="height: auto; min-height:160px; display:flex; flex-direction:column; justify-content:center; padding:20px 0; border-bottom:1px solid var(--border);">
+                <div id="ana-chart" style="height: auto; min-height:160px; display:flex; flex-direction:column; justify-content:center; padding:0px 0; border-bottom:1px solid var(--border);">
                     <div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center; font-size:14px;">Loading data...</div>
                 </div>
                 
@@ -1169,6 +1171,17 @@ div[style*="rgba(118, 118, 128, 0.12)"] *,
 
 
         </div>
+
+
+<!-- GLOBAL RETENTION PERFORMANCE CHART -->
+                <h3 style="font-size:16px; margin-bottom:15px; width: 100%; box-sizing: border-box;">Ecosystem Live Performance</h3>
+                
+                <div id="glob-retention-chart" style="width: 100%; height: auto; min-height:160px; display:flex; flex-direction:column; justify-content:center; padding:20px 0; border-bottom:1px solid var(--border); margin-bottom: 30px; box-sizing: border-box; overflow: hidden;">
+                    <div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center; font-size:14px;">Loading data...</div>
+                </div>
+
+
+
 
                 <!-- TOP APPS CHART -->
                 <h3 style="font-size:16px; margin-bottom:15px; display:flex; justify-content:space-between;">
@@ -1998,10 +2011,9 @@ async register() {
 // --- SECURITY MODULE ---
 
 // 1. Register Device ID on Login
-// 1. Register Device & Run Janitor
 async registerCurrentDevice(uid) {
     try {
-        // --- A. REGISTER CURRENT DEVICE ---
+        // --- A. INJECT TELEMETRY & DEVICE CONFIG ---
         let deviceId = localStorage.getItem('app_device_id');
         if (!deviceId) {
             deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
@@ -2009,31 +2021,124 @@ async registerCurrentDevice(uid) {
         }
 
         const ua = navigator.userAgent;
-        let bName = "Unknown Device";
-        if(ua.indexOf("Chrome") > -1) bName = "Chrome";
-        else if(ua.indexOf("Safari") > -1) bName = "Safari";
-        else if(ua.indexOf("Firefox") > -1) bName = "Firefox";
-        if(navigator.platform.indexOf("iPhone") > -1) bName += " (iPhone)";
-        else if(navigator.platform.indexOf("Android") > -1) bName += " (Android)";
+        let platform = "Unknown OS";
+        let browser = "Unknown Browser";
+        let type = "Desktop";
+        let brand = "PC / Desktop";
+        let modelName = "";
+
+        // 1. High-Entropy Model Extraction (Chromium / User-Agent Client Hints)
+        if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+            try {
+                const highEntropyHints = await navigator.userAgentData.getHighEntropyValues(['model']);
+                if (highEntropyHints && highEntropyHints.model) {
+                    modelName = highEntropyHints.model;
+                }
+            } catch(e) { console.warn("Entropy evaluation bypassed", e); }
+        }
+
+        // 2. Resolve Form Factor Parameters
+        const isTablet = /tablet|ipad|playbook|silk/i.test(ua);
+        const isMobile = /mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua);
+        
+        if (isTablet) {
+            type = "Tablet";
+        } else if (isMobile || (navigator.userAgentData && navigator.userAgentData.mobile)) {
+            type = "Mobile";
+        }
+
+        // 3. Resolve Precise Operating System Layer
+        if (/iPhone|iPad|iPod/i.test(ua)) {
+            platform = "iOS";
+            brand = "Apple";
+            // Native model inference for iOS vectors
+            if (/iPhone/i.test(ua)) modelName = "iPhone";
+            if (/iPad/i.test(ua)) { modelName = "iPad"; platform = "iPadOS"; type = "Tablet"; }
+        } else if (/Android/i.test(ua)) {
+            platform = "Android";
+            brand = "Android Device"; // Generic fallback baseline
+            
+            // Comprehensive Mobile Manufacturer String Sniffing Engine
+            const uaLower = ua.toLowerCase();
+            if (/samsung|sm-|gt-/i.test(ua) || uaLower.includes('samsungbrowser')) brand = "Samsung";
+            else if (/pixel|nexus/i.test(ua)) brand = "Google";
+            else if (/oneplus/i.test(ua)) brand = "OnePlus";
+            else if (/xiaomi|redmi|poco/i.test(ua)) brand = "Xiaomi";
+            else if (/oppo/i.test(ua)) brand = "Oppo";
+            else if (/vivo/i.test(ua)) brand = "Vivo";
+            else if (/huawei|honor/i.test(ua)) brand = "Huawei";
+            else if (/motorola|moto /i.test(ua)) brand = "Motorola";
+            else if (/sony/i.test(ua)) brand = "Sony";
+        } else if (/Macintosh|MacIntel/i.test(ua)) {
+            if (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) {
+                platform = "iPadOS";
+                type = "Tablet";
+                brand = "Apple";
+                modelName = "iPad (Silicon View)";
+            } else {
+                platform = "macOS";
+                brand = "Apple Mac";
+            }
+        } else if (/Windows|Win32|Win64/i.test(ua)) {
+            platform = "Windows";
+        } else if (/Linux/i.test(ua)) {
+            platform = "Linux";
+        }
+
+        // 4. Resolve Browser Engine Signature
+        if (/Edg\//i.test(ua)) browser = "Edge";
+        else if (/OPR\/|Opera/i.test(ua)) browser = "Opera";
+        else if (/Chrome/i.test(ua)) browser = "Chrome";
+        else if (/Firefox/i.test(ua)) browser = "Firefox";
+        else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+
+        // 5. Dual-Tier Asynchronous Geolocation Fallback Core
+        let locationStr = "Loading Location...";
+        try {
+            // Tier 1: Primary Lookup Engine
+            const geoResponse = await fetch('https://ipapi.co/json/').then(res => res.json());
+            if (geoResponse && geoResponse.city && geoResponse.region && geoResponse.country_code) {
+                locationStr = `${geoResponse.city}, ${geoResponse.region} (${geoResponse.country_code})`;
+            } else {
+                throw new Error("Invalid schema");
+            }
+        } catch (geoError) {
+            try {
+                // Tier 2: Redundant Secondary Failover Engine (Adblock / Rate-limit protection)
+                const altResponse = await fetch('https://freeipapi.com/api/json').then(res => res.json());
+                if (altResponse && altResponse.cityName && altResponse.regionName && altResponse.countryCode) {
+                    locationStr = `${altResponse.cityName}, ${altResponse.regionName} (${altResponse.countryCode})`;
+                } else {
+                    locationStr = "Location Unknown";
+                }
+            } catch(e) {
+                locationStr = "Network Location N/A";
+            }
+        }
+
+        // Construct clean, isolated telemetry parameters
+        const hardwareDescriptor = modelName ? `${brand} ${modelName}` : brand;
 
         const sessionsRef = this.db.collection('artifacts').doc(this.appId)
             .collection('public').doc('data')
             .collection('user_info').doc(uid)
             .collection('sessions');
 
-        // Update Heartbeat
+        // Update Heartbeat with clean structural metadata fields
         await sessionsRef.doc(deviceId).set({
-            name: bName,
+            brand: hardwareDescriptor,
+            browser: browser,
+            platform: platform,
+            type: type,
+            location: locationStr,
             lastActive: firebase.firestore.FieldValue.serverTimestamp(),
             userAgent: ua
         }, { merge: true });
 
-        // --- B. THE JANITOR (Self-Cleaning) ---
-        // "Next time it gets a chance, it clears pending ghosts"
+        // --- B. THE JANITOR (Self-Cleaning Routine Preserved) ---
         const SEVEN_DAYS_AGO = Date.now() - (7 * 24 * 60 * 60 * 1000);
         const cutoffTimestamp = firebase.firestore.Timestamp.fromMillis(SEVEN_DAYS_AGO);
 
-        // Find orphaned sessions older than 7 days
         sessionsRef.where('lastActive', '<', cutoffTimestamp).get()
             .then(snapshot => {
                 if (!snapshot.empty) {
@@ -2044,7 +2149,7 @@ async registerCurrentDevice(uid) {
             })
             .catch(e => console.warn("Janitor skipped (permissions/offline)", e));
 
-    } catch(e) { console.warn("Sec: Device reg failed", e); }
+    } catch(e) { console.warn("Sec: Advanced device telemetry compilation failed", e); }
 }
 
 // 2. Monitor for "Sign Out All" Command
@@ -2140,28 +2245,46 @@ async fetchActiveDevices(uid) {
                         const sessionTime = d.lastActive ? d.lastActive.toMillis() : 0;
 
                         // --- PRO FILTERS ---
-                        // 1. Kill Switch: Hide if older than "Sign Out All"
                         if (sessionTime <= revokeTime) return;
-                        
-                        // 2. Stale Filter: Hide if inactive for > 7 Days (Cleans up Guest Mode ghosts)
                         if ((now - sessionTime) > STALE_THRESHOLD) return;
 
                         const isMe = (doc.id === currentId);
                         const timeStr = d.lastActive ? new Date(sessionTime).toLocaleString() : 'Unknown';
-                        const isMobile = d.name.includes('iPhone') || d.name.includes('Android');
+                        const isMobile = d.type === 'Mobile' || (d.name && (d.name.includes('iPhone') || d.name.includes('Android')));
+
+                        // Backward compatibility fallback wrapper
+                        const uiTitle = d.brand || d.name || "Unknown Device";
+                        const uiMeta = d.browser ? `${d.browser} on ${d.platform} (${d.type})` : "Legacy Session Connection";
+                        const uiLocation = d.location || "Location Offline";
 
                         html += `
-                            <li style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);">
-                                <div style="display:flex; align-items:center; gap:12px;">
-                                    <div style="width:36px; height:36px; background:var(--bg-color); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); border:1px solid var(--border);">
+                            <li style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid var(--border); box-sizing: border-box; width: 100%; overflow: hidden;">
+                                <div style="display:flex; align-items:flex-start; gap:14px; width: 100%; min-width: 0;">
+                                    <!-- Dynamic Vector Icon Frame -->
+                                    <div style="width:38px; height:38px; background:var(--bg-color); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); border:1px solid var(--border); flex-shrink:0; margin-top: 2px;">
                                         ${isMobile ? iconMobile : iconDesktop}
                                     </div>
-                                    <div>
-                                        <div style="font-weight:600; font-size:14px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
-                                            ${d.name} 
-                                            ${isMe ? '<span class="tag" style="background:var(--success); color:#fff; font-size:10px; padding:2px 6px; border-radius:4px;">THIS DEVICE</span>' : ''}
+                                    
+                                    <!-- Clean Separated Typography Core Stack -->
+                                    <div style="flex:1; min-width: 0; display:flex; flex-direction:column; gap:3px;">
+                                        <!-- Line 1: Primary Device Identification Title -->
+                                        <div style="font-weight:600; font-size:15px; color:var(--text-primary); display:flex; flex-wrap: wrap; align-items:center; gap:6px; line-height: 1.2; word-break: break-word;">
+                                            <span>${uiTitle}</span> 
+                                            ${isMe ? '<span class="tag" style="background:var(--success); color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; margin: 0; letter-spacing: 0.3px; white-space: nowrap;">THIS DEVICE</span>' : ''}
                                         </div>
-                                        <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">${timeStr}</div>
+                                        
+                                        <!-- Line 2: Environment Metadata & Timestamps Subtitle -->
+                                        <div style="font-size:12px; color:var(--text-secondary); line-height: 1.3; word-break: break-word;">
+                                            <span style="color: var(--text-primary); opacity: 0.85; font-weight: 500;">${uiMeta}</span>
+                                            <span style="opacity: 0.5; margin: 0 4px;">•</span>
+                                            <span style="font-variant-numeric: tabular-nums;">${timeStr}</span>
+                                        </div>
+                                        
+                                        <!-- Line 3: Geo-Telemetry Location Data Layer -->
+                                        <div style="font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:4px; opacity: 0.8; margin-top: 1px; word-break: break-word;">
+                                            <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24" style="flex-shrink:0; opacity: 0.7;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                            <span>${uiLocation}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </li>
@@ -3294,6 +3417,8 @@ async openGlobalAnalytics() {
     // 2. Clear layouts and inject clean loading screens
     document.getElementById('glob-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); padding:20px;">Fetching global charts...</div>';
     document.getElementById('glob-creators-roster').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:20px;">Mapping collaborator directory...</div>';
+document.getElementById('glob-retention-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Refreshing...</div>';
+
 
     try {
         // 3. Force raw sync pull from the database collection
@@ -3377,7 +3502,43 @@ async openGlobalAnalytics() {
         this.animateNum(activeEl, totalInstalls);
         if(devAppsEl) this.animateNum(devAppsEl, developerAppsCount);
         if(storeAppsEl) this.animateNum(storeAppsEl, globalStoreAppsCount);
-        if(devsCountEl) this.animateNum(devsCountEl, totalDevsCount);
+if(devsCountEl) this.animateNum(devsCountEl, totalDevsCount);
+        
+        // --- PRO UPDATE: ECOSYSTEM RETENTION MATH & SECURE RENDERING ---
+        const globRetention = Math.round((totalInstalls / totalDownloads) * 100) || 0;
+        const globRetentionChart = document.getElementById('glob-retention-chart');
+        
+        if (globRetentionChart) {
+            globRetentionChart.innerHTML = `
+                <div style="width:100%; max-width:400px; padding:0 20px; box-sizing: border-box; margin: 0 auto; overflow: hidden;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; font-weight:600; color:var(--text-primary); box-sizing: border-box;">
+                        <span>Ecosystem Retention Rate</span>
+                        <span>${globRetention}%</span>
+                    </div>
+                    <div style="width:100%; height:24px; background:var(--chart-track); border-radius:12px; overflow:hidden; position:relative; box-sizing: border-box;">
+                        <!-- Global Installs Progress Bar (Using Custom Vibrant Palette) -->
+                        <div style="height:100%; width:0%; background:var(--success); border-radius:12px; transition:width 1s cubic-bezier(0.2, 0.8, 0.2, 1);" id="glob-bar-retention"></div>
+                    </div>
+                    <div style="display:flex; flex-wrap: wrap; gap:16px 20px; margin-top:15px; justify-content:center; font-size:13px; color:var(--text-secondary); box-sizing: border-box; width: 100%;">
+                        <div style="display:flex; align-items:center; gap:6px; min-width: 0;">
+                            <div style="width:10px; height:10px; background:var(--text-primary); border-radius:50%; opacity:0.2; flex-shrink:0;"></div> 
+                            <span style="white-space: nowrap;">Total Downloads</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; min-width: 0;">
+                            <div style="width:10px; height:10px; background:var(--success); border-radius:50%; flex-shrink:0;"></div> 
+                            <span style="white-space: nowrap;">Active Installs</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Trigger safe layout-flush hardware slide transition
+            setTimeout(() => {
+                const globalBar = document.getElementById('glob-bar-retention');
+                if (globalBar) globalBar.style.width = `${globRetention}%`;
+            }, 100);
+        }
+        
         
         // 6. Build BOTH layouts back concurrently (Unreduced)
         this.renderTopAppsChart(this.myAppsCache);
@@ -3646,7 +3807,7 @@ let start = Math.max(0, parseInt(el.innerText.replace(/,/g, '')) || 0); const du
                             <span>Retention Rate</span>
                             <span>${retention}%</span>
                         </div>
-                        <div style="width:100%; height:24px; background:#E5E5EA; border-radius:12px; overflow:hidden; position:relative;">
+                        <div style="width:100%; height:24px; background:var(--chart-track); border-radius:12px; overflow:hidden; position:relative;">
                             <!-- Installs Bar -->
                             <div style="height:100%; width:0%; background:var(--success); border-radius:12px; transition:width 1s cubic-bezier(0.2, 0.8, 0.2, 1);" id="bar-retention"></div>
                         </div>
