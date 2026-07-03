@@ -3049,7 +3049,14 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                         </ul>
                     </div>
 
-                    <div class="input-group">
+<!-- ACTIVE IDENTITY DISPLAY PANEL -->
+                    <div class="input-group" style="margin-bottom:1.5rem;">
+                        <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">Email</label>
+                        <input type="text" class="custom-input" value="${currentUser && currentUser.email ? currentUser.email : 'No Email Associated'}" disabled style="cursor: not-allowed; background: var(--surface-hover); color: var(--dim);">
+                    </div>
+
+
+                    <div class="input-group" style="margin-bottom:1.5rem;">
                         <label class="text-dim text-sm bold" style="display:block; margin-bottom:0.3rem;">New Password</label>
                         <div style="position:relative;">
                             <input type="password" id="edit-pass" class="custom-input" placeholder="Leave blank to keep current">
