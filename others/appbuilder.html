@@ -2011,9 +2011,12 @@ async register() {
 // --- SECURITY MODULE ---
 
 // 1. Register Device ID on Login
+// ==========================================================================
+// DECOUPLED ASYNCHRONOUS BACKGROUND TELEMETRY MATRIX (MIXOS APPMANAGER OPTIMIZED)
+// ==========================================================================
 async registerCurrentDevice(uid) {
     try {
-        // --- A. INJECT TELEMETRY & DEVICE CONFIG ---
+        // --- A. TELEMETRY INITIALIZATION & STORAGE ANCHORING ---
         let deviceId = localStorage.getItem('app_device_id');
         if (!deviceId) {
             deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
@@ -2027,49 +2030,141 @@ async registerCurrentDevice(uid) {
         let brand = "PC / Desktop";
         let modelName = "";
 
-        // 1. High-Entropy Model Extraction (Chromium / User-Agent Client Hints)
+        // 1. Asynchronous High-Entropy Client Hints Extraction Pipeline
         if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
             try {
                 const highEntropyHints = await navigator.userAgentData.getHighEntropyValues(['model']);
                 if (highEntropyHints && highEntropyHints.model) {
                     modelName = highEntropyHints.model;
                 }
-            } catch(e) { console.warn("Entropy evaluation bypassed", e); }
+            } catch(e) { console.warn("High-entropy telemetric lookahead bypassed:", e); }
         }
 
-        // 2. Resolve Form Factor Parameters
+        // UNIFIED TELEMETRY TARGET: Neutralizes browser User-Agent Reduction
+        const targetSearchStr = (ua + " " + modelName).toLowerCase();
+
+        // 2. Comprehensive Environment Form Factor Formulator (Supports TVs & Consoles)
+        const isTV = /tv|smarttv|googletv|appletv|hbbtv|povtv|netcast|tizen|viera|aquos|roku|firetv|\baft[bms]\b/i.test(targetSearchStr);
+        const isConsole = /playstation|xbox|nintendo/i.test(targetSearchStr);
         const isTablet = /tablet|ipad|playbook|silk/i.test(ua);
         const isMobile = /mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua);
-        
-        if (isTablet) {
+
+        if (isTV) {
+            type = "Smart TV / Streaming Device";
+            brand = "Smart TV";
+        } else if (isConsole) {
+            type = "Gaming Console";
+            brand = "Console Platform";
+        } else if (isTablet) {
             type = "Tablet";
         } else if (isMobile || (navigator.userAgentData && navigator.userAgentData.mobile)) {
             type = "Mobile";
         }
 
-        // 3. Resolve Precise Operating System Layer
+        // 3. Resolve Precise Operating System, Platform, and Manufacturer Layer
         if (/iPhone|iPad|iPod/i.test(ua)) {
             platform = "iOS";
             brand = "Apple";
-            // Native model inference for iOS vectors
             if (/iPhone/i.test(ua)) modelName = "iPhone";
             if (/iPad/i.test(ua)) { modelName = "iPad"; platform = "iPadOS"; type = "Tablet"; }
-        } else if (/Android/i.test(ua)) {
+        } 
+        else if (/Android/i.test(ua)) {
             platform = "Android";
-            brand = "Android Device"; // Generic fallback baseline
+            brand = "Android Device"; // Baseline initialization fallback
             
-            // Comprehensive Mobile Manufacturer String Sniffing Engine
-            const uaLower = ua.toLowerCase();
-            if (/samsung|sm-|gt-/i.test(ua) || uaLower.includes('samsungbrowser')) brand = "Samsung";
-            else if (/pixel|nexus/i.test(ua)) brand = "Google";
-            else if (/oneplus/i.test(ua)) brand = "OnePlus";
-            else if (/xiaomi|redmi|poco/i.test(ua)) brand = "Xiaomi";
-            else if (/oppo/i.test(ua)) brand = "Oppo";
-            else if (/vivo/i.test(ua)) brand = "Vivo";
-            else if (/huawei|honor/i.test(ua)) brand = "Huawei";
-            else if (/motorola|moto /i.test(ua)) brand = "Motorola";
-            else if (/sony/i.test(ua)) brand = "Sony";
-        } else if (/Macintosh|MacIntel/i.test(ua)) {
+            // Comprehensive Hardware Signature Traps Matrix
+            if (/samsung|sm-|gt-|sgh-|sch-|sph-|sec-/i.test(targetSearchStr) || targetSearchStr.includes('samsungbrowser')) {
+                brand = "Samsung";
+            }
+            else if (/pixel|nexus|\bg[0-9a-z]{4}\b/i.test(targetSearchStr) || /\b(gx7as|ge2ae|g9s9b|gc15s)\b/i.test(targetSearchStr)) {
+                brand = "Google";
+            }
+            else if (/xiaomi|redmi|poco|mi |\bmi\b/i.test(targetSearchStr) || /\b[0-9m][0-9a-z]{8,10}[gi]\b/i.test(targetSearchStr)) {
+                brand = "Xiaomi";
+            }
+            else if (/oneplus/i.test(targetSearchStr) || /\b(hd19|in20|kb20|le21|ne22|cph2449|cph2581|cph2609|op[0-9])\b/i.test(targetSearchStr)) {
+                brand = "OnePlus";
+            }
+            else if (/oppo|\bcph[0-9]{4}\b/i.test(targetSearchStr) || /\b(pndm|pher)[0-9]{2}\b/i.test(targetSearchStr)) {
+                brand = "Oppo";
+            }
+            else if (/vivo|iqoo|\bv2[0-9]{3}\b|\bpd2[0-9]{3}\b/i.test(targetSearchStr)) {
+                brand = "Vivo";
+            }
+            else if (/realme|\brmx[0-9]{4}\b/i.test(targetSearchStr)) {
+                brand = "Realme";
+            }
+            else if (/motorola|moto |\bxt[0-9]{4}\b/i.test(targetSearchStr)) {
+                brand = "Motorola";
+            }
+            else if (/huawei|mate\s*[0-9]|mediapad|\b(bog|ana|els|vtr|generic\s*p30|generic\s*p40)\b/i.test(targetSearchStr)) {
+                brand = "Huawei";
+            }
+            else if (/honor|\b(hry|any|vne|fne|chk|clk)-[a-z0-9]/i.test(targetSearchStr)) {
+                brand = "Honor";
+            }
+            else if (/nothing|\b(a063|ain065|a065|a142|a142p|a024|a059|a059p|a001t|a015|a001)\b/i.test(targetSearchStr)) {
+                brand = "Nothing Phone";
+            }
+            else if (/infinix|\bx[0-9]{4,5}\b/i.test(targetSearchStr)) {
+                brand = "Infinix";
+            }
+            else if (/tecno|phantom|pova|camon|spark|\b(kj|lh|ad|ck)[0-9][a-z]?\b/i.test(targetSearchStr)) {
+                brand = "Tecno";
+            }
+            else if (/itel|\bit[0-9]{4}\b|\ba66[0-9]\b|\bs66[0-9]\b/i.test(targetSearchStr)) {
+                brand = "itel";
+            }
+            else if (/lava|yuva|blaze|agni|\blzn[0-9]\b/i.test(targetSearchStr)) {
+                brand = "Lava";
+            }
+            else if (/sony|xperia|\bso-[0-9a-z]{3}\b|\bsog[0-9]{2}\b|\bxq-[a-z0-9]{4}\b/i.test(targetSearchStr)) {
+                brand = "Sony";
+            }
+            else if (/asus|zenfone|rog\s*phone|\bai24[0-9]{2}\b/i.test(targetSearchStr)) {
+                brand = "Asus";
+            }
+            else if (/htc|desire|\bu11\b|\bu12\b|\bu19\b|\bu20\b|\bu23\b/i.test(targetSearchStr)) {
+                brand = "HTC";
+            }
+            else if (/nokia|\bta-[0-9]{4}\b/i.test(targetSearchStr)) {
+                brand = "Nokia";
+            }
+            else if (/lenovo|legion|\b(yt|tb)-[0-9a-z]{4}\b/i.test(targetSearchStr)) {
+                brand = "Lenovo";
+            }
+            else if (/zte|nubia|redmagic|\bnx[0-9]{3}j\b/i.test(targetSearchStr)) {
+                brand = "ZTE";
+            }
+            else if (/meizu|\bm[0-9]{4}q\b/i.test(targetSearchStr)) {
+                brand = "Meizu";
+            }
+            else if (/micromax|\bcanvas\b|\bin\s*note\b/i.test(targetSearchStr)) {
+                brand = "Micromax";
+            }
+        }
+        else if (/tizen/i.test(targetSearchStr)) {
+            platform = "Tizen OS";
+            brand = "Samsung Smart TV";
+        } else if (/webos/i.test(targetSearchStr)) {
+            platform = "webOS";
+            brand = "LG Smart TV";
+        } else if (/roku/i.test(targetSearchStr)) {
+            platform = "Roku OS";
+            brand = "Roku Device";
+        } else if (/playstation/i.test(targetSearchStr)) {
+            platform = "PlayStation OS";
+            brand = "Sony PlayStation";
+            if (/playstation 5/i.test(targetSearchStr)) modelName = "PS5";
+            else if (/playstation 4/i.test(targetSearchStr)) modelName = "PS4";
+        } else if (/xbox/i.test(targetSearchStr)) {
+            platform = "Xbox OS";
+            brand = "Microsoft Xbox";
+        } else if (/nintendo/i.test(targetSearchStr)) {
+            platform = "Nintendo OS";
+            brand = "Nintendo Switch";
+        }
+        else if (/Macintosh|MacIntel/i.test(ua)) {
             if (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) {
                 platform = "iPadOS";
                 type = "Tablet";
@@ -2085,71 +2180,80 @@ async registerCurrentDevice(uid) {
             platform = "Linux";
         }
 
-        // 4. Resolve Browser Engine Signature
+        // 4. Resolve Browser Engine Signature Channel
         if (/Edg\//i.test(ua)) browser = "Edge";
         else if (/OPR\/|Opera/i.test(ua)) browser = "Opera";
         else if (/Chrome/i.test(ua)) browser = "Chrome";
         else if (/Firefox/i.test(ua)) browser = "Firefox";
         else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
 
-        // 5. Dual-Tier Asynchronous Geolocation Fallback Core
-        let locationStr = "Loading Location...";
-        try {
-            // Tier 1: Primary Lookup Engine
-            const geoResponse = await fetch('https://ipapi.co/json/').then(res => res.json());
-            if (geoResponse && geoResponse.city && geoResponse.region && geoResponse.country_code) {
-                locationStr = `${geoResponse.city}, ${geoResponse.region} (${geoResponse.country_code})`;
-            } else {
-                throw new Error("Invalid schema");
-            }
-        } catch (geoError) {
-            try {
-                // Tier 2: Redundant Secondary Failover Engine (Adblock / Rate-limit protection)
-                const altResponse = await fetch('https://freeipapi.com/api/json').then(res => res.json());
-                if (altResponse && altResponse.cityName && altResponse.regionName && altResponse.countryCode) {
-                    locationStr = `${altResponse.cityName}, ${altResponse.regionName} (${altResponse.countryCode})`;
-                } else {
-                    locationStr = "Location Unknown";
-                }
-            } catch(e) {
-                locationStr = "Network Location N/A";
-            }
-        }
-
-        // Construct clean, isolated telemetry parameters
-        const hardwareDescriptor = modelName ? `${brand} ${modelName}` : brand;
+        const hardwareDescriptor = modelName ? `${brand} (${modelName})` : brand;
 
         const sessionsRef = this.db.collection('artifacts').doc(this.appId)
             .collection('public').doc('data')
             .collection('user_info').doc(uid)
             .collection('sessions');
 
-        // Update Heartbeat with clean structural metadata fields
+        // --- PHASE 1: INSTANT DATABOUND WRITE (<50ms) ---
+        // Releases the main event loop immediately so the dashboard displays instantly
         await sessionsRef.doc(deviceId).set({
             brand: hardwareDescriptor,
             browser: browser,
             platform: platform,
             type: type,
-            location: locationStr,
+            location: "Loading Location...", // Non-blocking initial display placeholder
             lastActive: firebase.firestore.FieldValue.serverTimestamp(),
             userAgent: ua
         }, { merge: true });
 
-        // --- B. THE JANITOR (Self-Cleaning Routine Preserved) ---
+        // --- PHASE 2: DECOUPLED BACKGROUND GEOLOCATION PROCESSOR ---
+        // Runs cleanly on its own thread. Slow/poor network connections can load naturally.
+        (async () => {
+            let locationStr = "Location Unknown";
+            try {
+                // Primary Core Lookahead
+                const geoResponse = await fetch('https://ipapi.co/json/').then(res => res.json());
+                if (geoResponse && geoResponse.city && geoResponse.region && geoResponse.country_code) {
+                    locationStr = `${geoResponse.city}, ${geoResponse.region} (${geoResponse.country_code})`;
+                } else {
+                    throw new Error("API Max Tier Met");
+                }
+            } catch (geoError) {
+                try {
+                    // Secondary Failover Fallback Tier
+                    const altResponse = await fetch('https://freeipapi.com/api/json').then(res => res.json());
+                    if (altResponse && altResponse.cityName && altResponse.regionName && altResponse.countryCode) {
+                        locationStr = `${altResponse.cityName}, ${altResponse.regionName} (${altResponse.countryCode})`;
+                    }
+                } catch(e) {
+                    locationStr = "Network Location N/A";
+                }
+            }
+            
+            // Quietly update the active Firestore target node without dragging down runtime navigation
+            try {
+                await sessionsRef.doc(deviceId).update({ location: locationStr });
+                
+            } catch (updateErr) {
+                console.warn("Background location sync skipped:", updateErr.message);
+            }
+        })();
+
+        // --- C. THE SYSTEM JANITOR ROUTINE (With Limit Guard to prevent query lag) ---
         const SEVEN_DAYS_AGO = Date.now() - (7 * 24 * 60 * 60 * 1000);
         const cutoffTimestamp = firebase.firestore.Timestamp.fromMillis(SEVEN_DAYS_AGO);
 
-        sessionsRef.where('lastActive', '<', cutoffTimestamp).get()
+        sessionsRef.where('lastActive', '<', cutoffTimestamp).limit(20).get()
             .then(snapshot => {
                 if (!snapshot.empty) {
                     const batch = this.db.batch();
                     snapshot.forEach(doc => batch.delete(doc.ref));
-                    batch.commit().then(() => console.log("Janitor: Cleaned up " + snapshot.size + " ghost sessions."));
+                    batch.commit().then(() => console.log("Janitor: Cleaned up obsolete session nodes."));
                 }
             })
-            .catch(e => console.warn("Janitor skipped (permissions/offline)", e));
+            .catch(e => console.warn("Janitor loop bypassed (permissions/offline context)", e));
 
-    } catch(e) { console.warn("Sec: Advanced device telemetry compilation failed", e); }
+    } catch(e) { console.warn("Sec: Advanced hardware telemetry collation failed", e); }
 }
 
 // 2. Monitor for "Sign Out All" Command
