@@ -741,7 +741,140 @@ svg, .pfp-nav, .pfp-sm, .pfp-lg {
         
         
         
+        /* ==========================================================================
+           PRO UNIFIED RESPONSIVE ENGINE (DYNAMIC FLUID OVERLAYS DOWN TO 240PX)
+           ========================================================================== */
+        @media (max-width: 320px) {
+            /* 1. Universal Box Isolation Layout Constraints */
+            .app-container,
+            .modal-box,
+            .post-card,
+            .thread-reply-box,
+            .post-right-col,
+            .search-bar-container,
+            .user-row,
+            .w-full {
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 2. Absolute Width Containment Rules for Form Fields */
+            textarea.custom-input,
+            input.custom-input,
+            #reply-text,
+            #post-text,
+            #search-input,
+            #conn-search {
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 3. Fluid Wrapping Vectors for Control Headers & Action Triggers */
+            .flex.justify-between.items-center,
+            .post-actions,
+            .modal-actions,
+            .feed-filters,
+            .thread-reply-box .flex.justify-between {
+                flex-wrap: wrap !important; /* Flows rows down naturally instead of overflowing */
+                gap: 10px 12px !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 4. Automated Smart Stacking for Button Pairs (Locks into 100% width near 240px) */
+            .modal-actions .btn-modal,
+            .thread-reply-box .flex.justify-between .btn-primary {
+                flex: 1 1 160px !important; /* Side-by-side on typical mobile widths, drops to full-width block rows if screen hits ~240px */
+                justify-content: center !important;
+                min-width: 0 !important;
+                margin: 0 !important;
+            }
+
+            /* 5. Fluid Typography Scoping Engine */
+            .flex.justify-between.items-center h2,
+            .modal-title {
+                font-size: calc(1.2rem + 1vw) !important; /* Automatically shrinks dynamically down to extreme small viewports */
+                line-height: 1.2 !important;
+                word-break: break-word !important;
+            }
+
+            /* 6. Anti-Shrink Layout Protection for Secondary Controls */
+            .btn-secondary,
+            .btn-primary,
+            .btn-modal,
+            .profile-btn,
+            .action-btn {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+        }
         
+        /* ==========================================================================
+           PRO UNIFIED RESPONSIVE INTERACTION ENGINE (FLUID ANTI-BLEED SHIELD)
+           ========================================================================== */
+        @media (max-width: 320px) {
+            /* 1. Pro Swipe Carousel for all Feed and Profile Filter Bars */
+            .feed-filters, 
+            #profile-filters {
+                display: flex !important;
+                flex-wrap: nowrap !important; /* Locks chips on a single endless row */
+                overflow-x: auto !important;  /* Enables smooth thumb swiping */
+                -webkit-overflow-scrolling: touch !important; /* Native mobile inertia physics */
+                scrollbar-width: none !important; /* Hides horizontal scrollbar on Firefox */
+                gap: 10px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .feed-filters::-webkit-scrollbar, 
+            #profile-filters::-webkit-scrollbar {
+                display: none !important; /* Hides horizontal scrollbar on Chrome/Safari/Blink */
+            }
+            .filter-chip {
+                flex-shrink: 0 !important; /* Prevents chips from distorting or compressing */
+            }
+
+            /* 2. Fluid Adaptive Constraints for Avatar Upload Box Area */
+            .input-group .flex.items-center.gap-4 {
+                flex-wrap: wrap !important; /* Clean drop-down stacking if width runs short */
+                gap: 16px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .input-group .flex.items-center.gap-4 .flex-col.gap-2 {
+                flex: 1 !important;
+                min-width: 150px !important; /* Forces layout to wrap cleanly before hitting text bounds */
+            }
+            .input-group .flex.items-center.gap-4 .btn-secondary {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+
+            /* 3. Defensive Margins for Followers / Following Metrics Box */
+            .stats-row {
+                display: flex !important;
+                flex-wrap: wrap !important; /* Breaks metric blocks gracefully if text expands */
+                gap: 8px 20px !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .stat-item {
+                min-width: 0 !important;
+                white-space: nowrap !important;
+            }
+        }
+
+        /* Tactical Ultra-Narrow Optimization for extreme micro-screens (<320px) */
+        @media (max-width: 320px) {
+            .input-group .flex.items-center.gap-4 {
+                flex-direction: column !important; /* Stacks image and buttons completely vertical */
+                align-items: center !important;
+                text-align: center !important;
+            }
+            .stats-row {
+                            width: 100% !important;
+            }
+        }
         
     </style>
 </head>
@@ -1021,15 +1154,217 @@ const appCheck = initializeAppCheck(app, {
                         
                     
 
-                    // 1. REGISTER DEVICE SESSION IN DB
-                    if (!localStorage.getItem('gibbl_session_start')) localStorage.setItem('gibbl_session_start', Date.now());
-                    const sessionStart = parseInt(localStorage.getItem('gibbl_session_start'));
+            // 1. REGISTER DEVICE SESSION IN DB (HIGH-PERFORMANCE DECOUPLED BACKGROUND ENGINE)
+            if (!localStorage.getItem('gibbl_session_start')) localStorage.setItem('gibbl_session_start', Date.now());
+            
+            const ua = navigator.userAgent;
+            let platform = "Unknown OS";
+            let browser = "Unknown Browser";
+            let type = "Desktop";
+            let brand = "PC / Desktop";
+            let modelName = "";
+
+            // A. Asynchronous High-Entropy Hardware Lookahead Check
+            if (navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === 'function') {
+                try {
+                    const highEntropyHints = await navigator.userAgentData.getHighEntropyValues(['model']);
+                    if (highEntropyHints && highEntropyHints.model) {
+                        modelName = highEntropyHints.model;
+                    }
+                } catch(e) { console.warn("Entropy evaluation bypassed", e); }
+            }
+
+            // UNIFIED TELEMETRY TARGET: Prevents User-Agent Reduction from masking models
+            const targetSearchStr = (ua + " " + modelName).toLowerCase();
+
+            // B. Form Factor Formulator (Supports Desktop, Mobile, Tablet, Consoles, and Smart TVs)
+            const isTV = /tv|smarttv|googletv|appletv|hbbtv|povtv|netcast|tizen|viera|aquos|roku|firetv|\baft[bms]\b/i.test(targetSearchStr);
+            const isConsole = /playstation|xbox|nintendo/i.test(targetSearchStr);
+            const isTablet = /tablet|ipad|playbook|silk/i.test(ua);
+            const isMobile = /mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua);
+
+            if (isTV) {
+                type = "Smart TV / Streaming Device";
+                brand = "Smart TV";
+            } else if (isConsole) {
+                type = "Gaming Console";
+                brand = "Console Platform";
+            } else if (isTablet) {
+                type = "Tablet";
+            } else if (isMobile || (navigator.userAgentData && navigator.userAgentData.mobile)) {
+                type = "Mobile";
+            }
+
+            // C. Operating System & Comprehensive Brand Identification Engine
+            if (/iPhone|iPad|iPod/i.test(ua)) {
+                platform = "iOS";
+                brand = "Apple";
+                if (/iPhone/i.test(ua)) modelName = "iPhone";
+                if (/iPad/i.test(ua)) { modelName = "iPad"; platform = "iPadOS"; type = "Tablet"; }
+            } 
+            else if (/Android/i.test(ua)) {
+                platform = "Android";
+                brand = "Android Device"; // Baseline mobile initialization
+                
+                if (/samsung|sm-|gt-|sgh-|sch-|sph-|sec-/i.test(targetSearchStr) || targetSearchStr.includes('samsungbrowser')) {
+                    brand = "Samsung";
+                }
+                else if (/pixel|nexus|\bg[0-9a-z]{4}\b/i.test(targetSearchStr) || /\b(gx7as|ge2ae|g9s9b|gc15s)\b/i.test(targetSearchStr)) {
+                    brand = "Google";
+                }
+                else if (/xiaomi|redmi|poco|mi |\bmi\b/i.test(targetSearchStr) || /\b[0-9m][0-9a-z]{8,10}[gi]\b/i.test(targetSearchStr)) {
+                    brand = "Xiaomi";
+                }
+                else if (/oneplus/i.test(targetSearchStr) || /\b(hd19|in20|kb20|le21|ne22|cph2449|cph2581|cph2609|op[0-9])\b/i.test(targetSearchStr)) {
+                    brand = "OnePlus";
+                }
+                else if (/oppo|\bcph[0-9]{4}\b/i.test(targetSearchStr) || /\b(pndm|pher)[0-9]{2}\b/i.test(targetSearchStr)) {
+                    brand = "Oppo";
+                }
+                else if (/vivo|iqoo|\bv2[0-9]{3}\b|\bpd2[0-9]{3}\b/i.test(targetSearchStr)) {
+                    brand = "Vivo";
+                }
+                else if (/realme|\brmx[0-9]{4}\b/i.test(targetSearchStr)) {
+                    brand = "Realme";
+                }
+                else if (/motorola|moto |\bxt[0-9]{4}\b/i.test(targetSearchStr)) {
+                    brand = "Motorola";
+                }
+                else if (/huawei|mate\s*[0-9]|mediapad|\b(bog|ana|els|vtr|generic\s*p30|generic\s*p40)\b/i.test(targetSearchStr)) {
+                    brand = "Huawei";
+                }
+                else if (/honor|\b(hry|any|vne|fne|chk|clk)-[a-z0-9]/i.test(targetSearchStr)) {
+                    brand = "Honor";
+                }
+                else if (/nothing|\b(a063|ain065|a065|a142|a142p|a024|a059|a059p|a001t|a015|a001)\b/i.test(targetSearchStr)) {
+                    brand = "Nothing Phone";
+                }
+                else if (/infinix|\bx[0-9]{4,5}\b/i.test(targetSearchStr)) {
+                    brand = "Infinix";
+                }
+                else if (/tecno|phantom|pova|camon|spark|\b(kj|lh|ad|ck)[0-9][a-z]?\b/i.test(targetSearchStr)) {
+                    brand = "Tecno";
+                }
+                else if (/itel|\bit[0-9]{4}\b|\ba66[0-9]\b|\bs66[0-9]\b/i.test(targetSearchStr)) {
+                    brand = "itel";
+                }
+                else if (/lava|yuva|blaze|agni|\blzn[0-9]\b/i.test(targetSearchStr)) {
+                    brand = "Lava";
+                }
+                else if (/sony|xperia|\bso-[0-9a-z]{3}\b|\bsog[0-9]{2}\b|\bxq-[a-z0-9]{4}\b/i.test(targetSearchStr)) {
+                    brand = "Sony";
+                }
+                else if (/asus|zenfone|rog\s*phone|\bai24[0-9]{2}\b/i.test(targetSearchStr)) {
+                    brand = "Asus";
+                }
+                else if (/htc|desire|\bu11\b|\bu12\b|\bu19\b|\bu20\b|\bu23\b/i.test(targetSearchStr)) {
+                    brand = "HTC";
+                }
+                else if (/nokia|\bta-[0-9]{4}\b/i.test(targetSearchStr)) {
+                    brand = "Nokia";
+                }
+                else if (/lenovo|legion|\b(yt|tb)-[0-9a-z]{4}\b/i.test(targetSearchStr)) {
+                    brand = "Lenovo";
+                }
+                else if (/zte|nubia|redmagic|\bnx[0-9]{3}j\b/i.test(targetSearchStr)) {
+                    brand = "ZTE";
+                }
+                else if (/meizu|\bm[0-9]{4}q\b/i.test(targetSearchStr)) {
+                    brand = "Meizu";
+                }
+                else if (/micromax|\bcanvas\b|\bin\s*note\b/i.test(targetSearchStr)) {
+                    brand = "Micromax";
+                }
+            } 
+            else if (/tizen/i.test(targetSearchStr)) {
+                platform = "Tizen OS";
+                brand = "Samsung Smart TV";
+            } else if (/webos/i.test(targetSearchStr)) {
+                platform = "webOS";
+                brand = "LG Smart TV";
+            } else if (/roku/i.test(targetSearchStr)) {
+                platform = "Roku OS";
+                brand = "Roku Device";
+            } else if (/playstation/i.test(targetSearchStr)) {
+                platform = "PlayStation OS";
+                brand = "Sony PlayStation";
+                if (/playstation 5/i.test(targetSearchStr)) modelName = "PS5";
+                else if (/playstation 4/i.test(targetSearchStr)) modelName = "PS4";
+            } else if (/xbox/i.test(targetSearchStr)) {
+                platform = "Xbox OS";
+                brand = "Microsoft Xbox";
+            } else if (/nintendo/i.test(targetSearchStr)) {
+                platform = "Nintendo OS";
+                brand = "Nintendo Switch";
+            }
+            else if (/Macintosh|MacIntel/i.test(ua)) {
+                if (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) {
+                    platform = "iPadOS";
+                    type = "Tablet";
+                    brand = "Apple";
+                    modelName = "iPad (Silicon View)";
+                } else {
+                    platform = "macOS";
+                    brand = "Apple Mac";
+                }
+            } else if (/Windows|Win32|Win64/i.test(ua)) {
+                platform = "Windows";
+            } else if (/Linux/i.test(ua)) {
+                platform = "Linux";
+            }
+
+            // D. Browser Engine Profiler Signatures
+            if (/Edg\//i.test(ua)) browser = "Edge";
+            else if (/OPR\/|Opera/i.test(ua)) browser = "Opera";
+            else if (/Chrome/i.test(ua)) browser = "Chrome";
+            else if (/Firefox/i.test(ua)) browser = "Firefox";
+            else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+
+            const hardwareDescriptor = modelName ? `${brand} (${modelName})` : brand;
+            const targetSessionDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid, 'sessions', myDeviceId);
+
+            // --- PHASE 1: INSTANT DATABOUND WRITE (<50ms) ---
+            // Logs the device instantly to prevent registration hangs
+            await setDoc(targetSessionDocRef, {
+                brand: hardwareDescriptor,
+                browser: browser,
+                platform: platform,
+                type: type,
+                location: "Loading Location...", // Display placeholder
+                lastActive: Date.now(),
+                userAgent: ua
+            }, { merge: true });
+
+            // --- PHASE 2: DECOUPLED BACKGROUND GEOLOCATION PIPELINE ---
+            // Evaluates location safely in the background without halting UI thread performance
+            (async () => {
+                let locationStr = "Location Unknown";
+                try {
+                    const geoResponse = await fetch('https://ipapi.co/json/').then(res => res.json());
+                    if (geoResponse && geoResponse.city && geoResponse.region && geoResponse.country_code) {
+                        locationStr = `${geoResponse.city}, ${geoResponse.region} (${geoResponse.country_code})`;
+                    } else {
+                        throw new Error("Schema Shift / Limit Hit");
+                    }
+                } catch (e) {
+                    try {
+                        const altResponse = await fetch('https://freeipapi.com/api/json').then(res => res.json());
+                        if (altResponse && altResponse.cityName && altResponse.regionName && altResponse.countryCode) {
+                            locationStr = `${altResponse.cityName}, ${altResponse.regionName} (${altResponse.countryCode})`;
+                        }
+                    } catch(err) {
+                        locationStr = "Network Geo N/A";
+                    }
+                }
+                
+                // Silently merges location payload into existing session document on resolution
+                try {
+                    await updateDoc(targetSessionDocRef, { location: locationStr });
                     
-                    const bName = (() => { const ua = navigator.userAgent; let b = "Unknown"; if(ua.includes("Chrome")) b = "Chrome"; else if(ua.includes("Safari")) b = "Safari"; else if(ua.includes("Firefox")) b = "Firefox"; if(ua.includes("iPhone")) b += " (iPhone)"; else if(ua.includes("Android")) b += " (Android)"; else if(ua.includes("Mac")) b += " (Mac)"; else if(ua.includes("Win")) b += " (Windows)"; return b; })();
-                    
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid, 'sessions', myDeviceId), {
-                        name: bName, lastActive: Date.now(), userAgent: navigator.userAgent
-                    }, { merge: true });
+                } catch (updateErr) {
+                    console.warn("Background location sync skipped:", updateErr.message);
+                }
+            })();
 
                     // THE SECURITY LISTENER
                     if (unsubscribeSecurity) unsubscribeSecurity();
@@ -1127,7 +1462,7 @@ const appCheck = initializeAppCheck(app, {
         
         
         
-        // --- PRO SECURITY LOGIC ---
+        // --- PRO SECURITY LOGIC: MULTI-TIER DEVICE SEPARATION LAYER ---
         window.fetchActiveDevices = async () => {
             const list = document.getElementById('device-list');
             if(!list || !currentUser) return;
@@ -1143,26 +1478,55 @@ const appCheck = initializeAppCheck(app, {
                 snap.forEach(d => sessions.push({id: d.id, ...d.data()}));
                 sessions.sort((a,b) => b.lastActive - a.lastActive);
 
+                const iconDesktop = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
+                const iconMobile = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
+
                 sessions.forEach(d => {
-                    if (d.lastActive <= revokeTime) return; // Hide revoked ghosts
-                    if ((now - d.lastActive) > (7 * 24 * 60 * 60 * 1000)) return; // Hide inactive > 7 days
+                    if (d.lastActive <= revokeTime) return; // Strict universal killswitch check
+                    if ((now - d.lastActive) > (7 * 24 * 60 * 60 * 1000)) return; // Auto-cleanup stale references
                     
                     const isMe = d.id === myId;
                     const timeStr = new Date(d.lastActive).toLocaleString();
+                    const isMobileApp = d.type === 'Mobile' || d.type === 'Tablet' || (d.name && (d.name.includes('iPhone') || d.name.includes('Android')));
+
+                    // Handle full string variables gracefully across legacy database boundaries
+                    const uiTitle = d.brand || d.name || "Unknown Hardware Asset";
+                    const uiMeta = d.browser ? `${d.browser} on ${d.platform} (${d.type})` : "Legacy Connected Endpoint";
+                    const uiLocation = d.location || "Geo-Location Context Offline";
+
                     html += `
-                        <li style="padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div class="bold text-sm" style="color:var(--text); display:flex; align-items:center; gap:6px;">
-                                    ${d.name} 
-                                    ${isMe ? '<span style="font-size:10px; background:var(--success); color:#fff; padding:2px 6px; border-radius:4px; font-weight:800;">THIS DEVICE</span>' : ''}
+                        <li style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--border); box-sizing: border-box; width: 100%; overflow: hidden; gap:12px;">
+                            <div style="display:flex; align-items:flex-start; gap:12px; width: 100%; min-width: 0;">
+                                <div style="width:34px; height:34px; background:var(--surface); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--dim); border:1px solid var(--border); flex-shrink:0; margin-top: 2px;">
+                                    ${isMobileApp ? iconMobile : iconDesktop}
                                 </div>
-                                <div class="text-xs text-dim" style="margin-top:4px;">Last active: ${timeStr}</div>
+                                
+                                <div style="flex:1; min-width: 0; display:flex; flex-direction:column; gap:3px;">
+                                    <div style="font-weight:700; font-size:14px; color:var(--text); display:flex; flex-wrap: wrap; align-items:center; gap:6px; line-height: 1.2; word-break: break-word;">
+                                        <span>${uiTitle}</span> 
+                                        ${isMe ? '<span style="background:var(--success); color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; letter-spacing:0.3px; white-space:nowrap; display:inline-block; line-height:1;">THIS DEVICE</span>' : ''}
+                                    </div>
+                                    
+                                    <div style="font-size:12px; color:var(--dim); line-height: 1.3; word-break: break-word;">
+                                        <span style="color:var(--text); opacity:0.85; font-weight:600;">${uiMeta}</span>
+                                        <span style="opacity:0.4; margin:0 4px;">•</span>
+                                        <span style="font-variant-numeric: tabular-nums;">${timeStr}</span>
+                                    </div>
+                                    
+                                    <div style="font-size:11px; color:var(--dim); display:flex; align-items:center; gap:4px; opacity:0.8; margin-top:1px; word-break: break-word;">
+                                        <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24" style="flex-shrink:0; opacity:0.7;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                        <span>${uiLocation}</span>
+                                    </div>
+                                </div>
                             </div>
                         </li>
                     `;
                 });
-                list.innerHTML = html || '<li class="text-dim text-sm" style="padding:10px 0;">No active sessions.</li>';
-            } catch(e) { list.innerHTML = '<li class="text-error text-sm">Failed to load devices.</li>'; }
+                list.innerHTML = html || '<li class="text-dim text-sm" style="padding:16px 0; text-align:center; font-style:italic;">No active session connections monitored.</li>';
+            } catch(e) { 
+                console.error("Layout Compilation Exception", e);
+                list.innerHTML = '<li class="text-error text-sm" style="text-align:center; padding:16px 0; font-weight:600;">Failed to map device parameters.</li>'; 
+            }
             list.style.opacity = '1';
         };
 
@@ -4058,86 +4422,91 @@ setTimeout(() => {
             list.innerHTML = fullHTML;
         };
 
-        // --- HIGH-PERFORMANCE SECURE MODERATION ENGINE ---
-        window.openReportModal = (postId, authorHandle) => {
-            // 1. Instant Memory Matrix Evaluation (0 Database Reads)
-            const priorIncidentTimestamp = window.sessionReportCache[postId];
+// --- HIGH-PERFORMANCE SECURE MODERATION ENGINE ---
+window.openReportModal = (postId, authorHandle) => {
+    // 1. Instant Memory Matrix Evaluation (0 Database Reads)
+    const priorIncidentTimestamp = window.sessionReportCache[postId];
 
-            if (priorIncidentTimestamp) {
-                const elapsedTimelineDelta = (Date.now() - priorIncidentTimestamp) / (1000 * 60 * 60);
-                if (elapsedTimelineDelta < 48) {
-                    const remainderLockoutDuration = Math.ceil(48 - elapsedTimelineDelta);
-                    window.showModal('Action Locked', `You have already filed a report against this content. Lock lifted in ${remainderLockoutDuration} hours.`, null, false);
-                    return;
-                }
+    if (priorIncidentTimestamp) {
+        const elapsedTimelineDelta = (Date.now() - priorIncidentTimestamp) / (1000 * 60 * 60);
+        if (elapsedTimelineDelta < 48) {
+            const remainderLockoutDuration = Math.ceil(48 - elapsedTimelineDelta);
+            window.showModal('Action Locked', `You have already filed a report against this content. Lock lifted in ${remainderLockoutDuration} hours.`, null, false);
+            return;
+        }
+    }
+
+    // 2. High-Fidelity Custom Dropdown Template
+    const selectionInterfaceTemplate = `
+        <div class="flex flex-col gap-2" style="text-align: left; margin-top: 1.2rem; width: 100%;">
+            <label class="text-xs bold text-dim" style="text-transform: uppercase; letter-spacing: 0.5px;">Reason for Content Report:</label>
+            <div style="position: relative; width: 100%;">
+                <select id="report-reason-select" class="custom-input" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); width: 100%; color: var(--text); padding: 1.1rem 2.5rem 1.1rem 1.1rem; font-size: 0.95rem; font-family: var(--font-head); font-weight: 700; cursor: pointer; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, background 0.2s;">
+                    <option value="Inappropriate Content">Inappropriate Content</option>
+                    <option value="Abuse or Harassment">Abuse or Harassment</option>
+                    <option value="Hate Speech">Hate Speech</option>
+                    <option value="Spam and Scams">Spam and Scams</option>
+                    <option value="Violence or Harm">Violence or Harm</option>
+                    <option value="Intellectual Property Violation">Intellectual Property Violation</option>
+                </select>
+                <div style="position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--dim); display: flex; align-items: center; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+        </div>`;
+
+    window.showModal(`Report Content`, `Report this post by ${authorHandle}?`, async () => {
+        const processingSelectorNode = document.getElementById('report-reason-select');
+        const prioritizedReasonString = processingSelectorNode ? processingSelectorNode.value : 'Inappropriate Content';
+        const confirmationTriggerNode = document.getElementById('modal-confirm');
+        
+        window.setLoading(confirmationTriggerNode, true);
+
+        try {
+            const uniqueIncidentId = `${postId}_${currentUser.uid}`;
+            const submissionTimeNow = Date.now();
+
+            const targetingDocumentReference = getPublicDoc('posts', postId);
+            const targetedSnapshotMetadata = await getDoc(targetingDocumentReference);
+
+            if (targetedSnapshotMetadata.exists()) {
+                const documentActiveState = targetedSnapshotMetadata.data();
+                const dynamicReasonsDataMatrix = documentActiveState.reportReasons || {};
+                dynamicReasonsDataMatrix[prioritizedReasonString] = (dynamicReasonsDataMatrix[prioritizedReasonString] || 0) + 1;
+
+                // PRO FIX: Initialize an atomic batch operation
+                const reportBatch = writeBatch(db);
+
+                // 1. Queue the report ticket document creation
+                const reportDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'reports', uniqueIncidentId);
+                reportBatch.set(reportDocRef, {
+                    reportId: uniqueIncidentId,
+                    reportedPostId: postId,
+                    reporterHandle: currentProfile.handle,
+                    reporterUid: currentUser.uid,
+                    reason: prioritizedReasonString,
+                    timestamp: new Date(submissionTimeNow).toISOString()
+                });
+
+                // 2. Queue the precise +1 increment update to the post document
+                reportBatch.update(targetingDocumentReference, {
+                    reportCount: (documentActiveState.reportCount || 0) + 1,
+                    reportReasons: dynamicReasonsDataMatrix
+                });
+
+                // 3. Fire both operations simultaneously across the network wire
+                await reportBatch.commit();
             }
 
-            // 2. High-Fidelity Custom Dropdown Template
-            const selectionInterfaceTemplate = `
-                <div class="flex flex-col gap-2" style="text-align: left; margin-top: 1.2rem; width: 100%;">
-                    <label class="text-xs bold text-dim" style="text-transform: uppercase; letter-spacing: 0.5px;">Reason for Content Report:</label>
-                    <div style="position: relative; width: 100%;">
-                        <select id="report-reason-select" class="custom-input" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); width: 100%; color: var(--text); padding: 1.1rem 2.5rem 1.1rem 1.1rem; font-size: 0.95rem; font-family: var(--font-head); font-weight: 700; cursor: pointer; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, background 0.2s;">
-                            <option value="Inappropriate Content">Inappropriate Content</option>
-                            <option value="Abuse or Harassment">Abuse or Harassment</option>
-                            <option value="Hate Speech">Hate Speech</option>
-                            <option value="Spam and Scams">Spam and Scams</option>
-                            <option value="Violence or Harm">Violence or Harm</option>
-                            <option value="Intellectual Property Violation">Intellectual Property Violation</option>
-                        </select>
-                        <div style="position: absolute; right: 1.1rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--dim); display: flex; align-items: center; justify-content: center;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </div>
-                    </div>
-                </div>`;
-
-            window.showModal(`Report Content`, `Report this post by ${authorHandle}?`, async () => {
-                const processingSelectorNode = document.getElementById('report-reason-select');
-                const prioritizedReasonString = processingSelectorNode ? processingSelectorNode.value : 'Inappropriate Content';
-                const confirmationTriggerNode = document.getElementById('modal-confirm');
-                
-                window.setLoading(confirmationTriggerNode, true);
-
-                try {
-                    const uniqueIncidentId = `${postId}_${currentUser.uid}`;
-                    const submissionTimeNow = Date.now();
-
-                    // File the permanent structural block entry
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'reports', uniqueIncidentId), {
-                        reportId: uniqueIncidentId,
-                        reportedPostId: postId,
-                        reporterHandle: currentProfile.handle,
-                        reporterUid: currentUser.uid,
-                        reason: prioritizedReasonString,
-                        timestamp: new Date(submissionTimeNow).toISOString()
-                    });
-
-                    // Mutate targeting document state counts
-                    const targetingDocumentReference = getPublicDoc('posts', postId);
-                    const targetedSnapshotMetadata = await getDoc(targetingDocumentReference);
-
-                    if (targetedSnapshotMetadata.exists()) {
-                        const documentActiveState = targetedSnapshotMetadata.data();
-                        const dynamicReasonsDataMatrix = documentActiveState.reportReasons || {};
-                        dynamicReasonsDataMatrix[prioritizedReasonString] = (dynamicReasonsDataMatrix[prioritizedReasonString] || 0) + 1;
-
-                        await updateDoc(targetingDocumentReference, {
-                            reportCount: (documentActiveState.reportCount || 0) + 1,
-                            reportReasons: dynamicReasonsDataMatrix
-                        });
-                    }
-
-                    // Dynamically push the restriction token into memory cache without reading database
-                    window.sessionReportCache[postId] = submissionTimeNow;
-
-                    window.closeModal();
-                    setTimeout(() => { window.showToast('Report submitted for verification.'); }, 150);
-                } catch (executionException) {
-                    window.closeModal();
-                    setTimeout(() => { window.showModal('Error', executionException.message); }, 300);
-                }
-            }, true, selectionInterfaceTemplate);
-        };
+            window.sessionReportCache[postId] = submissionTimeNow;
+            window.closeModal();
+            setTimeout(() => { window.showToast('Report submitted for verification.'); }, 150);
+        } catch (executionException) {
+            window.closeModal();
+            setTimeout(() => { window.showModal('Error', executionException.message); }, 300);
+        }
+    }, true, selectionInterfaceTemplate);
+};
         
         
         
