@@ -1154,7 +1154,7 @@ const appCheck = initializeAppCheck(app, {
                         
                     
 
-            // 1. REGISTER DEVICE SESSION IN DB (HIGH-PERFORMANCE DECOUPLED BACKGROUND ENGINE)
+            // 1. REGISTER DEVICE SESSION IN DB (HIGH-PERFORMANCE NON-BLOCKING COHESION ENGINE)
             if (!localStorage.getItem('gibbl_session_start')) localStorage.setItem('gibbl_session_start', Date.now());
             
             const ua = navigator.userAgent;
@@ -1206,72 +1206,97 @@ const appCheck = initializeAppCheck(app, {
                 platform = "Android";
                 brand = "Android Device"; // Baseline mobile initialization
                 
-                if (/samsung|sm-|gt-|sgh-|sch-|sph-|sec-/i.test(targetSearchStr) || targetSearchStr.includes('samsungbrowser')) {
+                // --- PRIORITIZED SPECIFIC HARDWARE MATCHING TRACKS ---
+                
+                // VIVO / IQOO (Surgically evaluated first to prevent generic token interception)
+                if (/vivo|iqoo|\bv[0-9]{4}\b|\bv2[0-9]{3}\b|\bpd2[0-9]{3}\b/i.test(targetSearchStr)) {
+                    brand = "Vivo";
+                }
+                // SAMSUNG (SM-, GT-, SCH-, SPH-, SGH-, SEC-)
+                else if (/samsung|sm-|gt-|sgh-|sch-|sph-|sec-/i.test(targetSearchStr) || targetSearchStr.includes('samsungbrowser')) {
                     brand = "Samsung";
                 }
-                else if (/pixel|nexus|\bg[0-9a-z]{4}\b/i.test(targetSearchStr) || /\b(gx7as|ge2ae|g9s9b|gc15s)\b/i.test(targetSearchStr)) {
-                    brand = "Google";
-                }
+                // XIAOMI / REDMI / POCO
                 else if (/xiaomi|redmi|poco|mi |\bmi\b/i.test(targetSearchStr) || /\b[0-9m][0-9a-z]{8,10}[gi]\b/i.test(targetSearchStr)) {
                     brand = "Xiaomi";
                 }
+                // ONEPLUS
                 else if (/oneplus/i.test(targetSearchStr) || /\b(hd19|in20|kb20|le21|ne22|cph2449|cph2581|cph2609|op[0-9])\b/i.test(targetSearchStr)) {
                     brand = "OnePlus";
                 }
+                // OPPO
                 else if (/oppo|\bcph[0-9]{4}\b/i.test(targetSearchStr) || /\b(pndm|pher)[0-9]{2}\b/i.test(targetSearchStr)) {
                     brand = "Oppo";
                 }
-                else if (/vivo|iqoo|\bv2[0-9]{3}\b|\bpd2[0-9]{3}\b/i.test(targetSearchStr)) {
-                    brand = "Vivo";
-                }
+                // REALME
                 else if (/realme|\brmx[0-9]{4}\b/i.test(targetSearchStr)) {
                     brand = "Realme";
                 }
+                // GOOGLE PIXEL
+                else if (/pixel|nexus|\bg[0-9a-z]{4}\b/i.test(targetSearchStr) || /\b(gx7as|ge2ae|g9s9b|gc15s)\b/i.test(targetSearchStr)) {
+                    brand = "Google";
+                }
+                // MOTOROLA
                 else if (/motorola|moto |\bxt[0-9]{4}\b/i.test(targetSearchStr)) {
                     brand = "Motorola";
                 }
-                else if (/huawei|mate\s*[0-9]|mediapad|\b(bog|ana|els|vtr|generic\s*p30|generic\s*p40)\b/i.test(targetSearchStr)) {
-                    brand = "Huawei";
-                }
-                else if (/honor|\b(hry|any|vne|fne|chk|clk)-[a-z0-9]/i.test(targetSearchStr)) {
-                    brand = "Honor";
-                }
+                // NOTHING PHONE
                 else if (/nothing|\b(a063|ain065|a065|a142|a142p|a024|a059|a059p|a001t|a015|a001)\b/i.test(targetSearchStr)) {
                     brand = "Nothing Phone";
                 }
+                // HUAWEI
+                else if (/huawei|mate\s*[0-9]|mediapad|\b(bog|ana|els|vtr|generic\s*p30|generic\s*p40)\b/i.test(targetSearchStr)) {
+                    brand = "Huawei";
+                }
+                // HONOR
+                else if (/honor|\b(hry|any|vne|fne|chk|clk)-[a-z0-9]/i.test(targetSearchStr)) {
+                    brand = "Honor";
+                }
+                // INFINIX
                 else if (/infinix|\bx[0-9]{4,5}\b/i.test(targetSearchStr)) {
                     brand = "Infinix";
                 }
+                // TECNO
                 else if (/tecno|phantom|pova|camon|spark|\b(kj|lh|ad|ck)[0-9][a-z]?\b/i.test(targetSearchStr)) {
                     brand = "Tecno";
                 }
+                // ITEL
                 else if (/itel|\bit[0-9]{4}\b|\ba66[0-9]\b|\bs66[0-9]\b/i.test(targetSearchStr)) {
                     brand = "itel";
                 }
+                // LAVA
                 else if (/lava|yuva|blaze|agni|\blzn[0-9]\b/i.test(targetSearchStr)) {
                     brand = "Lava";
                 }
+                // SONY
                 else if (/sony|xperia|\bso-[0-9a-z]{3}\b|\bsog[0-9]{2}\b|\bxq-[a-z0-9]{4}\b/i.test(targetSearchStr)) {
                     brand = "Sony";
                 }
+                // ASUS
                 else if (/asus|zenfone|rog\s*phone|\bai24[0-9]{2}\b/i.test(targetSearchStr)) {
                     brand = "Asus";
                 }
+                // HTC
                 else if (/htc|desire|\bu11\b|\bu12\b|\bu19\b|\bu20\b|\bu23\b/i.test(targetSearchStr)) {
                     brand = "HTC";
                 }
+                // NOKIA
                 else if (/nokia|\bta-[0-9]{4}\b/i.test(targetSearchStr)) {
                     brand = "Nokia";
                 }
+                // LENOVO
                 else if (/lenovo|legion|\b(yt|tb)-[0-9a-z]{4}\b/i.test(targetSearchStr)) {
                     brand = "Lenovo";
                 }
+                // ZTE
                 else if (/zte|nubia|redmagic|\bnx[0-9]{3}j\b/i.test(targetSearchStr)) {
                     brand = "ZTE";
                 }
+                // MEIZU
                 else if (/meizu|\bm[0-9]{4}q\b/i.test(targetSearchStr)) {
                     brand = "Meizu";
                 }
+                // MICROMAX
                 else if (/micromax|\bcanvas\b|\bin\s*note\b/i.test(targetSearchStr)) {
                     brand = "Micromax";
                 }
@@ -1323,20 +1348,18 @@ const appCheck = initializeAppCheck(app, {
             const hardwareDescriptor = modelName ? `${brand} (${modelName})` : brand;
             const targetSessionDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid, 'sessions', myDeviceId);
 
-            // --- PHASE 1: INSTANT DATABOUND WRITE (<50ms) ---
-            // Logs the device instantly to prevent registration hangs
+            // --- PHASE 1: INSTANT LOCAL SAVE (<50ms) ---
             await setDoc(targetSessionDocRef, {
                 brand: hardwareDescriptor,
                 browser: browser,
                 platform: platform,
                 type: type,
-                location: "Loading Location...", // Display placeholder
+                location: "Loading Location...", 
                 lastActive: Date.now(),
                 userAgent: ua
             }, { merge: true });
 
             // --- PHASE 2: DECOUPLED BACKGROUND GEOLOCATION PIPELINE ---
-            // Evaluates location safely in the background without halting UI thread performance
             (async () => {
                 let locationStr = "Location Unknown";
                 try {
@@ -1357,7 +1380,6 @@ const appCheck = initializeAppCheck(app, {
                     }
                 }
                 
-                // Silently merges location payload into existing session document on resolution
                 try {
                     await updateDoc(targetSessionDocRef, { location: locationStr });
                     
@@ -1366,43 +1388,62 @@ const appCheck = initializeAppCheck(app, {
                 }
             })();
 
-                    // THE SECURITY LISTENER
-                    if (unsubscribeSecurity) unsubscribeSecurity();
-                    unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), (docSnap) => {
-                        const data = docSnap.data();
-                        if (data) {
-                            const sessionStart = parseInt(localStorage.getItem('gibbl_session_start') || '0');
-                            
-                            // A. THE BULLETPROOF KILL SWITCH
-                            if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
-                                window.handleLogout(true);
-                                window.showModal('Session Expired', 'You have been signed out because your account was secured from another device.', () => { window.location.reload(); }, false);
-                                document.getElementById('modal-cancel').classList.add('hidden');
-                                return;
-                            }
+                    // ==========================================
+// THE SECURITY LISTENER (UPDATED FOR ASYNC DETONATION)
+// ==========================================
+if (unsubscribeSecurity) unsubscribeSecurity();
+unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), async (docSnap) => {
+    const data = docSnap.data();
+    if (data) {
+        const sessionStart = parseInt(localStorage.getItem('gibbl_session_start') || '0');
+        
+        // A. THE BULLETPROOF KILL SWITCH
+if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
+    window.sessionExpiredActive = true; // <-- Flag to capture the router bypass
+    window.handleLogout(true);
+    window.showModal('Session Expired', 'You have been signed out because your account was secured from another device.', () => { window.location.reload(); }, false);
+    document.getElementById('modal-cancel').classList.add('hidden');
+    return;
+}
 
-                            // B. TRUE INTRUSION ENGINE (Like App Store Connect)
-                            if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (sessionStart + 5000)) {
-                                const alertKey = 'gibbl_alerted_' + data.lastLoginAt; 
-                                if (!sessionStorage.getItem(alertKey)) {
-                                    sessionStorage.setItem(alertKey, 'true'); 
-                                    window.showModal('New Login Detected', 'Your account was just accessed from a new device. Was this you?', null, false, `
-                                        <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
-                                            <button class="btn-danger" style="margin:0; width:100%;" onclick="window.closeModal(); window.confirmSignOutAll();">No, Secure Account (Sign Out All)</button>
-                                            <button class="btn-secondary" style="margin:0; width:100%; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full); color:var(--text);" onclick="window.closeModal(); window.setView('settings');">Review Active Devices</button>
-                                            
-                                            <!-- THE FIX: This button now resets your local anchor so it trusts the login! -->
-                                            <button class="btn-primary" style="margin:0; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal();">Yes, It Was Me</button>
-                                        </div>
-                                    `);
-                                    document.getElementById('modal-actions-container').style.display = 'none';
-                                }
-                            }
-                            
-                            // Auto-refresh device list if settings are open
-                            if (currentView === 'settings' && window.fetchActiveDevices) window.fetchActiveDevices();
-                        }
-                    }, (err) => {});
+        // B. TRUE INTRUSION ENGINE (Like App Store Connect)
+        if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (sessionStart + 5000)) {
+            const alertKey = 'gibbl_alerted_' + data.lastLoginAt; 
+            if (!sessionStorage.getItem(alertKey)) {
+                sessionStorage.setItem(alertKey, 'true'); 
+                window.showModal('New Login Detected', 'Your account was just accessed from a new device. Was this you?', null, false, `
+                    <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
+                        <button class="btn-danger" style="margin:0; width:100%;" onclick="window.confirmSignOutAll();">No, Secure Account (Sign Out All)</button>
+                        
+                        <button class="btn-secondary" style="margin:0; width:100%; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full); color:var(--text);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal(); window.setView('settings'); setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);">Review Active Devices</button>
+                        
+                        <button class="btn-primary" style="margin:0; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal();">Yes, It Was Me</button>
+                    </div>
+                `);
+                document.getElementById('modal-actions-container').style.display = 'none';
+                
+                const confirmBtn = document.getElementById('modal-confirm');
+                if (confirmBtn) {
+                    const origConfirmClick = confirmBtn.onclick;
+                    confirmBtn.onclick = function(...args) {
+                        document.getElementById('modal-actions-container').style.display = 'flex';
+                        if (origConfirmClick) origConfirmClick.apply(this, args);
+                    };
+                }
+                const cancelBtn = document.getElementById('modal-cancel');
+                if (cancelBtn) {
+                    const origCancelClick = cancelBtn.onclick;
+                    cancelBtn.onclick = function(...args) {
+                        document.getElementById('modal-actions-container').style.display = 'flex';
+                        if (origCancelClick) origCancelClick.apply(this, args);
+                    };
+                }
+            }
+        }
+        
+        if (currentView === 'settings' && window.fetchActiveDevices) window.fetchActiveDevices();
+    }
+}, (err) => {});
                     
                     
                     
@@ -1537,36 +1578,35 @@ const appCheck = initializeAppCheck(app, {
 
 
 
-        window.confirmSignOutAll = () => {
-            window.showModal('Sign Out Everywhere?', 'This will instantly log out ALL devices, including this one.', async () => {
-                try {
-                    // 1. Mute our own alarm
-                    if (window.unsubscribeSecurity) window.unsubscribeSecurity();
-                    
-                    // 2. Drop the bomb in the database
-                    await updateDoc(getPublicDoc('profiles', currentUser.uid), { 
-                        lastRevokeTime: Date.now(),
-                        handle: currentProfile.handle 
-                    });
-                    
-                    
-                    // 4. Sign out and hard reload
-                    await signOut(auth);
-                    
-                    
-                    window.setLoading(document.getElementById('modal-confirm'), false); window.closeModal();
-                    
-                    
-                    window.location.reload();
-                    
-                    
-                    
-                } catch(e) { 
-                    window.closeModal();
-                    setTimeout(() => window.showModal('Error', e.message), 300);
-                }
-            }, true);
-        };
+        // ==========================================
+// CONFIRM SIGN OUT ALL HANDLER (BUG 1 & BUG 2 FIXED)
+// ==========================================
+window.confirmSignOutAll = () => {
+    // PRO FIX: Instantly advance local session window to neutralize the alert loop on cancel
+    localStorage.setItem('gibbl_session_start', Date.now());
+    
+    window.showModal('Sign Out Everywhere?', 'This will instantly log out ALL devices, including this one.', async () => {
+        try {
+            if (window.unsubscribeSecurity) window.unsubscribeSecurity();
+            
+            // Drop the revocation payload to instantly force-reload all connected zombied nodes
+            await updateDoc(getPublicDoc('profiles', currentUser.uid), { 
+                lastRevokeTime: Date.now(),
+                handle: currentProfile.handle 
+            });
+            
+            await signOut(auth);
+            window.setLoading(document.getElementById('modal-confirm'), false); 
+            window.closeModal();
+            
+            // Hard reload the master controller node
+            window.location.reload();
+        } catch(e) { 
+            window.closeModal();
+            setTimeout(() => window.showModal('Error', e.message), 300);
+        }
+    }, true);
+};
         
         
         
@@ -4626,6 +4666,21 @@ window.openReportModal = (postId, authorHandle) => {
         }
     }
 })();
+
+
+// ==========================================================================
+// GLOBAL HIGH-PRIORITY BACK-BUTTON CAPTURE OVERRIDE
+// ==========================================================================
+window.addEventListener('popstate', () => {
+    if (window.sessionExpiredActive) {
+        window.location.reload();
+    }
+}, { capture: true });
+
+
+
+
+
 </script>
     
     
