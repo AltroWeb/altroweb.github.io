@@ -2432,18 +2432,28 @@ async fetchActiveDevices(uid) {
                     
         list.innerHTML = html || '<li style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">No active sessions found.</li>';
 
-        // --- THE PRO AUTO-HEALING LOCATION PATCH ---
-        // If a transient loading state is detected, silently schedule a single refresh to pull the updated geo-data
+// ==========================================================================
+        // --- THE PRO AUTO-HEALING LOCATION PATCH (WITH RETRY CAP ENGINE) ---
+        // ==========================================================================
         if (html.includes("Loading Location...") && !this._locRetryTimer) {
-            this._locRetryTimer = setTimeout(() => {
-                delete this._locRetryTimer;
-                // Only run the background refresh if the settings card or security pop-up is actively visible
-                const isViewActive = document.getElementById('settings-view').classList.contains('active') || 
-                                     document.getElementById('security-modal').style.display === 'flex';
-                if (isViewActive && this.user) {
-                    this.fetchActiveDevices(uid);
-                }
-            }, 2500);
+            // Track the iteration loop count on the class instance safely
+            this._locRetryCount = (this._locRetryCount || 0) + 1;
+            
+            // GUARD: Max out at 3 refresh cycles to completely kill any infinite flashing loops from dead zombie documents
+            if (this._locRetryCount <= 3) {
+                this._locRetryTimer = setTimeout(() => {
+                    delete this._locRetryTimer;
+                    // Only run the background refresh if the settings card or security pop-up is actively visible
+                    const isViewActive = document.getElementById('settings-view').classList.contains('active') || 
+                                         document.getElementById('security-modal').style.display === 'flex';
+                    if (isViewActive && this.user) {
+                        this.fetchActiveDevices(uid);
+                    }
+                }, 2500);
+            }
+        } else if (!html.includes("Loading Location...")) {
+            // Reset the counter once all active location layouts have resolved successfully
+            this._locRetryCount = 0;
         }
 
     } catch(e) {
