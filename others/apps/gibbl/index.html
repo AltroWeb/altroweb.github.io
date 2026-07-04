@@ -1572,16 +1572,26 @@ unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), async (docS
                 list.innerHTML = html || '<li class="text-dim text-sm" style="padding:16px 0; text-align:center; font-style:italic;">No active session connections monitored.</li>';
                 
                 
-                // Add this immediately after list.innerHTML = html ... inside window.fetchActiveDevices
-// --- THE PRO AUTO-HEALING LOCATION PATCH ---
+                // ==========================================================================
+// --- THE PRO AUTO-HEALING LOCATION PATCH (WITH RETRY CAP ENGINE) ---
+// ==========================================================================
 if (html.includes("Loading Location...") && !window._locRetryTimer) {
-    window._locRetryTimer = setTimeout(() => {
-        delete window._locRetryTimer;
-        // Check if the user is still actively staying on the settings tab
-        if (currentView === 'settings' && currentUser) {
-            window.fetchActiveDevices();
-        }
-    }, 3500); // 3.5 Second Intelligent Failover Window
+    // Initialize or advance the execution loop tracker
+    window._locRetryCount = (window._locRetryCount || 0) + 1;
+    
+    // GUARD: Only allow a maximum of 3 background syncs before shutting down to prevent infinite flashing
+    if (window._locRetryCount <= 3) {
+        window._locRetryTimer = setTimeout(() => {
+            delete window._locRetryTimer;
+            // Check if the user is still actively staying on the settings tab
+            if (currentView === 'settings' && currentUser) {
+                window.fetchActiveDevices();
+            }
+        }, 3500); // 3.5 Second Intelligent Failover Window
+    }
+} else if (!html.includes("Loading Location...")) {
+    // Reset the tracking metric once all locations are cleanly synchronized
+    window._locRetryCount = 0;
 }
                 
                 
@@ -3331,7 +3341,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 
                 if (passwordChanged) {
                     window.showModal('Security Update', 'Settings saved & Password changed.\n\nFor your security, you will now be signed out of all devices.', () => {
-                        window.closeModal();
+                        
                         window.handleLogout(false);
                     });
                     document.getElementById('modal-cancel').classList.add('hidden');
@@ -4749,6 +4759,21 @@ window.addEventListener('popstate', () => {
     const modalTitle = document.getElementById('modal-title');
     if (modal && modal.classList.contains('open') && modalTitle && modalTitle.innerText === 'Session Expired') {
         window.location.reload();
+    }
+}, { capture: true });
+
+
+
+// FIX BUG 3: Catch back gestures on Security Update and force direct security logouts
+window.addEventListener('popstate', () => {
+    const modal = document.getElementById('modal-container');
+    const modalTitle = document.getElementById('modal-title');
+    if (modal && modal.classList.contains('open') && modalTitle && modalTitle.innerText === 'Security Update') {
+        if (window.handleLogout) {
+            window.handleLogout(false);
+        } else {
+            window.location.reload();
+        }
     }
 }, { capture: true });
 
