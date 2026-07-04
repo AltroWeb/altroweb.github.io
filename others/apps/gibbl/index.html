@@ -1564,6 +1564,23 @@ if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
                     `;
                 });
                 list.innerHTML = html || '<li class="text-dim text-sm" style="padding:16px 0; text-align:center; font-style:italic;">No active session connections monitored.</li>';
+                
+                
+                // Add this immediately after list.innerHTML = html ... inside window.fetchActiveDevices
+// --- THE PRO AUTO-HEALING LOCATION PATCH ---
+if (html.includes("Loading Location...") && !window._locRetryTimer) {
+    window._locRetryTimer = setTimeout(() => {
+        delete window._locRetryTimer;
+        // Check if the user is still actively staying on the settings tab
+        if (currentView === 'settings' && currentUser) {
+            window.fetchActiveDevices();
+        }
+    }, 3500); // 3.5 Second Intelligent Failover Window
+}
+                
+                
+                
+                
             } catch(e) { 
                 console.error("Layout Compilation Exception", e);
                 list.innerHTML = '<li class="text-error text-sm" style="text-align:center; padding:16px 0; font-weight:600;">Failed to map device parameters.</li>'; 
@@ -1578,34 +1595,75 @@ if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
 
 
 
-        // ==========================================
-// CONFIRM SIGN OUT ALL HANDLER (BUG 1 & BUG 2 FIXED)
-// ==========================================
+        // ==========================================================================
+// CONFIRM SIGN OUT ALL HANDLER (ATOMIC SINGLE-THREADED TIMER SHIELD)
+// ==========================================================================
 window.confirmSignOutAll = () => {
-    // PRO FIX: Instantly advance local session window to neutralize the alert loop on cancel
+    // 1. Force-advance the local tracking window to prevent loop bugs on cancellation
     localStorage.setItem('gibbl_session_start', Date.now());
     
     window.showModal('Sign Out Everywhere?', 'This will instantly log out ALL devices, including this one.', async () => {
+        // Safe-kill the timer if the user manages to click confirmation
+        if (window.gibblConfirmInterval) {
+            clearInterval(window.gibblConfirmInterval);
+            window.gibblConfirmInterval = null;
+        }
+        
         try {
             if (window.unsubscribeSecurity) window.unsubscribeSecurity();
             
-            // Drop the revocation payload to instantly force-reload all connected zombied nodes
+            // Dispatch the revocation payload while authentication tokens are active
             await updateDoc(getPublicDoc('profiles', currentUser.uid), { 
                 lastRevokeTime: Date.now(),
                 handle: currentProfile.handle 
             });
             
-            await signOut(auth);
-            window.setLoading(document.getElementById('modal-confirm'), false); 
-            window.closeModal();
+            // NETWORK FLUSH: Safe buffer delay for mobile data transmission to complete
+            await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // Hard reload the master controller node
+            await signOut(auth);
+            window.closeModal();
             window.location.reload();
         } catch(e) { 
             window.closeModal();
             setTimeout(() => window.showModal('Error', e.message), 300);
         }
     }, true);
+
+    // 2. THE ATOMIC TIMER GUARD: Clear any running stray clocks to make the countdown rock-solid
+    if (window.gibblConfirmInterval) clearInterval(window.gibblConfirmInterval);
+
+    const confirmBtn = document.getElementById('modal-confirm');
+    if (confirmBtn) {
+        let count = 3;
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        confirmBtn.style.cursor = 'not-allowed';
+        confirmBtn.innerText = `OK (${count}s)`;
+        
+        window.gibblConfirmInterval = setInterval(() => {
+            count--;
+            const activeBtn = document.getElementById('modal-confirm');
+            
+            // Structural guard: if modal is dismissed or element vanishes mid-timer
+            if (!activeBtn) {
+                clearInterval(window.gibblConfirmInterval);
+                window.gibblConfirmInterval = null;
+                return;
+            }
+
+            if (count > 0) {
+                activeBtn.innerText = `OK (${count}s)`;
+            } else {
+                clearInterval(window.gibblConfirmInterval);
+                window.gibblConfirmInterval = null;
+                activeBtn.disabled = false;
+                activeBtn.style.opacity = '1';
+                activeBtn.style.cursor = 'pointer';
+                activeBtn.innerText = 'OK';
+            }
+        }, 1000);
+    }
 };
         
         
@@ -4678,6 +4736,15 @@ window.addEventListener('popstate', () => {
 }, { capture: true });
 
 
+
+// FIX BUG 2: Catch back gestures on expired sessions and force structural reload
+window.addEventListener('popstate', () => {
+    const modal = document.getElementById('modal-container');
+    const modalTitle = document.getElementById('modal-title');
+    if (modal && modal.classList.contains('open') && modalTitle && modalTitle.innerText === 'Session Expired') {
+        window.location.reload();
+    }
+}, { capture: true });
 
 
 
