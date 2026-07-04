@@ -156,7 +156,7 @@
             width: 100%;
             margin-bottom: 1rem;
             position: relative;
-            text-align: left;
+            text-align: center;
         }
         
         .custom-input {
@@ -1593,6 +1593,7 @@ if (html.includes("Loading Location...") && !window._locRetryTimer) {
     // Reset the tracking metric once all locations are cleanly synchronized
     window._locRetryCount = 0;
 }
+
                 
                 
                 
@@ -1998,7 +1999,7 @@ window.handleHashtagClick = (tag) => {
                     
                     <div id="login-view" class="hidden w-full flex-col">
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('landing')">${getIcon('arrow-left')} Back</div>
-                        <h2 style="text-align: left; margin-bottom: 1.5rem; font-size: 2rem;">Welcome back.</h2>
+                        <h2 style="text-align: center; margin-bottom: 1.5rem; font-size: 2rem;">Welcome back.</h2>
                         <div class="input-group">
                             <input type="email" id="login-email" class="custom-input" placeholder="Email">
                         </div>
@@ -2027,7 +2028,7 @@ window.handleHashtagClick = (tag) => {
 
                     <div id="signup-view" class="hidden w-full flex-col">
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('landing')">${getIcon('arrow-left')} Back</div>
-                        <h2 style="text-align: left; margin-bottom: 1.5rem; font-size: 2rem;">Create Account.</h2>
+                        <h2 style="text-align: center; margin-bottom: 1.5rem; font-size: 2rem;">Create Account.</h2>
                         
                             <div class="input-group">
                             <input type="text" id="reg-name" class="custom-input" placeholder="Display Name" maxlength="50" oninput="window.updateCharCount(this, 'reg-name-count')">
@@ -2056,7 +2057,7 @@ window.handleHashtagClick = (tag) => {
 
                     <div id="reset-view" class="hidden w-full flex-col">
                         <div class="back-btn" style="margin-bottom: 2rem;" onclick="window.switchAuth('login')">${getIcon('arrow-left')} Back</div>
-                        <h2 style="text-align: left; margin-bottom: 1.5rem; font-size: 2rem;">Reset Password.</h2>
+                        <h2 style="text-align: center; margin-bottom: 1.5rem; font-size: 2rem;">Reset Password.</h2>
                         <div class="input-group">
                             <input type="email" id="reset-email" class="custom-input" placeholder="Enter your registered email">
                         </div>
