@@ -976,7 +976,7 @@ window.addEventListener('scroll', () => {
     
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, sendPasswordResetEmail, signInWithCustomToken, setPersistence, browserSessionPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer, startAfter } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, query, addDoc, deleteDoc, writeBatch, getDocs, limit, orderBy, where, startAt, endAt, getCountFromServer, startAfter, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
         
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app-check.js";
         
@@ -1388,23 +1388,29 @@ const appCheck = initializeAppCheck(app, {
                 }
             })();
 
-                    // ==========================================
-// THE SECURITY LISTENER (UPDATED FOR ASYNC DETONATION)
-// ==========================================
+                    // ==========================================================================
+// THE SECURITY LISTENER (UPDATED FOR TIMESTAMPS)
+// ==========================================================================
 if (unsubscribeSecurity) unsubscribeSecurity();
 unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), async (docSnap) => {
     const data = docSnap.data();
     if (data) {
         const sessionStart = parseInt(localStorage.getItem('gibbl_session_start') || '0');
         
-        // A. THE BULLETPROOF KILL SWITCH
-if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
-    window.sessionExpiredActive = true; // <-- Flag to capture the router bypass
-    window.handleLogout(true);
-    window.showModal('Session Expired', 'You have been signed out because your account was secured from another device.', () => { window.location.reload(); }, false);
-    document.getElementById('modal-cancel').classList.add('hidden');
-    return;
-}
+        // A. THE BULLETPROOF KILL SWITCH (Surgically updated comparison math)
+        if (data.lastRevokeTime) {
+            const revokeTimeMillis = typeof data.lastRevokeTime.toMillis === 'function' ? data.lastRevokeTime.toMillis() : data.lastRevokeTime;
+            
+            if (revokeTimeMillis > sessionStart) {
+                window.sessionExpiredActive = true; 
+                window.handleLogout(true);
+                window.showModal('Session Expired', 'You have been signed out because your account was secured from another device.', () => { window.location.reload(); }, false);
+                document.getElementById('modal-cancel').classList.add('hidden');
+                return;
+            }
+        }
+
+
 
         // B. TRUE INTRUSION ENGINE (Like App Store Connect)
         if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (sessionStart + 5000)) {
@@ -1512,7 +1518,7 @@ if (data.lastRevokeTime && data.lastRevokeTime > sessionStart) {
                 const snap = await getDocs(query(collection(db, 'artifacts', appId, 'public', 'data', 'profiles', currentUser.uid, 'sessions')));
                 let html = '';
                 const myId = localStorage.getItem('gibbl_device_id');
-                const revokeTime = currentProfile.lastRevokeTime || 0;
+                const revokeTime = currentProfile.lastRevokeTime ? (typeof currentProfile.lastRevokeTime.toMillis === 'function' ? currentProfile.lastRevokeTime.toMillis() : currentProfile.lastRevokeTime) : 0;
                 const now = Date.now();
 
                 let sessions = [];
@@ -1614,7 +1620,7 @@ window.confirmSignOutAll = () => {
             
             // Dispatch the revocation payload while authentication tokens are active
             await updateDoc(getPublicDoc('profiles', currentUser.uid), { 
-                lastRevokeTime: Date.now(),
+                lastRevokeTime: serverTimestamp(),
                 handle: currentProfile.handle 
             });
             
@@ -3261,7 +3267,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 let passwordChanged = false;
                 if (pass) { 
                     if (unsubscribeSecurity) unsubscribeSecurity(); 
-                    await updateDoc(getPublicDoc('profiles', currentUser.uid), { lastRevokeTime: Date.now() }); 
+                    await updateDoc(getPublicDoc('profiles', currentUser.uid), { lastRevokeTime: serverTimestamp() }); 
                     await updatePassword(currentUser, pass); 
                     passwordChanged = true; 
                 }
@@ -3280,7 +3286,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                 }
                 
                 const profileUpdateData = { displayName: name, handle: newHandle, bio: bio, pfp: pfp, mentionsEnabled: mentionsEnabled, mediaEnabled: mediaEnabled };
-                if (passwordChanged) profileUpdateData.lastRevokeTime = Date.now();
+                if (passwordChanged) profileUpdateData.lastRevokeTime = serverTimestamp();
                 
                 operations.push({ 
                     type: 'update', ref: getPublicDoc('profiles', currentUser.uid), 
