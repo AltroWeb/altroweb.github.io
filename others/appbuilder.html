@@ -24,6 +24,7 @@
             --header-bg: rgba(255, 255, 255, 0.8);
             --input-bg: #fff;
             --chart-track: #E5E5EA;
+            --button: #ffffff;
         }
 
         body.dark-mode {
@@ -36,6 +37,7 @@
             --header-bg: rgba(28, 28, 30, 0.8);
             --input-bg: #2C2C2E;
             --chart-track: #2C2C2E;
+            --button: #292929;
         }
 
         body {
@@ -167,7 +169,7 @@
         }
         .btn:active { transform: scale(0.98); }
         .btn:hover { opacity: 0.9; }
-        .btn.secondary { background: var(--border); color: var(--text-primary); }
+        .btn.secondary { background: var(--button); color: var(--text-primary); border: 1px solid var(--border); }
         .btn.danger { background: var(--danger); color: white; }
         .btn.block { width: 100%; }
         .btn.sm { padding: 6px 14px; font-size: 13px; }
@@ -2454,7 +2456,55 @@ async fetchActiveDevices(uid) {
 
 // 4. Action: Sign Out All
 async confirmSignOutAll() {
-    const ok = await this.showConfirm("Sign Out Everywhere?", "This will log out ALL devices including this one.", "Sign Out All");
+    // Prevent alert loop tracking by recording local action window initiation on cancels
+    localStorage.setItem('auth_session_start', Date.now());
+
+    const okPromise = this.showConfirm("Sign Out Everywhere?", "This will log out ALL devices including this one.", "Sign Out All");
+    
+    // PRO FIX: Access the static DOM element instantly and synchronously to drop click lag to 0ms
+    const confirmBtn = document.getElementById('confirm-ok');
+    if (confirmBtn) {
+        let count = 3;
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.5';
+        confirmBtn.style.cursor = 'not-allowed';
+        confirmBtn.innerText = `Sign Out All (${count}s)`;
+        
+        // Clear any running stray timers to ensure the countdown starts fresh
+        if (window.appBuilderConfirmInterval) clearInterval(window.appBuilderConfirmInterval);
+        
+        window.appBuilderConfirmInterval = setInterval(() => {
+            count--;
+            const currentBtn = document.getElementById('confirm-ok');
+            if (!currentBtn) { clearInterval(window.appBuilderConfirmInterval); return; }
+
+            if (count > 0) {
+                currentBtn.innerText = `Sign Out All (${count}s)`;
+            } else {
+                clearInterval(window.appBuilderConfirmInterval);
+                window.appBuilderConfirmInterval = null;
+                currentBtn.disabled = false;
+                currentBtn.style.opacity = '1';
+                currentBtn.style.cursor = 'pointer';
+                currentBtn.innerText = 'Sign Out All';
+            }
+        }, 1000);
+    }
+
+    const ok = await okPromise;
+    
+    // PRO CLEANUP PIPELINE: Force-kill the timer loop and reset button normalization metrics 
+    // so it never carries over to corrupt other app delete or password reset confirmations
+    if (window.appBuilderConfirmInterval) {
+        clearInterval(window.appBuilderConfirmInterval);
+        window.appBuilderConfirmInterval = null;
+    }
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        confirmBtn.style.cursor = 'pointer';
+    }
+
     if(ok) {
         try {
             this.isIntentionalGlobalRevoke = true; // Lock local thread state signature
@@ -2465,6 +2515,9 @@ async confirmSignOutAll() {
                     lastRevokeTime: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             
+            // NETWORK FLUSH SHIELD: Wait 1.5 seconds to ensure slow mobile data completely flushes out the pipe
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             // Fires intentional direct reload track without triggering the modal alert loop here
             await this.logout(false);
         } catch(e) { 
@@ -4871,6 +4924,15 @@ function renderBio(text) {
 
 
 
+
+// FIX: Catch back gestures on expired sessions and force hard page reload
+window.addEventListener('popstate', () => {
+    const alertModal = document.getElementById('alert-modal');
+    const alertTitle = document.getElementById('alert-title');
+    if (alertModal && alertModal.style.display === 'flex' && alertTitle && alertTitle.innerText === 'Session Expired') {
+        window.location.reload();
+    }
+}, { capture: true });
 
 
 
