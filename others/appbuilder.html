@@ -2012,7 +2012,7 @@ async register() {
 
 // 1. Register Device ID on Login
 // ==========================================================================
-// DECOUPLED ASYNCHRONOUS BACKGROUND TELEMETRY MATRIX (MIXOS APPMANAGER OPTIMIZED)
+// HIGH-ENTROPY MULTI-ENVIRONMENT TELEMETRY ENGINE (ACCURATE VIVO & FALLBACK FIX)
 // ==========================================================================
 async registerCurrentDevice(uid) {
     try {
@@ -2027,7 +2027,7 @@ async registerCurrentDevice(uid) {
         let platform = "Unknown OS";
         let browser = "Unknown Browser";
         let type = "Desktop";
-        let brand = "PC / Desktop";
+        let brand = "Device"; // Universal baseline fallback
         let modelName = "";
 
         // 1. Asynchronous High-Entropy Client Hints Extraction Pipeline
@@ -2070,79 +2070,104 @@ async registerCurrentDevice(uid) {
         } 
         else if (/Android/i.test(ua)) {
             platform = "Android";
-            brand = "Android Device"; // Baseline initialization fallback
+            brand = "Android Device"; // Universal Android baseline fallback (never blanks or breaks)
             
-            // Comprehensive Hardware Signature Traps Matrix
-            if (/samsung|sm-|gt-|sgh-|sch-|sph-|sec-/i.test(targetSearchStr) || targetSearchStr.includes('samsungbrowser')) {
+            // --- PRIORITIZED HARDWARE MATCHING TRACKS (ANTI-COLLISION FLOW) ---
+            
+            // VIVO / IQOO (Checked first to prevent generic Android build tokens from triggering Pixel rules)
+            if (/vivo|iqoo|\bv[0-9]{4}\b|\bv2[0-9]{3}\b|\bpd2[0-9]{3}\b/i.test(targetSearchStr)) {
+                brand = "Vivo";
+            }
+            // SAMSUNG (SM-, GT-, SCH-, SPH-, SGH-, SEC-)
+            else if (/samsung|sm-|gt-|sgh-|sch-|sph-|sec-/i.test(targetSearchStr) || targetSearchStr.includes('samsungbrowser')) {
                 brand = "Samsung";
             }
-            else if (/pixel|nexus|\bg[0-9a-z]{4}\b/i.test(targetSearchStr) || /\b(gx7as|ge2ae|g9s9b|gc15s)\b/i.test(targetSearchStr)) {
-                brand = "Google";
-            }
+            // XIAOMI / REDMI / POCO
             else if (/xiaomi|redmi|poco|mi |\bmi\b/i.test(targetSearchStr) || /\b[0-9m][0-9a-z]{8,10}[gi]\b/i.test(targetSearchStr)) {
                 brand = "Xiaomi";
             }
+            // ONEPLUS
             else if (/oneplus/i.test(targetSearchStr) || /\b(hd19|in20|kb20|le21|ne22|cph2449|cph2581|cph2609|op[0-9])\b/i.test(targetSearchStr)) {
                 brand = "OnePlus";
             }
+            // OPPO
             else if (/oppo|\bcph[0-9]{4}\b/i.test(targetSearchStr) || /\b(pndm|pher)[0-9]{2}\b/i.test(targetSearchStr)) {
                 brand = "Oppo";
             }
-            else if (/vivo|iqoo|\bv2[0-9]{3}\b|\bpd2[0-9]{3}\b/i.test(targetSearchStr)) {
-                brand = "Vivo";
-            }
+            // REALME
             else if (/realme|\brmx[0-9]{4}\b/i.test(targetSearchStr)) {
                 brand = "Realme";
             }
+            // GOOGLE PIXEL (Strict enforcement patterns only)
+            else if (/pixel|nexus/i.test(targetSearchStr) || /\b(gx7as|ge2ae|g9s9b|gc15s)\b/i.test(targetSearchStr)) {
+                brand = "Google";
+            }
+            // MOTOROLA
             else if (/motorola|moto |\bxt[0-9]{4}\b/i.test(targetSearchStr)) {
                 brand = "Motorola";
             }
-            else if (/huawei|mate\s*[0-9]|mediapad|\b(bog|ana|els|vtr|generic\s*p30|generic\s*p40)\b/i.test(targetSearchStr)) {
-                brand = "Huawei";
-            }
-            else if (/honor|\b(hry|any|vne|fne|chk|clk)-[a-z0-9]/i.test(targetSearchStr)) {
-                brand = "Honor";
-            }
+            // NOTHING PHONE
             else if (/nothing|\b(a063|ain065|a065|a142|a142p|a024|a059|a059p|a001t|a015|a001)\b/i.test(targetSearchStr)) {
                 brand = "Nothing Phone";
             }
+            // HUAWEI
+            else if (/huawei|mate\s*[0-9]|mediapad|\b(bog|ana|els|vtr|generic\s*p30|generic\s*p40)\b/i.test(targetSearchStr)) {
+                brand = "Huawei";
+            }
+            // HONOR
+            else if (/honor|\b(hry|any|vne|fne|chk|clk)-[a-z0-9]/i.test(targetSearchStr)) {
+                brand = "Honor";
+            }
+            // INFINIX
             else if (/infinix|\bx[0-9]{4,5}\b/i.test(targetSearchStr)) {
                 brand = "Infinix";
             }
+            // TECNO
             else if (/tecno|phantom|pova|camon|spark|\b(kj|lh|ad|ck)[0-9][a-z]?\b/i.test(targetSearchStr)) {
                 brand = "Tecno";
             }
+            // ITEL
             else if (/itel|\bit[0-9]{4}\b|\ba66[0-9]\b|\bs66[0-9]\b/i.test(targetSearchStr)) {
                 brand = "itel";
             }
+            // LAVA
             else if (/lava|yuva|blaze|agni|\blzn[0-9]\b/i.test(targetSearchStr)) {
                 brand = "Lava";
             }
+            // SONY
             else if (/sony|xperia|\bso-[0-9a-z]{3}\b|\bsog[0-9]{2}\b|\bxq-[a-z0-9]{4}\b/i.test(targetSearchStr)) {
                 brand = "Sony";
             }
+            // ASUS
             else if (/asus|zenfone|rog\s*phone|\bai24[0-9]{2}\b/i.test(targetSearchStr)) {
                 brand = "Asus";
             }
+            // HTC
             else if (/htc|desire|\bu11\b|\bu12\b|\bu19\b|\bu20\b|\bu23\b/i.test(targetSearchStr)) {
                 brand = "HTC";
             }
+            // NOKIA
             else if (/nokia|\bta-[0-9]{4}\b/i.test(targetSearchStr)) {
                 brand = "Nokia";
             }
+            // LENOVO
             else if (/lenovo|legion|\b(yt|tb)-[0-9a-z]{4}\b/i.test(targetSearchStr)) {
                 brand = "Lenovo";
             }
+            // ZTE
             else if (/zte|nubia|redmagic|\bnx[0-9]{3}j\b/i.test(targetSearchStr)) {
                 brand = "ZTE";
             }
+            // MEIZU
             else if (/meizu|\bm[0-9]{4}q\b/i.test(targetSearchStr)) {
                 brand = "Meizu";
             }
+            // MICROMAX
             else if (/micromax|\bcanvas\b|\bin\s*note\b/i.test(targetSearchStr)) {
                 brand = "Micromax";
             }
         }
+        // LIVING ROOM & EMBEDDED CONSOLE OPERATING ENVIRONMENT TARGETS
         else if (/tizen/i.test(targetSearchStr)) {
             platform = "Tizen OS";
             brand = "Samsung Smart TV";
@@ -2164,6 +2189,7 @@ async registerCurrentDevice(uid) {
             platform = "Nintendo OS";
             brand = "Nintendo Switch";
         }
+        // DESKTOP CORE COMPUTATION ARCHITECTURES
         else if (/Macintosh|MacIntel/i.test(ua)) {
             if (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) {
                 platform = "iPadOS";
@@ -2176,8 +2202,10 @@ async registerCurrentDevice(uid) {
             }
         } else if (/Windows|Win32|Win64/i.test(ua)) {
             platform = "Windows";
+            brand = "PC / Desktop";
         } else if (/Linux/i.test(ua)) {
             platform = "Linux";
+            brand = "Linux Device";
         }
 
         // 4. Resolve Browser Engine Signature Channel
@@ -2268,16 +2296,20 @@ initSecurityMonitor(uid) {
                 const data = doc.data();
 
                 // A. KILL SWITCH CHECK (Revoke Access)
-                if (data.lastRevokeTime) {
-                    const revokeTime = data.lastRevokeTime.toMillis();
-                    const sessionStart = parseInt(localStorage.getItem('auth_session_start') || '0');
+                // Locate this block within your initSecurityMonitor method:
+if (data.lastRevokeTime) {
+    const revokeTime = data.lastRevokeTime.toMillis();
+    const sessionStart = parseInt(localStorage.getItem('auth_session_start') || '0');
 
-                    if (revokeTime > sessionStart) {
-                        this.logout(true);
-                        this.showAlert("Session Expired", "Signed out.", true);
-                        return; 
-                    }
-                }
+    if (revokeTime > sessionStart) {
+        // If THIS client generated the revoke command, skip processing and return
+        if (this.isIntentionalGlobalRevoke) return; 
+        
+        // Pass control to the asynchronous forced logout framework
+        this.logout(true);
+        return; 
+    }
+}
 
     // B. INTRUSION ALERT (Smart Check)
                 if (data.lastLoginTime) {
@@ -2395,30 +2427,50 @@ async fetchActiveDevices(uid) {
                         `;
                     });
 
-                    list.innerHTML = html || '<li style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">No active sessions found.</li>';
+                    
+        list.innerHTML = html || '<li style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">No active sessions found.</li>';
 
-                } catch(e) {
-                    console.error(e);
-                    list.innerHTML = '<li style="color:var(--danger); font-size:13px; padding:10px;">Error loading devices.</li>';
-                } finally {
-                    list.style.opacity = '1';
+        // --- THE PRO AUTO-HEALING LOCATION PATCH ---
+        // If a transient loading state is detected, silently schedule a single refresh to pull the updated geo-data
+        if (html.includes("Loading Location...") && !this._locRetryTimer) {
+            this._locRetryTimer = setTimeout(() => {
+                delete this._locRetryTimer;
+                // Only run the background refresh if the settings card or security pop-up is actively visible
+                const isViewActive = document.getElementById('settings-view').classList.contains('active') || 
+                                     document.getElementById('security-modal').style.display === 'flex';
+                if (isViewActive && this.user) {
+                    this.fetchActiveDevices(uid);
                 }
-            }
+            }, 2500);
+        }
+
+    } catch(e) {
+        console.error(e);
+        list.innerHTML = '<li style="color:var(--danger); font-size:13px; padding:10px;">Error loading devices.</li>';
+    } finally {
+        list.style.opacity = '1';
+    }
+}
 
 // 4. Action: Sign Out All
 async confirmSignOutAll() {
     const ok = await this.showConfirm("Sign Out Everywhere?", "This will log out ALL devices including this one.", "Sign Out All");
     if(ok) {
         try {
+            this.isIntentionalGlobalRevoke = true; // Lock local thread state signature
+            
             await this.db.collection('artifacts').doc(this.appId)
                 .collection('public').doc('data')
                 .collection('user_info').doc(this.user.uid).set({
                     lastRevokeTime: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             
-            // Wait for listener to catch it, or force logout manually
-            setTimeout(() => this.logout(), 500);
-        } catch(e) { this.showAlert("Error", e.message, true); }
+            // Fires intentional direct reload track without triggering the modal alert loop here
+            await this.logout(false);
+        } catch(e) { 
+            this.isIntentionalGlobalRevoke = false; // Reset state tracking
+            this.showAlert("Error", e.message, true); 
+        }
     }
 }
 
@@ -2431,39 +2483,56 @@ async confirmSignOutAll() {
 
 
             async logout(forced = false) {
-                // 1. PRO CLEANUP: Delete this session from Firestore (Only if manual logout)
-                // We do this BEFORE signOut so we still have write permissions.
-                if (!forced && this.user) {
-                    const deviceId = localStorage.getItem('app_device_id');
-                    if (deviceId) {
-                        try {
-                           // Fire and forget (awaiting ensures reliability but we don't block UI too long)
-                           await this.db.collection('artifacts').doc(this.appId)
-                                .collection('public').doc('data')
-                                .collection('user_info').doc(this.user.uid)
-                                .collection('sessions').doc(deviceId).delete();
-                        } catch(e) { console.warn("Session cleanup error (likely offline):", e); }
-                    }
-                }
+    // 1. Immediately drop snapshot background sync tunnels
+    if (this.securityUnsub) this.securityUnsub(); 
 
-                // 2. Stop Listeners
-                if(this.securityUnsub) this.securityUnsub(); 
-                
-                // 3. Destroy Local Auth
-                await this.auth.signOut();
-                localStorage.removeItem('ios_builder_session');
-                
-                // 4. Reset Memory State
-                this.user = null;
-                this.devProfile = null;
-                document.getElementById('login-email').value = '';
-                document.getElementById('login-pass').value = '';
-                document.getElementById('navbar').style.display = 'none';
-                
-                // 5. Navigate
-                if(!forced) this.updateUIState('login');
-                else document.getElementById('login-view').classList.add('active');
-            }
+    // 2. Manual cleaning execution path
+    if (!forced && this.user) {
+        const deviceId = localStorage.getItem('app_device_id');
+        if (deviceId) {
+            try {
+               await this.db.collection('artifacts').doc(this.appId)
+                    .collection('public').doc('data')
+                    .collection('user_info').doc(this.user.uid)
+                    .collection('sessions').doc(deviceId).delete();
+            } catch(e) { console.warn("Session teardown bypassed safely:", e.message); }
+        }
+    }
+
+    // 3. Vaporize tracking storage references
+    if (this.auth) {
+        await this.auth.signOut().catch(() => {});
+    }
+    localStorage.removeItem('ios_builder_session');
+    
+    // 4. Re-zero UI Input Fields
+    this.user = null;
+    this.devProfile = null;
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('navbar').style.display = 'none';
+    
+    // 5. Instantly force view presentation changes underneath the alert canvas layer
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.getElementById('login-view').classList.add('active');
+    
+    // 6. Hard-overwrite active entry pointer indexes to break tracking arrays
+    history.replaceState({ screen: 'login' }, '', window.location.pathname);
+
+    // 7. SURGICAL DISPATCH PIPELINE EXECUTION
+    if (!forced) {
+        // --- FLOW A: INTENTIONAL MANUAL SIGN OUT ---
+        // Immediate, silent, and clean hard page reload
+        window.location.reload();
+    } else {
+        // --- FLOW B: FORCED REMOTE INTRUSION OR TOKEN EXPIRATION ---
+        // Halts layout assembly entirely. Waits patiently for user interaction.
+        // Hitting the "OK" button OR swiping back fires the alert resolver, triggering the reload.
+        this.showAlert("Session Expired", "Your account session has expired or been revoked by another device.", true).then(() => {
+            window.location.reload();
+        });
+    }
+}
 
             showLogin() { this.updateUIState('login'); }
             showRegister() { this.updateUIState('register'); }
@@ -4708,95 +4777,95 @@ function renderBio(text) {
     
 <script>
 (function initPerfectAppBuilderRouter() {
-    // 1. Establish Base State
-    history.replaceState({ screen: 'login' }, '');
+    // 1. Establish Secure Ground State Entry
+    if (!firebase.auth().currentUser) {
+        history.replaceState({ screen: 'login' }, '', window.location.pathname);
+    }
 
-    // 2. Monkey-Patch UI Update for Native Tracking
+    // 2. Monkey-Patch UI Update Engine for History Controls
     const origUpdateUI = appBuilder.updateUIState;
     appBuilder.updateUIState = function(viewName, isFromHistory = false) {
         origUpdateUI.call(this, viewName);
         if (!isFromHistory) history.pushState({ screen: viewName }, '');
     };
 
-    // 3. Inject Dynamic Property to safely read Editor state
+    // 3. Inject Diagnostic Property to read Unsaved Editor state changes Safely
     Object.defineProperty(appBuilder, 'hasUnsavedChanges', {
         get: function() {
             return this.editorSnapshot && this.editorSnapshot !== this.getEditorSnapshot();
         }
     });
 
-    // 4. The Hardware Back-Button Trap
+    // 4. THE MASTER HARDWARE BACK-BUTTON INTERCEPTOR FRAMEWORK
     window.addEventListener('popstate', function(e) {
-        e.stopImmediatePropagation(); // Instantly kill the old buggy constructor listener
+        e.stopImmediatePropagation(); // Terminate all competing listener nodes instantly
+
+        // --- THE UNBREAKABLE BARRIER GUARD ---
+        // If there is no active authenticated user profile, completely freeze navigation rules
+        if (!firebase.auth().currentUser) {
+            origUpdateUI.call(appBuilder, 'login', true);
+            history.pushState({ screen: 'login' }, '', window.location.pathname);
+            return;
+        }
 
         const currentScreen = document.querySelector('.view.active')?.id.replace('-view', '') || 'dashboard';
 
-        // Fetch all potential modals
+        // Fetch display node references for validation checks
         const securityModal = document.getElementById('security-modal');
         const alertModal = document.getElementById('alert-modal');
         const promptModal = document.getElementById('prompt-modal');
         const confirmModal = document.getElementById('confirm-modal');
 
         // ==========================================
-        // TRAP 1: MODAL ROUTING & CLOSING
+        // MODULE A: INTERFACE MODAL DISMISSAL QUEUES
         // ==========================================
-        
         if (securityModal && securityModal.style.display === 'flex') {
-            history.pushState({ screen: currentScreen }, ''); return; // Inescapable
+            history.pushState({ screen: currentScreen }, ''); return; // Revoke swipe actions
         }
         
         if (alertModal && alertModal.style.display === 'flex') {
             history.pushState({ screen: currentScreen }, ''); 
-            document.getElementById('alert-ok')?.click(); return; // Close Alert
+            document.getElementById('alert-ok')?.click(); return; // Fires Alert Resolver
         }
         
         if (promptModal && promptModal.style.display === 'flex') {
             history.pushState({ screen: currentScreen }, ''); 
-            document.getElementById('prompt-cancel')?.click(); return; // Close Prompt
+            document.getElementById('prompt-cancel')?.click(); return; 
         }
         
         if (confirmModal && confirmModal.style.display === 'flex') {
-            history.pushState({ screen: currentScreen }, ''); // Repair URL immediately
-            
+            history.pushState({ screen: currentScreen }, ''); 
             const title = document.getElementById('confirm-title')?.innerText || '';
-            
             if (title === 'Unsaved Changes') {
-                // THE BRICK WALL: Do not auto-close. Force user interaction.
-                return; 
+                return; // Prevent automatic deletion on swipe gestures
             } else {
-                // NORMAL CONFIRM (Sign Out, Delete App, Reset Stats): Auto-close on swipe back
                 document.getElementById('confirm-cancel')?.click();
                 return;
             }
         }
 
         // ==========================================
-        // TRAP 2: THE EDITOR GUARD (No Modals Open)
+        // MODULE B: NATIVE EDITOR CONTEXT LOCKS
         // ==========================================
-        
         if (currentScreen === 'editor' && appBuilder.hasUnsavedChanges) {
-            // User swiped back while typing. Lock the URL to keep them in the editor.
             history.pushState({ screen: 'editor' }, '');
-
-            // Summon the native warning
             appBuilder.discardChangesGuard(() => {
-                // This ONLY fires if they click "Discard Changes"
                 appBuilder.updateUIState('dashboard'); 
             });
             return; 
         }
 
         // ==========================================
-        // TRAP 3: NORMAL SCREEN ROUTING
+        // MODULE C: COMPATIBLE ACTIVE SCREEN PASS-THRU
         // ==========================================
-        
         if (e.state && e.state.screen) {
             let target = e.state.screen;
-            // Smart Auth Guard: Prevent swiping back to login if already authenticated
             if (target === 'login' && firebase.auth().currentUser) target = 'dashboard';
             origUpdateUI.call(appBuilder, target, true);
-        } else { origUpdateUI.call(appBuilder, firebase.auth().currentUser ? 'dashboard' : 'login', true); }
-    }, true); // Capture phase ensures we intercept the swipe first
+        } else { 
+            origUpdateUI.call(appBuilder, firebase.auth().currentUser ? 'dashboard' : 'login', true); 
+        }
+    }, true); // Assert high-priority target capture processing phase
 })();
 
 
@@ -4911,7 +4980,7 @@ function renderBio(text) {
                 <button class="btn danger block" onclick="appBuilder.confirmSignOutAll(); document.getElementById('security-modal').style.display='none'">
                     No, Secure My Account (Sign Out All)
                 </button>
-                <button class="btn secondary block" onclick="appBuilder.showSettings(); document.getElementById('security-modal').style.display='none'">
+                <button class="btn secondary block" onclick="appBuilder.showSettings(); document.getElementById('security-modal').style.display='none'; setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);">
                     Review Active Devices
                 </button>
                 <button class="btn block" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--border);" onclick="localStorage.setItem('auth_session_start', Date.now()); document.getElementById('security-modal').style.display='none'">
