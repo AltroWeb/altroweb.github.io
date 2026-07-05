@@ -1413,39 +1413,39 @@ unsubscribeSecurity = onSnapshot(getPublicDoc('profiles', user.uid), async (docS
 
 
         // B. TRUE INTRUSION ENGINE (Like App Store Connect)
-        if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (sessionStart + 5000)) {
-            const alertKey = 'gibbl_alerted_' + data.lastLoginAt; 
-            if (!sessionStorage.getItem(alertKey)) {
-                sessionStorage.setItem(alertKey, 'true'); 
-                window.showModal('New Login Detected', 'Your account was just accessed from a new device. Was this you?', null, false, `
-                    <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
-                        <button class="btn-danger" style="margin:0; width:100%;" onclick="window.confirmSignOutAll();">No, Secure Account (Sign Out All)</button>
-                        
-                        <button class="btn-secondary" style="margin:0; width:100%; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full); color:var(--text);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal(); window.setView('settings'); setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);">Review Active Devices</button>
-                        
-                        <button class="btn-primary" style="margin:0; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal();">Yes, It Was Me</button>
-                    </div>
-                `);
-                document.getElementById('modal-actions-container').style.display = 'none';
+        
+if (data.lastLoginDevice && data.lastLoginDevice !== myDeviceId && data.lastLoginAt > (sessionStart + 5000)) {
+    if (window.activeAlertTimestamp !== data.lastLoginAt) {
+        window.activeAlertTimestamp = data.lastLoginAt; 
+        window.showModal('New Login Detected', 'Your account was just accessed from a new device. Was this you?', null, false, `
+            <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:10px;">
+                <button class="btn-danger" style="margin:0; width:100%;" onclick="window.confirmSignOutAll();">No, Secure Account (Sign Out All)</button>
                 
-                const confirmBtn = document.getElementById('modal-confirm');
-                if (confirmBtn) {
-                    const origConfirmClick = confirmBtn.onclick;
-                    confirmBtn.onclick = function(...args) {
-                        document.getElementById('modal-actions-container').style.display = 'flex';
-                        if (origConfirmClick) origConfirmClick.apply(this, args);
-                    };
-                }
-                const cancelBtn = document.getElementById('modal-cancel');
-                if (cancelBtn) {
-                    const origCancelClick = cancelBtn.onclick;
-                    cancelBtn.onclick = function(...args) {
-                        document.getElementById('modal-actions-container').style.display = 'flex';
-                        if (origCancelClick) origCancelClick.apply(this, args);
-                    };
-                }
-            }
+                <button class="btn-secondary" style="margin:0; width:100%; border:1px solid var(--border); padding:1rem; border-radius:var(--radius-full); color:var(--text);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal(); window.setView('settings'); setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);">Review Active Devices</button>
+                
+                <button class="btn-primary" style="margin:0; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="localStorage.setItem('gibbl_session_start', Date.now()); window.closeModal();">Yes, It Was Me</button>
+            </div>
+        `);
+        document.getElementById('modal-actions-container').style.display = 'none';
+        
+        const confirmBtn = document.getElementById('modal-confirm');
+        if (confirmBtn) {
+            const origConfirmClick = confirmBtn.onclick;
+            confirmBtn.onclick = function(...args) {
+                document.getElementById('modal-actions-container').style.display = 'flex';
+                if (origConfirmClick) origConfirmClick.apply(this, args);
+            };
         }
+        const cancelBtn = document.getElementById('modal-cancel');
+        if (cancelBtn) {
+            const origCancelClick = cancelBtn.onclick;
+            cancelBtn.onclick = function(...args) {
+                document.getElementById('modal-actions-container').style.display = 'flex';
+                if (origCancelClick) origCancelClick.apply(this, args);
+            };
+        }
+    }
+}
         
         if (currentView === 'settings' && window.fetchActiveDevices) window.fetchActiveDevices();
     }
