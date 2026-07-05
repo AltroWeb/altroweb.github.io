@@ -2330,27 +2330,22 @@ if (data.lastRevokeTime) {
                             const otherDevices = snapshot.docs.filter(doc => doc.id !== currentDeviceId);
 
                             if (otherDevices.length > 0) {
-                                // REPLACE IT ENTIRELY WITH THIS PRO ENGINE:
-const alertKey = 'app_alerted_' + lastGlobalLogin;
-
-if (!sessionStorage.getItem(alertKey)) {
-    sessionStorage.setItem(alertKey, 'true');
-    const modal = document.getElementById('security-modal');
-    modal.style.display = 'flex';
-    
-    // Dynamically bind the "Review Active Devices" button to advance the timeline baseline
-    const buttons = modal.querySelectorAll('button');
-    if (buttons && buttons[1]) {
-        buttons[1].onclick = () => {
-            localStorage.setItem('auth_session_start', Date.now());
-            this.showSettings();
-            modal.style.display = 'none';
-            setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
-        };
-    }
-}
-                            } else {
-                                localStorage.setItem('auth_session_start', lastGlobalLogin);
+                                if (this.activeAlertTimestamp !== lastGlobalLogin) {
+                                    this.activeAlertTimestamp = lastGlobalLogin;
+                                    const modal = document.getElementById('security-modal');
+                                    modal.style.display = 'flex';
+                                    
+                                    // Dynamically bind the "Review Active Devices" button to advance the tracking timeline baseline
+                                    const buttons = modal.querySelectorAll('button');
+                                    if (buttons && buttons[1]) {
+                                        buttons[1].onclick = () => {
+                                            localStorage.setItem('auth_session_start', Date.now());
+                                            this.showSettings();
+                                            modal.style.display = 'none';
+                                            setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+                                        };
+                                    }
+                                }
                             }
                         }).catch(e => console.warn("Security check skipped", e));
                     }
