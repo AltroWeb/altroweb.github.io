@@ -2330,13 +2330,25 @@ if (data.lastRevokeTime) {
                             const otherDevices = snapshot.docs.filter(doc => doc.id !== currentDeviceId);
 
                             if (otherDevices.length > 0) {
-                                // ROBUST FIX: Use localStorage so it survives tab reloads!
-                                const lastSeenAlert = parseInt(localStorage.getItem('last_alert_timestamp') || '0');
-                                
-                                if (lastGlobalLogin > lastSeenAlert) {
-                                    localStorage.setItem('last_alert_timestamp', lastGlobalLogin);
-                                    document.getElementById('security-modal').style.display = 'flex';
-                                }
+                                // REPLACE IT ENTIRELY WITH THIS PRO ENGINE:
+const alertKey = 'app_alerted_' + lastGlobalLogin;
+
+if (!sessionStorage.getItem(alertKey)) {
+    sessionStorage.setItem(alertKey, 'true');
+    const modal = document.getElementById('security-modal');
+    modal.style.display = 'flex';
+    
+    // Dynamically bind the "Review Active Devices" button to advance the timeline baseline
+    const buttons = modal.querySelectorAll('button');
+    if (buttons && buttons[1]) {
+        buttons[1].onclick = () => {
+            localStorage.setItem('auth_session_start', Date.now());
+            this.showSettings();
+            modal.style.display = 'none';
+            setTimeout(() => document.getElementById('device-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+        };
+    }
+}
                             } else {
                                 localStorage.setItem('auth_session_start', lastGlobalLogin);
                             }
