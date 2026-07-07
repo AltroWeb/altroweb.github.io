@@ -410,6 +410,58 @@
         #autosave-interval, #autosave-interval option { font-family: var(--font-ui); }
         
         
+        
+        /* --- PRO BREAK-PROOF DIALOG SAFETY ENFORCEMENT --- */
+#modal-overlay {
+    box-sizing: border-box !important;
+    padding: 16px !important; /* Forces a safe buffer margin around the card on small screens */
+}
+
+#modal-overlay .modal-card {
+    box-sizing: border-box !important;
+    max-height: 80vh !important;       /* Hard ceiling: Card can never scale past 80% of viewport height */
+    max-height: 80dvh !important;      /* Stabilizes shifting when Chrome address bars hide/show */
+    display: flex !important;
+    flex-direction: column !important; /* Aligns Title, Message, and Buttons on a single grid spine */
+    overflow-y: auto !important;           /* Boundary shield: Absolutely prevents container bleeding */
+}
+
+#modal-msg {
+    margin: 12px 0 12px 0 !important;
+    padding-right: 6px !important;     /* Precision buffer gap to separate text from the scrollbar line */
+    flex: 1 !important;                /* Fluid dynamic scaling: Absorbs all text overflow space */
+    min-height: 0 !important;          /* Crucial flex rule: Allows the container box to compress and scroll */
+    overflow-y: auto !important;       /* Activates clean independent internal vertical text scrolling */
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;   /* Hard-cuts continuous unbroken strings neatly at the border */
+    -webkit-overflow-scrolling: touch !important; /* Smooth elastic mobile momentum mechanics */
+}
+
+.modal-actions {
+    margin-top: 16px !important;
+    flex-shrink: 0 !important;        /* HARD PROTECTION: Buttons can NEVER be squished out or hidden */
+}
+
+/* Micro-Viewport Adaptive Structural Flow Ceiling (<320px) */
+@media (max-width: 320px) {
+    #modal-overlay .modal-card {
+        padding: 16px !important;      /* Compresses empty border areas to maximize text display room */
+    }
+    .modal-actions {
+        flex-direction: column !important; /* Stacks button actions vertically so they never clip horizontally */
+        width: 100% !important;
+        gap: 8px !important;
+    }
+    .modal-actions button {
+        width: 100% !important;        /* Stretched target boxes for reliable capacitive thumb taps */
+        margin: 0 !important;
+    }
+}
+        
+        
+        
+        
+        
     </style>
 </head>
 <body>
