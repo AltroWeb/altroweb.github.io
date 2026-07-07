@@ -2985,9 +2985,19 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                             </button>
                         </div>
-                        <div id="profile-search-bar" class="hidden" style="padding: 0.8rem 1.2rem; border-bottom: 1px solid var(--border); background: var(--bg);">
-                            <input type="text" id="profile-search-input" class="custom-input w-full" placeholder="Search loaded posts..." onkeyup="window.localProfileSearch(this.value)" style="padding: 0.8rem 1rem;">
-                        </div>
+                        <div id="profile-search-bar" class="hidden" style="padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg);">
+    <div style="position: relative; width: 100%; display: flex; align-items: center;">
+        <input type="text" id="profile-search-input" class="custom-input w-full" placeholder="Search loaded posts..." 
+            oninput="document.getElementById('profile-search-clear').style.display = this.value.length > 0 ? 'flex' : 'none'; window.localProfileSearch(this.value);" 
+            style="padding: 0.8rem 2.5rem 0.8rem 1rem;">
+        
+        <button id="profile-search-clear" 
+            style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--dim); display: none; align-items: center; justify-content: center; width: 24px; height: 24px; z-index: 10;" 
+            onclick="const inp = document.getElementById('profile-search-input'); inp.value = ''; this.style.display = 'none'; window.localProfileSearch(''); inp.focus();">
+            ${getIcon('x')}
+        </button>
+    </div>
+</div>
                     </div>
                     <div id="profile-posts">
                         <div style="padding:2rem;text-align:center; color:var(--dim)"><div class="spinner"></div></div>
@@ -3520,7 +3530,7 @@ const renderConnections = async (container, type) => {
         <div style="display:flex; align-items:center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10;">
             <div class="back-btn" style="margin:0; padding:0;" onclick="window.setView('profile', '${currentUser.uid}')">${getIcon('arrow-left')} <span style="margin-left: 6px;">${title}</span></div>
         </div>
-        <div class="search-bar-container">
+       <div class="search-bar-container">
             <input type="text" id="conn-search" class="custom-input" placeholder="Search ${title.toLowerCase()}..." oninput="window.handleConnSearch(this.value, '${type}')">
         </div>
         <div id="conn-list" class="list-results"></div>
@@ -3629,27 +3639,36 @@ window.handleConnSearch = async (val, type) => {
 
 
 const renderSearch = async (container) => {
-            window.searchType = window.searchType || 'users'; 
-            container.innerHTML = `
-          <div style="position: sticky; top: 60px; background: var(--bg); z-index: 10; display: flex; flex-direction: column; border-bottom: 1px solid var(--border);">
-                    <div class="search-bar-container" style="border-bottom: none; padding: 0.8rem 1rem 0.5rem 1rem;">
-                        <input type="text" id="search-input" class="custom-input" placeholder="Search ${window.searchType}..." onkeyup="window.handleSearch(this.value)" value="${window.currentSearchQuery || ''}">
-                    </div>
-                    <div class="feed-filters" style="border-bottom: none; padding-bottom: 0.8rem; padding-top: 0.3rem;">
-                        <button class="filter-chip ${window.searchType === 'users' ? 'active' : ''}" onclick="window.setSearchType('users')">Users</button>
-                        <button class="filter-chip ${window.searchType === 'posts' ? 'active' : ''}" onclick="window.setSearchType('posts')">Posts</button>
-                    </div>
+    window.searchType = window.searchType || 'users'; 
+    container.innerHTML = `
+        <div style="position: sticky; top: 60px; background: var(--bg); z-index: 10; display: flex; flex-direction: column; border-bottom: 1px solid var(--border);">
+            <div class="search-bar-container" style="border-bottom: none; padding: 0.8rem 1rem 0.5rem 1rem;">
+                <div style="position: relative; width: 100%; display: flex; align-items: center;">
+                    <input type="text" id="search-input" class="custom-input w-full" placeholder="Search ${window.searchType}..." 
+                        oninput="document.getElementById('main-search-clear').style.display = this.value.length > 0 ? 'flex' : 'none'; window.handleSearch(this.value);" 
+                        value="${window.currentSearchQuery || ''}" style="padding-right: 2.5rem;">
+                    
+                    <button id="main-search-clear" 
+    style="position: absolute; right: 0.8rem; top: 50%; transform: translateY(-50%); color: var(--dim); display: ${window.currentSearchQuery ? 'flex' : 'none'}; align-items: center; justify-content: center; width: 24px; height: 24px; z-index: 90; background: transparent;" 
+    onclick="const inp = document.getElementById('search-input'); inp.value = ''; window.currentSearchQuery = ''; window.searchMatchedPosts = []; window.lastSearchCursor = null; this.style.display = 'none'; window.handleSearch(''); inp.focus();">
+    ${getIcon('x')}
+</button>
                 </div>
-                <div id="search-res" class="list-results">
-                    <div class="text-dim" style="text-align:center; margin-top: 2rem;">Type to search.</div>
-                </div>
-                
-                <!-- PRO FIX: Infinite Scroll Tripwire for Post Search -->
-                <div id="search-tripwire" style="height: 1px; width: 100%; pointer-events: none;"></div>
-                <button id="search-load-more" class="load-more-btn" style="display:none;" onclick="window.loadMoreSearchPosts(true)">Load More</button>
-            `;
-            if (window.currentSearchQuery) window.handleSearch(window.currentSearchQuery);
-        };
+            </div>
+            <div class="feed-filters" style="border-bottom: none; padding-bottom: 0.8rem; padding-top: 0.3rem;">
+                <button class="filter-chip ${window.searchType === 'users' ? 'active' : ''}" onclick="window.setSearchType('users')">Users</button>
+                <button class="filter-chip ${window.searchType === 'posts' ? 'active' : ''}" onclick="window.setSearchType('posts')">Posts</button>
+            </div>
+        </div>
+        <div id="search-res" class="list-results">
+            <div class="text-dim" style="text-align:center; margin-top: 2rem;">Type to search.</div>
+        </div>
+        
+        <div id="search-tripwire" style="height: 1px; width: 100%; pointer-events: none;"></div>
+        <button id="search-load-more" class="load-more-btn" style="display:none;" onclick="window.loadMoreSearchPosts(true)">Load More</button>
+    `;
+    if (window.currentSearchQuery) window.handleSearch(window.currentSearchQuery);
+};
 
         window.setSearchType = (type) => {
             window.searchType = type;
@@ -3866,24 +3885,39 @@ const renderSearch = async (container) => {
 
                 let fullHTML = '';
                 notifs.forEach(n => {
-                    let action = '';
-                    if (n.type === 'like') action = 'liked your post';
-                    else if (n.type === 'reply') action = 'replied to your post';
-                    else if (n.type === 'follow') action = 'followed you';
-                    else if (n.type === 'post') action = 'published a new post';
-                    else if (n.type === 'mention') action = 'mentioned you in a post';
+    let action = '';
+    let clickRoutingAttr = '';
 
-                    fullHTML += `
-                        <div class="user-row">
-                            <div class="user-info-row w-full ${n.postId ? 'pointer' : ''}" ${n.postId ? `onclick="window.setView('thread', '${n.postId}')"` : ''}>
-                                <div style="color:var(--text); line-height: 1.3;">
-                                    <span class="bold break-words">${n.senderName}</span> <span class="text-dim">${action}</span>.
-                                    <div class="text-xs text-dim" style="margin-top:4px;">${timeAgo(n.timestamp)}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
+    if (n.type === 'like') {
+        action = 'liked your post';
+        clickRoutingAttr = `onclick="window.setView('thread', '${n.postId}')"`;
+    } else if (n.type === 'reply') {
+        action = 'replied to your post';
+        clickRoutingAttr = `onclick="window.setView('thread', '${n.postId}')"`;
+    } else if (n.type === 'mention') {
+        action = 'mentioned you in a post';
+        clickRoutingAttr = `onclick="window.setView('thread', '${n.postId}')"`;
+    } else if (n.type === 'post') {
+        action = 'published a new post';
+        clickRoutingAttr = `onclick="window.setView('thread', '${n.postId}')"`;
+    } else if (n.type === 'follow') {
+        action = 'followed you';
+        // Pure vanilla routing: Drops them straight into your profile handler,
+        // letting its existing fallback catch missing users automatically!
+        clickRoutingAttr = `onclick="window.setView('profile', '${n.senderId}')"`;
+    }
+
+    fullHTML += `
+        <div class="user-row">
+            <div class="user-info-row w-full pointer" ${clickRoutingAttr}>
+                <div style="color:var(--text); line-height: 1.3;">
+                    <span class="bold break-words">${n.senderName}</span> <span class="text-dim">${action}</span>.
+                    <div class="text-xs text-dim" style="margin-top:4px;">${timeAgo(n.timestamp)}</div>
+                </div>
+            </div>
+        </div>
+    `;
+});
 
                 if (notifs.length === window.LIMITS.notifs && notifs.length < allNotifs.length) {
                     fullHTML += `<div class="load-more-btn" onclick="window.loadMoreNotifs(this)">Load Older Notifications</div>`;
