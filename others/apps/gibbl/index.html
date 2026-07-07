@@ -3269,7 +3269,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
             if (name.length > 100 || newHandle.length > 100) { window.showModal('Error', 'Name and Handle max length is 100.'); return; }
             
             if(newHandle.startsWith('@')) newHandle = newHandle.substring(1);
-            if (!/^[a-z0-9_][a-z0-9._]{0,18}[a-z0-9_]$/.test(newHandle)) {
+            if (!/^(?=[a-z0-9._]{2,20}$)(?!.*\.{2})(?=.*[a-z0-9])[a-z0-9_][a-z0-9._]*[a-z0-9_]$/.test(newHandle)) {
                 window.showModal('Error', 'Handle can only contain lowercase letters, numbers, dots, and underscores. Minimum length of 2 characters. No spaces or emojis allowed.');
                 return;
             }
@@ -4005,7 +4005,7 @@ const renderSearch = async (container) => {
            // --- PRO HANDLE REGISTRY CHECK ---
 // 1. Clean the handle input (ensure it's lowercase and has @)
 h = h.replace(/@/g, ''); 
-if (!/^[a-z0-9_][a-z0-9._]{0,18}[a-z0-9_]$/.test(h)) {
+if (!/^(?=[a-z0-9._]{2,20}$)(?!.*\.{2})(?=.*[a-z0-9])[a-z0-9_][a-z0-9._]*[a-z0-9_]$/.test(h)) {
     window.showModal('Error', 'Handle can only contain lowercase letters, numbers, dots, and underscores. Minimum length of 2 characters. No spaces or emojis allowed.');
     window.setLoading(btn, false);
     return;
