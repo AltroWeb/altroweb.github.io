@@ -669,6 +669,134 @@ body.dark-mode { --text-tertiary: #636366; } /* Light Gray for Dark Mode */
         border-radius: 22px !important;
     }
 
+
+
+
+
+/* =========================================================
+       MODALS, SECURITY CONFIGS, & ACTIVE SESSION PANEL FORCES
+       ========================================================= */
+    
+    /* 1. UNIVERSAL ACTION MODAL COMPRESSION & VERTICAL BUTTON STACKING */
+    #confirm-modal > div, #alert-modal > div, #prompt-modal > div, #security-modal > div {
+        width: 95% !important;
+        padding: 16px 12px !important;
+        border-radius: 14px !important;
+    }
+    #confirm-modal h2, #alert-modal h2, #prompt-modal h2, #security-modal h2 {
+        font-size: 15px !important;
+        margin-bottom: 6px !important;
+    }
+    #confirm-msg, #alert-msg, #prompt-msg, #security-modal p {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* Force linear cascading layouts for inline flexible action buttons rows inside modals */
+    #confirm-modal div[style*="display: flex; gap: 10px;"],
+    #confirm-modal div[style*="display:flex; gap:10px;"],
+    #prompt-modal div[style*="display: flex; gap: 10px;"],
+    #prompt-modal div[style*="display:flex; gap:10px;"],
+    #security-modal div[style*="display: flex; flex-direction: column; gap: 10px;"],
+    #security-modal div[style*="display:flex; flex-direction:column; gap:10px;"] {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+    #confirm-modal .btn, #alert-modal .btn, #prompt-modal .btn, #security-modal .btn {
+        width: 100% !important;
+        height: 38px !important;
+        font-size: 12px !important;
+        padding: 0 12px !important;
+    }
+
+    /* 2. SECURITY & DEVICES HEADER COMPACT ALIGNMENT OVERRIDE */
+    #settings-view div[style*="margin: 30px 0 10px 0"],
+    #settings-view div[style*="margin:30px 0 10px 0"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: center !important;
+        gap: 10px !important;
+        margin-top: 20px !important;
+        padding-bottom: 8px !important;
+    }
+    #settings-view div[style*="margin: 30px 0 10px 0"] h3,
+    #settings-view div[style*="margin:30px 0 10px 0"] h3 {
+        font-size: 14px !important;
+        text-align: center !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    #settings-view div[style*="margin: 30px 0 10px 0"] .btn,
+    #settings-view div[style*="margin:30px 0 10px 0"] .btn {
+        width: 100% !important;
+        height: 34px !important;
+        font-size: 11px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* 3. HARD RE-ZERO DEVICE LIVE SESSIONS CARD MATRIX (ANTI-BLEED DECOUPLING) */
+    #device-list li {
+        padding: 12px 4px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    #device-list li > div[style*="display:flex"],
+    #device-list li > div[style*="display: flex"] {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    #device-list li div[style*="width:38px"],
+    #device-list li div[style*="width: 38px"] {
+        margin: 0 auto !important;
+        width: 34px !important;
+        height: 34px !important;
+        flex-shrink: 0 !important;
+    }
+    #device-list li div[style*="flex:1"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    #device-list li div[style*="font-weight:600"] {
+        font-size: 13px !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        line-height: 1.2 !important;
+    }
+    #device-list li div[style*="font-size:12px"] {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    #device-list li div[style*="font-size:12px"] span[style*="opacity: 0.5"] {
+        display: none !important; /* Drops the dot separator string layout element when rows stack linearly */
+    }
+    #device-list li div[style*="font-size:11px"] {
+        font-size: 10px !important;
+        justify-content: center !important;
+        margin-top: 2px !important;
+    }
+
+
+
+
+
+
+
     /* 4. MARKDOWN EDITOR DEFENSIVE PROTECTION (FIXES WRITE/PREVIEW TABS) */
     /* Forces description/bio section headers to hold row formats instead of breaking into columns */
     .form-group > div[style*="display:flex; justify-content:space-between"],
@@ -823,6 +951,9 @@ div[style*="rgba(118, 118, 128, 0.12)"] *,
     overflow: hidden !important;
 }
 	
+input[type="password"], .password-wrapper input { padding-right: 45px !important; }
+
+
 
     </style>
 </head>
@@ -1574,6 +1705,10 @@ div[style*="rgba(118, 118, 128, 0.12)"] *,
 
     <script>
     	
+    
+    
+    
+    ['log', 'warn', 'error'].forEach(k => { const _o = console[k]; console[k] = (...args) => _o.apply(console, args.map(v => typeof v === 'string' ? v.replace(/Firebase:\s*/gi, '') : (v && v.message ? (v.message = v.message.replace(/Firebase:\s*/gi, ''), v) : v))); });
     
     
     
@@ -4493,14 +4628,19 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
                 // REPLACED NATIVE PROMPT WITH CUSTOM PROMPT
                 const userInput = await this.showPrompt(
                     "Delete Account", 
-                    `To confirm deletion, type your email:<br><b>${this.devProfile.email}</b><br><br><span style="color:var(--danger)">WARNING: This will delete ALL your published apps permanently.</span>`, 
-                    "Type email here"
+                    `To confirm deletion, enter your account password:<br><br><span style="color:var(--danger)">WARNING: This will delete ALL your published apps permanently.</span>`, 
+                    "Type password here",
+                    "password"
                 );
                 
-                if (userInput === this.devProfile.email) {
+                if (userInput) {
                     try {
                         const btn = document.querySelector('.btn.danger');
                         if(btn) btn.innerText = "Deleting...";
+
+                        // Secure Re-Authentication Layer
+                        const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, userInput);
+                        await this.user.reauthenticateWithCredential(credential);
 
                         const uid = this.devProfile.uid;
 
@@ -4557,7 +4697,9 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
 
                     } catch (e) {
                         console.error(e);
-                        if (e.code === 'permission-denied') {
+                        if (e.code === 'auth/wrong-password') {
+                            await this.showAlert("Security Failure", "Incorrect password entered. Deletion cancelled.", true);
+                        } else if (e.code === 'permission-denied') {
                             await this.showAlert("Permission Denied", "You cannot delete these apps.", true);
                         } else if (e.code === 'auth/requires-recent-login') {
                              await this.showAlert("Security Check", "Please Sign Out and Sign In again, then try deleting immediately.", true);
@@ -4568,12 +4710,16 @@ if(this.user) this.fetchActiveDevices(this.user.uid);
                         if(btn) btn.innerText = "Delete Account";
                     }
                 } else if (userInput !== null) { // If null, user cancelled
-                    await this.showAlert("Mismatch", "Email did not match. Deletion cancelled.", true);
+                    await this.showAlert("Mismatch", "Password cannot be empty. Deletion cancelled.", true);
                 }
             }
         }
 
         const appBuilder = new AppBuilder();
+        
+        
+        
+        const _origAlert = AppBuilder.prototype.showAlert; AppBuilder.prototype.showAlert = function(t, m, e) { return _origAlert.call(this, t, typeof m === 'string' ? m.replace(/Firebase:\s*/gi, '') : m, e); };
         
         
         

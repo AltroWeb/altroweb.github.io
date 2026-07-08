@@ -3866,7 +3866,7 @@ if (isUpdateAvailable) {
                     const safeAuthor = (app.author || 'Unknown').replace(/'/g, "\\'");
                     
                     // Create Clickable Link
-                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore || window.mixStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
+                    const authorHTML = `<span class="store-author-link" onclick="const sObj = window.appStore; sObj.savedScroll = document.getElementById('store-scroll').scrollTop; const i=document.getElementById('store-search-input'); i.value='dev:${safeAuthor}'; i.dispatchEvent(new Event('input')); document.getElementById('store-scroll').scrollTop=0;">${app.author}</span>`;
 
                     // --- REMOVED WARNING BADGE ---
 let removedBadgeHTML = '';
@@ -4646,12 +4646,12 @@ window.appStoreShareSuite = {
         // Define premium text templates matched directly to your specifications
         if (type === 'app') {
             // data matches: { id, name, author }
-            shareText = `Check out ${data.name} by ${data.author} on App Store!\n\n`;
+            shareText = `Check out ${data.name} by ${data.author} on App Store\n\n\n`;
             pathQuery = `s=${encodeURIComponent(data.id)}`;
         } else if (type === 'dev') {
             // data matches: { name }
-            shareText = `View ${data.name} on App Store\n\n`;
-            pathQuery = `s=${encodeURIComponent('dev:' + data.name)}`;
+            shareText = `View ${data.name} on App Store\n\n\n`;
+            pathQuery = `s=${encodeURIComponent('dev:' + window.appStore.currentViewedDevId)}`;
         }
 
         const targetUrl = `${baseOrigin}${this.targetAppStorePage}?${pathQuery}`;
