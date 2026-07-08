@@ -1076,6 +1076,10 @@
         function confirmLogout() { confirmDialog("Logout?", "End session?", doLogout); }
         function doLogout() {
             db.auth.signOut();
+            
+            window.location.replace(window.location.pathname);
+            
+            
             currentUser = null; masterKey = null;
             
             // Clear all structural configuration settings inputs and auth parameters
@@ -1306,6 +1310,15 @@
                     
                     await db.ref(`users/${currentUser.uid}`).remove();
                     await db.auth.deleteAccount();
+                    
+                    // Wipe any local app configuration session tokens entirely
+                    localStorage.clear();
+                    
+                    // 🔥 PRO FRAME REBOOT: Forces hard clean load layout and locks security state out
+                    window.location.replace(window.location.pathname);
+                    
+                    
+                    
                     toast("Account Deleted", "success");
                     
                     // Clear all operational parameters and profile inputs
@@ -1832,15 +1845,20 @@ if (document.querySelector('.screen.active')?.id === 'dashboard-screen') { histo
 
 
 
-        // NORMAL ROUTING: Sync UI with History Stack
-        if (e.state && e.state.screen) {
+        // =========================================================================
+        // 🔥 SURGICAL UPDATE: AUTH-PATROL NATIVE ROUTER GUARD
+        // =========================================================================
+        // NORMAL ROUTING: Sync UI with History Stack with Strict Auth Patrol Guard
+        if (e.state && e.state.screen && currentUser) {
             origShowScreen(e.state.screen, true);
         } else {
             origShowScreen('login-screen', true);
+            try {
+                history.replaceState({ screen: 'login-screen' }, '', window.location.pathname);
+            } catch(histErr) {}
         }
     });
 })();
-        
         
         
         
