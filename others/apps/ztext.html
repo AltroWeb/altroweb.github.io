@@ -721,7 +721,12 @@
             <h3 style="color:var(--danger); margin:0 0 10px 0; font-size:16px;">Danger Zone</h3>
             <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Deleting account removes all files permanently.</p>
             <div class="input-group">
-                 <input type="text" id="del-confirm-user" placeholder="Type username to confirm">
+                <div class="input-wrapper">
+                    <input type="password" id="del-confirm-pass" placeholder="Enter password to confirm deletion">
+                    <div class="password-toggle" onclick="togglePassword('del-confirm-pass')">
+                        <svg class="svg-icon" viewBox="0 0 24 24" id="icon-del-confirm-pass"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                </div>
             </div>
             <button class="danger" onclick="performDeleteAccount()" style="width:100%">Delete Account</button>
         </div>
@@ -1020,6 +1025,17 @@
             setLoading(btn, true);
             
             const u = val('auth-user'); const p = val('auth-pass');
+            
+            
+            // FRONTEND CEILING: Drop client registration instantly if input exceeds limit bounds
+            if (u.length > 20) {
+                toast("Username cannot exceed 20 characters.", "error");
+                setLoading(btn, false);
+                return;
+            }
+            
+            
+            
             try {
                 const email = u + "@ztext.local"; 
                 const mKey = await ENC.genKey();
@@ -1061,6 +1077,17 @@
         function doLogout() {
             db.auth.signOut();
             currentUser = null; masterKey = null;
+            
+            // Clear all structural configuration settings inputs and auth parameters
+            val('set-new-user', '');
+            val('set-old-pass', '');
+            val('set-new-pass', '');
+            val('del-confirm-pass', '');
+            val('auth-user', '');
+            val('auth-pass', '');
+            
+            
+            document.querySelectorAll('*').forEach(el => el.scrollTop = 0);
             showScreen('login-screen');
         }
 
@@ -1266,21 +1293,36 @@
     });
 }
 
+        // SURGICAL REPLACEMENT: PASSWORD RE-AUTHENTICATED ACCOUNT DELETION
         async function performDeleteAccount() {
-            const confirmName = val('del-confirm-user');
-            if(confirmName !== currentUser.username) return toast("Username mismatch", "error");
-            confirmDialog("DELETE ACCOUNT?", "All data lost.", async () => {
+            const confirmPass = val('del-confirm-pass');
+            if(!confirmPass) return toast("Password required", "error");
+            confirmDialog("DELETE ACCOUNT?", "All data lost permanently.", async () => {
                 try {
                     showConnectionStatus(true);
+                    
+                    // Force authorization verification handshake before executing deletion
+                    await db.auth.signIn(currentUser.username, confirmPass);
+                    
                     await db.ref(`users/${currentUser.uid}`).remove();
                     await db.auth.deleteAccount();
                     toast("Account Deleted", "success");
                     
-                    val('del-confirm-user', '');
+                    // Clear all operational parameters and profile inputs
+                    val('set-new-user', '');
+                    val('set-old-pass', '');
+                    val('set-new-pass', '');
+                    val('del-confirm-pass', '');
+                    val('auth-user', '');
+                    val('auth-pass', '');
+                    
+                    
                     
                     currentUser = null; masterKey = null;
+                    
+                    document.querySelectorAll('*').forEach(el => el.scrollTop = 0);
                     showScreen('login-screen');
-                } catch(e) { toast("Failed: " + e.message, "error"); }
+                } catch(e) { toast("Verification Failed: Incorrect Password", "error"); }
             });
         }
 
@@ -1438,7 +1480,7 @@
         
         // --- PRO AUTO-SAVE SYSTEM (Cloud Synced) ---
         let autoSaveTimer = null;
-        const DEFAULT_AUTOSAVE = { enabled: false, interval: 60000 }; 
+        const DEFAULT_AUTOSAVE = { enabled: true, interval: 60000 }; 
 
         // 1. Load Settings (Call this in openEditor AND openSettings)
         async function loadAutoSaveSettings() {
@@ -1589,6 +1631,7 @@
             if (!newName) return toast("Enter new username", "error");
             if (newName === currentUser.username) return toast("Same username", "error");
             if (newName.length < 3) return toast("Too short (min 3)", "error");
+            if (newName.length > 20) return toast("Username cannot exceed 20 characters.", "error");
 
             // 2. Confirmation
             confirmDialog("Change Username?", `Change to "${newName}"?`, async () => {
