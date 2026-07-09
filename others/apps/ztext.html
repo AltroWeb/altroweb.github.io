@@ -540,7 +540,7 @@
     <div id="dashboard-screen" class="screen">
         <div class="top-nav" style="position: relative;">
     <div id="nav-default" style="display:flex; justify-content:space-between; align-items:center; width: 100%;">
-        <h2>My Files</h2>
+<h2 style="cursor:pointer;" onclick="document.querySelector('.dashboard-content').scrollTo({ top: 0, behavior: 'smooth' })">My Files</h2>
         <div style="display:flex; gap:8px;">
             <button class="icon-btn" onclick="toggleSearch()" title="Search">
                 <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
