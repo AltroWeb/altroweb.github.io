@@ -4102,6 +4102,7 @@ if (totalUsers >= 500) {
         };
 
         window.handleLogout = async (silent = false) => {
+    if (!silent && auth.currentUser) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', auth.currentUser.uid, 'sessions', localStorage.getItem('gibbl_device_id')));
         	
         window.closeModal(); 
         
