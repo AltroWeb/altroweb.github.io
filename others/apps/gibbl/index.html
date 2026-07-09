@@ -129,7 +129,7 @@
             align-items: center;
         }
 
-        .logo { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
+.logo { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; user-select: none; -webkit-user-select: none; }
 
         /* --- AUTH SCREEN --- */
 .auth-screen {
@@ -1985,7 +1985,7 @@ window.handleHashtagClick = (tag) => {
                             ${getIcon(isDarkMode ? 'sun' : 'moon')}
                         </button>
                     </div>
-                    <div class="logo">gibbl.</div>
+                    <div class="logo" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">gibbl.</div>
                     <div style="flex: 1;"></div>
                 </div>
                 <div class="auth-screen">
@@ -3402,9 +3402,7 @@ document.querySelector('.back-btn').setAttribute('onclick', post.replyTo ? `wind
             }, true);
         };
 
-        window.confirmLogout = () => {
-             window.showModal('Log Out', 'Are you sure you want to log out of this device?', () => { window.handleLogout(false); }, true);
-        };
+        window.confirmLogout = () => window.showModal('Log Out', 'Are you sure you want to log out of this device?', () => window.handleLogout(false), true);
 
         window.deleteAccount = () => {
     const hasEmail = currentUser && currentUser.email;
