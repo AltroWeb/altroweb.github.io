@@ -938,6 +938,11 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
 #report-modal .report-box { max-height: 80dvh !important; max-width: 270px !important; margin: auto !important; display: flex !important; flex-direction: column !important; } .ra-options { flex: 1 !important; min-height: 0 !important; overflow-y: auto !important; } .ra-btn:last-child { flex-shrink: 0 !important; margin-top: auto !important; }
 
 
+
+#dev-profile-card .dev-open-btn, .dev-open-btn { display: inline-flex !important; flex-direction: row !important; flex-wrap: wrap !important; align-items: center !important; justify-content: center !important; gap: 8px !important; white-space: normal !important; height: auto !important; min-height: 44px !important; overflow-wrap: anywhere !important; word-break: break-word !important; text-align: center !important; padding: 12px 16px !important; }
+
+
+
     </style>
 </head>
 <body>
@@ -1510,15 +1515,7 @@ if (lowerTerm.startsWith('download:')) {
 }
 
             // 3. LIGHTSPEED STANDARD FALLBACK INDEX (Zero overhead during normal text searches)
-            const displayName = (app.storeName || app.name || '').toLowerCase();
-            const author = (app.author || '').toLowerCase();
-            const desc = (app.description || '').toLowerCase();
-            const tags = (app.tags || '').toLowerCase();
-
-            return displayName.includes(lowerTerm) || 
-                   author.includes(lowerTerm) || 
-                   desc.includes(lowerTerm) || 
-                   tags.includes(lowerTerm)
+            const ogName = (app.name || '').toLowerCase(); const displayName = (app.storeName || '').toLowerCase(); const author = (app.author || '').toLowerCase(); const desc = (app.description || '').toLowerCase(); const tags = (app.tags || '').toLowerCase(); return ogName.includes(lowerTerm) || displayName.includes(lowerTerm) || author.includes(lowerTerm) || desc.includes(lowerTerm) || tags.includes(lowerTerm);
         });
 
 

@@ -1723,7 +1723,7 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
 #report-modal .report-box { max-height: 80dvh !important; max-width: 270px !important; margin: auto !important; display: flex !important; flex-direction: column !important; } .ra-options { flex: 1 !important; min-height: 0 !important; overflow-y: auto !important; } .ra-btn:last-child { flex-shrink: 0 !important; margin-top: auto !important; }
 
 
-
+#sl-tab-write, #sl-tab-preview { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; display: block !important; }
 
 
     </style>
@@ -3143,15 +3143,7 @@ if (term.startsWith('download:')) {
 }
 
             // 3. LIGHTSPEED STANDARD FALLBACK INDEX (Zero overhead during normal text searches)
-            const displayName = (app.storeName || app.name || '').toLowerCase();
-            const author = (app.author || '').toLowerCase();
-            const desc = (app.description || '').toLowerCase();
-            const tags = (app.tags || '').toLowerCase();
-
-            return displayName.includes(term) || 
-                   author.includes(term) || 
-                   desc.includes(term) || 
-                   tags.includes(term);
+            const ogName = (app.name || '').toLowerCase(); const displayName = (app.storeName || '').toLowerCase(); const author = (app.author || '').toLowerCase(); const desc = (app.description || '').toLowerCase(); const tags = (app.tags || '').toLowerCase(); return ogName.includes(term) || displayName.includes(term) || author.includes(term) || desc.includes(term) || tags.includes(term);
         });
     
     
@@ -6782,10 +6774,7 @@ handleDeepLinks() {
                         if (!searchVal || searchVal.includes(':') || (window.appStore && window.appStore.lockedAppId)) { originalRender(list); return; }
                         if (searchVal && list.length > 0) {
                             const filtered = list.filter(app => {
-                                const displayName = (app.storeName || app.name).toLowerCase();
-                                const author = (app.author || '').toLowerCase();
-                                const desc = (app.description || '').toLowerCase();
-                                return displayName.includes(searchVal) || author.includes(searchVal) || desc.includes(searchVal);
+                                const ogName = (app.name || '').toLowerCase(); const displayName = (app.storeName || '').toLowerCase(); const author = (app.author || '').toLowerCase(); const desc = (app.description || '').toLowerCase(); const tags = (app.tags || '').toLowerCase(); return ogName.includes(searchVal) || displayName.includes(searchVal) || author.includes(searchVal) || desc.includes(searchVal) || tags.includes(searchVal);
                             });
                             originalRender(filtered);
                         } else { originalRender(list); }
