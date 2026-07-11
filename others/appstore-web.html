@@ -260,8 +260,9 @@
 }
 
 .store-desc.expanded {
+    display: block !important;       /* Kills the flexbox/webkit box layout entirely */
     -webkit-line-clamp: unset !important;
-    white-space: pre-wrap !important; /* THE MAGIC: Un-squashes the newlines */
+    white-space: pre-line !important; /* Forces standard text line breaks cleanly across all engines */
 }
 
 

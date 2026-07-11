@@ -73,7 +73,7 @@
         body.dark-mode .ios-search-bar input { color: #fff !important; }
         body.dark-mode .ios-search-bar svg { opacity: 0.7; color: #8E8E93; }
 
-        body.dark-mode .ios-btn.secondary { background: #2c2c2e; color: #fff; }
+        body.dark-mode .ios-btn.secondary { background: #1c1c1e; color: #fff; }
         body.dark-mode .ios-btn.secondary:active { background: #3a3a3c; }
 
         body.dark-mode .app-navbar.scrolled {
@@ -449,7 +449,7 @@ body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
             cursor: pointer; transition: transform 0.1s, opacity 0.2s;
         }
         .ios-btn:active { transform: scale(0.98); opacity: 0.6; }
-        .ios-btn.secondary { background: #E9E9EA; color: #000; }
+        .ios-btn.secondary { background: #ffffff; color: #000; }
 
         .ios-input {
             width: 100%; padding: 12px 16px; background: #F2F2F7; 
@@ -540,8 +540,9 @@ body.dark-mode.sleek-scrollbars ::-webkit-scrollbar-thumb:hover {
 }
 
 .store-desc.expanded {
+    display: block !important;       /* Kills the flexbox/webkit box layout entirely */
     -webkit-line-clamp: unset !important;
-    white-space: pre-wrap !important; /* THE MAGIC: Un-squashes the newlines */
+    white-space: pre-line !important; /* Forces standard text line breaks cleanly across all engines */
 }
 
 
@@ -1726,6 +1727,16 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
 #sl-tab-write, #sl-tab-preview { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; display: block !important; }
 
 
+/* Force the Sideloader description boxes to remain distinct in Dark Mode */
+body.dark-mode #sideloader-window #sl-desc,
+body.dark-mode #sideloader-window #sl-desc-preview {
+    background: rgba(128, 128, 128, 0.15) !important; /* Premium semi-translucent dark layer */
+    color: #ffffff !important;
+    border: none !important;
+}
+
+
+
     </style>
 </head>
 <body>
@@ -2212,13 +2223,15 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
             <div id="sl-form-view" style="display:none;">
     <div class="ios-list">
         <!-- APP NAME ROW -->
-        <div class="ios-row">
-            <input type="text" class="ios-input" id="sl-name" placeholder="App Name" style="background:transparent; padding:0;">
+        <div class="ios-row" style="flex-direction: column; align-items: stretch; padding: 12px 16px;">
+            <input type="text" class="ios-input" id="sl-name" maxlength="100" placeholder="App Name" style="background:transparent; padding:0;" oninput="document.getElementById('sl-name-counter').innerText = this.value.length + '/100'">
+            <div style="text-align:right; font-size:11px; color:#8E8E93; margin-top:4px; font-variant-numeric: tabular-nums;" id="sl-name-counter">0/30</div>
         </div>
         
-        <!-- AUTHOR NAME ROW (New Addition) -->
-        <div class="ios-row">
-            <input type="text" class="ios-input" id="sl-author" placeholder="Author Name (Optional)" style="background:transparent; padding:0;">
+        <!-- AUTHOR NAME ROW -->
+        <div class="ios-row" style="flex-direction: column; align-items: stretch; padding: 12px 16px;">
+            <input type="text" class="ios-input" id="sl-author" maxlength="100" placeholder="Author Name (Optional)" style="background:transparent; padding:0;" oninput="document.getElementById('sl-author-counter').innerText = this.value.length + '/100'">
+            <div style="text-align:right; font-size:11px; color:#8E8E93; margin-top:4px; font-variant-numeric: tabular-nums;" id="sl-author-counter">0/20</div>
         </div>
 
 
@@ -2231,8 +2244,8 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
                     <button id="sl-tab-preview" onclick="sideloader.setDescMode('preview')" style="flex:1; border:none; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; background:transparent; color:#8E8E93;">Preview</button>
                 </div>
             </div>
-            <textarea id="sl-desc" rows="3" maxlength="1000" placeholder="e.g. **v2.0 Update**&#10;- Improved UI&#10;- Fixed bugs" class="ios-input" style="background:rgba(128,128,128,0.1); padding:12px; border-radius:10px; font-size:15px; resize:vertical; min-height:80px;" oninput="document.getElementById('sl-desc-counter').innerText = this.value.length + '/1000'"></textarea>
-            <div id="sl-desc-preview" class="ios-input" style="display:none; background:rgba(128,128,128,0.1); padding:12px; border-radius:10px; font-size:15px; min-height:80px; white-space:pre-wrap; overflow-wrap:break-word;"></div>
+            <textarea id="sl-desc" rows="3" maxlength="1000" placeholder="e.g. **v2.0 Update**&#10;- Improved UI&#10;- Fixed bugs" class="ios-input" style="background:rgba(128,128,128,0.15); padding:12px; border-radius:10px; font-size:15px; resize:vertical; min-height:80px;" oninput="document.getElementById('sl-desc-counter').innerText = this.value.length + '/1000'"></textarea>
+            <div id="sl-desc-preview" class="ios-input" style="display:none; background:rgba(128,128,128,0.15); padding:12px; border-radius:10px; font-size:15px; min-height:80px; white-space:pre-wrap; overflow-wrap:break-word;"></div>
             <div style="text-align:right; font-size:11px; color:#8E8E93; margin-top:6px;" id="sl-desc-counter">0/1000</div>
         </div>
 
@@ -2303,14 +2316,14 @@ body.dark-mode #store-dev-card #dev-card-share-floating-trigger:active {
         <input type="hidden" id="sl-file-data"> 
     </div>
 
-    <div class="ios-list" style="background:transparent; margin-top:20px;">
+    
         <button class="ios-btn" onclick="sideloader.saveApp()">Save App</button>
         <!-- The Export Button will be injected here by JS if needed, or you can add it statically -->
         <button class="ios-btn secondary" id="sl-export-btn" onclick="sideloader.downloadIAP()" style="margin-top:10px; color:#007AFF;">Export .iap Package</button>
         <div style="height:10px;"></div>
         <button class="ios-btn secondary" onclick="sideloader.showList()">Cancel</button>
     </div>
-</div>
+
 
         </div>
     </div>
@@ -4986,17 +4999,19 @@ handleUrlInput(el) {
         this.editingId = editId;
         
         document.getElementById('sl-name').value = app.name;
-        document.getElementById('sl-desc').value = app.description || ''; // <--- ADD THIS
-        document.getElementById('sl-desc-counter').innerText = (app.description ? app.description.length : 0) + '/1000'; // <--- ADD THIS
-        this.setDescMode('write'); // <--- ADD THIS (Resets UI tab)
+        document.getElementById('sl-name-counter').innerText = app.name.length + '/100'; // Hydrate Name Counter
         
-        // LOAD AUTHOR (Robust Check)
+        document.getElementById('sl-desc').value = app.description || '';
+        document.getElementById('sl-desc-counter').innerText = (app.description ? app.description.length : 0) + '/1000';
+        this.setDescMode('write');
+        
+        // LOAD AUTHOR
         const authorField = document.getElementById('sl-author');
         if (authorField) {
             const storedAuthor = app.author;
-            // Only show if it's a real name, not a generic system label
             const isGeneric = !storedAuthor || storedAuthor === 'Sideloaded Package' || storedAuthor === 'User Generated';
             authorField.value = isGeneric ? '' : storedAuthor;
+            document.getElementById('sl-author-counter').innerText = authorField.value.length + '/100'; // Hydrate Author Counter
         }
         
         // Icon Logic
@@ -5034,7 +5049,12 @@ handleUrlInput(el) {
         this.editingId = null;
         
         document.getElementById('sl-name').value = '';
-        if(document.getElementById('sl-author')) document.getElementById('sl-author').value = ''; // Clear Author
+        document.getElementById('sl-name-counter').innerText = '0/100'; // Reset Name Counter
+        
+        if(document.getElementById('sl-author')) {
+            document.getElementById('sl-author').value = '';
+            document.getElementById('sl-author-counter').innerText = '0/100'; // Reset Author Counter
+        }
         
         document.getElementById('sl-icon').value = '';
         document.getElementById('sl-url').value = '';
@@ -5614,7 +5634,7 @@ const updatedStr = ((isModified && !app.isPacked) || app.isIAPUpdate)
             <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:0;">
                 <img src="${iconSrc}" style="width:42px; height:42px; border-radius:10px; background:#eee; object-fit:cover; flex-shrink:0;" onerror="if(!this.dataset.fallback){this.dataset.fallback=true;this.src='grey.png';}">
                 <div style="display:flex; flex-direction:column; min-width:0; width:100%;">
-                    <span style="font-weight:600; font-size:17px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${app.name}${badge}</span>
+                    <span style="font-weight:600; font-size:17px; overflow:hidden; white-space:pre-wrap; overflow-wrap:break-word;">${app.name}${badge}</span>
                     <span style="font-size:11px; color:#8E8E93; font-family: 'SF Mono', monospace; margin-top:2px; white-space:normal; overflow-wrap:break-word; line-height:1.3;">
                         ${app.author || 'Sideloaded'} • ${app.id}
                     </span>

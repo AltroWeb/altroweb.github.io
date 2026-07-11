@@ -1467,9 +1467,7 @@ input[type="password"], .password-wrapper input { padding-right: 45px !important
                 
                 <div class="form-group">
     <label>Search Tags (Hidden)</label>
-    <textarea id="edit-tags" rows="2" maxlength="1000" 
-        placeholder="e.g. game, shooter, multiplayer, fps (Max 1000 chars)" 
-        oninput="appBuilder.updateTagsCounter(this)"></textarea>
+    <textarea id="edit-tags" rows="2" maxlength="1000" placeholder="e.g. game, shooter, multiplayer, fps (Max 1000 chars)" oninput="appBuilder.updateTagsCounter(this)" style="resize: vertical;"></textarea>
     
     <div style="display:flex; justify-content:space-between; margin-top:6px;">
         <div class="hint" style="margin:0;">Comma separated. Used only for search.</div>
