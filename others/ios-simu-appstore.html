@@ -4079,14 +4079,8 @@ directOpen(appId) {
         return style.display !== 'none' && win !== targetWindow;
     });
 
-    // 4. NAVIGATION SYNC (Background)
-    const sourceApps = window.iOS.allApps;
-    const iconsPerPage = (Math.floor((window.innerHeight - 280) / 120)) * 3;
-    const appIndex = sourceApps.findIndex(el => el.getAttribute('data-app-id') === appId);
-    if (appIndex !== -1) {
-        window.iOS.currentPage = Math.floor(appIndex / (iconsPerPage || 1));
-        window.iOS.updatePageScroll();
-    }
+// 4. NAVIGATION SYNC (Background)
+    const targetPage = window.iOS.getVisibleIconElement(appId)?.closest('.homescreen-page'); if (targetPage) { window.iOS.currentPage = Array.from(window.iOS.pagesWrapper.children).indexOf(targetPage); window.iOS.updatePageScroll(); }
 
     // 5. PREPARE CONTENT
     window.iOS.routeContent(appId);
