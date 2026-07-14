@@ -6045,7 +6045,7 @@ const SecureStorage = {
                 'setting-strict-notifs': true,
                 'setting-notif-dev-only': false,
                 'setting-reduce-effects': false,
-                'setting-scrollbars': false,
+                'setting-scrollbars': true,
                 'setting-assistive': false,
                 'setting-assistive-hide': true,
                 'setting-fullscreen': false,
@@ -6668,7 +6668,7 @@ if (reduceSwitch) reduceSwitch.checked = savedReduce; // Sync UI,,
                 
                 
                 // Load Sleek Scrollbars (Default to true for the Pro look)
-        const savedScrollbars = localStorage.getItem('ios_sleek_scrollbars') === 'true';
+        const savedScrollbars = localStorage.getItem('ios_sleek_scrollbars') !== 'false';
         this.toggleScrollbars({ checked: savedScrollbars });
         const scrollSwitch = document.getElementById('setting-scrollbars');
         if (scrollSwitch) scrollSwitch.checked = savedScrollbars;
