@@ -8374,7 +8374,9 @@ if (isTrusted) {
         };
 
         this.renderSafeModeUI(); // Refresh UI instantly
-        this.showAlert('Service Revoked', `Background privileges removed for ${appId}.`);
+        setTimeout(() => {
+            this.showAlert('Service Revoked', `Background privileges removed for ${appId}.`);
+        }, 350);
     }
 
     bootBackgroundServices() {
