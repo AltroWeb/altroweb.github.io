@@ -1156,7 +1156,15 @@ const appCheck = initializeAppCheck(app, {
                     
 
             // 1. REGISTER DEVICE SESSION IN DB (HIGH-PERFORMANCE NON-BLOCKING COHESION ENGINE)
-            if (!localStorage.getItem('gibbl_session_start')) localStorage.setItem('gibbl_session_start', Date.now());
+            // PRO SECURITY LAYER: Strict session metadata enforcement
+const sessionStart = localStorage.getItem('gibbl_session_start');
+if (!sessionStart) {
+    window.sessionExpiredActive = true;
+    window.handleLogout(true);
+    window.showModal('Session Invalid', 'Your local session verification metadata has been cleared or tampered with. Please sign in again.', () => { window.location.reload(); }, false);
+    document.getElementById('modal-cancel').classList.add('hidden');
+    return;
+}
             
             const ua = navigator.userAgent;
             let platform = "Unknown OS";
