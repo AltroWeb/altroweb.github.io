@@ -5992,6 +5992,11 @@ const SecureStorage = {
         "This will restore all system preferences, toggles, and brightness to factory defaults. No apps or data will be deleted.",
         () => {
             
+            // --- PASTE THESE LINES HERE ---
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            }
+            
             // 2. Wipe specific settings from localStorage
             const settingsKeys = [
                 'ios_dark_mode', 'ios_airplane_mode', 'ios_brightness', 'ios_truetone',
