@@ -1875,7 +1875,7 @@ async restoreDeviceId() {
         };
         req.onerror = () => resolve(null);
     });
-}
+} 
 
 // --- 2. REPORT SUBMISSION (6-HOUR COOLDOWN) ---
 async submitReport(reason) {
@@ -2259,12 +2259,11 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
             await origOpenReport.call(this, appId);
         };
 
+
+
+
         if (typeof appStoreWeb.showAlert === 'function') {
-            const origShowAlert = appStoreWeb.showAlert;
-            appStoreWeb.showAlert = function(title, msg, cb) {
-                history.pushState({ screen: 'modal' }, '', window.location.href);
-                origShowAlert.call(this, title, msg, cb);
-            };
+            const origShowAlert = appStoreWeb.showAlert; appStoreWeb.showAlert = function(t, m, c) { if (history.state?.screen !== 'modal') history.pushState({ screen: 'modal' }, '', window.location.href); origShowAlert.call(this, t, m, c); };
         }
 
         // 5. Hardware & Browser Back-Button Navigation Core Interceptor Engine
@@ -2272,7 +2271,7 @@ const simuLink = `ios-simu-appstore.html?s=${encodeURIComponent(app.id)}`;
             e.stopImmediatePropagation(); // Capture event prioritization frame immediately
 
             const reportModal = document.getElementById('report-modal');
-            const alertModal = document.getElementById('sys-alert');
+            const alertModal = document.getElementById('alert-modal') || document.getElementById('sys-alert');
             let modalClosed = false;
 
             // Handle Modal Dismissals First
