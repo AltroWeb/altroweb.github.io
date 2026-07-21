@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Filmystream Pro</title>
+    <title>Filmystream Pro</title> 
     
     <!-- Fonts: SF Pro Display (Apple System Clone) -->
     <link href="https://fonts.cdnfonts.com/css/sf-pro-display" rel="stylesheet">
@@ -1585,6 +1585,35 @@ window.addEventListener('scroll', () => {
         function loadIndianHorror() { closeSidebar(); renderGridPage('/discover/movie?with_genres=27&with_original_language=hi&sort_by=popularity.desc', 'Indian Horror Files', 'movie'); }
         function loadAnime() { closeSidebar(); renderGridPage('/discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc', 'Anime World', 'tv'); }
         function loadGenre(id, type) { closeSidebar(); renderGridPage(`/discover/${type}?with_genres=${id}&sort_by=popularity.desc`, 'Top Picks', type); }
+        
+        
+        
+        
+        
+        
+        
+        
+        // Drop this inside your script tag. It hooks history state, manages back/forward cleanly, and clears state cleanly when returning home.
+(() => {
+    history.replaceState({ page: 'home' }, '');
+    window.addEventListener('popstate', (e) => {
+        const s = e.state || { page: 'home' };
+        if (s.page === 'home') loadPage('home', null, false);
+        else if (s.page === 'grid') renderGridPage(s.endpoint, s.title, s.type, false);
+        else if (s.page === 'details') renderDetailsPage(s.data, false);
+    });
+
+    const _lp = window.loadPage;
+    window.loadPage = async (page, data = null, push = true) => {
+        if (push) history.pushState({ page, data }, '', window.location.pathname);
+        return _lp(page, data);
+    };
+})();
+
+
+
+
+
     </script>
 </body>
 </html>
