@@ -3796,7 +3796,7 @@ async openGlobalAnalytics() {
     if(devsCountEl) devsCountEl.innerText = '...';
     
     // 2. Clear layouts and inject clean loading screens
-    document.getElementById('glob-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); padding:20px;">Fetching global charts...</div>';
+    document.getElementById('glob-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); padding-top:20px; padding-bottom:20px;">Fetching global charts...</div>';
     document.getElementById('glob-creators-roster').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:20px;">Mapping collaborator directory...</div>';
 document.getElementById('glob-retention-chart').innerHTML = '<div style="width:100%; text-align:center; color:var(--text-secondary); align-self:center;">Refreshing...</div>';
 
