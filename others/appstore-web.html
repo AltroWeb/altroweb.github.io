@@ -1065,6 +1065,84 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
     	
     
     
+    const DeviceIdentity = {
+    DB_NAME: 'iOS_Identity_Store',
+    DB_VERSION: 2,
+    STORE_NAME: 'identity',
+    KEY: 'device_id',
+    STORAGE_KEY: 'ios_device_unique_id',
+
+    openDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                    db.createObjectStore(this.STORE_NAME);
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    async getFromDB() {
+        try {
+            const db = await this.openDB();
+            if (!db.objectStoreNames.contains(this.STORE_NAME)) return null;
+            return new Promise((resolve) => {
+                const tx = db.transaction(this.STORE_NAME, 'readonly');
+                const req = tx.objectStore(this.STORE_NAME).get(this.KEY);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            });
+        } catch (e) {
+            return null;
+        }
+    },
+
+    async saveToDB(id) {
+        try {
+            const db = await this.openDB();
+            if (!db.objectStoreNames.contains(this.STORE_NAME)) return false;
+            return new Promise((resolve) => {
+                const tx = db.transaction(this.STORE_NAME, 'readwrite');
+                tx.objectStore(this.STORE_NAME).put(id, this.KEY);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            });
+        } catch (e) {
+            return false;
+        }
+    },
+
+    async resolvePersistentId() {
+        let dbId = await this.getFromDB();
+        let localId = localStorage.getItem(this.STORAGE_KEY);
+
+        if (dbId && typeof dbId === 'string' && dbId.length >= 10) {
+            if (localId !== dbId) {
+                localStorage.setItem(this.STORAGE_KEY, dbId);
+            }
+            window._cachedDeviceId = dbId;
+            return dbId;
+        }
+
+        if (localId && typeof localId === 'string' && localId.length >= 10) {
+            await this.saveToDB(localId);
+            window._cachedDeviceId = localId;
+            return localId;
+        }
+
+        const freshId = 'dev_' + Math.random().toString(36).substring(2, 12) + '_' + Date.now();
+        await this.saveToDB(freshId);
+        localStorage.setItem(this.STORAGE_KEY, freshId);
+        window._cachedDeviceId = freshId;
+        return freshId;
+    }
+};
+    
+    
     
     
         const FIREBASE_CONFIG = {
@@ -1095,18 +1173,11 @@ body.dark-mode .sys-alert-box { background: rgba(35,35,35,0.85); color: white; }
             }
 
             /// --- PRO: PURE SIMULATOR COHESION IDENTIFIER (1-STEP SWAP) ---
-getDeviceId() {
-    // 1. Instantly pull the raw string from localStorage synchronously to feed the report pipeline
-    let did = localStorage.getItem('ios_device_unique_id');
-    
-    // 2. Failsafe: If a malicious user wipes local storage mid-session, grab it from the window frame context
-    if (!did && window.parent && window.parent.localStorage) {
-        did = window.parent.localStorage.getItem('ios_device_unique_id');
+async getDeviceId() {
+    if (window._cachedDeviceId && window._cachedDeviceId.length >= 10) {
+        return window._cachedDeviceId;
     }
-
-    // 3. Fallback: If both storage areas are completely nuked, return an empty string to force Firestore 
-    // rules to throw an immediate validation block instead of executing a new rogue generation.
-    return did || '';
+    return await DeviceIdentity.resolvePersistentId();
 }
 
             async init() {
@@ -1116,6 +1187,9 @@ getDeviceId() {
         // 1. Firebase Init
         if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
         this.db = firebase.firestore();
+
+        // 2. Identity Boot (Safe)
+        await DeviceIdentity.resolvePersistentId();
 
         // 2. Auth
         try {
@@ -1844,49 +1918,15 @@ if (lowerTerm.startsWith('download:')) {
                 this.pendingReportId = null;
             }
 
-            async backupDeviceIdToDB(id) {
-    try {
-        const req = indexedDB.open('iOS_Identity_Store', 1);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('identity')) db.createObjectStore('identity');
-        };
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction('identity', 'readwrite');
-            tx.objectStore('identity').put(id, 'device_id');
-        };
-    } catch(e) {}
-}
-
-async restoreDeviceId() {
-    return new Promise((resolve) => {
-        const req = indexedDB.open('iOS_Identity_Store', 1);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction('identity', 'readonly');
-            const get = tx.objectStore('identity').get('device_id');
-            get.onsuccess = () => {
-                if (get.result) {
-                    localStorage.setItem('ios_device_unique_id', get.result);
-                    resolve(get.result);
-                } else resolve(null);
-            };
-        };
-        req.onerror = () => resolve(null);
-    });
-} 
+            
 
 // --- 2. REPORT SUBMISSION (6-HOUR COOLDOWN) ---
 async submitReport(reason) {
-    let deviceId = localStorage.getItem('ios_device_unique_id');
-    if (!deviceId) deviceId = await this.restoreDeviceId();
-    deviceId = this.getDeviceId(); 
-
+    const deviceId = await this.getDeviceId();
     const appId = this.pendingReportId; 
     this.closeReport(); 
 
-    if (!appId || !this.db) return;
+    if (!appId || !this.db || !deviceId) return;
 
     this.showAlert('Sending...', 'Securely submitting report data.');
 

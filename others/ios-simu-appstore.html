@@ -2448,6 +2448,94 @@ body.dark-mode #sideloader-window #sl-desc-preview {
   
   
   
+  const DeviceIdentity = {
+    DB_NAME: 'iOS_Identity_Store',
+    DB_VERSION: 2,
+    STORE_NAME: 'identity',
+    KEY: 'device_id',
+    STORAGE_KEY: 'ios_device_unique_id',
+
+    openDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                    db.createObjectStore(this.STORE_NAME);
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    async getFromDB() {
+        try {
+            const db = await this.openDB();
+            if (!db.objectStoreNames.contains(this.STORE_NAME)) return null;
+            return new Promise((resolve) => {
+                const tx = db.transaction(this.STORE_NAME, 'readonly');
+                const req = tx.objectStore(this.STORE_NAME).get(this.KEY);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            });
+        } catch (e) {
+            return null;
+        }
+    },
+
+    async saveToDB(id) {
+        try {
+            const db = await this.openDB();
+            if (!db.objectStoreNames.contains(this.STORE_NAME)) return false;
+            return new Promise((resolve) => {
+                const tx = db.transaction(this.STORE_NAME, 'readwrite');
+                tx.objectStore(this.STORE_NAME).put(id, this.KEY);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            });
+        } catch (e) {
+            return false;
+        }
+    },
+
+    async resolvePersistentId() {
+        let dbId = await this.getFromDB();
+        let localId = localStorage.getItem(this.STORAGE_KEY);
+
+        // 1. If DB already has the ID, IT WINS. Restore it to localStorage even if user deleted it!
+        if (dbId && typeof dbId === 'string' && dbId.length >= 10) {
+            if (localId !== dbId) {
+                localStorage.setItem(this.STORAGE_KEY, dbId);
+            }
+            window._cachedDeviceId = dbId;
+            return dbId;
+        }
+
+        // 2. If DB was empty but localStorage had an ID, write it down to DB
+        if (localId && typeof localId === 'string' && localId.length >= 10) {
+            await this.saveToDB(localId);
+            window._cachedDeviceId = localId;
+            return localId;
+        }
+
+        // 3. ONLY generate a new ID if BOTH are truly empty (fresh browser)
+        const freshId = 'dev_' + Math.random().toString(36).substring(2, 12) + '_' + Date.now();
+        await this.saveToDB(freshId);
+        localStorage.setItem(this.STORAGE_KEY, freshId);
+        window._cachedDeviceId = freshId;
+        return freshId;
+    }
+};
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   const _pW = (w) => { try { ['requestFullscreen', 'webkitRequestFullscreen'].forEach(k => { const o = w.Element.prototype[k]; if (o && !o._p) { w.Element.prototype[k] = function(...a) { const f = this.ownerDocument.defaultView.frameElement; return (f && (f.hasAttribute('sandbox') || f.hasAttribute('data-untrusted')) && localStorage.getItem('ios_untrusted_fs') !== 'true') ? Promise.reject(new Error()) : o.apply(this, a); }; w.Element.prototype[k]._p = 1; } }); } catch(e){} }; _pW(window); ['contentWindow', 'contentDocument'].forEach(p => { const d = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, p); if (d?.get) Object.defineProperty(HTMLIFrameElement.prototype, p, { get() { const r = d.get.call(this); if (r) _pW(p === 'contentWindow' ? r : r.defaultView); return r; }, configurable: true }); });
   
@@ -2504,6 +2592,9 @@ if (localStorage.getItem('ios_console_logger_enabled') !== 'true') {
         this.isKernelReady = false; // 1. LOCK THE SYSTEM
 
         await this.initFirebase();
+        
+        await DeviceIdentity.resolvePersistentId();
+        
         this.initSearch();
         
         await Promise.all([
@@ -3346,62 +3437,22 @@ closeReportAlert() {
 
 
 
-getDeviceId() {
-    let did = localStorage.getItem('ios_device_unique_id');
-    if (!did) {
-        did = 'device_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-        localStorage.setItem('ios_device_unique_id', did);
+
+
+async getDeviceId() {
+    if (window._cachedDeviceId && window._cachedDeviceId.length >= 10) {
+        return window._cachedDeviceId;
     }
-    this.backupDeviceIdToDB(did);
-    return did;
+    return await DeviceIdentity.resolvePersistentId();
 }
 
-
-
-
-
-async backupDeviceIdToDB(id) {
-    try {
-        const req = indexedDB.open('iOS_Identity_Store', 1);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains('identity')) db.createObjectStore('identity');
-        };
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction('identity', 'readwrite');
-            tx.objectStore('identity').put(id, 'device_id');
-        };
-    } catch(e) {}
-}
-
-async restoreDeviceId() {
-    return new Promise((resolve) => {
-        const req = indexedDB.open('iOS_Identity_Store', 1);
-        req.onsuccess = (e) => {
-            const db = e.target.result;
-            const tx = db.transaction('identity', 'readonly');
-            const get = tx.objectStore('identity').get('device_id');
-            get.onsuccess = () => {
-                if (get.result) {
-                    localStorage.setItem('ios_device_unique_id', get.result);
-                    resolve(get.result);
-                } else resolve(null);
-            };
-        };
-        req.onerror = () => resolve(null);
-    });
-}
 
 async submitReport(reason) {
-    let deviceId = localStorage.getItem('ios_device_unique_id');
-    if (!deviceId) deviceId = await this.restoreDeviceId();
-    deviceId = this.getDeviceId(); 
-
+    const deviceId = await this.getDeviceId();
     const appId = this.pendingReportAppId; 
     this.closeReportAlert(); 
 
-    if (!appId || !this.db) return;
+    if (!appId || !this.db || !deviceId) return;
 
     iOS.showAlert('Sending...', 'Securely submitting report data.');
 
